@@ -9,6 +9,9 @@
  */
 'use strict';
 
+// Desde cuándo se puede encender «¿Es tu negocio?» con código: el día en que se aplica la versión 2026-11-12 de las
+// condiciones para negocios (migración 20261279100000 de la app; 15 días después de publicarla, P2B art. 3.2).
+const CODIGO_DESDE = '2026-11-27';
 const QUE_HECHO = {
   verify_business: ['negocio verificado', 'negocios verificados', 'business verified', 'businesses verified'],
   verify_entity: ['entidad verificada', 'entidades verificadas', 'organisation verified', 'organisations verified'],
@@ -188,8 +191,8 @@ PAGES.automatico = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>${en ? 'Automatic' : 'Automático'}</h1></div>
     ${helpBox(en ? 'What do I do here?' : '¿Qué hago aquí?', en
-    ? '<p>What Klendar can do alone so that only exceptions reach you. Everything starts off. <b>Before switching on</b>: the PA texts of <code>LEGAL_PENDIENTE</code> must be approved and published (RUNBOOK §4zf). A switch with AI also switches its use in the shared AI piece, with its cap.</p>'
-    : '<p>Lo que Klendar puede hacer solo para que te lleguen solo las excepciones. Todo empieza apagado. <b>Antes de encender</b>: aprobar y publicar los textos PA de <code>LEGAL_PENDIENTE</code> (RUNBOOK §4zf). Un interruptor con IA enciende también su uso en la pieza común, con su tope.</p>')}
+    ? '<p>What Klendar can do alone so that only exceptions reach you. Everything starts off. The AI texts are published since 12-11-2026 (RUNBOOK §4zm). <b>“Is this your business?” with a code, not before 27-11-2026</b>, when the new business terms apply. A switch with AI also switches its use in the shared AI piece, with its cap.</p>'
+    : '<p>Lo que Klendar puede hacer solo para que te lleguen solo las excepciones. Todo empieza apagado. Los textos de IA están publicados desde el 12-11-2026 (RUNBOOK §4zm). <b>«¿Es tu negocio?» con código, no antes del 27-11-2026</b>, cuando se aplican las condiciones nuevas para negocios. Un interruptor con IA enciende también su uso en la pieza común, con su tope.</p>')}
     <div class="card"><h2>${en ? 'Switches' : 'Interruptores'}</h2>
       ${PARTES.map(([k, es, e, de, den]) => {
     const on = !!cfg[k]?.enabled;
@@ -216,9 +219,14 @@ PAGES.automatico = async (v) => {
       const on = !b.dataset.on;
       const p = PARTES.find((x) => x[0] === b.dataset.parte);
       const ayuda = modoSeguro(b.dataset.parte, cfg);
+      // «¿Es tu negocio?» con código, solo desde que se aplican las condiciones de la versión 2026-11-12 (D2, RUNBOOK §4zm).
+      if (on && b.dataset.parte === 'claim_code' && new Date().toISOString().slice(0, 10) < CODIGO_DESDE) {
+        toast(en ? 'Not before 27-11-2026: that is when the new business terms (version 2026-11-12) apply.' : 'No antes del 27-11-2026: es cuando se aplican las condiciones nuevas para negocios (versión 2026-11-12).', true);
+        return;
+      }
       if (on && !await confirmDlg(en ? `Switch on: ${p[2]}` : `Encender: ${p[1]}`, esc(ayuda
         ? (en ? 'It checks and helps you: nothing is decided without you. Are the AI texts published (RUNBOOK §4zm)?' : 'Comprueba y te ayuda: nada se decide sin ti. ¿Están publicados los textos de IA (RUNBOOK §4zm)?')
-        : (en ? 'From now on Klendar decides this alone. Are the PA texts published and the lawyer’s questions answered?' : 'A partir de ahora Klendar lo decide solo. ¿Están publicados los textos PA y contestadas las preguntas al abogado?')), { submit: en ? 'Switch on' : 'Encender' })) return;
+        : (en ? 'From now on Klendar decides this alone. Are the AI texts published (RUNBOOK §4zm) and the lawyer’s questions answered?' : 'A partir de ahora Klendar lo decide solo. ¿Están publicados los textos de IA (RUNBOOK §4zm) y contestadas las preguntas al abogado?')), { submit: en ? 'Switch on' : 'Encender' })) return;
       await rpc('admin_piloto_set', { p_part: b.dataset.parte, p_enabled: on });
       toast(on ? (en ? 'On' : 'Encendido') : (en ? 'Off' : 'Apagado'));
       route();

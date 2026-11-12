@@ -23,7 +23,7 @@
     };
     const pinta = (d) => {
       hueco.innerHTML = `<h2>${en ? 'AI help for businesses' : 'Ayudas de IA para negocios'}</h2>
-        <p class="meta">${en ? 'Sent to Claude (Anthropic). Approve the IN texts first. Nothing is published or sent on its own.' : 'Va a Claude (Anthropic). Antes, aprobar los textos IN. Nada se publica ni se envía solo.'}${d.only_users ? ` · ${en ? 'only for' : 'solo para'} ${esc(String(d.only_users))} ${en ? 'accounts' : 'cuentas'}` : ''}</p>
+        <p class="meta">${en ? 'Sent to Claude (Anthropic). Texts published on 12-11-2026. Nothing is published or sent on its own.' : 'Va a Claude (Anthropic). Textos publicados el 12-11-2026. Nada se publica ni se envía solo.'}${d.only_users ? ` · ${en ? 'only for' : 'solo para'} ${esc(String(d.only_users))} ${en ? 'accounts' : 'cuentas'}` : ''}</p>
         ${d.uses.map((u) => `<div class="item" style="grid-template-columns:1fr auto"><div style="min-width:0">
           <b>${esc(NOMBRES[u.use][0])}</b> <span class="tag ${u.enabled ? 'ok' : 'dim'}">${u.enabled ? (en ? 'on' : 'encendido') : (en ? 'off' : 'apagado')}</span>
           <div class="meta">${esc(NOMBRES[u.use][1])}</div>

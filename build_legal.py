@@ -1273,16 +1273,18 @@ def _fecha_en(f):
     return datetime.datetime.strptime(f['en'] if isinstance(f, dict) else f, '%d %B %Y').date()
 
 
-def _apunta(slug, cuando, es, en):
+def _apunta(slug, cuando, es, en, primero=False):
     """Fecha de «Última actualización» (si es más nueva) y línea del historial
-    en su sitio (de la más nueva a la más vieja)."""
+    en su sitio (de la más nueva a la más vieja). Con `primero`, delante de las
+    de su mismo día (lo publicado más tarde ese día)."""
     if slug not in ACTUALIZADO or _fecha_en(cuando) > _fecha_en(ACTUALIZADO[slug]):
         ACTUALIZADO[slug] = cuando
     filas = CAMBIOS.setdefault(slug, [])
     fila = (cuando['es'], es, cuando['en'], en)
     if fila in filas:
         return
-    i = next((n for n, f in enumerate(filas) if _fecha_en(f[2]) < _fecha_en(cuando)), len(filas))
+    i = next((n for n, f in enumerate(filas) if _fecha_en(f[2]) < _fecha_en(cuando)
+              or (primero and _fecha_en(f[2]) == _fecha_en(cuando))), len(filas))
     filas.insert(i, fila)
 
 
@@ -1306,8 +1308,10 @@ if TURNSTILE_DESDE:
 # que se aplica 15 días después (P2B art. 3.2). VERSION no se sube
 # (informativo para las personas usuarias).
 # ════════════════════════════════════════════════════════════════════════════
+# Se publicaron el 12-11 después de QA1–QA3 y del 12-11 de «Cuenta de negocio»:
+# su línea va delante de las de ese mismo día.
 for _slug, _cuando, _es, _en in legal_ia.cambios():
-    _apunta(_slug, _cuando, _es, _en)
+    _apunta(_slug, _cuando, _es, _en, primero=True)
 VERSIONES_NEGOCIOS[:0] = [v for v in legal_ia.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
 
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:

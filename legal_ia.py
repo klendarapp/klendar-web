@@ -40,17 +40,23 @@ Decisiones de Iván del 12-11 (lo que dicen estos textos):
     DENUNCIAS_AUTOMATICAS_DESDE = None: no salen hasta que conteste el abogado
     y se encienda (con su línea en el historial y su versión con 15 días).
 
-Ojo: los modos «Listos para aprobar» y «solo opina» aún no están programados
-(los hace otra tarea). Estos textos los dan por hechos: no publicar sin ellos.
+Los modos «Listos para aprobar» y «solo opina», y `document_review` sin
+decidir, están programados desde el 12-11 (migración 20261279000000 de la app).
+
+Iván aprobó el PDF el 12-11 con «todo como recomiendas» (D1–D6) y se publicó
+ese día. «¿Es tu negocio?» con código (`claim_code`) solo se enciende desde que
+se aplica la versión nueva de las condiciones, 15 días después (D2): el
+27-11-2026. El asistente, al principio, solo con cuenta (D5).
 """
 import datetime
 import sys
 
 # ════════════════════════════════════════════════════════════════════════════
-# LA FECHA DEL DÍA QUE SE PUBLIQUE (AAAA-MM-DD). Hoy es una fecha de
-# PRUEBA: cambiarla por la del día de publicar antes de subir nada.
+# LA FECHA DEL DÍA EN QUE SE PUBLICARON (AAAA-MM-DD): el 12-11-2026, con el
+# visto bueno de Iván al PDF. Tiene que coincidir con la versión de las
+# condiciones de la migración 20261279100000 de la app (se aplica el 27-11).
 # ════════════════════════════════════════════════════════════════════════════
-IA_DESDE = '2026-11-13'
+IA_DESDE = '2026-11-12'
 DENUNCIAS_AUTOMATICAS_DESDE = None  # NO se enciende hasta que conteste el abogado (FF-Q4, PA-Q1)
 
 CORREO = 'info@klendar.app'
