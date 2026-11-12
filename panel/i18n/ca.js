@@ -1615,6 +1615,7 @@ KL_DIC('ca', {
   "Has llegado al límite de publicaciones activas de tu plan.": "Has arribat al límit de publicacions actives del teu pla.",
   "Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.": "Has arribat al límit de publicacions actives del teu pla. Posa'n alguna en pausa o canvia de pla.",
   "Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.": "Has arribat al màxim de publicacions actives del teu pla. Espera que n'acabi alguna o escriu-nos.",
+  "Puedes guardar 50 plantillas como mucho: borra alguna que ya no uses.": "Pots desar 50 plantilles com a màxim: esborra'n alguna que ja no facis servir.",
   "Has probado muchas veces seguidas. Espera un poco.": "Ho has provat moltes vegades seguides. Espera't una mica.",
   "Has salido del equipo de {nombre}": "Has sortit de l'equip de {nombre}",
   "Has terminado por hoy": "Has acabat per avui",

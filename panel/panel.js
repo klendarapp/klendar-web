@@ -144,6 +144,8 @@ const ERRORS = {
   not_a_member: 'Esa persona ya no está en el equipo.',
   invalid_role: 'Ese rol no existe.',
   plan_limit_reached: 'Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.',
+  // 50 plantillas por negocio (migración 20261280500000).
+  templates_limit: 'Puedes guardar 50 plantillas como mucho: borra alguna que ya no uses.',
   prior_price_required: 'Pon el precio anterior: la ley obliga a enseñarlo junto al descuento.',
   prior_price_not_lower: 'El precio anterior tiene que ser mayor que el de ahora.',
   alcohol_declaration_required: 'Di si el 2x1 incluye bebidas alcohólicas.',
@@ -2639,7 +2641,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   let ideas = [];
   const [{ data: yo }, { data: tpl }] = await Promise.all([
     !id && !desde ? sb.from('businesses').select('category_id').eq('id', BIZ.id).maybeSingle() : Promise.resolve({ data: null }),
-    sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false }),
+    sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false }).limit(50),
   ]);
   if (!id && !desde) {
     const slug = CATS.find((c) => c.id === yo?.category_id)?.slug;
@@ -3644,7 +3646,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     };
     try {
       await rpc('save_offer_template', { p_business: BIZ.id, p_name: r.name, p_data: data });
-      const { data: tpl2 } = await sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false });
+      const { data: tpl2 } = await sb.from('offer_templates').select('id, name, data, updated_at').eq('business_id', BIZ.id).order('updated_at', { ascending: false }).limit(50);
       guardadas = tpl2 || guardadas;
       toast('Plantilla guardada');
     } catch (err) { toast(friendly(err.message), true); }

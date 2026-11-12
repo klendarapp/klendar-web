@@ -20,6 +20,34 @@ Object.assign(ERRORES, {
   qr_invalid: 'No es un QR de cliente de Klendar.',
 });
 
+// Tus bonos: los activos enteros y los gastados o caducados por partes, 20 y
+// «Ver más» (`my_passes` con `p_part`, migración 20261280500000; igual que la
+// app). Contra una base sin las partes, la llamada de antes (todos).
+const BONOS_POR_PARTE = 20;
+async function bonosMios() {
+  try {
+    const [activos, hechos] = await Promise.all([
+      llamar('my_passes', { p_part: 'active' }),
+      llamar('my_passes', { p_part: 'done', p_limit: BONOS_POR_PARTE }),
+    ]);
+    return { bonos: [...(activos || []), ...(hechos || [])], mas: (hechos || []).length >= BONOS_POR_PARTE };
+  } catch {
+    return { bonos: (await llamar('my_passes', {})) || [], mas: false };
+  }
+}
+/** Los gastados o caducados siguientes a `ultimo`. */
+const bonosMas = async (ultimo) => (await llamar('my_passes', {
+  p_part: 'done', p_limit: BONOS_POR_PARTE, p_before: ultimo.sold_at, p_before_id: ultimo.id,
+})) || [];
+/** Uno tuyo, esté como esté (o null). */
+async function bonoMio(id) {
+  try {
+    return ((await llamar('my_passes', { p_id: id })) || [])[0] || null;
+  } catch {
+    return ((await llamar('my_passes', {})) || []).find((x) => x.id === id) || null;
+  }
+}
+
 /** «12 de noviembre de 2027». */
 const bonoFecha = (iso) => fecha(iso, { day: 'numeric', month: 'long', year: 'numeric' });
 /** «Te quedan 7 de 10». */
@@ -118,8 +146,7 @@ RUTAS['qr-cliente'] = async () => {
 // ── Un bono ───────────────────────────────────────────────────────────────
 RUTAS.bono = async ([id]) => {
   if (!exigeSesion(`bono/${id}`)) return;
-  const lista = await llamar('my_passes', {});
-  const p = (lista || []).find((x) => x.id === id);
+  const p = await bonoMio(id);
   if (!p) {
     pinta(pantallaVacia({ icono: 'local_activity', titulo: t('Ese bono no está'), h: 'h1',
       texto: t('Puede que el negocio deshiciera la venta. Tus bonos están en «Tus códigos».'),

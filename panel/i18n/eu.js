@@ -1615,6 +1615,7 @@ KL_DIC('eu', {
   "Has llegado al límite de publicaciones activas de tu plan.": "Zure planaren argitalpen aktiboen mugara iritsi zara.",
   "Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.": "Zure planaren argitalpen aktiboen mugara iritsi zara. Pausatu baten bat edo aldatu plana.",
   "Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.": "Zure planaren argitalpen aktiboen gehienezkora iritsi zara. Itxaron bat amaitu arte edo idatzi iezaguzu.",
+  "Puedes guardar 50 plantillas como mucho: borra alguna que ya no uses.": "Gehienez 50 txantiloi gorde ditzakezu: ezabatu erabiltzen ez duzun bat.",
   "Has probado muchas veces seguidas. Espera un poco.": "Askotan saiatu zara jarraian. Itxaron pixka bat.",
   "Has salido del equipo de {nombre}": "{nombre} negozioaren taldetik irten zara",
   "Has terminado por hoy": "Gaurkoz amaitu duzu",

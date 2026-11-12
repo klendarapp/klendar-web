@@ -2346,13 +2346,13 @@ RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
-  const [lista, regalos, premios, bonos, turnos, dados, pedidosListo] = await Promise.all([
+  const [lista, regalos, premios, misBonos, turnos, dados, pedidosListo] = await Promise.all([
     llamar('my_redemptions', { p_limit: CODIGOS_POR_PARTE }),
     misRegalos().catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
     llamar('my_stamp_rewards', {}).catch(() => []),
     // Los bonos pagados en el local (assets/cuenta/bonos.js), arriba del todo.
-    llamar('my_passes', {}).catch(() => []),
+    bonosMios().catch(() => ({ bonos: [], mas: false })),
     // Tu turno en una cola virtual (assets/cuenta/cola.js), encima de todo.
     llamar('my_queue_turns', {}).catch(() => []),
     // Lo que te dieron con «Dar en el momento» (assets/cuenta/momento.js), ya canjeado.
@@ -2367,7 +2367,8 @@ RUTAS.codigos = async (_partes, params) => {
     .map((r) => ({ ...r, tz: zona(r) })), true);
   const conRegalos = Array.isArray(regalos) && regalos.length > 0;
   const conPremios = Array.isArray(premios) && premios.length > 0;
-  const conBonos = Array.isArray(bonos) && bonos.length > 0;
+  const bonos = misBonos.bonos;
+  const conBonos = bonos.length > 0;
   const conDados = Array.isArray(dados) && dados.length > 0;
   // Con un turno o un pedido a la vista no está vacío (como la app).
   const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados && !turnoHtml;
@@ -2386,7 +2387,8 @@ RUTAS.codigos = async (_partes, params) => {
     ${turnoHtml}
     ${nada ? '' : `<div class="olist">${bonoFilaQr()}</div>`}
     ${conBonos ? `<h2 class="seccion-t">${esc(t('Bonos'))}</h2>
-      <div class="olist">${bonos.map(bonoFila).join('')}</div>` : ''}
+      <div class="olist" id="codigosBonos">${bonos.map(bonoFila).join('')}</div>
+      ${misBonos.mas ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="bonos">${esc(t('Ver más'))}</button></p>` : ''}` : ''}
     ${conRegalos ? `<h2 class="seccion-t">${esc(t('Regalos y cupones'))}</h2>
       <div class="olist">${regalos.map(filaRegalo).join('')}</div>` : ''}
     ${conPremios ? `<h2 class="seccion-t">${esc(t('Premios de tarjetas de sellos'))}</h2>
@@ -2411,6 +2413,23 @@ RUTAS.codigos = async (_partes, params) => {
         botones: `<a class="pill accent" href="/cuenta/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
       })}`);
   $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
+  // Los bonos gastados o caducados siguientes, al final de «Bonos».
+  const masBonos = $('[data-ver-mas="bonos"]');
+  if (masBonos) {
+    masBonos.onclick = async () => {
+      masBonos.disabled = true;
+      try {
+        const parte = await bonosMas(bonos[bonos.length - 1]);
+        bonos.push(...parte);
+        const caja = $('#codigosBonos');
+        const antes = caja.children.length;
+        caja.insertAdjacentHTML('beforeend', parte.map(bonoFila).join(''));
+        caja.children[antes]?.focus?.();
+        if (parte.length < BONOS_POR_PARTE) masBonos.closest('.ver-mas').remove();
+        else masBonos.disabled = false;
+      } catch (e) { masBonos.disabled = false; toast(e.message || String(e), true); }
+    };
+  }
   // Los siguientes (más antiguos): se añaden a «Pasados».
   let cargados = (lista || []).length;
   const mas = $('[data-ver-mas="codigos"]');

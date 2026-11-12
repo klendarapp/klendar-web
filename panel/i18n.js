@@ -751,6 +751,7 @@ const I18N = makeI18N({
     "(quien tiene código tiene sitio; si no va y no anula, su plaza se queda sin usar)": "(having a code means having a place; if someone doesn't come and doesn't cancel, their place goes unused)",
     "Aforo completo: ya han entrado todas las plazas.": "Full: every place has been taken.",
     "Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.": "You've reached your plan's limit of active publications. Wait for one to end or get in touch.",
+    "Puedes guardar 50 plantillas como mucho: borra alguna que ya no uses.": "You can save up to 50 templates: delete one you no longer use.",
     "Publicar en otros locales…": "Post at other venues…",
     "Cerrar sesión": "Log out",
     "Tu plan no incluye publicaciones destacadas.": "Your plan doesn't include featured publications.",

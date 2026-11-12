@@ -1615,6 +1615,7 @@ KL_DIC('de', {
   "Has llegado al límite de publicaciones activas de tu plan.": "Du hast das Limit an aktiven Beiträgen deines Tarifs erreicht.",
   "Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.": "Du hast das Limit an aktiven Beiträgen deines Tarifs erreicht. Pausiere einen oder wechsle den Tarif.",
   "Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.": "Du hast das Maximum an aktiven Beiträgen deines Tarifs erreicht. Warte, bis einer endet, oder schreib uns.",
+  "Puedes guardar 50 plantillas como mucho: borra alguna que ya no uses.": "Du kannst höchstens 50 Vorlagen speichern: Lösch eine, die du nicht mehr brauchst.",
   "Has probado muchas veces seguidas. Espera un poco.": "Du hast es oft hintereinander versucht. Warte ein bisschen.",
   "Has salido del equipo de {nombre}": "Du hast das Team von {nombre} verlassen",
   "Has terminado por hoy": "Für heute beendet",

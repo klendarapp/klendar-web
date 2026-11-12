@@ -1615,6 +1615,7 @@ KL_DIC('gl', {
   "Has llegado al límite de publicaciones activas de tu plan.": "Chegaches ao límite de publicacións activas do teu plan.",
   "Has llegado al límite de publicaciones activas de tu plan. Pausa alguna o cambia de plan.": "Chegaches ao límite de publicacións activas do teu plan. Pon algunha en pausa ou cambia de plan.",
   "Has llegado al máximo de publicaciones activas de tu plan. Espera a que termine alguna o escríbenos.": "Chegaches ao máximo de publicacións activas do teu plan. Agarda a que remate algunha ou escríbenos.",
+  "Puedes guardar 50 plantillas como mucho: borra alguna que ya no uses.": "Podes gardar 50 modelos como moito: borra algún que xa non uses.",
   "Has probado muchas veces seguidas. Espera un poco.": "Probaches moitas veces seguidas. Agarda un pouco.",
   "Has salido del equipo de {nombre}": "Saíches do equipo de {nombre}",
   "Has terminado por hoy": "Remataches por hoxe",

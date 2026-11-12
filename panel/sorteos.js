@@ -78,6 +78,22 @@ function sorteosEnPanel() {
   return SORTEOS_EN_PANEL;
 }
 
+// Los terminados llegan por partes: 20 y «Ver más» (los abiertos, siempre
+// todos; `business_giveaways` con `p_limit` y cursor `p_before`, migración
+// 20261280500000). Contra una base sin las partes, la llamada de antes.
+const SORTEOS_POR_PARTE = 20;
+async function sorteosDelNegocio(extra = {}) {
+  try {
+    return await rpc('business_giveaways', { p_business: BIZ.id, p_limit: SORTEOS_POR_PARTE, ...extra });
+  } catch (e) {
+    if (!/Could not find the function|PGRST202/i.test(String(e?.clave || ''))) throw e;
+    if (extra.p_before) return { giveaways: [], has_more: false };
+    const todo = await rpc('business_giveaways', { p_business: BIZ.id });
+    if (extra.p_id) return { ...todo, giveaways: (todo.giveaways || []).filter((x) => x.id === extra.p_id) };
+    return todo;
+  }
+}
+
 PAGES.sorteos = async (v, param) => {
   if (!(await sorteosEnPanel())) {
     const S = KSp.t(sorteoL());
@@ -85,16 +101,20 @@ PAGES.sorteos = async (v, param) => {
       <div class="vacio-botones"><a class="btn primary" href="#/resumen">${esc(S.offGoBiz)}</a></div></section>`;
     return;
   }
-  const d = await rpc('business_giveaways', { p_business: BIZ.id });
+  const d = await sorteosDelNegocio();
   const lista = d.giveaways || [];
+  let hayMas = d.has_more === true;
   if (param === 'nuevo') return sorteoForm(v, d, null);
   if (param) {
-    const g = lista.find((x) => x.id === param);
+    // Uno antiguo (de una parte sin cargar o de un aviso): se pide aparte.
+    const g = lista.find((x) => x.id === param)
+      || ((await sorteosDelNegocio({ p_id: param })).giveaways || [])[0];
     if (!g) { location.hash = '#/sorteos'; return; }
     if (new URLSearchParams(location.hash.split('?')[1] || '').get('editar') === '1') return sorteoForm(v, d, g);
     return sorteoDetalle(v, d, g);
   }
   const abiertos = lista.filter((g) => g.status === 'active').length;
+  const pinta = () => {
   v.innerHTML = `
     <div class="page-head"><h1>${esc(KSp.t(sorteoL()).title)}</h1><span class="spacer"></span>
       ${d.can_manage ? (abiertos >= 3
@@ -114,7 +134,23 @@ PAGES.sorteos = async (v, param) => {
       </a>`).join('')
     : `<div class="empty"><b>${esc(bi('Aún no has hecho ningún sorteo', "You haven't run any giveaways yet"))}</b><br>${esc(d.can_manage
       ? bi('Crea uno: la gente participa gratis y, si quieres, añade tu negocio a favoritos.', 'Create one: people enter for free and, if you like, add your business to their favourites.')
-      : bi('Cuando quien lleva el negocio cree un sorteo, lo verás aquí.', 'When whoever runs the business creates a giveaway, you’ll see it here.'))}</div>`}`;
+      : bi('Cuando quien lleva el negocio cree un sorteo, lo verás aquí.', 'When whoever runs the business creates a giveaway, you’ll see it here.'))}</div>`}
+    ${hayMas ? botonVerMas('sorteos') : ''}`;
+  const mas = $('[data-ver-mas="sorteos"]', v);
+  if (mas) {
+    mas.onclick = async () => {
+      mas.disabled = true;
+      try {
+        const ultimo = lista.filter((g) => g.status !== 'active').pop();
+        const parte = await sorteosDelNegocio(ultimo ? { p_before: ultimo.ends_at, p_before_id: ultimo.id } : {});
+        for (const g of parte.giveaways || []) if (!lista.some((x) => x.id === g.id)) lista.push(g);
+        hayMas = parte.has_more === true;
+        pinta();
+      } catch (e) { toast(friendly(e.message), true); mas.disabled = false; }
+    };
+  }
+  };
+  pinta();
 };
 
 /** El estado de un ganador o suplente. */
