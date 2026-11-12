@@ -34,7 +34,7 @@
   Cache-Control: no-store, no-transform
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
 # Los JS y el CSS del admin: un año en el navegador. Su `?v=` es la huella del
-# fichero y la pone sola tools/versiones_admin.py (pre-commit; el pre-push lo
+# fichero y la pone sola tools/versiones.py (pre-commit; el pre-push lo
 # comprueba): al cambiar uno, el admin pide el nuevo en la siguiente visita.
 # (La página, `/admin`, sigue sin caché: es la que dice qué versión toca.)
 # Un fichero nuevo de admin/ no está aquí: sin caché (lento, nunca viejo).
@@ -99,10 +99,16 @@
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(self), microphone=()
+# Lo de dentro del panel (`/panel/*`) son solo sus JS, su CSS y sus
+# diccionarios: un año en el navegador y sin `no-transform` (así Cloudflare
+# los comprime) y fuera de las Functions (`_routes.json`). Su `?v=` (y el
+# `data-dic-v` de los diccionarios) es la huella del fichero y la pone sola
+# tools/versiones.py en el pre-commit; el pre-push lo comprueba. La página,
+# `/panel`, sigue sin caché: es la que dice qué versión toca.
 /panel/*
   ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow
-  Cache-Control: no-store, no-transform
+  Cache-Control: public, max-age=31536000, immutable
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(self), microphone=()
@@ -252,6 +258,22 @@
 /assets/live.js
   Cache-Control: public, max-age=31536000, immutable
 /assets/visita.js
+  Cache-Control: public, max-age=31536000, immutable
+# «Tu cuenta» (/assets/cuenta/, también sus diccionarios) y lo de /assets/ que
+# solo enlazan páginas .html (SUELTOS en tools/versiones.py): un año, con el
+# `?v=` = huella del fichero que pone solo tools/versiones.py (pre-commit). No
+# hace falta subirlo a mano; el pre-push falla si alguno no cuadra.
+/assets/cuenta/*
+  Cache-Control: public, max-age=31536000, immutable
+/assets/acceso.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/identidad.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/cajon.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/fotogramas.js
+  Cache-Control: public, max-age=31536000, immutable
+/assets/retenido.js
   Cache-Control: public, max-age=31536000, immutable
 /assets/zona.js
   Cache-Control: public, max-age=31536000, immutable

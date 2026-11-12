@@ -779,6 +779,14 @@ async function preparaNegocio() {
   if (!BIZ) { TZ = KZ.MADRID; return; }
   // Bloqueado o en pausa: se sabe antes de pintar nada (el menú y las rutas).
   const cobroListo = cargaCobro();
+  // Organizador sin local fijo (`no_fixed_venue`): sin las herramientas que
+  // necesitan un local y con «Dónde» siempre en otro sitio. Sin la función,
+  // como un negocio con local. Ayuntamiento, asociación u ONG (o a punto de
+  // serlo): su panel no enseña plan, Fidelizar, RRPP ni partidos
+  // (entidades.js). Las tres preguntas van a la vez (antes, una tras otra).
+  const conLocal = BIZ.id;
+  const orgP = rpc('business_is_organizer', { p_business: conLocal }).catch(() => false);
+  const entidadLista = typeof entCarga === 'function' ? entCarga() : null;
   if (!KZ.valida(BIZ.time_zone)) {
     try {
       const { data } = await sb.from('businesses').select('time_zone, rejection_reason_en').eq('id', BIZ.id).maybeSingle();
@@ -793,15 +801,9 @@ async function preparaNegocio() {
     } catch { /* Madrid */ }
   }
   TZ = KZ.de(BIZ);
-  // Organizador sin local fijo (`no_fixed_venue`): sin las herramientas que
-  // necesitan un local y con «Dónde» siempre en otro sitio. Sin la función,
-  // como un negocio con local.
-  const conLocal = BIZ.id;
-  const org = await rpc('business_is_organizer', { p_business: conLocal }).catch(() => false);
+  const org = await orgP;
   if (BIZ?.id === conLocal) BIZ.no_fixed_venue = org === true;
-  // Ayuntamiento, asociación u ONG (o a punto de serlo): su panel no enseña
-  // plan, Fidelizar, RRPP ni partidos (entidades.js).
-  if (typeof entCarga === 'function') await entCarga();
+  await entidadLista;
   await cobroListo;
   // «Antes de cerrar» en el menú: se sabe al momento, sin esperar.
   ANTES = null;
@@ -886,6 +888,13 @@ async function boot() {
   ME = session.user;
   const aviso = window.KL_ENLACE.aviso(I18N.lang);
   if (aviso) toast(aviso, true);
+  // Tus negocios y las categorías se piden ya, a la vez que los términos (antes
+  // iban uno detrás de otro): solo leen, y si toca ir a otra pantalla se tiran.
+  const negociosP = rpc('my_businesses').then((v) => ({ v }), (e) => ({ e }));
+  // Todas las columnas: `category_group` (el grupo del selector de
+  // categorías) solo existe con la migración 20261114100000.
+  const categoriasP = Promise.resolve().then(() => sb.from('categories').select('*').order('position'))
+    .then((r) => r.data || [], () => []);
   // Quien entró con Google y aún no ha aceptado los términos ni dicho su
   // edad lo hace primero en «Tu cuenta», y vuelve aquí. Igual si los aceptó
   // en una versión anterior a la vigente («Hemos actualizado los términos…»).
@@ -902,14 +911,15 @@ async function boot() {
   $('#who').textContent = ME.email || ME.phone || '';
   $('#app').hidden = false;
 
-  try {
-    BIZZES = await rpc('my_businesses');
-  } catch (e) {
+  const negocios = await negociosP;
+  if (negocios.e) {
+    const e = negocios.e;
     // La pantalla de error, centrada (`.vacio`, como en la app).
     $('#view').innerHTML = `<section class="vacio"><h2>${esc(I18N.t('Algo ha fallado'))}</h2><p>${esc(friendly(e.message))}</p><div class="vacio-botones"><button class="btn primary" data-recargar>${esc(I18N.t('Reintentar'))}</button></div></section>`;
     $('[data-recargar]', $('#view')).onclick = () => location.reload();
     return;
   }
+  BIZZES = negocios.v;
   // Quien llega del registro de negocio trae ?alta=1: se limpia la dirección.
   if (new URLSearchParams(location.search).has('alta')) {
     // Con `#/alta/…` (klendar.app/alta, el QR de la visita) se queda ahí,
@@ -925,9 +935,7 @@ async function boot() {
   if (pedido && BIZ.id === pedido) localStorage.setItem('klendar.biz', BIZ.id);
   await preparaNegocio();
   renderBizPicker();
-  // Todas las columnas: `category_group` (el grupo del selector de
-  // categorías) solo existe con la migración 20261114100000.
-  try { CATS = (await sb.from('categories').select('*').order('position')).data || []; } catch { CATS = []; }
+  CATS = await categoriasP;
   route();
 }
 /** Sin sesión: a la pantalla de entrar de siempre (la de «Tu cuenta»), que

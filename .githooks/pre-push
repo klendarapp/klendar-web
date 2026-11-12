@@ -3,8 +3,8 @@
 refs=$(cat)
 # Antes de subir: sintaxis de todo el JavaScript (un error en functions/ tumba el despliegue entero).
 python tools/check_js.py || { echo "pre-push: hay errores de sintaxis; no se sube."; exit 1; }
-# Los JS y el CSS del admin se guardan un año: su `?v=` tiene que ser la huella de lo que se sube (lo pone el pre-commit).
-python tools/versiones_admin.py --check HEAD || { echo "pre-push: hay versiones del admin viejas; no se sube."; exit 1; }
+# Los JS y el CSS del admin, el panel y «Tu cuenta» se guardan un año: su `?v=` tiene que ser la huella de lo que se sube (lo pone el pre-commit).
+python tools/versiones.py --check HEAD || { echo "pre-push: hay versiones viejas (admin, panel o «Tu cuenta»); no se sube."; exit 1; }
 # El único indicador de carga es la aguja de Klendar (y los esqueletos).
 python tools/indicadores_check.py || { echo "pre-push: hay un indicador de carga que no es la aguja de Klendar."; exit 1; }
 python tools/i18n_missing.py panel >/dev/null && python tools/i18n_missing.py admin >/dev/null || { echo "pre-push: faltan traducciones."; exit 1; }

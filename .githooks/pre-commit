@@ -1,4 +1,4 @@
 #!/bin/sh
-# El `?v=` de lo que carga el admin es la huella de cada fichero (tools/versiones_admin.py):
-# se pone sola en lo que va en este commit, para que el admin nunca se quede con código viejo.
-python tools/versiones_admin.py --index || { echo "pre-commit: no he podido poner las versiones del admin."; exit 1; }
+# El `?v=` de lo que se guarda un año (admin, panel, «Tu cuenta»…) es la huella de cada fichero (tools/versiones.py):
+# se pone sola en lo que va en este commit, para que nadie se quede con código viejo.
+python tools/versiones.py --index || { echo "pre-commit: no he podido poner las versiones."; exit 1; }

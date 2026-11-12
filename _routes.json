@@ -57,6 +57,7 @@
     "/en/terms",
     "/para-entidades",
     "/en/for-organisations",
+    "/panel/*",
     "/admin/admin.css",
     "/admin/admin.js",
     "/admin/artistas.js",

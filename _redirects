@@ -21,6 +21,10 @@ https://www.klendar.app/* https://klendar.app/:splat 301
 /negocios/ /negocios 301
 /normas/ /normas 301
 /para-negocios/ /para-negocios 301
+# Lo de dentro del panel (/panel/*: sus JS y su CSS) no pasa por las Functions:
+# su página vieja con barra, aquí (el resto de /panel… sigue en el middleware).
+/panel/ /panel 301
+/panel/index.html /panel 301
 /precios/ /precios 301
 /preguntas/ /preguntas 301
 /prensa/ /prensa 301
