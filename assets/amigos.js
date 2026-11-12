@@ -571,8 +571,9 @@
     };
     if (cerca) {
       params.p_lat = lat; params.p_lng = lng;
-      // Sin `km` en la dirección es la de serie, 5 km (como la página).
-      params.p_radius_m = ([1, 3, 5, 10, 25].indexOf(km) >= 0 ? km : 5) * 1000;
+      // Sin `km` en la dirección es la de serie, 5 km (como la página); con
+      // la barra, de 1 a 100 km.
+      params.p_radius_m = (isFinite(km) ? Math.min(Math.max(km, 1), 100) : 5) * 1000;
     }
     // Las categorías y lo de «El sitio», «Para quién», «Más», ¿Qué? y el
     // momento, tal cual los pide la página (`data-amigos-params`).

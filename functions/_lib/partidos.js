@@ -21,6 +21,7 @@ import { enlaceCuenta } from './cuenta.js';
 import { esc, html, rows, rpc, rpcAll, supabasePublic, isUuid } from './page.js';
 import KZ from '../../assets/zona.js';
 import KE from '../../assets/emisiones.js';
+import { kmDeUrl } from './barra.js';
 import { bizPath, breadcrumbLd, ldScript, publicPage } from './public.js';
 
 /** Dónde vive cada página en cada idioma. */
@@ -94,7 +95,7 @@ export const PARTIDOS_CSS = '<link rel="stylesheet" href="/assets/partidos.css?v
  *  solo hace algo con sesión. */
 export const seguirScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/seguir.js?v=20261111sinbarra" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/seguir.js?v=20261112barras" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 /** «350 m», «1,2 km». */
@@ -118,19 +119,18 @@ function leeEstado(qs) {
   const comp = de('comp', 70).replace(/[^a-z0-9_:\- ]/gi, '');
   // La distancia de los filtros (la de Explorar, `?km=`), solo con «Cerca de
   // mí»; sin ella, la de siempre (5 km).
-  const km = Number.parseInt(qs.get('km') || '', 10);
   return {
     q: (qs.get('q') || '').trim().slice(0, 60),
     city: cerca ? '' : de('city', 60),
     sport: KE.DEPORTES.includes(sport) ? sport : '',
     comp: KE.DEPORTES.includes(sport) ? comp : '',
     cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
-    km: cerca && RADIOS_KM.includes(km) ? km : RADIO_KM,
+    // La barra de Explorar: de 1 a 100 km (los de antes también).
+    km: cerca ? kmDeUrl(qs.get('km'), RADIO_KM) : RADIO_KM,
   };
 }
 
-// Las distancias de los filtros de Explorar (y de la app).
-const RADIOS_KM = [1, 3, 5, 10, 25];
+// La distancia de los filtros de Explorar (y de la app) si no viene otra.
 const RADIO_KM = 5;
 
 /** Los parámetros de la zona para la base, como Explorar: «Cerca de mí» con

@@ -27,6 +27,7 @@ import { SITIO, esDieta, icSitio, nombreSitio, ordenaSitio, sitioAUrl, sitioDeUr
 import { FUENTE_TIEMPO, dondeTiempo, tiempoDeHoy } from './tiempo.js';
 import { rejilla, tarjeta } from './tarjeta.js';
 import { ajustaDistancias } from './distancia.js';
+import { ESCALA_KM, ESCALA_PRECIO, MARCAS_KM, barraFiltro, kmDeUrl, precioDeUrl } from './barra.js';
 import KM from '../../assets/marcas.js';
 import KMO from '../../assets/momentos.js';
 import { notFound, sitioAhoraScripts } from './views.js';
@@ -177,10 +178,14 @@ const T = (en) => en
       whenQ: 'When', whatQ: 'What', whatTitle: 'What?', tonight: 'Tonight', weekend: 'This weekend',
       shortcuts: 'Shortcuts', walkNow: 'Now, a short walk away', walkNowHint: '1 km, the next 2 hours and the nearest first.',
       planIs: 'The plan is…', placeNow: 'The place, right now', clearQ: 'Clear',
-      forEating: "Food and today's specials", pricePlan: 'Plan price', pricePlanHint: 'Free, up to €10, €25 or €50',
+      forEating: "Food and today's specials", pricePlan: 'Plan price', pricePlanHint: 'Free, up to a price or no limit',
+      // Las barras (12-11-2026): «A menos de 63 km», «Hasta 80 €» (como la app).
+      kmWithin: (n) => `Within ${n} km`, kmField: 'Or type the km', kmError: 'Type a whole number from 1 to 100.',
+      priceMax: 'Maximum price', priceOnlyFree: 'Free only', priceAnyPrice: 'Any price', priceNoLimit: 'No limit',
+      priceField: 'Or type the price', priceError: 'Type a whole number from 0 to 100, or leave it empty for “No limit”.',
       placeLike: 'What the place is like', placeLikeHint: 'Terrace, indoors, dogs, wheelchair access, Wi-Fi, venue price…',
       dietsBHint: 'Vegetarian, vegan, gluten-free, coeliac, lactose-free, halal',
-      nearMe: 'Near me', aCity: 'A city', howFar: 'How far?', walk1: '1 km · a short walk', wholeCity: 'The whole town and around it, no distance.', muniSearch: 'Find your town', muniOffline: 'No connection. Check your internet and try again.', muniPopular: 'Popular', muniNotFound: "We can't find that town. Try another name.",
+      nearMe: 'Near me', aCity: 'A city', howFar: 'How far?', wholeCity: 'The whole town and around it, no distance.', muniSearch: 'Find your town', muniOffline: 'No connection. Check your internet and try again.', muniPopular: 'Popular', muniNotFound: "We can't find that town. Try another name.",
       mapNoKm: 'On the map you see what is on the screen.',
       sortRec: 'Recommended', sortDefault: 'default',
       recLine: 'The newest nearby and, if you leave their boxes ticked, based on the weather and what you like.',
@@ -314,10 +319,14 @@ const T = (en) => en
       whenQ: 'Cuándo', whatQ: 'Qué', whatTitle: '¿Qué?', tonight: 'Esta noche', weekend: 'Este finde',
       shortcuts: 'Atajos', walkNow: 'Ahora, a un paseo', walkNowHint: '1 km, las próximas 2 horas y lo más cerca primero.',
       planIs: 'El plan es…', placeNow: 'El sitio, ahora', clearQ: 'Quitar',
-      forEating: 'Para comer y lo del día', pricePlan: 'Precio del plan', pricePlanHint: 'Gratis, hasta 10, 25 o 50 €',
+      forEating: 'Para comer y lo del día', pricePlan: 'Precio del plan', pricePlanHint: 'Gratis, hasta un precio o sin límite',
+      // Las barras (12-11-2026): «A menos de 63 km», «Hasta 80 €» (como la app).
+      kmWithin: (n) => `A menos de ${n} km`, kmField: 'O escribe los km', kmError: 'Escribe un número entero de 1 a 100.',
+      priceMax: 'Precio máximo', priceOnlyFree: 'Solo gratis', priceAnyPrice: 'Cualquier precio', priceNoLimit: 'Sin límite',
+      priceField: 'O escribe el precio', priceError: 'Escribe un número entero de 0 a 100, o déjalo vacío para «Sin límite».',
       placeLike: 'Cómo es el sitio', placeLikeHint: 'Terraza, bajo techo, perros, accesible, wifi, precio del local…',
       dietsBHint: 'Vegetariano, vegano, sin gluten, celíacos, sin lactosa, halal',
-      nearMe: 'Cerca de mí', aCity: 'Una ciudad', howFar: '¿Hasta dónde?', walk1: '1 km · a un paseo', wholeCity: 'Todo el municipio y alrededor, sin distancia.', muniSearch: 'Busca tu municipio', muniOffline: 'No hay conexión. Revisa tu internet y vuelve a probar.', muniPopular: 'Populares', muniNotFound: 'No encontramos ese municipio. Prueba con otro nombre.',
+      nearMe: 'Cerca de mí', aCity: 'Una ciudad', howFar: '¿Hasta dónde?', wholeCity: 'Todo el municipio y alrededor, sin distancia.', muniSearch: 'Busca tu municipio', muniOffline: 'No hay conexión. Revisa tu internet y vuelve a probar.', muniPopular: 'Populares', muniNotFound: 'No encontramos ese municipio. Prueba con otro nombre.',
       mapNoKm: 'En el mapa ves lo que hay en la pantalla.',
       sortRec: 'Recomendado', sortDefault: 'de serie',
       recLine: 'Lo más nuevo cerca y, si dejas encendidas sus casillas, según el tiempo y tus gustos.',
@@ -520,10 +529,13 @@ const mapaHtml = (items, lang, S) => {
   <script src="/assets/mapa.js?v=7"></script>`;
 };
 
-/** Las distancias de «Cerca de mí», las mismas que la hoja de filtros de la
- * app (`FeedFilters.radiusOptionsM`). Sin elegir, 5 km, como la app. */
-const RADIOS_KM = [1, 3, 5, 10, 25];
+/** La distancia de «Cerca de mí»: una barra de 1 a 100 km (12-11-2026; antes,
+ * 1, 3, 5, 10 y 25), como la app (`StepScale.distanceKm`). «Ampliar a N km»
+ * va a la marca siguiente (5, 10, 25, 50, 100). Sin elegir, 5 km. */
 const RADIO_KM = 5;
+/** Hasta dónde se mira si «no hay nada cerca» (la cobertura de Klendar, como
+ * `klendar_coverage`): con la lista vacía y menos de esto, se pregunta. */
+const RADIO_COBERTURA_KM = 25;
 /** «Una ciudad»: toda ella, 25 km de su centro (como la app, `cityRadiusM`). */
 const RADIO_CIUDAD_M = 25000;
 
@@ -616,7 +628,7 @@ const AVISAME_CSS = `<style>
  * centradas como una pantalla vacía (`.vacio`), como Descubre vacío. */
 const finalHtml = ({ S, en, lang, cerca, km, city, cityName = '', filtros, link, page, alertaHref, sugerencias, vacio = false, limpiar = '', compacto = false, pedirQ = '', sinSugiere = false, agendaHref = '', busqueda = '', enSitios = '', nadaCerca = false, sinAgenda = false, h = 'h2' }) => {
   // Con [nadaCerca] (no hay nada ni a 25 km), ampliar no serviría de nada.
-  const sigKm = cerca && !nadaCerca ? RADIOS_KM.find((k) => k > km) : null;
+  const sigKm = cerca && !nadaCerca ? MARCAS_KM.find((k) => k > km) : null;
   // ¿Se puede mirar más lejos? Con «Cerca de mí», a la distancia siguiente
   // (y si ni a 25 km hay nada, en todas las ciudades, como la app sin
   // distancia); en una ciudad, en todas.
@@ -735,7 +747,7 @@ function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
     },
   }) : '';
   if (!items.length) {
-    const sigKm = e.cerca ? RADIOS_KM.find((k) => k > e.km) : null;
+    const sigKm = e.cerca ? MARCAS_KM.find((k) => k > e.km) : null;
     const donde = dondeSitios(e, S);
     return `${quitaSolo}${mapaH}<section class="vacio" aria-labelledby="finTitulo">
     <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="${IC.lugar}"/></svg></span>
@@ -755,7 +767,7 @@ function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
  * «Ampliar a 10 km», si se puede. */
 function sitiosFinal({ items, TSi, S, e, link, page, paginas, mapa }) {
   if (mapa || !items.length || page < paginas) return '';
-  const sigKm = e.cerca ? RADIOS_KM.find((k) => k > e.km) : null;
+  const sigKm = e.cerca ? MARCAS_KM.find((k) => k > e.km) : null;
   const donde = dondeSitios(e, S);
   if (!donde) return '';
   return `<section class="sitios-fin" aria-labelledby="finSitios">
@@ -1005,7 +1017,6 @@ function leeEstado(qs) {
   const lat = redondeaPos(Number.parseFloat(qs.get('lat') || ''));
   const lng = redondeaPos(Number.parseFloat(qs.get('lng') || ''));
   const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-  const kmPedido = Number.parseInt(qs.get('km') || '', 10);
   // Varios valores (`?sitio=a&sitio=b`) o separados por comas.
   const todos = (k) => [...qs.getAll(CLAVES.es[k]), ...qs.getAll(CLAVES.en[k])];
   const traits = ordenaSitio(todos('place').flatMap((v) => String(v).split(',')).slice(0, 24).map(sitioDeUrl));
@@ -1036,7 +1047,8 @@ function leeEstado(qs) {
     cats,
     cat: cats[0] || '',
     kind,
-    price: price === 'free' || /^\d{1,3}$/.test(price) ? price : '',
+    // «Gratis» (`free`, también `0`) o hasta N € (1 a 100); los de antes valen.
+    price: precioDeUrl(price),
     when: ['now', 'today', 'tomorrow', 'next10', 'tonight', 'weekend'].includes(when) ? when : '',
     soloDescuento: de('discount', 2) === '1',
     abierto: de('open', 2) === '1',
@@ -1052,7 +1064,8 @@ function leeEstado(qs) {
     // JavaScript.
     buscar: de('search', 2) === '1',
     cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
-    km: RADIOS_KM.includes(kmPedido) ? kmPedido : RADIO_KM,
+    // Cualquier entero de 1 a 100 (los de antes también); fuera, al extremo.
+    km: kmDeUrl(qs.get('km'), RADIO_KM),
     amigos: qs.get('amigos') === '1',
     traits,
     edades: traits.includes('kids') ? edades : [],
@@ -1602,7 +1615,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // lista ni en el calendario: ¿hay algo a 25 km? Si no, «Ampliar a 10 km»
   // no sirve de nada: la salida es «Ver todas las ciudades» (P5 de la
   // revisión del 5-11-2026).
-  const RADIO_MAX = RADIOS_KM[RADIOS_KM.length - 1];
+  const RADIO_MAX = RADIO_COBERTURA_KM;
   const nadaCerca = (vacio || (calendario && items.length === 0)) && cerca && !negocios && !q && !sinKlendar && km < RADIO_MAX
     ? await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, radius_m: RADIO_MAX * 1000 }, p_limit: 1, p_offset: 0 }, H)
       .then((r) => !(r?.items || []).length).catch(() => false)
@@ -1764,12 +1777,24 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // dice la hoja).
   const zonaValor = cerca ? (e.aprox ? S.approx : S.nearOn) : city ? e.cityName || PRETTY(city) : S.allCities;
   const zonaTxt = cerca ? `${zonaValor} · ${km} km` : zonaValor;
-  const kmOp = (k) => {
-    const txt = k === 1 ? S.walk1 : `${k} km`;
-    return cerca
-      ? `<a class="op-km${km === k ? ' on' : ''}" href="${esc(link({ km: k }))}"${km === k ? ' aria-current="true"' : ''}>${esc(txt)}</a>`
-      : `<button type="button" class="op-km" data-cerca data-mas="km=${k}" data-err="${esc(S.nearNo)}">${esc(txt)}</button>`;
-  };
+  // «¿Hasta dónde?»: la barra de 1 a 100 km (functions/_lib/barra.js). Con
+  // tu posición, las marcas son enlaces y la casilla va en un formulario (sin
+  // JavaScript, Intro); sin ella, al elegir se pide la ubicación (el botón
+  // oculto `data-cerca`, que /assets/tarjetas.js sabe usar).
+  const kmTextos = { titulo: S.distance, valor: (v) => S.kmWithin(v ?? 100), marca: (v) => String(v), dicho: (v) => S.kmWithin(v),
+    campo: S.kmField, unidad: 'km', error: S.kmError, n: S.kmWithin('{n}') };
+  const kmBarra = barraFiltro({
+    id: 'barraKm', e: ESCALA_KM, valor: km, t: kmTextos, nombre: 'km',
+    href: cerca ? (v) => link({ km: v }) : null,
+    ir: cerca ? link({ km: '__V__' }) : '#',
+    cerca: cerca ? '' : 'kmCerca',
+  });
+  const kmOcultos = [...new URLSearchParams(link({ km: RADIO_KM }).split('?')[1] || '')]
+    .filter(([k]) => k !== 'km' && k !== 'p')
+    .map(([k, v]) => `<input type="hidden" name="${esc(k)}" value="${esc(v)}">`).join('');
+  const kmBloque = cerca
+    ? `<form class="barra-form" method="get" action="${esc(link({}).split('?')[0])}">${kmOcultos}${kmBarra}</form>`
+    : `${kmBarra}<button type="button" id="kmCerca" class="sr" data-cerca data-err="${esc(S.nearNo)}" tabindex="-1" aria-hidden="true"></button>`;
   // ¿Dónde?, como las otras hojas (Iván, 2026-10-28): título, ✕ y el velo
   // detrás (en el escritorio, centrada; en el móvil, desde abajo). Sus
   // opciones son enlaces: cada una ya lleva a su página, sin «Ver N» abajo.
@@ -1790,7 +1815,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
      <div class="donde-sec" data-donde-sec="cerca">
        ${cerca && !e.aprox ? '' : `${botonCerca(S.useLoc, '', 'op')}<p class="menu-nota">${esc(S.useLocHint)}</p>`}
        <p class="menu-d-t">${esc(S.howFar)}</p>
-       <div class="menu-km" role="group" aria-label="${esc(S.howFar)}">${RADIOS_KM.map(kmOp).join('')}</div>
+       <div class="menu-km">${kmBloque}</div>
        ${enMapa ? `<p class="menu-nota">${esc(S.mapNoKm)}</p>` : ''}
      </div>
      <div class="donde-sec" data-donde-sec="ciudad">
@@ -1964,12 +1989,20 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       <summary><span class="hoja-bloque-t"><h3 id="bloque-${id}">${esc(titulo)}<span class="hoja-bloque-n" data-bloque-n${n ? '' : ' hidden'}> · ${n}</span></h3><small>${esc(ayuda)}</small></span>${ic('abajo', 20)}</summary>
       <div class="hoja-bloque-c" role="group" aria-labelledby="bloque-${id}">${cuerpo}</div>
     </details>`;
+  // «Precio máximo»: la barra de Gratis a «Sin límite» (lo de serie), como
+  // la app. Es otro filtro que «Precio del local» (€/€€/€€€). La casilla es
+  // el campo `precio` del formulario: vacía, sin límite; 0, gratis.
+  const precioValor = price === 'free' ? 0 : price ? Number(price) : null;
+  const precioTxt = (v) => (v == null ? S.priceAnyPrice : v === 0 ? S.priceOnlyFree : S.upTo(v));
   const precioBloque = negocios ? '' : bloque('precio', S.pricePlan, S.pricePlanHint, nPrecio, `
-      <fieldset><legend class="sr">${esc(S.pricePlan)}</legend><div class="ops">
-        ${radio(K.price, '', S.any, !price)}
-        ${radio(K.price, enIdioma('free', en), S.free, price === 'free')}
-        ${['10', '25', '50'].map((n) => radio(K.price, n, S.upTo(n), price === n)).join('')}
-      </div></fieldset>`, true);
+      <fieldset><legend class="sr">${esc(S.priceMax)}</legend>
+        ${barraFiltro({
+          id: 'barraPrecio', e: ESCALA_PRECIO, valor: precioValor, nombre: K.price,
+          t: { titulo: S.priceMax, valor: precioTxt, marca: (v) => (v == null ? S.priceNoLimit : v === 0 ? S.free : String(v)),
+            dicho: (v) => (v == null ? S.priceNoLimit : precioTxt(v)), campo: S.priceField, unidad: '€', error: S.priceError,
+            vacio: S.priceNoLimit, n: S.upTo('{n}'), cero: S.priceOnlyFree, sin: S.priceAnyPrice },
+        })}
+      </fieldset>`, true);
   // Para quién: Con niños (y la edad), Ideal para ir solo, Descuentos para y,
   // con sesión, «Van mis amigos» (lo pone /assets/amigos.js en su hueco).
   const paraQuien = negocios ? '' : bloque('para-quien', S.forWhom, S.forWhomHint, nParaQuien, `
@@ -2165,7 +2198,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=7" defer></script>
   <script src="/assets/gustos.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}"></script>
-  <script src="/assets/municipios.js?v=20261111sinbarra" defer></script>`;
+  <script src="/assets/municipios.js?v=20261111sinbarra" defer></script>
+  <link rel="stylesheet" href="/assets/barra-filtro.css?v=20261112">
+  <script src="/assets/barra-filtro.js?v=20261112" defer></script>`;
 
   // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus
   // filtros sobre los que haya y lleva a Descubre; «Para comer ya», a
@@ -2243,7 +2278,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ...(cat ? { cat } : {}),
     ...(price === 'free' ? { precio: '0' } : /^\d{1,3}$/.test(price) ? { precio: String(Number(price) * 100) } : {}),
     ...(soloDescuento ? { descuento: '1' } : {}),
-    ...(cerca ? { radio: String(km * 1000), lat: posUrl(lat), lng: posUrl(lng) } : {}),
+    // Un aviso mira como mucho 25 km (la base no deja más; como la app).
+    ...(cerca ? { radio: String(Math.min(km, 25) * 1000), lat: posUrl(lat), lng: posUrl(lng) } : {}),
   })}`)}`;
   const hayAlgo = conFiltros || cerca || Boolean(city) || Boolean(sort);
   // «Según el tiempo» ya no lleva línea encima de la lista: lo dice el chip

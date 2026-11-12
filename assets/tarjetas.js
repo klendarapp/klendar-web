@@ -723,7 +723,9 @@
         // Los precios del local cuentan uno aunque se marquen varios (como
         // la app): `data-cuenta-uno`, uno por nombre.
         var uno = {};
-        var n = Array.prototype.filter.call(b.querySelectorAll('input:checked'), function (i) {
+        // La casilla de una barra («Precio máximo») cuenta si lleva algo.
+        var n = Array.prototype.filter.call(b.querySelectorAll('input:checked, input[data-cuenta-valor]'), function (i) {
+          if (i.hasAttribute('data-cuenta-valor')) return i.value !== '';
           if (i.hasAttribute('data-cuenta-uno')) {
             if (uno[i.name]) return false;
             uno[i.name] = true;

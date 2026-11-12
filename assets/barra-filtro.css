@@ -1,0 +1,52 @@
+/* Las barras de filtro (12-11-2026): la distancia de «¿Dónde?» y el «Precio
+   del plan» de ☰. Como la app (`FilterSlider`): lo elegido arriba, la barra
+   en tinta (el coral es para la oferta y el botón principal), las marcas
+   debajo (cada una en su sitio de la barra) y la casilla para escribirlo.
+   HTML: functions/_lib/barra.js; vida: /assets/barra-filtro.js. */
+.barra { --pulgar: 24px; padding: 2px 4px 4px; }
+.barra-form { margin: 0; }
+.menu-km .barra { width: 100%; }
+.menu-km { display: block; }
+.barra-valor { margin: 0 0 2px; font-size: 17px; font-weight: 800; color: var(--ink); }
+.barra-pista { position: relative; }
+/* La barra: 44 px de alto para el dedo; la línea, fina, y el pulgar, de 24. */
+.barra-r { display: block; width: 100%; height: 44px; margin: 0; background: transparent; cursor: pointer;
+  -webkit-appearance: none; appearance: none; accent-color: var(--ink); touch-action: pan-y; }
+.barra-r[hidden] { display: none; }
+.barra-r:focus { outline: none; }
+.barra-r:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; border-radius: 12px; }
+/* Lo elegido, en tinta hasta el pulgar (`--p`, de 0 a 1, lo pone barra-filtro.js). */
+.barra-r::-webkit-slider-runnable-track { height: 4px; border-radius: 4px;
+  background: linear-gradient(var(--ink), var(--ink)) 0 0 / calc(var(--p, 0) * 100%) 100% no-repeat, color-mix(in srgb, var(--ink) 18%, transparent); }
+.barra-r::-moz-range-track { height: 4px; border-radius: 4px; background: color-mix(in srgb, var(--ink) 18%, transparent); }
+.barra-r::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--ink); }
+.barra-r::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: var(--pulgar); height: var(--pulgar); margin-top: -10px;
+  border-radius: 50%; background: var(--ink); border: 3px solid var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.25); }
+.barra-r::-moz-range-thumb { width: var(--pulgar); height: var(--pulgar); border-radius: 50%; background: var(--ink);
+  border: 3px solid var(--surface); box-shadow: 0 1px 4px rgba(0,0,0,.25); box-sizing: border-box; }
+/* Las marcas, bajo su sitio: el pulgar va de 12 px a (ancho − 12 px). */
+.barra-marcas { position: relative; height: 32px; margin: -4px 0 6px; }
+.barra-m { position: absolute; top: 0; left: calc(var(--pulgar) / 2 + (100% - var(--pulgar)) * var(--x)); transform: translateX(-50%);
+  min-height: 32px; min-width: 32px; padding: 4px 6px; display: inline-grid; place-items: center; border: 0; background: none;
+  color: var(--ink-2); font: inherit; font-size: 13px; font-weight: 600; white-space: nowrap; border-radius: 8px; cursor: pointer;
+  text-decoration: none; }
+/* Zona táctil de 44 px sin ocupar más sitio. */
+.barra-m::before { content: ''; position: absolute; inset: -6px -4px; }
+.barra-m:hover { color: var(--ink); text-decoration: none; }
+.barra-m:focus-visible { outline: 2px solid var(--ink); outline-offset: 0; }
+/* La elegida, en negrita sin cambiar de ancho (`text-shadow`, no `font-weight`). */
+.barra-m.on { color: var(--ink); text-shadow: 0 0 .6px currentColor, 0 0 .6px currentColor; }
+.barra-m[hidden] { display: none; }
+.barra-m-ini { left: 0; transform: none; padding-left: 0; }
+.barra-m-fin { left: auto; right: 0; transform: none; padding-right: 0; }
+.barra-campo { display: grid; gap: 6px; max-width: 240px; font-size: 13px; color: var(--ink-2); }
+.barra-campo-t { font-weight: 600; }
+.barra-in { flex: none; border-radius: 14px; }
+/* 16 px: con menos, iOS agranda la página al escribir. */
+.barra-in input { flex: 1; min-width: 0; height: 46px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 16px; outline: none; }
+.barra-in input::placeholder { color: var(--ink-2); opacity: 1; }
+.barra-in input[aria-invalid="true"] { color: var(--ink); }
+.barra-in:has(input[aria-invalid="true"]) { border: 2px solid var(--ink); }
+.barra-u { color: var(--ink-2); font-size: 15px; }
+.barra-err { margin: 6px 0 0; padding: 8px 12px; border-radius: 12px; background: var(--soft); font-size: 13px; font-weight: 600; color: var(--ink); }
+.barra-err[hidden] { display: none; }

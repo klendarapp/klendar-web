@@ -16,10 +16,10 @@ python tools/ayuda_app_check.py || { echo "pre-push: la ayuda de la app habla de
 python tools/sin_app_check.py || { echo "pre-push: sigue la dirección vieja de «Tu cuenta»; no se sube."; exit 1; }
 # Los enlaces a «Tu cuenta», al panel y al admin llevan a una pantalla que existe (sin `//` ni rutas inventadas; revisión 9-11, I6).
 python tools/rutas_check.py || { echo "pre-push: hay un enlace a una pantalla que no existe; no se sube."; exit 1; }
-# Pruebas rápidas con datos de mentira (tools/_web_con_datos.mjs; unos 8 s): distancias sin ubicación de verdad, municipios,
+# Pruebas rápidas con datos de mentira (tools/_web_con_datos.mjs; unos 8 s): distancias sin ubicación de verdad, municipios, las barras de distancia y precio,
 # «Seguir» sin esperar a la base y los mensajes de error de entrar. La de «Seguir» abre Chromium: Playwright, el de PW= o
 # el de la caché de npx; sin ninguno, se avisa y se salta.
-for c in tools/distancias_check.mjs tools/espana_check.mjs tools/auth_errores_check.cjs tools/precio_local_check.mjs; do
+for c in tools/distancias_check.mjs tools/espana_check.mjs tools/auth_errores_check.cjs tools/precio_local_check.mjs tools/barras_check.mjs; do
   node "$c" >/dev/null 2>&1 || { echo "pre-push: falla $c (node $c para ver qué); no se sube."; exit 1; }
 done
 [ -n "${PW:-}" ] || PW=$(ls -d "$HOME"/AppData/Local/npm-cache/_npx/*/node_modules/playwright 2>/dev/null | head -1)

@@ -359,9 +359,9 @@ ${cabeza}
 ${siteHeader(lang, esc(es + (consultas ? consultas.es : consulta)), esc(enPath + (consultas ? consultas.en : consulta)), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=20261112barras" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261028rp" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261109sb" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261112barras" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;

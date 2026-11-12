@@ -212,7 +212,16 @@
           falla(c === 'too_many' ? tipo.tope : c === 'rate_limited' ? T.rate : T.oops);
           return;
         }
-        if (!on) sb.rpc('set_broadcast_area', zonaParaAvisos()).then(function () {}, function () {});
+        if (!on) {
+          var z = zonaParaAvisos();
+          sb.rpc('set_broadcast_area', z).then(function (r) {
+            // Una base de antes deja como mucho 50 km: entonces, 50.
+            if (r && r.data && r.data.error === 'invalid_radius' && z.p_radius_m > 50000) {
+              z.p_radius_m = 50000;
+              sb.rpc('set_broadcast_area', z).then(function () {}, function () {});
+            }
+          }, function () {});
+        }
         // El aviso según lo que es («…antes de sus carreras», «Sigues LaLiga…»).
         toast(on ? (b.getAttribute('data-msg-no') || tipo.off(nombre)) : (b.getAttribute('data-msg-si') || tipo.on(nombre)));
       }).catch(function () { falla(T.oops); }).then(function () { ocupado = false; });
@@ -228,7 +237,8 @@
       var g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
       var a = new URLSearchParams((g && (g[/^\/en(\/|$)/.test(location.pathname) ? 'en' : 'es'])) || '');
       var km = parseInt(a.get('km') || '', 10);
-      if ([1, 3, 5, 10, 25].indexOf(km) >= 0) z.p_radius_m = km * 1000;
+      // La barra de Explorar: de 1 a 100 km.
+      if (isFinite(km)) z.p_radius_m = Math.min(Math.max(km, 1), 100) * 1000;
       var c = a.get('ciudad') || a.get('city');
       if (!(a.get('lat') && a.get('lng')) && c) z.p_city = c;
     } catch (x) { /* sin almacenamiento: la de siempre */ }

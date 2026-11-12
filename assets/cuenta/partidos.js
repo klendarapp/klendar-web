@@ -218,9 +218,14 @@ function guardaZonaAvisos() {
     const g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
     const a = new URLSearchParams((g && g[I18N.pub]) || ''); // los filtros se guardan por versión de la web pública
     const km = Number.parseInt(a.get('km') || '', 10);
-    if ([1, 3, 5, 10, 25].includes(km)) z.p_radius_m = km * 1000;
+    // La barra de Explorar: de 1 a 100 km.
+    if (Number.isFinite(km)) z.p_radius_m = Math.min(Math.max(km, 1), 100) * 1000;
     const c = a.get('ciudad') || a.get('city');
     if (!(a.get('lat') && a.get('lng')) && c) z.p_city = c;
   } catch { /* sin almacenamiento: la de siempre */ }
-  return llamar('set_broadcast_area', z).catch(() => null);
+  // Una base de antes deja como mucho 50 km: entonces, 50.
+  return llamar('set_broadcast_area', z)
+    .then((r) => (r?.error === 'invalid_radius' && z.p_radius_m > 50000
+      ? llamar('set_broadcast_area', { ...z, p_radius_m: 50000 }) : r))
+    .catch(() => null);
 }
