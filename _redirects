@@ -24,6 +24,7 @@ https://www.klendar.app/* https://klendar.app/:splat 301
 /precios/ /precios 301
 /preguntas/ /preguntas 301
 /prensa/ /prensa 301
+/novedades/ /novedades 301
 /privacidad/ /privacidad 301
 /sobre/ /sobre 301
 /soporte/ /soporte 301
@@ -40,6 +41,7 @@ https://www.klendar.app/* https://klendar.app/:splat 301
 /en/how-it-works/ /en/how-it-works 301
 /en/legal-notice/ /en/legal-notice 301
 /en/press/ /en/press 301
+/en/whats-new/ /en/whats-new 301
 /en/pricing/ /en/pricing 301
 /en/privacy/ /en/privacy 301
 /en/sources/ /en/sources 301

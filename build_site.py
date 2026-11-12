@@ -25,6 +25,7 @@ ALT = {
     '/precios': '/en/pricing',
     '/preguntas': '/en/faq',
     '/prensa': '/en/press',
+    '/novedades': '/en/whats-new',
     '/accesibilidad': '/en/accessibility',
     '/estado': '/en/status',
     '/fuentes': '/en/sources',
@@ -503,8 +504,8 @@ def doc_page(t, path, title, desc, body, pestana=None, extra=''):
 # fuera mientras los sorteos están apagados (app_config.giveaways, Apple 5.3):
 # al encenderlos, volver a ponerlo aquí (docs/RUNBOOK.md de la app); los
 # sorteos abiertos van en /sitemap-negocios.xml y sus bases no se indexan.
-SITEMAP_ES = ['/', '/como-funciona', '/descubre', '/explorar', '/partidos', '/grupos', '/agenda', '/para-negocios', '/para-entidades', '/precios', '/preguntas', '/prensa', '/sobre', '/accesibilidad', '/estado', '/fuentes', '/negocios', '/soporte', '/privacidad', '/terminos', '/aviso-legal', '/cookies', '/normas', '/eliminar-cuenta']
-SITEMAP_EN = ['/en', '/en/how-it-works', '/en/discover', '/en/explore', '/en/matches', '/en/groups', '/en/whats-on', '/en/for-business', '/en/for-organisations', '/en/pricing', '/en/faq', '/en/press', '/en/about', '/en/accessibility', '/en/status', '/en/sources', '/en/business-terms', '/en/support', '/en/privacy', '/en/terms', '/en/legal-notice', '/en/cookies', '/en/community-guidelines', '/en/delete-account']
+SITEMAP_ES = ['/', '/como-funciona', '/descubre', '/explorar', '/partidos', '/grupos', '/agenda', '/para-negocios', '/para-entidades', '/precios', '/preguntas', '/novedades', '/prensa', '/sobre', '/accesibilidad', '/estado', '/fuentes', '/negocios', '/soporte', '/privacidad', '/terminos', '/aviso-legal', '/cookies', '/normas', '/eliminar-cuenta']
+SITEMAP_EN = ['/en', '/en/how-it-works', '/en/discover', '/en/explore', '/en/matches', '/en/groups', '/en/whats-on', '/en/for-business', '/en/for-organisations', '/en/pricing', '/en/faq', '/en/whats-new', '/en/press', '/en/about', '/en/accessibility', '/en/status', '/en/sources', '/en/business-terms', '/en/support', '/en/privacy', '/en/terms', '/en/legal-notice', '/en/cookies', '/en/community-guidelines', '/en/delete-account']
 ALT_PAIRS = dict(zip(SITEMAP_ES, SITEMAP_EN))
 # Con los precios apagados, /precios solo dice «te lo explicamos en persona»
 # (noindex): fuera del sitemap. ALT_PAIRS sigue con el par para el hreflang.

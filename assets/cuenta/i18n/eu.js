@@ -1324,6 +1324,8 @@ KL_DIC('eu', {
   "Preguntas de festivos": "Jaiegunei buruzko galderak",
   "Preguntas en tu ficha": "Zure fitxako galderak",
   "Preguntas frecuentes": "Ohiko galderak",
+  "Novedades": "Berritasunak",
+  "Lo nuevo de cada versión de la app": "Aplikazioaren bertsio bakoitzeko berritasunak",
   "Pregúntale a {nombre}": "Galdera {nombre}(r)entzat",
   "Premio": "Saria",
   "Premio aceptado. {x} te lo entregará: enséñale esta pantalla.": "Saria onartuta. Hark emango dizu: {x}. Erakutsi pantaila hau.",

@@ -1324,6 +1324,8 @@ KL_DIC('fr', {
   "Preguntas de festivos": "Questions sur les jours fériés",
   "Preguntas en tu ficha": "Questions sur ta fiche",
   "Preguntas frecuentes": "Questions fréquentes",
+  "Novedades": "Nouveautés",
+  "Lo nuevo de cada versión de la app": "Les nouveautés de chaque version de l'app",
   "Pregúntale a {nombre}": "Pose ta question à {nombre}",
   "Premio": "Récompense",
   "Premio aceptado. {x} te lo entregará: enséñale esta pantalla.": "Prix accepté. {x} te le remettra : montre-lui cet écran.",

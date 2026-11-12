@@ -1324,6 +1324,8 @@ KL_DIC('gl', {
   "Preguntas de festivos": "Preguntas de festivos",
   "Preguntas en tu ficha": "Preguntas na túa ficha",
   "Preguntas frecuentes": "Preguntas frecuentes",
+  "Novedades": "Novidades",
+  "Lo nuevo de cada versión de la app": "O novo de cada versión da app",
   "Pregúntale a {nombre}": "Pregúntalle a {nombre}",
   "Premio": "Premio",
   "Premio aceptado. {x} te lo entregará: enséñale esta pantalla.": "Premio aceptado. {x} entregarácho: amósalle esta pantalla.",

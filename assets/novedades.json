@@ -1,0 +1,51 @@
+{
+ "_como": "Novedades de Klendar, de la más nueva a la más vieja. Para añadir una versión: un bloque arriba con 3 o 4 puntos cortos en es y en (sin precios ni fechas de cobro). «proxima»: true mientras esa versión no esté en las tiendas (la web la enseña como «Próximamente» y la app solo a quien ya la tiene). Después: python build_pages.py y subir. La app la lee de klendar.app/assets/novedades.json; no hace falta compilarla.",
+ "versiones": [
+  {
+   "version": "0.1.9",
+   "proxima": true,
+   "es": [
+    "Elige hasta dónde buscar con una barra, de 1 a 100 km.",
+    "Nuevo «Precio máximo» en los filtros: de Gratis a Sin límite.",
+    "Con «Avísame cuando llegue», te avisamos en cuanto haya planes cerca de ti.",
+    "Cuando haya una versión nueva de Klendar, te lo decimos abajo, sin cortarte lo que estás haciendo."
+   ],
+   "en": [
+    "Choose how far to look with a slider, from 1 to 100 km.",
+    "New “Maximum price” in the filters: from Free to No limit.",
+    "With “Tell me when it arrives”, we let you know as soon as there are plans near you.",
+    "When there's a new version of Klendar, we tell you at the bottom of the screen, without interrupting what you're doing."
+   ]
+  },
+  {
+   "version": "0.1.8",
+   "es": [
+    "Mantén pulsado el icono de Klendar para ir directo a Buscar, el mapa, tus planes o tus códigos.",
+    "Bienvenida nueva, con un dibujo en cada página.",
+    "Filtros más claros («Bares +2») y opciones que ya no se mueven al tocarlas.",
+    "Más locales en Explorar › Sitios."
+   ],
+   "en": [
+    "Press and hold the Klendar icon to go straight to Search, the map, your plans or your codes.",
+    "A new welcome, with a picture on every page.",
+    "Clearer filters (“Bars +2”) and options that no longer shift when you tap them.",
+    "More venues in Explore › Places."
+   ]
+  },
+  {
+   "version": "0.1.7",
+   "es": [
+    "En Sugerencias y mejoras puedes añadir hasta 3 capturas.",
+    "Si el enlace de un correo ha caducado, te lo decimos.",
+    "La ubicación se pide una sola vez.",
+    "La bienvenida ya no se cierra si tienes quitadas las animaciones del móvil."
+   ],
+   "en": [
+    "In Ideas and feedback you can add up to 3 screenshots.",
+    "If a link in one of our emails has expired, we tell you.",
+    "Your location is only asked for once.",
+    "The welcome screens no longer close if your phone's animations are turned off."
+   ]
+  }
+ ]
+}

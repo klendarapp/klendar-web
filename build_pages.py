@@ -544,6 +544,41 @@ PAGINAS['prensa'] = (
 )
 
 
+# ── Novedades ───────────────────────────────────────────────────────────────
+# Lo nuevo de cada versión de la app, en 3 o 4 puntos. Una sola fuente,
+# `assets/novedades.json`: la app la descarga de ahí (con copia dentro para
+# la primera vez sin conexión, `tool/sync_novedades.py` en el repo de la app),
+# así que añadir una versión no pide compilar la app. Cómo se publica una
+# versión: docs/RUNBOOK.md de la app, «Publicar una versión».
+def novedades_html(lang):
+    import html as _h
+    import json as _json
+    datos = _json.load(io.open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'assets', 'novedades.json'), encoding='utf-8'))
+    en = lang == 'en'
+    partes = ['<p class="lead">' + ("What's new in each version of the Klendar app. Update it from Google Play or the App Store to get it."
+                                     if en else 'Lo nuevo de cada versión de la app de Klendar. Actualízala desde Google Play o la App Store para tenerlo.') + '</p>']
+    for v in datos['versiones']:
+        assert 3 <= len(v['es']) <= 4 and len(v['en']) == len(v['es']), f"novedades {v['version']}: 3 o 4 puntos, los mismos en es y en"
+        titulo = ('Version ' if en else 'Versión ') + _h.escape(v['version'])
+        if v.get('proxima'):
+            titulo += ' · ' + ('coming soon' if en else 'próximamente')
+        puntos = ''.join(f'<li>{_h.escape(p)}</li>' for p in v[lang])
+        partes.append(f'<h2 id="v{_h.escape(v["version"])}">{titulo}</h2>\n<ul>{puntos}</ul>')
+    partes.append('<p class="note">' + ('Something not working? Tell us at <a href="mailto:info@klendar.app">info@klendar.app</a>.'
+                                        if en else '¿Algo no va bien? Cuéntanoslo en <a href="mailto:info@klendar.app">info@klendar.app</a>.') + '</p>')
+    return '\n'.join(partes) + '\n'
+
+
+PAGINAS['novedades'] = (
+    'whats-new',
+    'Novedades', "What's new",
+    'Lo nuevo de cada versión de la app de Klendar, en pocas líneas.',
+    "What's new in each version of the Klendar app, in a few lines.",
+    novedades_html('es'),
+    novedades_html('en'),
+)
+
+
 # ── Accesibilidad ───────────────────────────────────────────────────────────
 PAGINAS['accesibilidad'] = (
     'accessibility',

@@ -1,0 +1,23 @@
+/* Material Symbols Outlined (Google, licencia Apache 2.0), servida desde
+ * klendar.app: el navegador no pide nada a Google Fonts. v385, opsz 24,
+ * wght 400, FILL 0, GRAD 0. Solo los iconos que usa «Tu cuenta» (/cuenta):
+ * add, add_alert, block, bookmark, cake, chevron_right, content_copy,
+ * copyright, description, download, event_repeat, explore, favorite, gavel,
+ * group, group_add, help_outline, info, key, lightbulb, link,
+ * local_activity, lock, logout, mail, my_location, new_releases,
+ * notifications, open_in_new, password, person, person_remove, privacy_tip,
+ * qr_code_2, qr_code_scanner, redeem, refresh, rule, savings, share,
+ * smartphone, storefront, tune, visibility, visibility_off,
+ * volunteer_activism.
+ * v385 (2026-11-12): más new_releases («Novedades» en Ayuda). Pedida a
+ * Google Fonts con la lista de arriba (RUNBOOK §2e de la app).
+ * Un icono nuevo hay que añadirlo a la lista y volver a generarla.
+ * Cómo regenerarla: docs/RUNBOOK.md de la app, §2e. El nombre lleva la
+ * versión: /assets/fonts/ se guarda en caché para siempre (immutable). */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(/assets/fonts/material-symbols-app-v385.woff2) format('woff2');
+}

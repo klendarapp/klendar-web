@@ -12,6 +12,7 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 
 - `python build_site.py` → landing ES (`index.html`), EN (`en.html`) y soporte EN (`en/support.html`). Textos en el dict `T` del script.
 - `python build_legal.py` → páginas legales en ES (idioma que prevalece) y su traducción informativa en `/en/{legal-notice,privacy,terms,business-terms,cookies,community-guidelines,delete-account}/` con aviso de cortesía; el mapa de rutas ES↔EN está en `ALT` (`build_site.py`) y alimenta hreflang y el selector de idioma.
+- **Novedades** (`/novedades`, `/en/whats-new`): lo nuevo de cada versión de la app, en 3 o 4 puntos por versión. Se escribe solo en `assets/novedades.json` (instrucciones dentro) y `python build_pages.py` pinta las dos páginas. La app descarga ese mismo JSON (Cuenta › Ayuda › Novedades): añadir una versión no pide compilarla. Cómo se publica una versión: `docs/RUNBOOK.md` de la app, §2-bis.
 - Capturas de la app en `assets/screens/*.webp` (540 px de ancho, en español, también en `/en`; datos inventados): se rehacen desde la app con `python tool/store_screenshots.py web` (`docs/tiendas/CAPTURAS.md`) y, al cambiarlas, se sube su `?v=`.
 - Idioma: `/` es ES; en la primera visita, si el navegador está en inglés, redirige a `/en` y se recuerda la elección del selector ES/EN (`localStorage.klendar_lang`). `hreflang` en todas las páginas.
   Francés, alemán e italiano van también a la versión inglesa y catalán, gallego y euskera a la española (`esOEn`).

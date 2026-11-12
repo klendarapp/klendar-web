@@ -81,6 +81,14 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/preguntas"/>
   </url>
   <url>
+    <loc>https://klendar.app/novedades</loc>
+    <lastmod>2026-11-12</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/novedades"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/whats-new"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/novedades"/>
+  </url>
+  <url>
     <loc>https://klendar.app/prensa</loc>
     <lastmod>2026-11-12</lastmod>
     <priority>0.5</priority>
@@ -263,6 +271,14 @@
     <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/preguntas"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/faq"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/preguntas"/>
+  </url>
+  <url>
+    <loc>https://klendar.app/en/whats-new</loc>
+    <lastmod>2026-11-12</lastmod>
+    <priority>0.5</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://klendar.app/novedades"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://klendar.app/en/whats-new"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://klendar.app/novedades"/>
   </url>
   <url>
     <loc>https://klendar.app/en/press</loc>

@@ -74,12 +74,12 @@ A_HASH = re.compile(ANTES + r"/(panel|admin)/?(?:\?[^#\s'\"`]*)?#/([a-z][a-z0-9-
 # Las páginas de la web (sin barra final). Detrás, lo que cierra una dirección.
 PAGINAS = [
     'accesibilidad', 'aviso-legal', 'captcha', 'como-funciona', 'cookies', 'eliminar-cuenta', 'estado', 'fuentes',
-    'negocios', 'normas', 'para-entidades', 'para-negocios', 'precios', 'preguntas', 'prensa', 'privacidad', 'sobre',
+    'negocios', 'normas', 'para-entidades', 'para-negocios', 'precios', 'preguntas', 'novedades', 'prensa', 'privacidad', 'sobre',
     'soporte', 'terminos', 'descubre', 'explorar', 'agenda', 'hoy', 'con-ninos', 'partidos', 'grupos', 'sorteos',
     'cuenta', 'panel', 'admin', 'tv', 'alta', 'en',
 ] + ['en/' + s for s in (
     'about', 'accessibility', 'business-terms', 'community-guidelines', 'cookies', 'delete-account', 'faq',
-    'for-business', 'for-organisations', 'how-it-works', 'legal-notice', 'press', 'pricing', 'privacy', 'sources',
+    'for-business', 'for-organisations', 'how-it-works', 'legal-notice', 'whats-new', 'press', 'pricing', 'privacy', 'sources',
     'status', 'support', 'terms', 'discover', 'explore', 'whats-on', 'today', 'kids', 'matches', 'groups', 'giveaways')]
 # `/privacidad/` entre comillas, en un href o tras el dominio, y que no siga la ruta
 # (ni `'/agenda/' + ciudad`, `${en ? '/en/matches/' : '/partidos/'}${id}` ni

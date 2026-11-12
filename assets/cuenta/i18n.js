@@ -1010,6 +1010,8 @@ const APP_EN = {
   "Tu calendario dejará de recibir tus planes. Puedes volver a activarlo cuando quieras, con un enlace nuevo.": "Your calendar will stop getting your plans. You can turn it on again whenever you like, with a new link.",
   "Enlace desactivado.": "Link turned off.",
   "Preguntas frecuentes": "Frequently asked questions",
+  "Novedades": "What's new",
+  "Lo nuevo de cada versión de la app": "What's new in each version of the app",
   "Para ti y para negocios, con buscador": "For you and for businesses, with search",
   // Tus gustos (tanda A)
   "¿Qué te gusta?": "What do you like?",

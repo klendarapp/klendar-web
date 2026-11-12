@@ -56,7 +56,7 @@ const RUTAS = [
   '/accesibilidad', '/en/accessibility', '/aviso-legal', '/en/legal-notice', '/privacidad', '/en/privacy',
   '/terminos', '/en/terms', '/negocios', '/en/business-terms', '/cookies', '/en/cookies', '/normas', '/en/community-guidelines',
   '/eliminar-cuenta', '/en/delete-account', '/estado', '/en/status', '/fuentes', '/en/sources', '/precios', '/en/pricing',
-  '/preguntas', '/en/faq', '/prensa', '/en/press', '/soporte', '/en/support', '/alta', '/admin/carta.html',
+  '/preguntas', '/en/faq', '/prensa', '/en/press', '/novedades', '/en/whats-new', '/soporte', '/en/support', '/alta', '/admin/carta.html',
 ];
 
 const titulo = (html) => (/<title>([^<]*)<\/title>/.exec(html)?.[1] || '')

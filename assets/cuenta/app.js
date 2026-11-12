@@ -780,12 +780,13 @@ const fila = ({ href, icono, titulo, detalle, fuera = false, id = '' }) => `
     ${ic(fuera ? 'open_in_new' : 'chevron_right')}
   </a>`;
 
-/** «Ayuda», como `_HelpSection` de la app: preguntas frecuentes, sugerencias
+/** «Ayuda», como `_HelpSection` de la app: preguntas frecuentes, novedades, sugerencias
  * (con cuenta), contacto y «Legal» en una fila. */
 const seccionAyuda = (conSugerencias) => `
     <h2 class="seccion-t">${esc(t('Ayuda'))}</h2>
     <div class="lista">
       ${filaSvg({ href: PUB_EN ? '/en/faq' : '/preguntas', icono: 'ayuda', titulo: t('Preguntas frecuentes'), detalle: t('Para ti y para negocios, con buscador') })}
+      ${fila({ href: PUB_EN ? '/en/whats-new' : '/novedades', icono: 'new_releases', titulo: t('Novedades'), detalle: t('Lo nuevo de cada versión de la app') })}
       ${conSugerencias ? fila({ href: '/cuenta/sugerencias', icono: 'lightbulb', titulo: t('Sugerencias y mejoras'), detalle: t('Cuéntanos qué cambiarías o qué falla') }) : ''}
       ${fila({ href: 'mailto:info@klendar.app', icono: 'mail', titulo: t('Contacto y soporte'), detalle: 'info@klendar.app' })}
       <!-- Los textos legales, en una sola fila (como la app: términos, privacidad, normas, aviso legal y fuentes). -->

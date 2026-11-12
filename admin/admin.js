@@ -4295,7 +4295,7 @@ async function pintaADedo(v, c) {
 // ── Configuración ───────────────────────────────────────────────────────────
 PAGES.configuracion = async (v) => {
   const cfg = await rpc('admin_config');
-  const mv = cfg.min_version?.value || {}, mt = cfg.maintenance?.value || {}, sp = cfg.send_push?.value || {};
+  const mv = cfg.min_version?.value || {}, lv = cfg.latest_version?.value || {}, mt = cfg.maintenance?.value || {}, sp = cfg.send_push?.value || {};
   const rl = cfg.rules?.value || {};
   // Sorteos (migración 20261243100000 de la app): apagados al lanzar.
   const gw = cfg.giveaways?.value || { enabled: false, platforms: ['web', 'android'] };
@@ -4316,6 +4316,11 @@ PAGES.configuracion = async (v) => {
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Minimum version</b>: if a user opens an older version of the app, they're asked to update (useful after breaking changes). <b>Maintenance</b>: blocks the app with a message while you make a delicate change. <b>Push delivery</b>: address of the function that sends the notifications (don't touch it unless the project changes). Below, maintenance tools and usage of the anti-abuse limits.</p>` : '<p><b>Versión mínima</b>: si un usuario abre una versión más antigua de la app, se le pide actualizar (útil tras cambios incompatibles). <b>Mantenimiento</b>: bloquea la app con un mensaje mientras haces un cambio delicado. <b>Envío de push</b>: dirección de la función que manda las notificaciones (no la toques salvo que cambie el proyecto). Abajo, herramientas de mantenimiento y el uso de los límites anti-abuso.</p>')}
     <div class="grid2">
       <div class="card"><h2>Versión mínima de la app</h2><form id="mvf" style="display:grid;gap:10px"><label class="f"><span>Android</span><input name="android" value="${esc(mv.android || '')}" placeholder="0.1.0"></label><label class="f"><span>iOS</span><input name="ios" value="${esc(mv.ios || '')}" placeholder="0.1.0"></label><div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.min_version?.updated_at)}</span></div></form></div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Latest version in the stores' : 'Última versión en las tiendas'}</h2><form id="lvf" style="display:grid;gap:10px"><label class="f"><span>Android</span><input name="android" value="${esc(lv.android || '')}" placeholder="0.1.9" inputmode="decimal"></label><label class="f"><span>iOS</span><input name="ios" value="${esc(lv.ios || '')}" placeholder="0.1.9" inputmode="decimal"></label>
+        <p class="muted small" style="margin:0">${I18N.lang === 'en'
+          ? `Doesn't block anything. Whoever has an older version sees once, at the bottom of the app, <b>“There's a new version of Klendar”</b> with <b>Update</b> and <b>Not now</b> (if they tap “Not now”, it doesn't come back until the next version). <b>iOS</b>: this is the only thing that tells iPhones; put the version as soon as Apple has approved it. <b>Android</b>: Google Play tells the app by itself; this is only the fallback if Play doesn't answer. Empty: nothing is shown. To force an update, use the minimum version.`
+          : `No bloquea nada. Quien tenga una versión anterior ve una vez, abajo en la app, <b>«Hay una versión nueva de Klendar»</b> con <b>Actualizar</b> y <b>Ahora no</b> (si pulsa «Ahora no», no vuelve hasta la siguiente versión). <b>iOS</b>: es lo único que avisa a los iPhone; pon la versión en cuanto Apple la haya aprobado. <b>Android</b>: Google Play se lo dice a la app solo; esto es el respaldo por si Play no contesta. Vacío: no sale nada. Para obligar a actualizar, la versión mínima.`}</p>
+        <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${cfg.latest_version ? fmtDate(cfg.latest_version.updated_at) : '—'}</span></div></form></div>
       <div class="card"><h2>Modo mantenimiento</h2><form id="mtf" style="display:grid;gap:10px"><label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="enabled" ${mt.enabled ? 'checked' : ''}><span>App en mantenimiento (bloquea a todos los usuarios)</span></label><label class="f"><span>Mensaje</span><textarea name="message">${esc(mt.message || '')}</textarea></label><div><button class="btn ${mt.enabled ? 'bad' : ''} sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.maintenance?.updated_at)}</span></div></form></div>
       <div class="card"><h2>Reglas de publicación</h2><form id="rlf" style="display:grid;gap:10px">
         <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="block2x1" ${rl.block_2x1_alcohol === true ? 'checked' : ''}><span>Bloquear promociones <b>2x1 en bebidas alcohólicas</b></span></label>
@@ -4364,6 +4369,26 @@ PAGES.configuracion = async (v) => {
     };
   };
   alGuardar($('#mvf'), async (c) => { if (!await confirmDlg('Cambiar la versión mínima', 'Quien tenga una versión anterior tendrá que actualizar para seguir usando la app.', { danger: true, submit: 'Guardar' })) return; await save('min_version', { android: c.android.value.trim(), ios: c.ios.value.trim() }); });
+  // «Hay una versión nueva» (aviso suave, no bloquea): migración 20261277600000
+  // de la app. Sin ella aplicada, la base dice `unknown_key` y se explica.
+  alGuardar($('#lvf'), async (c) => {
+    const en = I18N.lang === 'en';
+    const v = { android: c.android.value.trim(), ios: c.ios.value.trim() };
+    const mal = Object.values(v).find((x) => x && !/^\d+\.\d+\.\d+$/.test(x));
+    if (mal) { toast(en ? `“${mal}” is not a version: use three numbers, like 0.1.9.` : `«${mal}» no es una versión: pon tres números, como 0.1.9.`, true); return; }
+    const num = (x) => x.split('.').map(Number);
+    const menor = (a, b) => { const [x, y] = [num(a), num(b)]; for (let i = 0; i < 3; i++) if (x[i] !== y[i]) return x[i] < y[i]; return false; };
+    const bajo = ['android', 'ios'].find((p) => v[p] && mv[p] && menor(v[p], mv[p]));
+    if (bajo) { toast(en ? `The latest version for ${bajo === 'ios' ? 'iOS' : 'Android'} can't be lower than the minimum (${mv[bajo]}).` : `La última versión de ${bajo === 'ios' ? 'iOS' : 'Android'} no puede ser menor que la mínima (${mv[bajo]}).`, true); return; }
+    try {
+      await rpc('admin_set_config', { p_key: 'latest_version', p_value: { android: v.android || null, ios: v.ios || null } });
+      toast(en ? 'Saved' : 'Guardado'); route();
+    } catch (e) {
+      toast(/unknown_key|desconocida/i.test(e.message || '')
+        ? (en ? 'The database does not know this setting yet: migration 20261277600000 (latest_version) has to be applied.' : 'La base aún no conoce este ajuste: falta aplicar la migración 20261277600000 (latest_version).')
+        : e.message, true);
+    }
+  });
   alGuardar($('#mtf'), async (c) => { if (c.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; await save('maintenance', { enabled: c.enabled.checked, message: c.message.value.trim() || null }); });
   alGuardar($('#spf'), async (c) => { if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; await save('send_push', { url: c.url.value.trim(), key: c.key.value.trim() }); });
   alGuardar($('#rlf'), (c) => save('rules', { block_2x1_alcohol: c.block2x1.checked }));
