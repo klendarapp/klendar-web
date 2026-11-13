@@ -810,3 +810,11 @@ a.pl-dia:hover { background: var(--soft); }
 }
 .capturas-anadir { align-self: flex-start; cursor: pointer; }
 .capturas-anadir[hidden] { display: none; }
+
+/* La contraseña con el ojo (como la app): el botón dentro del campo, a la derecha. */
+.clave-ojo { position: relative; display: block; }
+.formu .clave-ojo input { padding-right: 52px; }
+.clave-ojo .ojo { position: absolute; top: 50%; right: 4px; transform: translateY(-50%); width: 44px; height: 44px;
+  display: grid; place-items: center; border: 0; border-radius: 12px; background: none; color: var(--ink-2); cursor: pointer; }
+.clave-ojo .ojo:hover { color: var(--ink); }
+.clave-ojo .ojo:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }

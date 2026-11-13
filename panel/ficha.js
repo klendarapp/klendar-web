@@ -900,7 +900,7 @@ const altaNueva = () => ({
   fotos: { logo: '', portada: '', galeria: [] },
 });
 const altaConAlgo = () => !!ALTA && JSON.stringify(ALTA) !== JSON.stringify(altaNueva());
-const PASOS_ALTA = ['Lo básico', 'Dónde y cuándo', 'Fotos y contacto'];
+const PASOS_ALTA = ['Lo básico', 'Dónde y cuándo', 'Contacto y fotos'];
 
 /** Lo que le falta a un paso ya rellenado (para no saltarse ninguno por la
  * dirección). Sin tocar la página. */
@@ -943,14 +943,16 @@ PAGES.alta = async (v, param) => {
       <div class="conlocal" data-con-local${A.sin_local ? ' hidden' : ''}>
       <div class="full"><h2 class="alta-sub">Horario</h2><p class="muted" style="margin:0 0 10px">Si aún no lo tienes claro, puedes ponerlo luego.</p><div data-horario></div></div>
       <details class="bloque full"><summary><span class="b-tit">Cómo es tu local</span><span class="b-res">Opcional</span></summary><div class="b-cuerpo form">${htmlSitio(A.sitio, { ...A, dietas: dietasCaben([A.category_id], cats, A.sitio) })}</div></details></div>`,
-    3: () => `<div class="full"><h2 class="alta-sub">Fotos</h2><p class="muted" style="margin:0">Opcional: lo puedes completar después desde Tu ficha.</p></div>
-      ${htmlFotos(A.fotos)}
-      <div class="full"><h2 class="alta-sub">Contacto y redes</h2></div>${htmlContacto(A)}
+    // Primero lo obligatorio (contacto y condiciones) y al final lo opcional,
+    // las fotos (13-11, como la app).
+    3: () => `<div class="full"><h2 class="alta-sub">Contacto y redes</h2></div>${htmlContacto(A)}
       ${ME?.email ? `<p class="full" data-mi-correo${A.contact_email.trim() ? ' hidden' : ''} style="margin:-4px 0 0"><button class="btn sm ghost" type="button" data-usar-correo><span>Usar el de tu cuenta <span translate="no">(${esc(ME.email)})</span></span></button></p>` : ''}
       <div class="full"><h2 class="alta-sub">Datos para Klendar</h2></div>${htmlKlendar(A)}
       ${htmlMayores(A)}
       <label class="f full casilla"><input type="checkbox" name="terms" ${A.terms ? 'checked' : ''}>
-        <span>Acepto las <a href="${APP_URL}/negocios" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>`,
+        <span>Acepto las <a href="${APP_URL}/negocios" target="_blank" rel="noopener">condiciones para negocios</a> *</span></label>
+      <div class="full"><h2 class="alta-sub">Fotos</h2><p class="muted" style="margin:0">Opcional: lo puedes completar después desde Tu ficha.</p></div>
+      ${htmlFotos(A.fotos)}`,
   }[paso];
 
   // Todo lo que se escribe pasa a ALTA al momento: ir atrás (con el botón o

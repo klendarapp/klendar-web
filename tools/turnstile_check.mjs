@@ -55,7 +55,6 @@ const FORMULARIOS = [
       await p.fill('#f [name=name]', 'Prueba Turnstile');
       await p.fill('#f [name=email]', 'turnstile.prueba@example.com');
       await p.fill('#f [name=password]', 'Prueba-Turnstile-2026');
-      await p.fill('#f [name=password2]', 'Prueba-Turnstile-2026');
       await p.fill('#f [name=birth]', '1990-01-01');
       await p.check('#f [name=terms]');
       await p.click('#f button[type=submit]');

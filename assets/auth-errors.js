@@ -105,8 +105,8 @@
   const klBi = (x, lang) => (lang === 'en' ? x.en : globalThis.KL_TABLA ? globalThis.KL_TABLA(x.es, lang) : x.es);
   const klLoc = (lang) => (globalThis.KL_LOCALE ? globalThis.KL_LOCALE(lang) : lang === 'en' ? 'en-GB' : 'es-ES');
   const MSG = {
-    es: { obligatorio: 'Obligatorio', correo: 'Ese correo no parece válido', minimo: 'Mínimo 8 caracteres', noCoinciden: 'Las contraseñas no coinciden' },
-    en: { obligatorio: 'Required', correo: "That email doesn't look valid", minimo: 'At least 8 characters', noCoinciden: "Passwords don't match" },
+    es: { obligatorio: 'Obligatorio', correo: 'Ese correo no parece válido', minimo: 'Mínimo 8 caracteres' },
+    en: { obligatorio: 'Required', correo: "That email doesn't look valid", minimo: 'At least 8 characters' },
   };
   const CORREO_OK = /^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/;
 

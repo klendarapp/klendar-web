@@ -269,7 +269,6 @@ async function pruebaAcceso(nav, motor) {
     await p.fill('[name=name]', 'Ana');
     await p.fill('[name=email]', 'nueva@example.com');
     await p.fill('[name=password]', 'clave-de-prueba');
-    await p.fill('[name=password2]', 'clave-de-prueba');
     await p.fill('[name=birth]', '01/01/1990');
     await p.check('[name=terms]');
     await p.click('#f button[type=submit]');
@@ -289,7 +288,6 @@ async function pruebaAcceso(nav, motor) {
     await p.fill('[name=name]', 'Ana');
     await p.fill('[name=email]', 'ya@example.com');
     await p.fill('[name=password]', 'clave-de-prueba');
-    await p.fill('[name=password2]', 'clave-de-prueba');
     await p.fill('[name=birth]', '01/01/1990');
     await p.check('[name=terms]');
     await p.click('#f button[type=submit]');
@@ -330,7 +328,6 @@ async function pruebaAcceso(nav, motor) {
     ok(dir(p) === '/cuenta/nueva-clave', `${motor} enlace de recuperar: sin token_hash en la dirección`, dir(p));
     ok(estado.auth.some((x) => x.que === 'verify' && x.body.token_hash === TOKEN_HASH && x.body.type === 'recovery'), `${motor} enlace de recuperar: verifyOtp`);
     await p.fill('[name=p1]', 'clave-nueva-123');
-    await p.fill('[name=p2]', 'clave-nueva-123');
     await p.click('#f button[type=submit]');
     await p.waitForFunction(() => location.pathname === '/cuenta');
     ok(estado.auth.some((x) => x.que === 'user' && x.metodo === 'PUT' && x.body.password === 'clave-nueva-123'), `${motor} contraseña nueva: guardada y a «Tu cuenta»`);
@@ -343,7 +340,6 @@ async function pruebaAcceso(nav, motor) {
     await p.goto(`${BASE}/cuenta/nueva-clave?destino=${q}&token_hash=${TOKEN_HASH}&type=recovery`);
     await p.waitForSelector('[name=p1]');
     await p.fill('[name=p1]', 'clave-nueva-123');
-    await p.fill('[name=p2]', 'clave-nueva-123');
     await p.click('#f button[type=submit]');
     await p.waitForFunction((d) => location.pathname === d, dest);
     ok(true, `${motor} nueva contraseña con ?destino=${dest}: vuelve a ${nombre}`);
@@ -384,7 +380,6 @@ async function pruebaAcceso(nav, motor) {
     await p.goto(`${BASE}/cuenta/nueva-clave?siguiente=ajustes`);
     await p.waitForSelector('[name=p1]');
     await p.fill('[name=p1]', 'clave-nueva-123');
-    await p.fill('[name=p2]', 'clave-nueva-123');
     await p.click('#f button[type=submit]');
     // (Antes, 400 ms a ciegas: en WebKit a veces el diálogo aún no estaba.)
     await p.waitForSelector('dialog[open] [data-modo="codigo"]');

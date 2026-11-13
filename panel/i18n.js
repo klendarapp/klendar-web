@@ -1156,7 +1156,7 @@ const I18N = makeI18N({
     "Si cambias el nombre, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto.": "If you change the name, we review it again. Your business stays visible in the meantime.",
     "Si cambias la ciudad o te mudas a más de 1 km, lo revisamos de nuevo. Tu negocio sigue a la vista mientras tanto y lo que tengas publicado se muda contigo.": "If you change the city or move more than 1 km, we review it again. Your business stays visible in the meantime and whatever you have published moves with you.",
     "Dónde y cuándo": "Where and when",
-    "Fotos y contacto": "Photos and contact",
+    "Contacto y fotos": "Contact and photos",
     "Si aún no lo tienes claro, puedes ponerlo luego.": "If you're not sure yet, you can add it later.",
     "Opcional: lo puedes completar después desde Tu ficha.": "Optional: you can fill it in later from Your page.",
     "Atrás": "Back",

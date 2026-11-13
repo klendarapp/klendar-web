@@ -585,7 +585,8 @@ const APP_EN = {
   "Para lo demás (notificaciones, privacidad, tu cuenta…), entra en Klendar.": "For everything else (notifications, privacy, your account…), log in to Klendar.",
   "Elegido": "Chosen",
   "Fuentes y licencias": "Sources and licences",
-  "Repite la contraseña": "Repeat password",
+  "Ver la contraseña": "Show the password",
+  "Ocultar la contraseña": "Hide the password",
   "Ese correo no parece válido.": "That email doesn't look valid.",
   "Continuar con Apple": "Continue with Apple",
   "Entrar con el teléfono": "Log in with your phone",
@@ -605,7 +606,6 @@ const APP_EN = {
   "Elige la fecha": "Pick the date",
   "Ese correo no parece válido": "That email doesn't look valid",
   "Mínimo 8 caracteres": "At least 8 characters",
-  "Las contraseñas no coinciden": "Passwords don't match",
   "Entra en Klendar": "Log in to Klendar",
   // Sugerencias con capturas (revisión 10-11)
   "Añadir captura": "Add a screenshot",

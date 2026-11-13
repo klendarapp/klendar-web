@@ -192,7 +192,6 @@ async function pruebaRegistro(nav, motor) {
   await p.fill('[name=name]', 'Prueba Fecha');
   await p.fill('[name=email]', 'fecha.prueba@example.com');
   await p.fill('[name=password]', 'Prueba-Fecha-2026');
-  await p.fill('[name=password2]', 'Prueba-Fecha-2026');
   await p.fill(CAMPO, '15/03/1980');
   await p.check('[name=terms]');
   await p.click('#f button[type=submit]');

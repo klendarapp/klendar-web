@@ -98,7 +98,6 @@ async function abre(nav, { con2fa = true, sesion = false, rechaza = false } = {}
 async function clavesNuevas(p) {
   await p.waitForSelector('[name=p1]');
   await p.fill('[name=p1]', 'clave-nueva-123');
-  await p.fill('[name=p2]', 'clave-nueva-123');
   await p.click('#f button[type=submit]');
 }
 

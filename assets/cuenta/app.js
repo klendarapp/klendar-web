@@ -1165,6 +1165,25 @@ function errorCampo(el, msg) {
   if (navigator.vibrate) navigator.vibrate(20);
 }
 
+/** La contraseña con el ojo para verla u ocultarla, como PasswordField de la
+ * app (13-11: sin «Repite la contraseña»). El nombre va en el campo
+ * (aria-label) para que el del botón no se le sume. */
+function campoClave(nombre, etiqueta, autocomplete) {
+  return `<span class="clave-ojo"><input name="${nombre}" type="password" autocomplete="${autocomplete}" aria-label="${esc(etiqueta)}"${autocomplete === 'new-password' ? ' minlength="8"' : ''} required autocapitalize="off" spellcheck="false">`
+    + `<button type="button" class="ojo" aria-label="${esc(t('Ver la contraseña'))}" title="${esc(t('Ver la contraseña'))}">${ic('visibility')}</button></span>`;
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest?.('.clave-ojo .ojo');
+  if (!b) return;
+  const input = b.previousElementSibling;
+  const ver = input.type === 'password';
+  input.type = ver ? 'text' : 'password';
+  const txt = t(ver ? 'Ocultar la contraseña' : 'Ver la contraseña');
+  b.setAttribute('aria-label', txt);
+  b.title = txt;
+  b.querySelector('.ms').textContent = ver ? 'visibility_off' : 'visibility';
+});
+
 /** `reglas`: { nombreDelCampo: (valor, form) => mensaje | null }. */
 function validaForm(form, reglas) {
   let primero = null;
@@ -1416,7 +1435,7 @@ RUTAS.entrar = async (_p, params) => {
       : 'Para guardar planes, tener favoritos y conseguir códigos.'))}</p>
     <form id="f" class="formu" novalidate>
       <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="username" required></label>
-      <label>${esc(t('Contraseña'))}<input name="password" type="password" autocomplete="current-password" required></label>
+      <label>${esc(t('Contraseña'))}${campoClave('password', t('Contraseña'), 'current-password')}</label>
       <p class="derecha"><a href="/cuenta/recuperar">${esc(t('¿Has olvidado la contraseña?'))}</a></p>
       <p id="err" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Entrar'))}</button>
@@ -1615,9 +1634,8 @@ RUTAS.registro = async (_p, params) => {
     <form id="f" class="formu" novalidate>
       <label>${esc(t('Nombre'))}<input name="name" autocomplete="name" maxlength="40" required></label>
       <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="email" required></label>
-      <label>${esc(t('Contraseña'))}<input name="password" type="password" autocomplete="new-password" minlength="8" required>
+      <label>${esc(t('Contraseña'))}${campoClave('password', t('Contraseña'), 'new-password')}
         <small>${esc(t('Mínimo 8 caracteres'))}</small></label>
-      <label>${esc(t('Repite la contraseña'))}<input name="password2" type="password" autocomplete="new-password" minlength="8" required></label>
       <label>${esc(t('Fecha de nacimiento'))}${campoNacimiento()}
         <small>${esc(t('Para comprobar tu edad (mínimo 14) y enseñarte lo adecuado a ella. Si un favorito tiene regalo de cumpleaños, te llega ese día.'))}</small></label>
       ${casillaTerminos({ estadisticas: true })}
@@ -1639,7 +1657,6 @@ RUTAS.registro = async (_p, params) => {
       name: VALIDA.requerido,
       email: VALIDA.correo,
       password: VALIDA.clave,
-      password2: (v, f) => VALIDA.clave(v) || (v !== f.password.value ? t('Las contraseñas no coinciden') : null),
       birth: VALIDA.nacimiento,
       terms: VALIDA.terminos,
     });
@@ -1777,9 +1794,8 @@ RUTAS['nueva-clave'] = async (_p, params) => {
     <h1>${esc(t('Nueva contraseña'))}</h1>
     <p class="muted">${esc(t('Elige una que no uses en otros sitios.'))}</p>
     <form id="f" class="formu" novalidate>
-      <label>${esc(t('Nueva contraseña'))}<input name="p1" type="password" autocomplete="new-password" minlength="8" required>
+      <label>${esc(t('Nueva contraseña'))}${campoClave('p1', t('Nueva contraseña'), 'new-password')}
         <small>${esc(t('Mínimo 8 caracteres'))}</small></label>
-      <label>${esc(t('Repite la contraseña'))}<input name="p2" type="password" autocomplete="new-password" minlength="8" required></label>
       <p id="err" class="err" role="alert"></p>
       <button class="pill accent" type="submit">${esc(t('Guardar contraseña'))}</button>
     </form>`);
@@ -1789,7 +1805,6 @@ RUTAS['nueva-clave'] = async (_p, params) => {
     $('#err').textContent = '';
     const ok = validaForm(form, {
       p1: VALIDA.clave,
-      p2: (v, f) => VALIDA.clave(v) || (v !== f.p1.value ? t('Las contraseñas no coinciden') : null),
     });
     if (!ok) return;
     ocupado(form.querySelector('button[type=submit]'), async () => {
