@@ -528,7 +528,7 @@ const mapaHtml = (items, lang, S) => {
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\u003c')}</script>
   <script src="/assets/iconos-mapa.js?v=2"></script>
-  <script src="/assets/mapa.js?v=7"></script>`;
+  <script src="/assets/mapa.js?v=8"></script>`;
 };
 
 /** La distancia de «Cerca de mí»: una barra de 1 a 100 km (12-11-2026; antes,

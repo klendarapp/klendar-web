@@ -531,9 +531,9 @@
       comoLlegar: t.comoLlegar, verSitio: t.verSitio, cerrar: t.cerrar, acercar: t.acercar,
     };
     try {
-      const tk = (await (await fetch('/api/mapbox-token')).json()).token;
-      if (!tk) { falla(); return; }
-      await new Promise((ok, ko) => {
+      // La librería (unos 450 kB) se pide a la vez que la clave, no después:
+      // una espera menos hasta ver el mapa. Sin clave, se descarta.
+      const lib = window.mapboxgl ? Promise.resolve() : new Promise((ok, ko) => {
         const c = document.createElement('link');
         c.rel = 'stylesheet';
         c.href = 'https://api.mapbox.com/mapbox-gl-js/v3.15.0/mapbox-gl.css';
@@ -544,6 +544,10 @@
         s.onerror = ko;
         document.head.append(s);
       });
+      lib.catch(() => {});
+      const tk = (await (await fetch('/api/mapbox-token')).json()).token;
+      if (!tk) { falla(); return; }
+      await lib;
       const mb = window.mapboxgl;
       mb.accessToken = tk;
       const oscuro = matchMedia('(prefers-color-scheme: dark)').matches;
