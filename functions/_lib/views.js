@@ -639,7 +639,7 @@ el.style.fontWeight=n<ini?600:fin-n<900e3?800:fin-n<3600e3?700:600;el.hidden=fal
 
   if (privada) {
     const res = html(publicPage({
-      lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS + COMPARTIR_JS,
+      lang, path, image: cover || o.business_cover || o.business_logo, body: body + cuentaAtras + vista + MENU_JS + COMPARTIR_JS,
       title: `${o.title} · ${o.business_name}`,
       description, privada: true, consulta: rpQ, contador: false,
       head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `
@@ -651,7 +651,7 @@ ${ARTISTAS_CSS}` : ''}
     return res;
   }
   return html(publicPage({
-    lang, path, image: cover, body: body + cuentaAtras + vista + MENU_JS + COMPARTIR_JS,
+    lang, path, image: cover || o.business_cover || o.business_logo, body: body + cuentaAtras + vista + MENU_JS + COMPARTIR_JS,
     title: `${o.title} · ${o.business_name}`,
     description,
     head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `

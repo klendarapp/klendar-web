@@ -296,7 +296,15 @@ export function publicPage({ lang, path, title, description, head = '', body, im
   const S = en
     ? { how: 'How it works', biz: 'Businesses', sup: 'Support', agenda: "What's on", exp: 'Explore' }
     : { how: 'Cómo funciona', biz: 'Negocios', sup: 'Soporte', agenda: 'Agenda local', exp: 'Explorar' };
-  const og = image || `${BASE}/assets/og.png`;
+  // La foto de la vista previa (WhatsApp, Telegram, X, correo…): solo una
+  // foto https (un vídeo no sale); si no hay, la tarjeta de Klendar
+  // (1200 × 630, 46 KB), con su tamaño para que la pinten sin descargarla.
+  const foto = typeof image === 'string' && /^https:\/\//.test(image) && !isVideo(image) ? image : null;
+  const og = foto || `${BASE}/assets/og.png`;
+  const ogTam = foto ? '' : `<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:type" content="image/png">
+`;
   // Con los datos de prueba de dev, ninguna página con datos se indexa (y
   // se quita el «index, follow» que traiga, para no mandar dos órdenes).
   const cabeza = datosDePrueba() && !privada
@@ -338,13 +346,16 @@ ${privada ? '' : `<link rel="canonical" href="${BASE}${esc(path)}">
 `}<meta property="og:site_name" content="Klendar">
 <meta property="og:title" content="${esc(title)}">
 <meta property="og:description" content="${esc(description)}">
+<meta property="og:type" content="website">
 <meta property="og:image" content="${esc(og)}">
+${ogTam}<meta property="og:image:alt" content="${esc(title)}">
 ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 `}<meta property="og:locale" content="${en ? 'en_GB' : 'es_ES'}">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="${esc(title)}">
 <meta name="twitter:description" content="${esc(description)}">
 <meta name="twitter:image" content="${esc(og)}">
+<meta name="twitter:image:alt" content="${esc(title)}">
 <meta name="theme-color" content="#0A0A0A">
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
