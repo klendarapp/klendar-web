@@ -234,6 +234,10 @@ window.KFotoRellena = (() => {
           ${o.alSaltar ? `<button type="button" class="linkbtn" id="fotoSaltar">${esc(t('Saltar este'))}</button>` : ''}
           ${traida ? `<span class="hint">${esc(t(origen === 'foto' ? 'Foto añadida a la publicación' : 'Imagen de la página añadida'))}</span>`
             : (foto && api.hayHueco() ? `<button type="button" class="linkbtn" id="fotoImagen">${esc(t(origen === 'foto' ? 'Usar la foto como imagen' : 'Usar la imagen de la página'))}</button>` : '')}</p></div>`;
+      avisoIA($('.foto-acciones', caja), origen === 'foto' ? 'photo_fill' : 'link_fill', [r.title, r.description,
+        JSON.stringify(Object.fromEntries(Object.entries(r).filter(([k, x]) => x != null && x !== ''
+          && !['title', 'description', 'image_url', 'image_token', 'doubts'].includes(k))))]
+        .filter(Boolean).join('\n'));
       const repite = $('#fotoRepite', caja);
       if (repite) repite.onchange = () => { reglaActual = repite.checked ? r.repeat : null; };
       $('#fotoDeshacer', caja).onclick = () => {
@@ -390,7 +394,7 @@ window.KFotoRellena = (() => {
       if (inyeccion) avisos.push(duda(t('La foto llevaba instrucciones para una IA. No les hemos hecho caso: míralo todo bien.')));
       if (hayAlergenos()) avisos.push(duda(t('Los alérgenos son los que salen en la foto, nada más. Compruébalos con tu cocina: aquí equivocarse no es una errata.')));
       v.innerHTML = `${cabecera()}
-        <p class="muted" style="margin:0 0 6px">${esc(t('Revísalo y corrige lo que haga falta. Se añade a tu carta, sin quitar lo que ya tienes, y se publica al guardarla.'))}</p>
+        <p class="muted foto-aviso-ia" style="margin:0 0 6px">${esc(t('Revísalo y corrige lo que haga falta. Se añade a tu carta, sin quitar lo que ya tienes, y se publica al guardarla.'))}</p>
         ${avisos.join('')}
         ${secs.map((s, si) => `<div class="card foto-sec">
           <div class="foto-fila"><label class="f"><span>${esc(t('Nombre de la sección'))}</span><input data-sec="${si}" value="${esc(s.name)}" maxlength="60"></label>
@@ -410,6 +414,8 @@ window.KFotoRellena = (() => {
           ${hayAlergenos() ? `<label class="opcion"><input type="checkbox" id="fotoAl" ${comprobados ? 'checked' : ''}><span>${esc(t('He comprobado los alérgenos'))}</span></label>` : ''}
           <button type="button" class="btn primary" id="fotoAnadir" ${(hayAlergenos() && !comprobados) || !secs.length ? 'disabled' : ''}>${esc(t('Añadir a la carta'))}</button>
         </div>`;
+      avisoIA($('.foto-aviso-ia', v), 'photo_fill', secs.flatMap((s) => [s.name,
+        ...s.items.map((i) => [i.name, i.description, i.price].filter(Boolean).join(' · '))]).filter(Boolean).join('\n'));
       $('#fotoVolver', v).onclick = volver;
       $$('[data-sec]', v).forEach((el) => { el.oninput = () => { secs[+el.dataset.sec].name = el.value; }; });
       $$('[data-i]', v).forEach((el) => {

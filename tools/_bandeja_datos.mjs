@@ -7,7 +7,7 @@ const id = (n) => `0ba0de1a-0000-4000-8000-${String(n).padStart(12, '0')}`;
 export const IDS = {
   admin: id(1), negocioListo: id(10), negocioListo2: id(11), negocioNo: id(12), entidad: id(20), reclamacion: id(30),
   denunciaGrave: id(40), denunciaNada: id(41), oferta: id(50), texto: id(60), mensaje: id(70), medio: id(80), contenido: id(81),
-  dupA: id(90), dupB: id(91), cambio: id(100), baja: id(110), sugerencia: id(120), festivo: id(130),
+  dupA: id(90), dupB: id(91), cambio: id(100), baja: id(110), sugerencia: id(120), festivo: id(130), avisoIA: id(140),
 };
 const hace = (min) => new Date(Date.now() - min * 60000).toISOString();
 
@@ -73,6 +73,10 @@ export function estadoInicial() {
     sugerencias: [
       { id: IDS.sugerencia, kind: 'idea', message: 'Estaría bien poder filtrar por terraza', user_email: 'idea@example.com', platform: 'ios', app_version: '0.1.7', created_at: hace(4000) },
     ],
+    avisosIA: [
+      { id: IDS.avisoIA, use_key: 'help_assistant', reason: 'wrong', note: 'Dice que se paga por canjear', response: 'Para canjear una oferta hay que pagar una comisión.',
+        lang: 'es', platform: 'android', status: 'new', user_email: 'aviso@example.com', from_same_user: 1, created_at: hace(3000) },
+    ],
     festivos: [
       { code: '29084', slug: 'ronda', name: 'Ronda', province: 'Málaga', region: 'AN', city_id: null, klendar_city: false, key: '29084', businesses: 1, last_verified: hace(15),
         confirmed: 0, proposed: 0, ok: false, days: [], bulletin: { name: 'BOJA', url: 'https://www.juntadeandalucia.es/eboja.html' }, year: new Date().getFullYear() },
@@ -107,6 +111,8 @@ export function contesta(fn, b, e) {
     case 'admin_subscription_cancellations': return { pending: e.bajas.length, items: e.bajas };
     case 'admin_suspension_pauses': return [];
     case 'admin_feedback': return { total: e.sugerencias.length, counts: { new: e.sugerencias.length }, rows: e.sugerencias };
+    case 'admin_ai_reports': return { total: e.avisosIA.length, rows: e.avisosIA };
+    case 'admin_ai_report_seen': quita(e.avisosIA, (x) => x.id === b.p_id); return null;
     case 'admin_web_errors': return { counts: { new_24h: 0, open: 0 }, rows: [] };
     case 'admin_holiday_alert': return null;
     case 'admin_pulso': return null;

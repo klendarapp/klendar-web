@@ -37,7 +37,17 @@ const BANDEJA_TIPOS = {
   cuenta: ['credit_card_off', 'Bajas y pausas', 'Cancellations and pauses', 'Cuenta', 'Account'],
   sistema: ['build', 'Sistema y cobros', 'System and payments', 'Sistema', 'System'],
   sugerencia: ['lightbulb', 'Sugerencias', 'Suggestions', 'Sugerencia', 'Suggestion'],
+  ia: ['smart_toy', 'Respuestas de la IA', 'AI responses', 'Aviso de una respuesta de la IA', 'AI response report'],
 };
+
+// «Avisar de esta respuesta» (migración 20261281600000 de la app): de qué función y por qué.
+const BJ_USO_IA = {
+  help_assistant: ['Asistente de ayuda', 'Help assistant'], suggest_category: ['Categoría y etiquetas propuestas', 'Suggested category and tags'],
+  business_ideas: ['Ideas para esta semana', 'Ideas for this week'], review_replies: ['Respuesta propuesta a una reseña', 'Suggested review reply'],
+  photo_fill: ['Rellenar desde una foto', 'Fill in from a photo'], link_fill: ['Rellenar desde un enlace o un texto', 'Fill in from a link or text'],
+  translation: ['Traducción automática', 'Automatic translation'],
+};
+const BJ_MOTIVO_IA = { offensive: ['Ofensiva', 'Offensive'], wrong: ['Incorrecta', 'Incorrect'], other: ['Otro', 'Other'] };
 
 const bjEn = () => I18N.lang === 'en';
 const bjT = (es, en) => (bjEn() ? en : es);
@@ -96,7 +106,7 @@ function bjOpinion(ai, encendida) {
 /** Pide todo lo pendiente a la vez (una sola rueda de carga: la del Resumen). */
 async function cargaBandeja() {
   const ok = (p) => p.catch((e) => { if (e?.obsoleta) throw e; return null; });
-  const [extra, pv, ents, recl, den, med, cont, ofs, txt, msj, dups, sug] = await Promise.all([
+  const [extra, pv, ents, recl, den, med, cont, ofs, txt, msj, dups, sug, ia] = await Promise.all([
     ok(rpc('admin_inbox_extra')),
     ok(rpc('admin_pending_now', { p_limit: 100 })),
     ok(rpc('admin_entity_applications', { p_status: 'pending', p_limit: 100, p_offset: 0 })),
@@ -109,11 +119,13 @@ async function cargaBandeja() {
     ok(rpc('admin_business_messages', { p_status: 'review', p_limit: 50, p_offset: 0 })),
     ok(rpc('admin_duplicate_alerts', { p_limit: 200 })),
     ok(rpc('admin_feedback', { p_status: 'new', p_kind: 'all', p_query: null, p_limit: 20, p_offset: 0 })),
+    // Sin la migración (prod aún sin ella), null: la bandeja sale igual.
+    ok(rpc('admin_ai_reports', { p_status: 'new', p_limit: 50, p_offset: 0 })),
   ]);
   // Las fotos retenidas se ven con un enlace firmado de 5 minutos (como en «Filtro automático»).
   const fotos = await Promise.all(((med?.rows) || []).map((x) => (x.kind === 'video' && x.frames?.length
     ? urlMedio(x.frames[0].name, x.frames[0].in_held) : urlMedio(x.name, x.in_held)).catch(() => '')));
-  return { extra, pv, ents, recl, den, med, cont, ofs, txt, msj, dups, sug, fotos };
+  return { extra, pv, ents, recl, den, med, cont, ofs, txt, msj, dups, sug, ia, fotos };
 }
 
 /** Las tarjetas, de todo lo pedido. `k`: admin_kpis; `ctx`: lo que el Resumen ya tiene (ATT, festivos…). */
@@ -392,6 +404,27 @@ function tarjetasBandeja(d, k, ctx) {
       titulo: bjCorta(x.message, 90) || '—',
       sub: [[x.user_email, x.platform, x.app_version].filter(Boolean).join(' · ')],
       abrir: '#/sugerencias',
+    });
+  }
+
+  // Avisos de respuestas de la IA: se leen aquí y se marcan como vistos.
+  for (const x of d.ia?.rows || []) {
+    const uso = BJ_USO_IA[x.use_key] || [x.use_key, x.use_key];
+    const motivo = BJ_MOTIVO_IA[x.reason] || [x.reason, x.reason];
+    add({
+      key: `ia:${x.id}`, tipo: 'ia', at: x.created_at, urg: x.reason === 'offensive' ? 1 : 2,
+      titulo: `${motivo[en ? 1 : 0]} · ${uso[en ? 1 : 0]}`,
+      sub: [[x.user_email || (en ? 'without an account' : 'sin cuenta'), x.lang, x.platform,
+        x.from_same_user > 1 ? (en ? `${x.from_same_user} reports from this person` : `${x.from_same_user} avisos de esta persona`) : ''].filter(Boolean).join(' · ')],
+      cita: x.response,
+      lineas: x.note ? [bjLinea('dim', `${en ? 'Note' : 'Nota'}: ${bjCorta(x.note, 300)}`)] : [],
+      acciones: [
+        { t: en ? 'Seen' : 'Visto', fn: async () => { await rpc('admin_ai_report_seen', { p_id: x.id, p_seen: true }); return true; } },
+        ...(String(x.response || '').length > 400 ? [{ t: en ? 'Read it all' : 'Leerla entera', cls: 'ghost', fn: async () => {
+          await modal({ title: uso[en ? 1 : 0], intro: esc(x.response), submit: en ? 'Close' : 'Cerrar' });
+          return false;
+        } }] : []),
+      ],
     });
   }
 

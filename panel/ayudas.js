@@ -107,6 +107,7 @@ window.KAyudas = (() => {
       const resumen = partes.join(' · ');
       caja.innerHTML = `<p class="ia-puesto" role="status">${CHISPA}<span>${esc(I18N.t(`Propuesto con IA: ${resumen}. Se cambia en «Más opciones».`))}</span>
         <button type="button" class="linkbtn" id="iaDeshacer">${esc(t('Deshacer'))}</button></p>`;
+      avisoIA($('.ia-puesto', caja), 'suggest_category', resumen);
       $('#iaDeshacer', caja).onclick = () => {
         const igual = estaIgual(puesto);
         if (igual.cat) api.categoria(null);
@@ -226,6 +227,7 @@ window.KAyudas = (() => {
           ${w.ideas.map((i, n) => `<div class="ia-idea">
             <button type="button" class="ia-abrir" data-idea-ia="${n}">${ICONOS[i.reason_kind] || ICONOS.history}
               <span><b>${esc(i.title)}</b>${i.description ? `<small>${esc(i.description)}</small>` : ''}${i.reason ? `<small class="muted">${esc(i.reason)}</small>` : ''}</span></button>
+            <span class="ia-aviso" data-aviso-ia="${n}"></span>
             <button type="button" class="btn-icon ia-quitar" data-quita-ia="${n}" aria-label="${esc(t('Quitar esta idea'))}" title="${esc(t('Quitar esta idea'))}">×</button></div>`).join('')}
           ${hayTiempo ? `<p class="hint">${esc(t('Previsión: MET Norway.'))}</p>` : ''}</div>`;
         $$('[data-idea-ia]', caja).forEach((b) => {
@@ -234,6 +236,10 @@ window.KAyudas = (() => {
             ideaPendiente = i;
             location.hash = i.kind === 'future_event' ? '#/publicaciones/nuevo-evento' : '#/publicaciones/nueva-flash';
           };
+        });
+        $$('[data-aviso-ia]', caja).forEach((x) => {
+          const i = w.ideas[+x.dataset.avisoIa];
+          avisoIA(x, 'business_ideas', [i.title, i.description, i.reason].filter(Boolean).join('\n'));
         });
         $$('[data-quita-ia]', caja).forEach((b) => {
           b.onclick = async () => {

@@ -588,6 +588,23 @@
     pintaRespuesta(log, x.r);
   }
 
+  // «Avisar de esta respuesta» (assets/aviso-ia.js, política de IA de Play): se carga al primer uso.
+  var avisoCargado = null;
+  function cargaAviso() {
+    if (window.KlendarAvisoIA) return Promise.resolve(window.KlendarAvisoIA);
+    if (!avisoCargado) {
+      avisoCargado = new Promise(function (bien, mal) {
+        var s = document.createElement('script');
+        s.src = '/assets/aviso-ia.js?v=1';
+        s.onload = function () { return window.KlendarAvisoIA ? bien(window.KlendarAvisoIA) : mal(new Error('sin aviso')); };
+        s.onerror = mal;
+        document.head.appendChild(s);
+      });
+      avisoCargado.catch(function () { avisoCargado = null; });
+    }
+    return avisoCargado;
+  }
+
   function pintaRespuesta(log, r) {
     var hijos = [el('p', { texto: r.text || '' })];
     if (r.redacted) hijos.push(el('p', { class: 'asis-nota', texto: t('redacted') }));
@@ -598,6 +615,14 @@
     if (r.screen && PANTALLAS[r.screen]) {
       var dir = r.screen === 'eliminar_cuenta' && enIngles() ? '/en/delete-account' : PANTALLAS[r.screen];
       hijos.push(el('a', { class: 'asis-enlace', href: dir, target: '_blank', rel: 'noopener', texto: t('goTo', t('s_' + r.screen)) }));
+    }
+    if (r.text) {
+      var hueco = el('div', { class: 'asis-aviso' });
+      hijos.push(hueco);
+      cargaAviso().then(function (A) {
+        hueco.appendChild(A.boton({ use: 'help_assistant', texto: r.text,
+          enviar: function (a) { return pide('/rest/v1/rpc/report_ai_response', a); } }));
+      }).catch(function () { /* sin el aviso, la respuesta se ve igual */ });
     }
     log.append(el('div', { class: 'asis-a' }, hijos));
   }

@@ -33,3 +33,4 @@ dialog.asis::backdrop { background: rgba(0, 0, 0, .45); }
 .asis-form textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--elevated, var(--surface)); color: var(--ink); font: inherit; font-size: 16px; resize: vertical; }
 .asis-form textarea:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .asis-form button { align-self: flex-end; }
+.asis-aviso { display: flex; justify-content: flex-end; min-height: 32px; }

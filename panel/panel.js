@@ -518,6 +518,14 @@ function etiquetaDescuento(d) {
   return d.label || d.text || '';
 }
 
+/** «Avisar de esta respuesta» junto a lo que ha escrito la IA (/assets/aviso-ia.js, política de IA
+ * de Play; migración 20261281600000 de la app). Sin el script o sin texto, no pone nada. */
+function avisoIA(donde, use, texto) {
+  const A = globalThis.KlendarAvisoIA;
+  if (!donde || !A || !String(texto || '').trim()) return;
+  donde.appendChild(A.boton({ use, texto: String(texto), enviar: (a) => rpc('report_ai_response', a) }));
+}
+
 async function rpc(fn, args = {}) {
   let res;
   try {
@@ -6931,14 +6939,18 @@ PAGES.resenas = async (v) => {
     : '<div class="card"><p class="muted" style="margin:0">Todavía no tienes reseñas. Llegan cuando la gente canjea y vuelve a contarlo.</p></div>'}`;
 
   const responder = async (r, borrador) => {
-    const out = await modal({
+    const espera = modal({
       title: 'Responder a la reseña',
       // Un borrador de la IA dice que lo es, y que no se envía sin él.
       intro: esc(borrador ? KAyudas.avisoBorrador(borrador) : I18N.t('Se ve debajo de la reseña, para todo el mundo. A quien la escribió le llega una notificación.')),
       fields: [{ name: 'reply', label: 'Tu respuesta', type: 'textarea', value: borrador?.draft || r.reply || '', maxlength: 500, rows: 6,
         placeholder: 'Gracias por venir. Nos alegra que…' }],
+      html: borrador ? '<p class="ia-aviso-borrador" style="margin:0;text-align:end"></p>' : '',
       submit: 'Publicar',
     });
+    // «Avisar de esta respuesta» junto al borrador de la IA (política de IA de Play).
+    if (borrador) avisoIA($('#modal .ia-aviso-borrador'), 'review_replies', borrador.draft);
+    const out = await espera;
     if (!out) return;
     const texto = out.reply.trim();
     if (texto === (r.reply || '')) return;

@@ -133,6 +133,8 @@
         n.querySelector('button span').textContent = u.viendoOriginal ? T.verTr : T.orig;
         if (PROVEEDOR[u.proveedor]) n.querySelector('.tr-atrib').textContent = `· ${T.por} ${PROVEEDOR[u.proveedor]}`;
         else n.querySelector('.tr-antes span').textContent = `${T.auto} ·`;
+        // Traducido por la IA: «Avisar de esta respuesta» (assets/aviso-ia.js, política de IA de Play).
+        if (!PROVEEDOR[u.proveedor] && !u.viendoOriginal) ponAviso(u);
         return;
       case 'mismo':
         n.innerHTML = `<span class="tr-mismo">${ICONO}<span></span></span>`;
@@ -147,6 +149,39 @@
         n.innerHTML = boton();
         n.querySelector('span').textContent = T.tr;
     }
+  };
+
+  // «Avisar de esta respuesta»: el script se carga la primera vez que hace falta.
+  let avisoCargado = null;
+  const cargaAviso = () => {
+    if (globalThis.KlendarAvisoIA) return Promise.resolve(globalThis.KlendarAvisoIA);
+    avisoCargado ??= new Promise((bien, mal) => {
+      const s = document.createElement('script');
+      s.src = '/assets/aviso-ia.js?v=1';
+      s.onload = () => (globalThis.KlendarAvisoIA ? bien(globalThis.KlendarAvisoIA) : mal(new Error('sin aviso')));
+      s.onerror = mal;
+      document.head.appendChild(s);
+    }).catch((e) => { avisoCargado = null; throw e; });
+    return avisoCargado;
+  };
+  const enviaAviso = (args) => fetch(`${url}/rest/v1/rpc/report_ai_response`, {
+    method: 'POST',
+    headers: { apikey: key, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(args),
+  }).then(async (r) => { if (!r.ok) throw new Error(await r.text().catch(() => `http ${r.status}`)); });
+  const ponAviso = (u) => {
+    const visto = u.els.map((el) => textos[el.dataset.tr]).filter((x) => typeof x === 'string').join('\n');
+    const original = u.els.map((el) => {
+      const d = document.createElement('div');
+      d.innerHTML = u.original.get(el) || '';
+      return d.textContent;
+    }).join('\n');
+    if (!visto.trim()) return;
+    const n = u.nota;
+    cargaAviso().then((A) => {
+      if (u.estado !== 'hecho' || u.viendoOriginal || n.querySelector('.aviso-ia-btn')) return;
+      n.appendChild(A.boton({ use: 'translation', texto: `${visto}\n\n— ${original}`, enviar: enviaAviso }));
+    }).catch(() => { /* sin el aviso, la traducción se ve igual */ });
   };
 
   // Lo pedido a la vez a la misma publicación o ficha va en una llamada.
