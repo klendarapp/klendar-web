@@ -23,7 +23,7 @@ main.pub { padding: 34px 20px 72px; }
    y lo segundo cómo conseguirlo. Leer el texto entero antes de ver el botón
    sobra. */
 @media (max-width: 860px) {
-  .detail { grid-template-columns: 1fr; gap: 22px; grid-template-areas: "head" "side" "body"; }
+  .detail { grid-template-columns: minmax(0, 1fr); gap: 22px; grid-template-areas: "head" "side" "body"; }
 }
 
 .badges { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
@@ -504,7 +504,7 @@ body.con-hoja { overflow: hidden; }
 .detail.negocio { grid-template-areas: "media media" "head side" "body side"; }
 .negocio > .ficha-media { grid-area: media; }
 @media (max-width: 860px) {
-  .detail.ficha, .detail.ficha.sin-media, .detail.negocio { grid-template-columns: 1fr; grid-template-areas: "media" "head" "side" "body"; row-gap: 20px; }
+  .detail.ficha, .detail.ficha.sin-media, .detail.negocio { grid-template-columns: minmax(0, 1fr); grid-template-areas: "media" "head" "side" "body"; row-gap: 20px; }
   /* De lado a lado, como la cabecera de la ficha en la app. */
   .ficha > .ficha-media, .negocio > .ficha-media { position: relative; top: auto; width: calc(100% + 40px); margin: 0 -20px; border-radius: 0; }
   .ficha-media { max-height: 74vh; }

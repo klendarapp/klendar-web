@@ -142,7 +142,7 @@
 
 /* ── Calendario (la agenda de Explorar en la app) ──────────────────────── */
 .calendario { display: grid; gap: 22px 28px; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); align-items: start; }
-@media (max-width: 900px) { .calendario { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .calendario { grid-template-columns: minmax(0, 1fr); } }
 .cal-mes { margin: 0; background: var(--elevated); border: 1px solid var(--glass-border); border-radius: 28px; padding: 14px 12px 12px; position: sticky; top: 84px; }
 @media (max-width: 900px) { .cal-mes { position: static; } }
 .cal-cab { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; margin: 0 0 4px; }
@@ -175,7 +175,7 @@ a.cal-dia:hover { background: var(--soft); text-decoration: none; }
 :is(.pub, .tjv) .cal-leyenda { display: flex; justify-content: center; gap: 18px; font-size: 13px; color: var(--ink-2); margin: 10px 0 2px; }
 .cal-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
 .cal-lista { min-width: 0; padding: 0; scroll-margin-top: 80px; }
-.cal-lista-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin: 4px 0 12px; }
+.cal-lista-cab { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px; margin: 4px 0 12px; }
 :is(.pub, .tjv) .cal-lista-cab h2 { margin: 0; font-size: 20px; }
 .cal-lista .empty a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
 

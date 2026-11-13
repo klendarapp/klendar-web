@@ -68,7 +68,7 @@ a:hover { text-decoration: underline; }
   background: var(--ink); color: var(--surface); font-weight: 700; font-size: 14px; }
 .saltar:focus { top: 10px; }
 .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
-h1, h2, h3 { margin: 0; letter-spacing: -.02em; font-family: var(--display); }
+h1, h2, h3 { margin: 0; letter-spacing: -.02em; font-family: var(--display); overflow-wrap: break-word; }
 .eyebrow { display: inline-block; font-size: 13px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 10px; }
 section { padding: 72px 0; }
 section h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; font-weight: 800; margin-bottom: 14px; }
@@ -279,7 +279,7 @@ p.muted a:not(.pill):not(.btn) { text-decoration: underline; text-underline-offs
 .doc .meta { color: var(--ink-2); margin-bottom: 28px; }
 .doc h2 { font-size: 22px; margin: 34px 0 10px; }
 .doc h3 { font-size: 17px; margin: 22px 0 6px; }
-.doc p, .doc li { font-size: 16px; }
+.doc p, .doc li { font-size: 16px; overflow-wrap: break-word; }
 .doc table { border-collapse: collapse; width: 100%; font-size: 15px; margin: 12px 0; display: block; overflow-x: auto; }
 .doc th, .doc td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--glass-border); vertical-align: top; }
 .doc .notice { background: var(--soft); border-left: 4px solid var(--ink); padding: 10px 14px; border-radius: 10px; font-size: 14px; margin-bottom: 12px; }
@@ -589,7 +589,9 @@ details.faq p { margin: 10px 0 0; color: var(--ink-2); }
    iguales, dos por fila, y si sobra uno va centrado. Un botón cuyo texto no
    cabe en media fila ocupa la fila entera. Lo mismo que ActionGrid en la app. */
 .acciones { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-.acciones > * { flex: 1 1 calc(50% - 4px); justify-content: center; text-align: center; margin: 0; white-space: nowrap; }
+/* En una línea mientras quepa en la fila entera; con la letra muy grande, en
+   dos antes que salirse de la pantalla (barrido del 13-11). */
+.acciones > * { flex: 1 1 calc(50% - 4px); justify-content: center; text-align: center; margin: 0; white-space: normal; min-width: fit-content; max-width: 100%; }
 .acciones > :last-child:nth-child(odd) { flex-grow: 0; }
 
 /* Dos o más botones seguidos en un párrafo: con su hueco también cuando no
