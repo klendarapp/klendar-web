@@ -1159,6 +1159,63 @@ const filaBarra = (txt, n, de, extra = '') => `<div class="cf-fila"><span class=
   <b>${fmtNum(n)}</b><span class="muted small">${pct(n, de)}</span>${extra}</div>`;
 const csvBtn = (id, que = '') => `<button class="btn sm ghost" type="button" data-csv="${id}">${ms('download')} CSV${que ? ` <span>${esc(I18N.t(que))}</span>` : ''}</button>`;
 
+// «Saber dónde se atascan» (migración 20261281700000 de la app): cuántos
+// negocios de cada tipo de «atascado» hay ahora. Lo mismo filtra la lista de
+// Negocios (`p_stuck` de `admin_businesses_page`).
+const ATASCOS = [
+  ['pending_48h', 'Pendientes de verificar hace más de 48 h'],
+  ['no_publication', 'Verificados hace más de 7 días sin publicar nada'],
+  ['draft_only', 'Con un borrador parado y nada publicado'],
+  ['no_redemption', 'Publicaron hace más de 14 días y ningún canje'],
+];
+const PASOS_ALTA = [
+  ['verified', 'Verificados'], ['started', 'Empiezan una publicación'], ['published', 'Publican la primera'],
+  ['viewed', 'Primera vista'], ['code', 'Primer código'], ['validated', 'Primer canje validado'],
+];
+/** La tarjeta «Alta de negocios» de Cifras: el embudo de los que se dieron de
+ * alta en el periodo (negocios o entidades) y «Atascados ahora». */
+function seccionAlta(fu, f) {
+  const en = I18N.lang === 'en';
+  const cab = `<div class="page-head cf-cab"><h2 id="cfAlta">Alta de negocios</h2><span class="spacer"></span>
+      ${fu ? `<div class="chart-tabs" id="cfAltaTipo" role="group" aria-label="${esc(I18N.t('Tipo'))}">${[['business', 'Negocios'], ['entity', 'Entidades']].map(([k, t]) => `<button type="button" data-k="${k}" class="${f.alta === k ? 'on' : ''}" aria-pressed="${f.alta === k}">${t}</button>`).join('')}</div>${csvBtn('alta')}` : ''}</div>`;
+  if (!fu) return `${cab}<p class="muted">${esc(en ? 'Not available yet: this database is missing the app migration 20261281700000.' : 'Aún no está: a esta base le falta la migración 20261281700000 de la app.')}</p>`;
+  const k = fu[f.alta] || {};
+  const st = k.steps || {};
+  const total = k.total || 0;
+  const ent = f.alta === 'entity';
+  const de = en
+    ? `Of the ${fmtNum(total)} ${ent ? 'organisations' : 'businesses'} that joined in the period (${fmtNum(k.pending)} still pending verification, ${fmtNum(k.rejected)} rejected):`
+    : `De ${total === 1 ? (ent ? 'la entidad que se dio' : 'el negocio que se dio') : `${ent ? 'las' : 'los'} ${fmtNum(total)} ${ent ? 'entidades que se dieron' : 'negocios que se dieron'}`} de alta en el periodo (${fmtNum(k.pending)} sin verificar aún, ${fmtNum(k.rejected)} ${k.rejected === 1 ? 'rechazado' : 'rechazados'}):`;
+  const at = fu.stuck || {};
+  return `${cab}
+      <p class="muted small" style="margin:0 0 10px">${esc(de)}</p>
+      ${table({
+    cols: [
+      { h: 'Paso', r: (x) => `<b>${esc(I18N.t(x[1]))}</b>` },
+      { h: ent ? 'Entidades' : 'Negocios', num: true, r: (x) => fmtNum((st[x[0]] || {}).n || 0) },
+      { h: '%', num: true, r: (x) => `<span class="cf-pct"><i style="width:${total ? Math.min(100, (100 * ((st[x[0]] || {}).n || 0)) / total) : 0}%"></i></span>${pct((st[x[0]] || {}).n || 0, total)}` },
+      { h: 'En 24 h', num: true, r: (x) => pct((st[x[0]] || {}).d1 || 0, total) },
+      { h: 'En 7 días', num: true, r: (x) => pct((st[x[0]] || {}).d7 || 0, total) },
+      { h: 'Tiempo (mediana)', num: true, r: (x) => horasTxt((st[x[0]] || {}).median_hours) },
+    ],
+    rows: PASOS_ALTA,
+  })}
+      <p class="muted small" style="margin:8px 0 0">${esc(en ? 'Times count from the sign-up. Review-only businesses are left out.' : 'Los tiempos se cuentan desde el alta. Sin los negocios de revisión.')}</p>
+      ${(k.weeks || []).length > 1 ? `<details class="cf-mas"><summary>${esc(I18N.t('Por semana de alta'))}</summary>${table({
+    cols: [
+      { h: 'Semana', r: (x) => diaCorto(x.week) },
+      { h: 'Altas', num: true, r: (x) => fmtNum(x.total) },
+      { h: 'Verificados', num: true, r: (x) => pct(x.verified, x.total) },
+      { h: 'Publican la primera', num: true, r: (x) => pct(x.published, x.total) },
+      { h: 'Primer canje validado', num: true, r: (x) => pct(x.validated, x.total) },
+    ],
+    rows: k.weeks.slice().reverse(),
+  })}</details>` : ''}
+      <h3 class="cf-h3">Atascados ahora</h3>
+      <p class="muted small" style="margin:0 0 8px">${esc(en ? 'Today, in every city and whatever the dates above: businesses and organisations that are active. Open one to see the list.' : 'Hoy, en todas las ciudades y sin mirar las fechas de arriba: negocios y entidades activos. Pulsa uno para ver la lista.')}</p>
+      <div class="kpis">${ATASCOS.map(([key, t]) => `<a class="kpi" href="#/negocios?stuck=${key}"><b>${fmtNum(at[key] || 0)}</b><span>${esc(I18N.t(t))}</span></a>`).join('')}</div>`;
+}
+
 PAGES.cifras = async (v) => {
   const en = I18N.lang === 'en';
   const hoy = diaMadridISO();
@@ -1169,6 +1226,7 @@ PAGES.cifras = async (v) => {
     ciudad: p.ciudad || '',
     serie: ['day', 'week', 'month'].includes(p.serie) ? p.serie : 'week',
     ret: p.ret === 'month' ? 'month' : 'week',
+    alta: p.alta === 'entity' ? 'entity' : 'business',
   };
   if (f.desde > f.hasta) f.desde = f.hasta;
   const escribe = () => ponUrl('cifras', {
@@ -1177,10 +1235,11 @@ PAGES.cifras = async (v) => {
     ciudad: f.ciudad || null,
     serie: f.serie === 'week' ? null : f.serie,
     ret: f.ret === 'week' ? null : f.ret,
+    alta: f.alta === 'business' ? null : f.alta,
   });
   escribe();
   const args = { p_from: f.desde, p_to: f.hasta, p_city: f.ciudad || null };
-  const [ciudades, s, a, r, pl, b, o] = await Promise.all([
+  const [ciudades, s, a, r, pl, b, o, fu] = await Promise.all([
     rpc('admin_stats_cities'),
     rpc('admin_stats_signups', args),
     rpc('admin_stats_activation', args),
@@ -1188,11 +1247,15 @@ PAGES.cifras = async (v) => {
     rpc('admin_stats_places', args),
     rpc('admin_stats_businesses', args),
     rpc('admin_stats_sources', args),
+    // Embudo del alta (migración 20261281700000 de la app): sin ella en la
+    // base, el resto de Cifras sigue igual.
+    rpc('admin_stats_business_funnel', args).catch(() => null),
   ]);
   const rapidos = [[7, '7 días'], [30, '30 días'], [90, '90 días'], [365, '12 meses']];
   const rapidoOn = (n) => f.hasta === hoy && f.desde === diaMadridISO(-(n - 1));
   const etSerie = { day: (x) => diaCorto(x.d), week: (x) => (en ? `Week of ${diaCorto(x.d)}` : `Semana del ${diaCorto(x.d)}`), month: (x) => mesCorto(x.d) };
-  const pasos = [['code', 'Sacan su primer código'], ['validated', 'Validan su primer canje'], ['saved', 'Guardan o añaden a favoritos']];
+  const pasos = [...(fu ? [['confirmed', 'Confirman el correo'], ['viewed', 'Ven una publicación']] : []),
+    ['code', 'Sacan su primer código'], ['validated', 'Validan su primer canje'], ['saved', 'Guardan o añaden a favoritos']];
   const st = a.steps || {};
   const colsRet = f.ret === 'month' ? [1, 2, 3, 6, 12] : [1, 2, 3, 4, 6, 8, 12];
   const cohortes = (r.cohorts || []).filter((c) => c.size > 0);
@@ -1240,6 +1303,8 @@ PAGES.cifras = async (v) => {
     cols: [
       { h: 'Semana', r: (x) => diaCorto(x.week) },
       { h: 'Personas', num: true, r: (x) => fmtNum(x.people) },
+      ...(fu ? [{ h: 'Confirman el correo', num: true, r: (x) => pct(x.confirmed, x.people) },
+        { h: 'Ven una publicación', num: true, r: (x) => pct(x.viewed, x.people) }] : []),
       { h: 'Primer código', num: true, r: (x) => pct(x.code, x.people) },
       { h: 'Primer canje', num: true, r: (x) => pct(x.validated, x.people) },
       { h: 'Guardan o favoritos', num: true, r: (x) => pct(x.saved, x.people) },
@@ -1297,6 +1362,8 @@ PAGES.cifras = async (v) => {
       ${(pl.zones || []).length > zonas.length ? `<p class="muted small">${esc(en ? `The ${zonas.length} with the most redemptions; all of them in the CSV.` : `Las ${zonas.length} con más canjes; todas, en el CSV.`)}</p>` : ''}
     </section>
 
+    <section class="card" aria-labelledby="cfAlta" id="cfAltaSec">${seccionAlta(fu, f)}</section>
+
     <section class="card" aria-labelledby="cfNeg">
       <div class="page-head cf-cab"><h2 id="cfNeg">Negocios</h2><span class="spacer"></span>${csvBtn('negocios', 'por semana')} ${csvBtn('traen', 'los que más traen')}</div>
       <div class="kpis">${[
@@ -1352,12 +1419,27 @@ PAGES.cifras = async (v) => {
     I18N.translate($('#cfSerieChart', v));
   };
   $('#cfRetTabs', v).onclick = (e) => { const btn = e.target.closest('button'); if (!btn || btn.dataset.k === f.ret) return; f.ret = btn.dataset.k; recarga(); };
+  // Negocios o entidades en «Alta de negocios»: solo se repinta esa tarjeta.
+  const activaAlta2 = () => {
+    const tabs = $('#cfAltaTipo', v);
+    if (!tabs) return;
+    tabs.onclick = (e) => {
+      const btn = e.target.closest('button'); if (!btn || btn.dataset.k === f.alta) return;
+      f.alta = btn.dataset.k; escribe();
+      $('#cfAltaSec', v).innerHTML = seccionAlta(fu, f);
+      I18N.translate($('#cfAltaSec', v));
+      activaAlta2();
+      $('[data-csv="alta"]', v).onclick = () => CSV.alta();
+    };
+  };
+  activaAlta2();
 
   // CSV de cada bloque, con el periodo y la ciudad en el nombre.
   const sufijo = `${f.desde}_${f.hasta}${f.ciudad ? `-${f.ciudad.toLowerCase().replace(/[^a-z0-9]+/g, '-')}` : ''}`;
   const CSV = {
     registros: () => downloadCsv(`cifras-registros-${f.serie}-${sufijo}`, s[f.serie] || [], [['d', 'Desde'], ['people', 'Personas'], ['businesses', 'Cuentas de negocio']]),
-    activacion: () => downloadCsv(`cifras-activacion-${sufijo}`, (a.weeks || []), [['week', 'Semana'], ['people', 'Personas'], ['code', 'Primer código'], ['validated', 'Primer canje'], ['saved', 'Guardan o favoritos']]),
+    activacion: () => downloadCsv(`cifras-activacion-${sufijo}`, (a.weeks || []), [['week', 'Semana'], ['people', 'Personas'], ...(fu ? [['confirmed', 'Confirman el correo'], ['viewed', 'Ven una publicación']] : []), ['code', 'Primer código'], ['validated', 'Primer canje'], ['saved', 'Guardan o favoritos']]),
+    alta: () => downloadCsv(`cifras-alta-${f.alta === 'entity' ? 'entidades' : 'negocios'}-${sufijo}`, ((fu || {})[f.alta] || {}).weeks || [], [['week', 'Semana'], ['total', 'Altas'], ['verified', 'Verificados'], ['published', 'Publican la primera'], ['validated', 'Primer canje validado']]),
     retencion: () => downloadCsv(`cifras-retencion-${f.ret}-${sufijo}`, cohortes, [['cohort', f.ret === 'month' ? 'Mes' : 'Semana'], ['size', 'Registros'], ...Array.from({ length: 13 }, (_, k) => [(c) => c.back[k], `+${k}`])]),
     ciudades: () => downloadCsv(`cifras-ciudades-${sufijo}`, pl.cities || [], [['city', 'Ciudad'], ['businesses', 'Negocios'], ['verified', 'Verificados'], ['vistas', 'Vistas'], ['codigos', 'Códigos'], ['canjes', 'Canjes'], ['visitas', 'Visitas con origen']]),
     zonas: () => downloadCsv(`cifras-zonas-${sufijo}`, pl.zones || [], [['city', 'Ciudad'], [(z) => (z.zone || '').replace(/^cp:/, 'CP ').replace(/^g:/, '≈ '), 'Zona'], ['businesses', 'Negocios'], ['verified', 'Verificados'], ['vistas', 'Vistas'], ['codigos', 'Códigos'], ['canjes', 'Canjes'], ['visitas', 'Visitas con origen']]),
@@ -1759,9 +1841,13 @@ const st = { mensajes: { limit: 50, offset: 0 }, sugerencias: { limit: 50, offse
 PAGES.negocios = async (v, id) => {
   if (id) return businessDetail(v, id);
   const s = st.negocios;
-  const DEF = { status: 'all', plan: 'all', active: '', sort: 'created_desc' };
+  const DEF = { status: 'all', plan: 'all', active: '', sort: 'created_desc', stuck: '' };
   for (const k in DEF) s[k] = s[k] ?? DEF[k];
+  // Desde «Atascados ahora» (Cifras): solo ese filtro, sin los de antes.
+  if (params().stuck) { Object.assign(s, DEF); s.q = ''; s.offset = 0; }
+  if (s.stuck && !ATASCOS.some(([k]) => k === s.stuck)) s.stuck = '';
   const aUrl = filtrosEnUrl('negocios', s, Object.keys(DEF), DEF);
+  const atasco = ATASCOS.find(([k]) => k === s.stuck);
   v.innerHTML = `
     <div class="page-head"><h1>Negocios</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Here you see every registered business. <b>Pending</b> ones are new sign-ups you need to review: check that the business exists (website, phone, Google Maps) and press <b>Verify</b>; if it doesn't qualify, <b>Reject</b> it with a reason (the business gets it as a notification). Click a row to see the full business page, change the plan or record a payment.</p>` : '<p>Aquí ves todos los negocios dados de alta. Los <b>pendientes</b> son altas nuevas que tienes que revisar: comprueba que el negocio existe (web, teléfono, Google Maps) y pulsa <b>Verificar</b>; si no procede, <b>Rechazar</b> indicando el motivo (el negocio lo recibe como notificación). Pulsa en una fila para ver la ficha completa, cambiar el plan o registrar un pago.</p>')}
@@ -1772,11 +1858,12 @@ PAGES.negocios = async (v, id) => {
       <select id="active">${[['', 'Activos e inactivos'], ['true', 'Solo activos'], ['false', 'Solo desactivados']].map((o) => `<option value="${o[0]}" ${(s.active ?? '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="sort">${[['created_desc', 'Más recientes'], ['created_asc', 'Más antiguos'], ['name', 'Por nombre'], ['redemptions', 'Más canjes']].map((o) => `<option value="${o[0]}" ${(s.sort || 'created_desc') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
+    ${atasco ? `<div class="toolbar" id="atascoFiltro"><span class="tag warn">${ms('hourglass_empty')} ${esc(I18N.t(atasco[1]))}</span><button class="btn sm ghost" type="button" id="quitaAtasco">Quitar este filtro</button></div>` : ''}
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = async () => {
-    const r = await rpc('admin_businesses_page', ultimos = { p_status: s.status, p_query: s.q || null, p_plan: s.plan || 'all', p_active: s.active === '' || s.active == null ? null : s.active === 'true', p_sort: s.sort || 'created_desc', p_limit: s.limit, p_offset: s.offset });
+    const r = await rpc('admin_businesses_page', ultimos = { p_status: s.status, p_query: s.q || null, p_plan: s.plan || 'all', p_active: s.active === '' || s.active == null ? null : s.active === 'true', p_sort: s.sort || 'created_desc', p_limit: s.limit, p_offset: s.offset, ...(s.stuck ? { p_stuck: s.stuck } : {}) });
     rows = r.rows;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({
@@ -1795,6 +1882,7 @@ PAGES.negocios = async (v, id) => {
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['status', 'plan', 'active', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
+  if (atasco) $('#quitaAtasco').onclick = () => { s.stuck = ''; s.offset = 0; aUrl(); $('#atascoFiltro')?.remove(); load(); };
   $('#csv').onclick = () => exportaTodo($('#csv'), 'negocios', 'admin_businesses_page', ultimos, [['id', 'id'], ['name', 'nombre'], ['category', 'categoría'], ['city', 'ciudad'], ['address', 'dirección'], ['owner_email', 'email dueño'], ['phone', 'teléfono'], ['website', 'web'], ['verification_status', 'verificación'], [(b) => b.is_active ? 'sí' : 'no', 'activo'], [(b) => b.plan_slug || 'free', 'plan'], ['sub_status', 'suscripción'], ['sub_period_end', 'fin periodo'], ['offers_count', 'publicaciones'], ['redemptions_count', 'canjes'], ['created_at', 'alta']]);
   await load();
 };

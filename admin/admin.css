@@ -577,3 +577,6 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
   .bandeja-chips { display: none; }
   .bandeja-sel { display: block; }
 }
+/* «Atascados ahora» (Cifras): cada número lleva a la lista de Negocios filtrada. */
+a.kpi { display: block; color: inherit; text-decoration: none; }
+a.kpi:hover, a.kpi:focus-visible { border-color: var(--accent-text); }
