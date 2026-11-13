@@ -736,7 +736,7 @@ RUTAS.ajustes = async ([sub]) => {
       <p><a class="pill" href="/cuenta/nueva-clave?siguiente=ajustes">${ic('key')} ${esc(t(tieneClave ? 'Cambiar la contraseña' : 'Crear una contraseña'))}</a></p>
     </section>
 
-    <section class="bloque">
+    <section class="bloque" id="sec-privacidad">
       <h2>${esc(t('Privacidad y datos'))}</h2>
       <p class="muted">${esc(t('Qué has consentido y cuándo. Puedes retirar cada permiso por separado y descargar todo lo que guardamos de ti.'))}</p>
       <dl class="consen">
@@ -798,7 +798,7 @@ RUTAS.ajustes = async ([sub]) => {
       <p class="muted">${esc(t('Si no usas Klendar en 24 meses, te avisamos por correo; si sigues sin entrar, la cuenta se borra a los 36 meses. Basta con entrar una vez para conservarla.'))}</p>
     </section>
 
-    <section class="bloque">
+    <section class="bloque" id="sec-cuenta">
       <h2>${esc(t('Sesión y cuenta'))}</h2>
       <p class="acciones">
         <button class="pill" id="salir-todo">${esc(t('Cerrar sesión en todos los dispositivos'))}</button>
@@ -846,6 +846,8 @@ RUTAS.ajustes = async ([sub]) => {
   pintaBloqueadas();
   // /cuenta/ajustes/bloqueadas (desde el enlace de amigo de alguien bloqueado): a la lista.
   if (sub === 'bloqueadas') $('#dd-bloqueadas')?.previousElementSibling?.scrollIntoView({ block: 'start' });
+  // Desde «Tus datos»: los permisos o «Eliminar mi cuenta», a la vista.
+  if (sub === 'privacidad' || sub === 'cuenta') $(`#sec-${sub}`)?.scrollIntoView({ block: 'start' });
   $('#marketing').addEventListener('change', async (ev) => {
     const caja = ev.currentTarget;
     try {
@@ -990,19 +992,7 @@ RUTAS.ajustes = async ([sub]) => {
       // La base apaga también «Cerca de ti» (Ajustes → Notificaciones).
     });
   });
-  $('#descargar').addEventListener('click', (ev) => ocupado(ev.currentTarget, async () => {
-    const datos = await llamar('export_my_data', {});
-    await enlacesDeCapturas(datos);
-    const blob =new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    // El día de Madrid (en UTC, entre las 0 y las 2 aún sería ayer).
-    a.download = `klendar-${EN ? 'my-data' : 'mis-datos'}-${new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())}.json`;
-    document.body.append(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 5000);
-  }));
+  $('#descargar').addEventListener('click', (ev) => ocupado(ev.currentTarget, descargaMisDatos));
 
   // Las capturas de «Sugerencias y mejoras» están en un Storage privado:
   // export_my_data da sus rutas (`media`) y aquí se piden enlaces firmados de
@@ -1078,6 +1068,102 @@ RUTAS.ajustes = async ([sub]) => {
     });
   });
 };
+/** «Descargar mis datos»: el JSON de `export_my_data` (Ajustes y «Tus datos»). */
+async function descargaMisDatos() {
+  const datos = await llamar('export_my_data', {});
+  await enlacesDeCapturas(datos);
+  const blob = new Blob([JSON.stringify(datos, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  // El día de Madrid (en UTC, entre las 0 y las 2 aún sería ayer).
+  a.download = `klendar-${EN ? 'my-data' : 'mis-datos'}-${new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Madrid' }).format(new Date())}.json`;
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+}
+
+// ── Tus datos ────────────────────────────────────────────────────────────
+// Como `MyDataScreen` de la app: en una pantalla y en lenguaje sencillo, qué
+// guardamos de ti (resumen de la Política de privacidad, que es la que
+// manda) y los accesos a descargarlo, a borrar cada historial, a los permisos
+// y a eliminar la cuenta. No repite nada: cada fila lleva a donde ya se hace.
+// Sin sesión, solo lo de este navegador.
+const leeLocal = (clave) => { try { return localStorage.getItem(clave); } catch { return null; } };
+const ponLocal = (clave, valor) => {
+  try { if (valor == null) localStorage.removeItem(clave); else localStorage.setItem(clave, valor); } catch { /* sin permisos */ }
+};
+const busquedasGuardadas = () => {
+  try { const l = JSON.parse(leeLocal('klendar.busquedas') || '[]'); return Array.isArray(l) ? l : []; } catch { return []; }
+};
+const vistosGuardados = () => {
+  const v = leeLocal('klendar.vistos');
+  if (!v || v === 'off') return 0;
+  try { const o = JSON.parse(v); return o && typeof o === 'object' ? Object.keys(o).length : 0; } catch { return 0; }
+};
+RUTAS['tus-datos'] = async () => {
+  const conVistos = await vistosEnMarcha();
+  const sorteos = YO && typeof sorteosEnCuenta === 'function' ? await sorteosEnCuenta().catch(() => false) : false;
+  const nBusq = busquedasGuardadas().length;
+  const nVistos = vistosGuardados();
+  const punto = (icono, texto) => `<li>${ic(icono)}<span>${esc(texto)}</span></li>`;
+  const filaBorrar = (id, icono, titulo, detalle, activa) => `<div class="fila">${ic(icono)}
+        <span class="fila-t"><b>${esc(titulo)}</b><small>${esc(detalle)}</small></span>
+        <button type="button" class="pill ghost" id="${id}"${activa ? '' : ' disabled'}>${esc(t('Borrar'))}</button></div>`;
+  pinta(`
+    <p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a></p>
+    <h1>${esc(t('Tus datos'))}</h1>
+    <h2 class="seccion-t">${esc(t('Qué guardamos de ti'))}</h2>
+    <div class="lista">
+      <ul class="tus-datos-puntos">
+        ${punto('person', t('Tu cuenta: correo, nombre, fecha de nacimiento, idioma y, si la pones, tu foto.'))}
+        ${punto('local_activity', t('Lo que haces en Klendar: favoritos, planes, códigos y reservas, bonos, sellos, reseñas, sorteos y notificaciones. Se guarda mientras tengas la cuenta, salvo lo que tiene su propio plazo (por ejemplo, las notificaciones, 90 días).'))}
+        ${punto('my_location', t('Tu ubicación, solo si nos das permiso, para enseñarte lo que tienes cerca.'))}
+        ${punto('smartphone', t('Solo en este navegador, sin mandárnoslo: tus últimas búsquedas y lo que ya has visto en Descubre.'))}
+        ${punto('visibility_off', t('Quitar algo de tus listas solo lo esconde para ti: sigue guardado como dice la Política de privacidad.'))}
+      </ul>
+      ${fila({ href: PUB_EN ? '/en/privacy' : '/privacidad', icono: 'privacy_tip', titulo: t('Todo el detalle, en la Política de privacidad'), fuera: true })}
+    </div>
+    ${YO ? `<div class="lista" style="margin-top:12px">
+      <button type="button" class="fila fila-btn" id="td-descargar">${ic('download')}
+        <span class="fila-t"><b>${esc(t('Descargar mis datos'))}</b><small>${esc(t('Un archivo JSON con todo lo que Klendar guarda de ti (derecho de acceso y portabilidad).'))}</small></span>${ic('chevron_right')}</button>
+    </div>` : ''}
+    <h2 class="seccion-t">${esc(t('Tus historiales'))}</h2>
+    <div class="lista">
+      ${filaBorrar('td-busquedas', 'smartphone', t('Lo que buscaste'),
+    nBusq === 1 ? t('1 búsqueda · solo en este navegador') : nBusq ? t('{n} búsquedas · solo en este navegador').replace('{n}', nBusq) : t('Ninguna · solo en este navegador'), nBusq > 0)}
+      ${conVistos ? filaBorrar('td-vistos', 'visibility', t('Lo que has visto en Descubre'), t('Solo en este navegador.'), nVistos > 0) : ''}
+      ${YO ? `${fila({ href: '/cuenta/codigos', icono: 'local_activity', titulo: t('Tus códigos'), detalle: t('Quita los usados, los caducados y los bonos gastados') })}
+      ${sorteos ? fila({ href: '/cuenta/sorteos', icono: 'redeem', titulo: t('En los que participas'), detalle: t('Quita los sorteos terminados') }) : ''}
+      ${fila({ href: '/cuenta/notificaciones', icono: 'notifications', titulo: t('Notificaciones'), detalle: t('Borra una o todas') })}
+      ${fila({ href: '/cuenta/alertas', icono: 'add_alert', titulo: t('Avísame si…'), detalle: t('Borra una o todas') })}
+      ${fila({ href: '/cuenta/pedidos', icono: 'storefront', titulo: t('Lo que has pedido'), detalle: t('Borra una o todas') })}` : ''}
+    </div>
+    <h2 class="seccion-t">${esc(t('Permisos y consentimientos'))}</h2>
+    <div class="lista">
+      ${fila({ href: YO ? '/cuenta/ajustes/privacidad' : '/cuenta/ajustes/lo-que-ves', icono: 'rule', titulo: t('Permisos y consentimientos'), detalle: t('Lo que has aceptado, retirarlo y tu ubicación') })}
+      ${YO ? fila({ href: '/cuenta/ajustes/cuenta', icono: 'person_remove', titulo: t('Eliminar mi cuenta'), detalle: t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres propietario de un negocio, antes tendrás que darlo de baja o traspasarlo. No se puede deshacer.') }) : ''}
+    </div>`);
+  $('#td-descargar')?.addEventListener('click', (ev) => ocupado(ev.currentTarget, descargaMisDatos));
+  // Lo de este navegador: tras confirmar y con «Deshacer» (como la app).
+  const borraLocal = async (clave, { titulo, texto, hecho }) => {
+    const antes = leeLocal(clave);
+    if (!antes || antes === 'off') return;
+    if (!(await confirma({ titulo, texto, aceptar: t('Borrar'), peligro: true }))) return;
+    ponLocal(clave, null);
+    navegar();
+    toastDeshacer(hecho, () => { ponLocal(clave, antes); navegar(); });
+  };
+  $('#td-busquedas')?.addEventListener('click', () => borraLocal('klendar.busquedas', {
+    titulo: t('¿Borrar lo que buscaste?'), texto: t('Solo en este navegador.'), hecho: t('Búsquedas borradas'),
+  }));
+  $('#td-vistos')?.addEventListener('click', () => borraLocal('klendar.vistos', {
+    titulo: t('¿Olvidar lo que has visto?'),
+    texto: t('Se borra de este navegador y todo vuelve a salir como nuevo en Descubre.'),
+    hecho: t('Olvidado lo que has visto'),
+  }));
+};
+
 // ── Editar perfil ────────────────────────────────────────────────────────
 // Como «Editar perfil» de la app: foto, nombre y fecha de nacimiento, con
 // «Guardar». El idioma y «Traducir…» van en Ajustes y se guardan solos.

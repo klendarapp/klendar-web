@@ -139,11 +139,10 @@
       return sb.auth.getSession().then(function (r) {
         if (!r.data || !r.data.session) { sinSesion(); return; }
         if (caja) return recarga();
-        return sb.rpc('my_giveaways').then(function (x) {
-          if (x.error) return;
-          var mis = Array.isArray(x.data) ? x.data : [];
-          if (lista) marcaLista(mis);
-          if (mios) pintaMios(mis);
+        return cargaMios().then(function (r) {
+          if (!r) return;
+          if (lista) marcaLista(r.activos.concat(r.hechos));
+          if (mios) pintaMios(r);
         });
       });
     })
@@ -319,14 +318,96 @@
       + (yoTxt ? '<small class="sorteo-tj-yo">' + esc(yoTxt) + '</small>' : '') + '</span>'
       + '<span class="sorteo-tj-ir" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></span></a>';
   }
-  function pintaMios(mis) {
-    var ver = mis.filter(function (g) { return g && UUID.test(g.id || ''); });
-    if (!ver.length) {
+  // «En los que participas»: los abiertos enteros y los terminados por partes
+  // («Ver más»), que se quitan de la lista uno a uno o todos, con «Deshacer»
+  // (solo para ti: siguen guardados y el negocio ve sus cifras). Con una base
+  // sin las partes (antes de la migración 20261281000000 de la app), todos de
+  // una vez y sin quitar.
+  var POR_PARTE = 20;
+  var mis = null;
+  function cargaMios() {
+    return Promise.all([sb.rpc('my_giveaways', { p_part: 'active' }), sb.rpc('my_giveaways', { p_part: 'done', p_limit: POR_PARTE })])
+      .then(function (r) {
+        if (!r[0].error && !r[1].error) {
+          var h = Array.isArray(r[1].data) ? r[1].data : [];
+          return (mis = { activos: Array.isArray(r[0].data) ? r[0].data : [], hechos: h, mas: h.length >= POR_PARTE, quitar: true });
+        }
+        return sb.rpc('my_giveaways').then(function (x) {
+          if (x.error) return null;
+          var todos = Array.isArray(x.data) ? x.data : [];
+          return (mis = { activos: todos, hechos: [], mas: false, quitar: false });
+        });
+      });
+  }
+  function deshaz(msg, at) {
+    toast(msg);
+    if (!at || !aviso) return;
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'pill ghost';
+    b.style.marginLeft = '8px';
+    b.textContent = S.undo;
+    b.onclick = function () {
+      aviso.hidden = true;
+      sb.rpc('unhide_my_history', { p_kind: 'giveaways', p_at: at }).then(function () { return cargaMios(); })
+        .then(function (r) { if (r) pintaMios(r); });
+    };
+    aviso.appendChild(b);
+  }
+  function quita(ids, todos, boton) {
+    if (todos && !window.confirm(S.hideAllAsk + '\n\n' + S.hideAllBody)) return;
+    if (boton) boton.disabled = true;
+    sb.rpc('hide_my_history', todos ? { p_kind: 'giveaways', p_all: true } : { p_kind: 'giveaways', p_ids: ids })
+      .then(function (x) {
+        if (x.error) { if (boton) boton.disabled = false; toast(S.oops, true); return; }
+        mis.hechos = todos ? [] : mis.hechos.filter(function (g) { return ids.indexOf(g.id) < 0; });
+        if (todos) mis.mas = false;
+        pintaMios(mis);
+        deshaz(todos ? S.hiddenAll : S.hidden, x.data && x.data.at);
+      });
+  }
+  function pintaMios(r) {
+    var vale = function (g) { return g && UUID.test(g.id || ''); };
+    var ver = r.activos.filter(vale);
+    var hechos = r.hechos.filter(vale);
+    if (!ver.length && !hechos.length) {
       mios.innerHTML = '<section class="vacio"><h2>' + esc(mios.getAttribute('data-vacio-t')) + '</h2>'
         + '<p>' + esc(mios.getAttribute('data-vacio-p')) + '</p>'
         + '<div class="vacio-botones"><a class="pill accent" href="' + esc(mios.getAttribute('data-cerca')) + '">' + esc(mios.getAttribute('data-cerca-t')) + '</a></div></section>';
       return;
     }
-    mios.innerHTML = '<div class="sorteos-lista">' + ver.map(tarjeta).join('') + '</div>';
+    var html = ver.length ? '<div class="sorteos-lista">' + ver.map(tarjeta).join('') + '</div>' : '';
+    if (hechos.length) {
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin:22px 0 8px">'
+        + '<h2 style="margin:0;font-size:15px">' + esc(S.doneTitle) + '</h2>'
+        + (r.quitar ? '<button type="button" class="pill ghost" data-quitar-todos>' + esc(S.hideAll) + '</button>' : '') + '</div>'
+        + '<div class="sorteos-lista">' + hechos.map(function (g) {
+          if (!r.quitar) return tarjeta(g);
+          return '<div style="position:relative">' + tarjeta(g)
+            + '<button type="button" class="pill ghost" data-quitar="' + esc(g.id) + '" aria-label="' + esc(S.hideOne) + '" title="' + esc(S.hideOne)
+            + '" style="position:absolute;right:8px;top:8px">×</button></div>';
+        }).join('') + '</div>';
+      if (r.mas) html += '<p class="ver-mas" style="text-align:center"><button type="button" class="pill" data-ver-mas>' + esc(S.seeMore) + '</button></p>';
+    }
+    mios.innerHTML = html;
+    mios.querySelectorAll('[data-quitar]').forEach(function (b) {
+      b.onclick = function () { quita([b.getAttribute('data-quitar')], false, b); };
+    });
+    var todos = mios.querySelector('[data-quitar-todos]');
+    if (todos) todos.onclick = function () { quita(null, true, todos); };
+    var mas = mios.querySelector('[data-ver-mas]');
+    if (mas) {
+      mas.onclick = function () {
+        mas.disabled = true;
+        var ult = r.hechos[r.hechos.length - 1];
+        sb.rpc('my_giveaways', { p_part: 'done', p_limit: POR_PARTE, p_before: ult.ends_at, p_before_id: ult.id }).then(function (x) {
+          if (x.error) { mas.disabled = false; toast(S.oops, true); return; }
+          var parte = Array.isArray(x.data) ? x.data : [];
+          r.hechos = r.hechos.concat(parte);
+          r.mas = parte.length >= POR_PARTE;
+          pintaMios(r);
+        });
+      };
+    }
   }
 })();

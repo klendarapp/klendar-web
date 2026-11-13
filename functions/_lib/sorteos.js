@@ -44,8 +44,8 @@ const zonaDe = (g) => KZ.zona(g?.business?.time_zone || KZ.porCoordenadas(g?.bus
 /** Lo personal lo pone el navegador (solo con sesión). */
 const sorteoScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/textos-sorteos.js?v=5" defer></script>
-<script src="/assets/sorteo.js?v=20261105cuenta" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/textos-sorteos.js?v=6" defer></script>
+<script src="/assets/sorteo.js?v=20261113tusdatos" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 // ── El interruptor ────────────────────────────────────────────────────────

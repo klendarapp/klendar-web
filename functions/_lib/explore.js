@@ -162,6 +162,7 @@ const T = (en) => en
       // «More plans in Marbella», just for that visit (like the app).
       visitNear: 'Back to near me', visitAll: 'Back to every city', visitTo: 'Back to {city}', visitLabel: 'Viewing {city} just this once',
       searchRecent: 'What you searched for', searchClear: 'Clear', searchLocal: 'Stored only in this browser.',
+      searchClearAsk: 'Clear what you searched for?', searchCleared: 'Searches cleared', searchUndo: 'Undo', searchCancel: 'Cancel',
       searchPopular: 'Most searched in {city}', searchPopularHint: 'What people searched for most this week. Without knowing who.',
       searchRemove: 'Remove “{q}”',
       // La hoja por orden de uso (2026-10-06).
@@ -305,6 +306,7 @@ const T = (en) => en
       // «Más planes en Marbella», solo para esa visita (como la app).
       visitNear: 'Volver a cerca de mí', visitAll: 'Volver a todas las ciudades', visitTo: 'Volver a {city}', visitLabel: 'Viendo {city} solo esta vez',
       searchRecent: 'Lo que buscaste', searchClear: 'Borrar', searchLocal: 'Se guarda solo en este navegador.',
+      searchClearAsk: '¿Borrar lo que buscaste?', searchCleared: 'Búsquedas borradas', searchUndo: 'Deshacer', searchCancel: 'Cancelar',
       searchPopular: 'Lo más buscado en {city}', searchPopularHint: 'Lo que más ha buscado la gente esta semana. Sin saber quién.',
       searchRemove: 'Quitar «{q}»',
       // La hoja por orden de uso (2026-10-06).
@@ -2130,6 +2132,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const sorteosOn = await conSorteos;
   const textosBusqueda = JSON.stringify({
     recent: S.searchRecent, clear: S.searchClear, local: S.searchLocal,
+    // «Borrar» todo: se pregunta antes y luego se puede deshacer (como la app).
+    clearAsk: S.searchClearAsk, cleared: S.searchCleared, undo: S.searchUndo, cancel: S.searchCancel,
     popular: S.searchPopular, popularHint: S.searchPopularHint, remove: S.searchRemove,
     // «Dónde ver el partido» con su subtítulo, arriba del panel en reposo.
     partidos: { t: KE.t(lang).title, s: KE.t(lang).lead, href: `${partidosBase(lang)}${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}` },
@@ -2197,7 +2201,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=7" defer></script>
-  <script src="/assets/gustos.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}"></script>
+  <script src="/assets/gustos.js?v=20261113tusdatos" defer data-lang="${en ? 'en' : 'es'}"></script>
   <script src="/assets/municipios.js?v=20261111sinbarra" defer></script>
   <link rel="stylesheet" href="/assets/barra-filtro.css?v=20261112">
   <script src="/assets/barra-filtro.js?v=20261112" defer></script>`;

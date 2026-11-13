@@ -117,6 +117,16 @@
       offTextBiz: 'Por ahora los sorteos no están disponibles en Klendar. Lo demás de Fidelizar funciona como siempre.',
       offGo: 'Ir a Descubre',
       offGoBiz: 'Volver al resumen',
+      // «En los que participas»: los terminados, por partes y quitables (migración 20261281000000 de la app).
+      doneTitle: 'Terminados',
+      seeMore: 'Ver más',
+      hideOne: 'Quitar de la lista',
+      hideAll: 'Quitar todos',
+      hideAllAsk: '¿Quitar todos de tu lista?',
+      hideAllBody: 'Solo dejan de salirte a ti. No se borran: siguen en «Descargar mis datos» y el negocio sigue viendo sus cifras.',
+      hidden: 'Quitado de tu lista',
+      hiddenAll: 'Quitados de tu lista',
+      undo: 'Deshacer',
     },
     en: {
       title: 'Giveaways',
@@ -212,6 +222,15 @@
       offTextBiz: "Giveaways aren't available on Klendar for now. Everything else in Loyalty works as usual.",
       offGo: 'Go to Discover',
       offGoBiz: 'Back to the overview',
+      doneTitle: 'Finished',
+      seeMore: 'See more',
+      hideOne: 'Remove from list',
+      hideAll: 'Remove all',
+      hideAllAsk: 'Remove all from your list?',
+      hideAllBody: "They only stop showing for you. They aren't deleted: they stay in “Download my data” and the business still sees its figures.",
+      hidden: 'Removed from your list',
+      hiddenAll: 'Removed from your list',
+      undo: 'Undo',
     },
   };
 

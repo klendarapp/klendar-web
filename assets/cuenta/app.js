@@ -956,6 +956,7 @@ RUTAS[''] = async () => {
       ${typeof filaEquipos === 'function' ? filaEquipos() : ''}
       ${typeof filaArtistas === 'function' ? filaArtistas() : ''}
       ${typeof filaPedidos === 'function' ? filaPedidos() : ''}
+      ${fila({ href: '/cuenta/tus-datos', icono: 'privacy_tip', titulo: t('Tus datos'), detalle: t('Qué guardamos, descargarlo y borrar tus historiales') })}
       ${fila({ href: '/cuenta/ajustes', icono: 'tune', titulo: t('Ajustes'), detalle: t('Idioma, notificaciones, privacidad y cuenta') })}
     </div>
 
@@ -2339,6 +2340,61 @@ function pintaCodigoGuardado(g) {
   $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
 }
 
+// ── «Quitar de tu lista» (migración 20261281000000 de la app) ────────────
+// Los códigos usados, caducados o anulados y los bonos gastados o caducados
+// (los sorteos terminados, en /sorteos: /assets/sorteo.js): uno, con el
+// botón del ojo tachado, o «Quitar todos» tras confirmar, con «Deshacer».
+// Solo se esconden para ti: siguen guardados, salen en «Descargar mis datos»
+// y el negocio ve sus cifras igual. Lo vivo no se quita. Si la base aún no
+// tiene la función (prod antes de la migración), no sale ningún botón.
+let QUITAR_EN_BASE = null;
+const quitarEnBase = () => (QUITAR_EN_BASE ||= llamar('hide_my_history', { p_kind: 'codes', p_ids: [] })
+  .then(() => true, () => false));
+/** `html` (una fila) con su botón «Quitar de la lista» si `si`. */
+const quitable = (html, id, si) => (si ? `<div class="quitable">${html}<button type="button" class="aviso-borrar" data-quitar="${esc(id)}"
+  aria-label="${esc(t('Quitar de la lista'))}" title="${esc(t('Quitar de la lista'))}">${ic('visibility_off')}</button></div>` : html);
+/** Un título de sección con «Quitar todos» a la derecha (si `tipo`). */
+const seccionQuitable = (titulo, tipo) => (tipo
+  ? `<div class="seccion-quitar"><h2 class="seccion-t">${esc(titulo)}</h2>
+      <button type="button" class="pill ghost" data-quitar-todos="${tipo}">${esc(t('Quitar todos'))}</button></div>`
+  : `<h2 class="seccion-t">${esc(titulo)}</h2>`);
+const deshacerQuitar = (tipo, at, msg) => toastDeshacer(msg, async () => {
+  try { await llamar('unhide_my_history', { p_kind: tipo, p_at: at }); } catch (e) { toast(e.message || String(e), true); return; }
+  navegar();
+});
+/** Conecta los botones de quitar que haya en `raiz` (`tipo`: 'codes' o 'passes'). */
+function conectaQuitar(raiz, tipo) {
+  raiz?.querySelectorAll('[data-quitar]').forEach((b) => {
+    if (b.dataset.conectado) return;
+    b.dataset.conectado = '1';
+    b.onclick = () => ocupado(b, async () => {
+      const r = await llamar('hide_my_history', { p_kind: tipo, p_ids: [b.dataset.quitar] });
+      const caja = b.closest('.quitable');
+      const otra = caja?.nextElementSibling || caja?.previousElementSibling;
+      caja?.remove();
+      (otra?.matches?.('a') ? otra : otra?.querySelector?.('a'))?.focus?.();
+      if (r?.at) deshacerQuitar(tipo, r.at, t('Quitado de tu lista'));
+    });
+  });
+  $$(`[data-quitar-todos="${tipo}"]`).forEach((b) => {
+    if (b.dataset.conectado) return;
+    b.dataset.conectado = '1';
+    b.onclick = async () => {
+      const ok = await confirma({
+        titulo: t('¿Quitar todos de tu lista?'),
+        texto: t('Solo dejan de salirte a ti. No se borran: siguen en «Descargar mis datos» y el negocio sigue viendo sus cifras.'),
+        aceptar: t('Quitar'),
+      });
+      if (!ok) return;
+      await ocupado(b, async () => {
+        const r = await llamar('hide_my_history', { p_kind: tipo, p_all: true });
+        navegar();
+        if (r?.at) deshacerQuitar(tipo, r.at, t('Quitados de tu lista'));
+      });
+    };
+  });
+}
+
 // «Tus códigos» llega por partes: los 50 más recientes y, al final de
 // «Pasados», «Ver más» con los siguientes (`my_redemptions`, `p_offset`).
 const CODIGOS_POR_PARTE = 50;
@@ -2359,7 +2415,10 @@ RUTAS.codigos = async (_partes, params) => {
     llamar('my_spot_gifts', {}).catch(() => []),
     // El pedido que se prepara (Te aviso cuando esté listo, assets/cuenta/listo.js).
     llamar('my_orders', {}).catch(() => []),
+    // ¿Se puede quitar de la lista? (la base de antes, no: sin botones).
+    quitarEnBase(),
   ]);
+  const quitar = await quitarEnBase();
   const zona = await zonasDe(lista);
   const turnoHtml = (await colaTarjetasHtml(turnos)) + listoTarjetasHtml(pedidosListo);
   // Los vivos, guardados para enseñarlos sin cobertura (y fuera los demás).
@@ -2386,8 +2445,8 @@ RUTAS.codigos = async (_partes, params) => {
       ${navigator.mediaDevices?.getUserMedia ? `<a class="pill" href="/cuenta/escanear">${ic('qr_code_scanner')} ${esc(t('Escanear un QR'))}</a>` : ''}</div>
     ${turnoHtml}
     ${nada ? '' : `<div class="olist">${bonoFilaQr()}</div>`}
-    ${conBonos ? `<h2 class="seccion-t">${esc(t('Bonos'))}</h2>
-      <div class="olist" id="codigosBonos">${bonos.map(bonoFila).join('')}</div>
+    ${conBonos ? `${seccionQuitable(t('Bonos'), quitar && bonos.some((b) => b.state !== 'active') ? 'passes' : '')}
+      <div class="olist" id="codigosBonos">${bonos.map((b) => quitable(bonoFila(b), b.id, quitar && b.state !== 'active')).join('')}</div>
       ${misBonos.mas ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="bonos">${esc(t('Ver más'))}</button></p>` : ''}` : ''}
     ${conRegalos ? `<h2 class="seccion-t">${esc(t('Regalos y cupones'))}</h2>
       <div class="olist">${regalos.map(filaRegalo).join('')}</div>` : ''}
@@ -2400,8 +2459,8 @@ RUTAS.codigos = async (_partes, params) => {
     // o anulados), como la app.
     [t('Para usar'), lista.filter(vivo)],
     [t('Pasados'), lista.filter((r) => !vivo(r))],
-  ].map(([titulo, parte], i) => (parte.length ? `<h2 class="seccion-t">${esc(titulo)}</h2>
-      <div class="olist"${i === 1 ? ' id="codigosPasados"' : ''}>${parte.map((r) => filaCanje(r, zona(r), r === resaltado)).join('')}</div>` : '')).join('')
+  ].map(([titulo, parte], i) => (parte.length ? `${seccionQuitable(titulo, i === 1 && quitar ? 'codes' : '')}
+      <div class="olist"${i === 1 ? ' id="codigosPasados"' : ''}>${parte.map((r) => quitable(filaCanje(r, zona(r), r === resaltado), r.id, i === 1 && quitar)).join('')}</div>` : '')).join('')
     + ((lista || []).length >= CODIGOS_POR_PARTE ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="codigos">${esc(t('Ver más'))}</button></p>` : '')
     : !nada ? ''
       : pantallaVacia({
@@ -2413,6 +2472,7 @@ RUTAS.codigos = async (_partes, params) => {
         botones: `<a class="pill accent" href="/cuenta/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
       })}`);
   $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
+  if (quitar) { conectaQuitar($('#codigosBonos'), 'passes'); conectaQuitar($('#codigosPasados'), 'codes'); }
   // Los bonos gastados o caducados siguientes, al final de «Bonos».
   const masBonos = $('[data-ver-mas="bonos"]');
   if (masBonos) {
@@ -2423,8 +2483,10 @@ RUTAS.codigos = async (_partes, params) => {
         bonos.push(...parte);
         const caja = $('#codigosBonos');
         const antes = caja.children.length;
-        caja.insertAdjacentHTML('beforeend', parte.map(bonoFila).join(''));
-        caja.children[antes]?.focus?.();
+        caja.insertAdjacentHTML('beforeend', parte.map((b) => quitable(bonoFila(b), b.id, quitar && b.state !== 'active')).join(''));
+        if (quitar) conectaQuitar(caja, 'passes');
+        const nuevo = caja.children[antes];
+        (nuevo?.matches?.('a') ? nuevo : nuevo?.querySelector?.('a'))?.focus?.();
         if (parte.length < BONOS_POR_PARTE) masBonos.closest('.ver-mas').remove();
         else masBonos.disabled = false;
       } catch (e) { masBonos.disabled = false; toast(e.message || String(e), true); }
@@ -2443,12 +2505,14 @@ RUTAS.codigos = async (_partes, params) => {
         const pasados = parte.filter((r) => !vivo(r));
         let caja = $('#codigosPasados');
         if (!caja && pasados.length) {
-          mas.closest('.ver-mas').insertAdjacentHTML('beforebegin', `<h2 class="seccion-t">${esc(t('Pasados'))}</h2><div class="olist" id="codigosPasados"></div>`);
+          mas.closest('.ver-mas').insertAdjacentHTML('beforebegin', `${seccionQuitable(t('Pasados'), quitar ? 'codes' : '')}<div class="olist" id="codigosPasados"></div>`);
           caja = $('#codigosPasados');
         }
         const antes = caja ? caja.children.length : 0;
-        caja?.insertAdjacentHTML('beforeend', pasados.map((r) => filaCanje(r, z(r), false)).join(''));
-        caja?.children[antes]?.focus?.();
+        caja?.insertAdjacentHTML('beforeend', pasados.map((r) => quitable(filaCanje(r, z(r), false), r.id, quitar)).join(''));
+        if (quitar) conectaQuitar(caja, 'codes');
+        const nueva = caja?.children[antes];
+        (nueva?.matches?.('a') ? nueva : nueva?.querySelector?.('a'))?.focus?.();
         if (parte.length < CODIGOS_POR_PARTE) mas.closest('.ver-mas').remove();
         else mas.disabled = false;
       } catch (e) { mas.disabled = false; toast(e.message || String(e), true); }

@@ -293,6 +293,9 @@
   var GRUPOS = 'M3.98 12.98C5.11 12.98 6 12.09 6 11.02C6 9.89 5.11 9 3.98 9C2.91 9 2.02 9.89 2.02 11.02C2.02 12.09 2.91 12.98 3.98 12.98ZM5.11 14.11C4.78 14.06 4.41 14.02 3.98 14.02C3 14.02 2.06 14.2 1.22 14.58C0.47 14.91 0 15.61 0 16.45V18H4.5V16.41C4.5 15.56 4.73 14.77 5.11 14.11ZM20.02 12.98C21.09 12.98 21.98 12.09 21.98 11.02C21.98 9.89 21.09 9 20.02 9C18.89 9 18 9.89 18 11.02C18 12.09 18.89 12.98 20.02 12.98ZM24 16.45C24 15.61 23.53 14.91 22.78 14.58C21.94 14.2 21 14.02 20.02 14.02C19.59 14.02 19.22 14.06 18.89 14.11C19.27 14.77 19.5 15.56 19.5 16.41V18H24V16.45ZM16.22 13.64C15.05 13.12 13.64 12.75 12 12.75C10.36 12.75 8.95 13.12 7.78 13.64C6.7 14.11 6 15.19 6 16.41V18H18V16.41C18 15.19 17.3 14.11 16.22 13.64ZM8.06 15.98C8.16 15.75 8.2 15.61 9 15.33C9.94 14.95 10.97 14.77 12 14.77C13.03 14.77 14.06 14.95 15 15.33C15.8 15.61 15.84 15.75 15.94 15.98H8.06ZM12 8.02C12.56 8.02 12.98 8.44 12.98 9C12.98 9.56 12.56 9.98 12 9.98C11.44 9.98 11.02 9.56 11.02 9C11.02 8.44 11.44 8.02 12 8.02ZM12 6C10.36 6 9 7.36 9 9C9 10.64 10.36 12 12 12C13.64 12 15 10.64 15 9C15 7.36 13.64 6 12 6Z';
   var SORTEO = 'M20.02 6H17.81C17.95 5.67 18 5.34 18 5.02C18 3.33 16.64 2.02 15 2.02C13.97 2.02 13.03 2.53 12.52 3.33L12 4.03L11.48 3.33C10.97 2.53 10.03 2.02 9 2.02C7.36 2.02 6 3.33 6 5.02C6 5.34 6.05 5.67 6.19 6H3.98C2.91 6 2.02 6.89 2.02 8.02V18.98C2.02 20.11 2.91 21 3.98 21H20.02C21.09 21 21.98 20.11 21.98 18.98V8.02C21.98 6.89 21.09 6 20.02 6ZM15 3.98C15.56 3.98 15.98 4.45 15.98 5.02C15.98 5.53 15.56 6 15 6C14.44 6 14.02 5.53 14.02 5.02C14.02 4.45 14.44 3.98 15 3.98ZM9 3.98C9.56 3.98 9.98 4.45 9.98 5.02C9.98 5.53 9.56 6 9 6C8.44 6 8.02 5.53 8.02 5.02C8.02 4.45 8.44 3.98 9 3.98ZM20.02 18.98H3.98V17.02H20.02V18.98ZM20.02 14.02H3.98V8.02H9.09L6.98 10.83L8.62 12L11.02 8.77L12 7.41L12.98 8.77L15.38 12L17.02 10.83L14.91 8.02H20.02V14.02Z';
   var TIENDA = 'M2.02 3.98H17.02V6H2.02V3.98ZM15 17.02H17.02V14.02H18V12L17.02 6.98H2.02L0.98 12V14.02H2.02V20.02H11.02V14.02H15V17.02ZM9 18H3.98V14.02H9V18ZM3.05 12 3.66 9H15.38L15.94 12H3.05ZM23.02 18H20.02V15H18V18H15V20.02H18V23.02H20.02V20.02H23.02V18Z';
+  // «Borrar» todo: preguntando (el paso de confirmar) y lo borrado, para «Deshacer».
+  var preguntando = false;
+  var deshacer = null;
   function pinta(pop) {
     var rec = recientes();
     var html = '';
@@ -309,7 +312,17 @@
           + '<span><b>' + esc(x[0].t) + '</b><small>' + esc(x[0].s || '') + '</small></span></a>';
       }).join('') + '</section>';
     }
-    if (rec.length) {
+    // «Borrar» todo, en dos pasos (como la app): primero se pregunta y,
+    // borradas, «Deshacer» las devuelve (hasta que se vuelve a pintar).
+    if (preguntando && rec.length && T.clearAsk) {
+      html += '<section><p class="busq-pregunta" role="alert" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-weight:600">' + esc(T.clearAsk)
+        + ' <button type="button" class="busq-borrar" data-borrar-si>' + esc(T.clear) + '</button>'
+        + ' <button type="button" class="busq-borrar" data-borrar-no>' + esc(T.cancel || '') + '</button></p></section>';
+    } else if (deshacer && !rec.length && T.cleared) {
+      html += '<section><p class="busq-pregunta" role="status" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-weight:600">' + esc(T.cleared)
+        + ' <button type="button" class="busq-borrar" data-deshacer>' + esc(T.undo || '') + '</button></p></section>';
+    }
+    if (rec.length && !preguntando) {
       html += '<section><' + hT + '><span>' + esc(T.recent) + '</span><button type="button" class="busq-borrar" data-borrar-todo>' + esc(T.clear) + '</button></' + hT + '>'
         + '<div class="busq-chips">' + rec.map(function (t) {
           return '<span class="busq-chip"><button type="button" data-busca="' + esc(t) + '">' + esc(t) + '</button>'
@@ -352,8 +365,19 @@
       var t = b.getAttribute('data-quita');
       pon(KB, recientes().filter(function (x) { return x !== t; }));
     } else if (b.hasAttribute('data-borrar-todo')) {
+      // Sin los textos nuevos (una página de antes en caché), como antes.
+      if (T.clearAsk) preguntando = true; else pon(KB, null);
+    } else if (b.hasAttribute('data-borrar-si')) {
+      deshacer = recientes();
+      preguntando = false;
       pon(KB, null);
+    } else if (b.hasAttribute('data-borrar-no')) {
+      preguntando = false;
+    } else if (b.hasAttribute('data-deshacer')) {
+      if (deshacer) pon(KB, deshacer);
+      deshacer = null;
     }
+    if (!b.hasAttribute('data-borrar-si')) deshacer = null;
     pidePopulares().then(pinta);
     campo.focus();
   });
