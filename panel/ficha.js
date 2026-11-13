@@ -942,10 +942,11 @@ PAGES.alta = async (v, param) => {
     2: () => `${htmlDonde(A)}
       <div class="conlocal" data-con-local${A.sin_local ? ' hidden' : ''}>
       <div class="full"><h2 class="alta-sub">Horario</h2><p class="muted" style="margin:0 0 10px">Si aún no lo tienes claro, puedes ponerlo luego.</p><div data-horario></div></div>
-      <div class="full"><h2 class="alta-sub">Cómo es tu local</h2></div>${htmlSitio(A.sitio, { ...A, dietas: dietasCaben([A.category_id], cats, A.sitio) })}</div>`,
+      <details class="bloque full"><summary><span class="b-tit">Cómo es tu local</span><span class="b-res">Opcional</span></summary><div class="b-cuerpo form">${htmlSitio(A.sitio, { ...A, dietas: dietasCaben([A.category_id], cats, A.sitio) })}</div></details></div>`,
     3: () => `<div class="full"><h2 class="alta-sub">Fotos</h2><p class="muted" style="margin:0">Opcional: lo puedes completar después desde Tu ficha.</p></div>
       ${htmlFotos(A.fotos)}
       <div class="full"><h2 class="alta-sub">Contacto y redes</h2></div>${htmlContacto(A)}
+      ${ME?.email ? `<p class="full" data-mi-correo${A.contact_email.trim() ? ' hidden' : ''} style="margin:-4px 0 0"><button class="btn sm ghost" type="button" data-usar-correo><span>Usar el de tu cuenta <span translate="no">(${esc(ME.email)})</span></span></button></p>` : ''}
       <div class="full"><h2 class="alta-sub">Datos para Klendar</h2></div>${htmlKlendar(A)}
       ${htmlMayores(A)}
       <label class="f full casilla"><input type="checkbox" name="terms" ${A.terms ? 'checked' : ''}>
@@ -1005,7 +1006,17 @@ PAGES.alta = async (v, param) => {
       f.elements.no_fixed_venue.addEventListener('change', () => { lee(f); pintaSinLocal(f, A); });
       editorHorario($('[data-horario]', v), A.horas, (h) => { A.horas = h; });
     }
-    if (paso === 3) activaFotos(v, A.fotos, (sel) => { lee(f); pinta(sel); }, true);
+    if (paso === 3) {
+      activaFotos(v, A.fotos, (sel) => { lee(f); pinta(sel); }, true);
+      // «Usar el de tu cuenta»: un toque en vez de escribirlo (no se rellena
+      // solo: se ve en la ficha). Como la app.
+      const mio = $('[data-mi-correo]', v);
+      const usar = $('[data-usar-correo]', v);
+      // Justo debajo del correo (htmlContacto es el de «Tu ficha» también).
+      if (mio) f.elements.contact_email.closest('label').after(mio);
+      if (usar) usar.onclick = () => { f.elements.contact_email.value = ME.email; lee(f); KL_CAMPO(f.elements.contact_email, null); mio.hidden = true; };
+      f.elements.contact_email.addEventListener('input', () => { if (mio) mio.hidden = !!f.elements.contact_email.value.trim(); });
+    }
     const atras = $('[data-atras]', v);
     // Del primer paso, otra vez a «¿Qué vas a dar de alta?».
     if (atras) atras.onclick = () => { lee(f); location.hash = paso > 1 ? `#/alta/${paso - 1}` : '#/alta'; };

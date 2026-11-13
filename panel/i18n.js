@@ -1079,6 +1079,8 @@ const I18N = makeI18N({
     "Le llega una invitación (en la app y por correo) que tiene que aceptar. Si aún no tiene cuenta, la verá al crearla con ese correo. Caduca a los 14 días. Tiene que tener 16 años (18 si tu negocio es +18).": "They get an invitation (in the app and by email) that they have to accept. If they don't have an account yet, they'll see it when they sign up with that email. It expires after 14 days. They need to be 16 (18 if your business is 18+).",
     // ── «Cómo es tu local» y el sitio de cada publicación (2026-10-05) ──
     "Cómo es tu local": "About your place",
+    "Opcional": "Optional",
+    "Usar el de tu cuenta": "Use your account email",
     "Marca lo que tenga tu local: sale en tu ficha y la gente lo puede buscar en los filtros.": "Tick what your place has: it shows on your page and people can filter by it.",
     "Terraza": "Terrace",
     "Bajo techo": "Indoor",
