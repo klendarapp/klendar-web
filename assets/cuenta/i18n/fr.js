@@ -1135,6 +1135,8 @@ KL_DIC('fr', {
   "No hace falta pedirlo: mira su ficha, guárdalo en favoritos y verás lo que publica.": "Pas besoin de le demander : regarde sa fiche, ajoute-le à tes favoris et tu verras ce qu'il publie.",
   "No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.": "Tu n’as bloqué personne. Ça se fait depuis un avis, ta liste d’amis ou une invitation.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "Pas de connexion. Vérifie ta connexion internet et réessaie.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Un problème de notre côté. On s’en occupe. Réessaie dans quelques minutes.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "La connexion est lente. Réessaie dans un instant.",
   "No hay nadie esperando": "Personne n’attend",
   "No hay partidos esta semana": "Pas de matchs cette semaine",
   "No hemos podido completar el acceso. Vuelve a intentarlo.": "Impossible de terminer la connexion. Réessaie.",

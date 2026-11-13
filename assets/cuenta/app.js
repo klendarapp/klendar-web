@@ -270,14 +270,28 @@ async function sinRobots() {
   try { return { token: await window.KL_CAPTCHA?.() }; } catch (e) { return { error: e }; }
 }
 
+// Sin red, lento, sesión caducada o servidor caído: lo mismo que la app
+// (`classifyError`), nunca el texto técnico.
+function familiaError(m) {
+  if (/Failed to fetch|NetworkError|network|Load failed/i.test(m) || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+    return 'No hay conexión. Revisa tu internet y vuelve a probar.';
+  }
+  if (/timed? ?out|AbortError|aborted/i.test(m)) return 'La conexión va lenta. Inténtalo de nuevo en un momento.';
+  if (/JWT expired|PGRST301|invalid JWT|refresh_token_not_found|session_not_found/i.test(m)) {
+    return 'Tu sesión ha caducado. Vuelve a entrar para continuar.';
+  }
+  if (/server_error|upstream|Bad Gateway|Service Unavailable|Gateway Time|PGRST00[0-3]/i.test(m)) {
+    return 'Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.';
+  }
+  return '';
+}
 function amable(msg) {
   const m = String(msg || '');
   for (const [k, v] of Object.entries(ERRORES)) {
     if (m === k || m.includes(k)) return t(v);
   }
-  if (/Failed to fetch|NetworkError|network|Load failed/i.test(m)) {
-    return t('No hay conexión. Revisa tu internet y vuelve a probar.');
-  }
+  const familia = familiaError(m);
+  if (familia) return t(familia);
   return t('Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.');
 }
 
@@ -292,7 +306,8 @@ async function llamar(fn, args = {}) {
   // `datos`: lo demás que manda la base con el error (p. ej. de qué negocio
   // es una exclusiva), para las pantallas que lo cuentan con nombre.
   const falla = (clave, datos = null) => Object.assign(new Error(amable(clave)), { clave: String(clave || ''), datos });
-  if (res.error) throw falla(res.error.message);
+  // Un 5xx sin texto útil (la base o la red de Supabase caídas).
+  if (res.error) throw falla(res.error.message || (res.status >= 500 ? 'server_error' : ''));
   const d = res.data;
   if (d && typeof d === 'object' && !Array.isArray(d) && d.ok === false) throw falla(d.error, d);
   return d;

@@ -205,6 +205,22 @@ const ERRORS = {
   'mime type': 'Ese archivo no es una foto. Prueba con una JPG o PNG.',
 };
 
+// Sin red, lento, sesión caducada o servidor caído: lo mismo que la app
+// (`classifyError`), nunca el texto técnico.
+function familiaError(m) {
+  if (/Failed to fetch|NetworkError|network|Load failed/i.test(m) || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+    return 'No hay conexión. Revisa tu internet y vuelve a probar.';
+  }
+  if (/timed? ?out|AbortError|aborted/i.test(m)) return 'La conexión va lenta. Inténtalo de nuevo en un momento.';
+  if (/JWT expired|PGRST301|invalid JWT|refresh_token_not_found|session_not_found/i.test(m)) {
+    return 'Tu sesión ha caducado. Vuelve a entrar para continuar.';
+  }
+  if (/server_error|upstream|Bad Gateway|Service Unavailable|Gateway Time|PGRST00[0-3]/i.test(m)) {
+    return 'Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.';
+  }
+  return '';
+}
+
 /** El error tal y como se lo enseñamos a quien lleva el negocio.
  *
  * Los códigos conocidos tienen su frase; lo que viene de Postgres (permisos,
@@ -217,9 +233,8 @@ function friendly(msg) {
   for (const codigo of Object.keys(ERRORS).sort((a, b) => b.length - a.length)) {
     if (m.includes(codigo)) return ERRORS[codigo];
   }
-  if (/Failed to fetch|NetworkError|network|Load failed/i.test(m)) {
-    return 'No hay conexión. Revisa tu internet y vuelve a probar.';
-  }
+  const familia = familiaError(m);
+  if (familia) return familia;
   // Lo que ya viene escrito para la persona (nuestras frases, en español) se
   // enseña tal cual; lo demás (Postgres, Storage, un código sin traducir) no.
   if (Object.values(ERRORS).includes(m) || /[áéíóúñ¿¡]/i.test(m)) return m;
@@ -534,7 +549,7 @@ async function rpc(fn, args = {}) {
     throw new Error(friendly(e?.message));
   }
   // Nunca el texto de Postgres tal cual: el código, si lo hay, se traduce.
-  if (res.error) throw Object.assign(new Error(friendly(res.error.message)), { clave: res.error.message });
+  if (res.error) throw Object.assign(new Error(friendly(res.error.message || (res.status >= 500 ? 'server_error' : ''))), { clave: res.error.message });
   return res.data;
 }
 

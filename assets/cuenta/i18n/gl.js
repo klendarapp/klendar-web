@@ -1135,6 +1135,8 @@ KL_DIC('gl', {
   "No hace falta pedirlo: mira su ficha, guárdalo en favoritos y verás lo que publica.": "Non fai falta pedilo: mira a súa ficha, gárdao en favoritos e verás o que publica.",
   "No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.": "Non bloqueaches a ninguén. Faise desde unha recensión, a túa lista de amigos ou un convite.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "Non hai conexión. Revisa a túa conexión a internet e volve probar.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Problema da nosa parte. Xa estamos niso. Téntao de novo nuns minutos.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "A conexión vai lenta. Téntao de novo nun momento.",
   "No hay nadie esperando": "Non hai ninguén agardando",
   "No hay partidos esta semana": "Non hai partidos esta semana",
   "No hemos podido completar el acceso. Vuelve a intentarlo.": "Non puidemos completar o acceso. Volve intentalo.",

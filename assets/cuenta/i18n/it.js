@@ -1135,6 +1135,8 @@ KL_DIC('it', {
   "No hace falta pedirlo: mira su ficha, guárdalo en favoritos y verás lo que publica.": "Non serve chiederlo: guarda la sua scheda, salvalo nei preferiti e vedrai cosa pubblica.",
   "No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.": "Non hai bloccato nessuno. Si fa da una recensione, dalla tua lista di amici o da un invito.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "Nessuna connessione. Controlla internet e riprova.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Un problema da parte nostra. Ci stiamo già lavorando. Riprova tra qualche minuto.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "La connessione è lenta. Riprova tra un attimo.",
   "No hay nadie esperando": "Non c’è nessuno in attesa",
   "No hay partidos esta semana": "Nessuna partita questa settimana",
   "No hemos podido completar el acceso. Vuelve a intentarlo.": "Non siamo riusciti a completare l’accesso. Riprova.",

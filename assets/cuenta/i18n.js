@@ -173,6 +173,9 @@ const APP_EN = {
   'Vas muy rápido. Espera un momento y vuelve a probar.': "You're going too fast. Wait a moment and try again.",
   'Todavía te faltan sellos para el premio.': 'You still need more stamps for the reward.',
   'No hay conexión. Revisa tu internet y vuelve a probar.': 'No connection. Check your internet and try again.',
+  'Tu sesión ha caducado. Vuelve a entrar para continuar.': 'Your session has expired. Log in again to continue.',
+  'Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.': "A problem on our end. We're on it. Try again in a few minutes.",
+  'La conexión va lenta. Inténtalo de nuevo en un momento.': 'The connection is slow. Try again in a moment.',
   'Algo no ha ido bien. Si vuelve a pasar, escríbenos a info@klendar.app.': "Something went wrong. If it happens again, email info@klendar.app.",
 
   // Entrar

@@ -2121,6 +2121,8 @@ KL_DIC('it', {
   "No has marcado ningún local.": "Non hai segnato nessun locale.",
   "No has ocultado ninguna.": "Non ne hai nascosta nessuna.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "Nessuna connessione. Controlla internet e riprova.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Un problema da parte nostra. Ci stiamo già lavorando. Riprova tra qualche minuto.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "La connessione è lenta. Riprova tra un attimo.",
   "No hay nada que exportar en este periodo.": "Non c’è niente da esportare in questo periodo.",
   "No hay nadie esperando": "Non c’è nessuno in attesa",
   "No hay nadie esperando.": "Non c’è nessuno in attesa.",

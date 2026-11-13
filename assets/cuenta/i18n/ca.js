@@ -1135,6 +1135,8 @@ KL_DIC('ca', {
   "No hace falta pedirlo: mira su ficha, guárdalo en favoritos y verás lo que publica.": "No cal demanar-lo: mira'n la fitxa, desa'l a preferits i veuràs el que publica.",
   "No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.": "No has bloquejat ningú. Es fa des d'una ressenya, de la teva llista d'amics o d'una invitació.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "No hi ha connexió. Revisa la connexió a internet i torna-ho a provar.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Un problema per part nostra. Ja hi estem treballant. Torna-ho a provar d'aquí a uns minuts.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "La connexió va lenta. Torna-ho a provar d'aquí a un moment.",
   "No hay nadie esperando": "No hi ha ningú esperant",
   "No hay partidos esta semana": "No hi ha partits aquesta setmana",
   "No hemos podido completar el acceso. Vuelve a intentarlo.": "No hem pogut completar l'accés. Torna-ho a provar.",

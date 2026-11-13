@@ -2121,6 +2121,8 @@ KL_DIC('eu', {
   "No has marcado ningún local.": "Ez duzu lokalik markatu.",
   "No has ocultado ninguna.": "Ez duzu bat ere ezkutatu.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "Ez dago konexiorik. Egiaztatu zure internet eta saiatu berriro.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Arazo bat gure aldean. Konpontzen ari gara. Saiatu berriro minutu batzuk barru.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "Konexioa motel dabil. Saiatu berriro une batean.",
   "No hay nada que exportar en este periodo.": "Ez dago ezer esportatzeko aldi honetan.",
   "No hay nadie esperando": "Ez dago inor itxaroten",
   "No hay nadie esperando.": "Ez dago inor zain.",

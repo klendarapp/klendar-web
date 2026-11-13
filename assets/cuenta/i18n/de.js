@@ -1135,6 +1135,8 @@ KL_DIC('de', {
   "No hace falta pedirlo: mira su ficha, guárdalo en favoritos y verás lo que publica.": "Du musst ihn nicht wünschen: Sieh dir seine Seite an, speichere ihn als Favorit und du siehst, was er postet.",
   "No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.": "Du hast niemanden blockiert. Das geht über eine Bewertung, deine Freundesliste oder eine Einladung.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "Keine Verbindung. Prüf dein Internet und versuch es noch mal.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Problem auf unserer Seite. Wir kümmern uns schon darum. Versuch es in ein paar Minuten noch mal.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "Die Verbindung ist langsam. Versuch es gleich noch mal.",
   "No hay nadie esperando": "Niemand wartet",
   "No hay partidos esta semana": "Diese Woche keine Spiele",
   "No hemos podido completar el acceso. Vuelve a intentarlo.": "Der Zugang konnte nicht abgeschlossen werden. Versuch es noch mal.",

@@ -2121,6 +2121,8 @@ KL_DIC('fr', {
   "No has marcado ningún local.": "Tu n’as coché aucun établissement.",
   "No has ocultado ninguna.": "Tu n’en as masqué aucune.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "Pas de connexion. Vérifie ta connexion internet et réessaie.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Un problème de notre côté. On s’en occupe. Réessaie dans quelques minutes.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "La connexion est lente. Réessaie dans un instant.",
   "No hay nada que exportar en este periodo.": "Rien à exporter sur cette période.",
   "No hay nadie esperando": "Personne n’attend",
   "No hay nadie esperando.": "Personne n’attend.",

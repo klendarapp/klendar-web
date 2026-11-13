@@ -1135,6 +1135,8 @@ KL_DIC('eu', {
   "No hace falta pedirlo: mira su ficha, guárdalo en favoritos y verás lo que publica.": "Ez dago eskatu beharrik: begiratu haren fitxa, gorde gogokoetan eta argitaratzen duena ikusiko duzu.",
   "No has bloqueado a nadie. Se hace desde una reseña, tu lista de amigos o una invitación.": "Ez duzu inor blokeatu. Iritzi batetik, zure lagun-zerrendatik edo gonbidapen batetik egiten da.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "Ez dago konexiorik. Egiaztatu zure internet eta saiatu berriro.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Arazo bat gure aldean. Konpontzen ari gara. Saiatu berriro minutu batzuk barru.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "Konexioa motel dabil. Saiatu berriro une batean.",
   "No hay nadie esperando": "Ez dago inor itxaroten",
   "No hay partidos esta semana": "Ez dago partidarik aste honetan",
   "No hemos podido completar el acceso. Vuelve a intentarlo.": "Ezin izan dugu sarbidea osatu. Saiatu berriro.",

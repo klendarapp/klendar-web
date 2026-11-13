@@ -763,6 +763,8 @@ const I18N = makeI18N({
     "Esa foto pesa demasiado. Prueba con otra más pequeña.": "That photo is too big. Try a smaller one.",
     "Ese archivo no es una foto. Prueba con una JPG o PNG.": "That file isn't a photo. Try a JPG or PNG.",
     "No hay conexión. Revisa tu internet y vuelve a probar.": "No connection. Check your internet and try again.",
+    "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "A problem on our end. We're on it. Try again in a few minutes.",
+    "La conexión va lenta. Inténtalo de nuevo en un momento.": "The connection is slow. Try again in a moment.",
     "No se ha podido guardar. Si vuelve a pasar, escríbenos a info@klendar.app.": "Couldn't save. If it happens again, email info@klendar.app.",
     "Reservada": "Reserved",
     "Caducada": "Expired",

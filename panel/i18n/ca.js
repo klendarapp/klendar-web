@@ -2121,6 +2121,8 @@ KL_DIC('ca', {
   "No has marcado ningún local.": "No has marcat cap local.",
   "No has ocultado ninguna.": "No n’has amagat cap.",
   "No hay conexión. Revisa tu internet y vuelve a probar.": "No hi ha connexió. Revisa la connexió a internet i torna-ho a provar.",
+  "Problema en nuestro lado. Ya estamos en ello. Inténtalo de nuevo en unos minutos.": "Un problema per part nostra. Ja hi estem treballant. Torna-ho a provar d'aquí a uns minuts.",
+  "La conexión va lenta. Inténtalo de nuevo en un momento.": "La connexió va lenta. Torna-ho a provar d'aquí a un moment.",
   "No hay nada que exportar en este periodo.": "No hi ha res per exportar en aquest període.",
   "No hay nadie esperando": "No hi ha ningú esperant",
   "No hay nadie esperando.": "No hi ha ningú esperant.",
