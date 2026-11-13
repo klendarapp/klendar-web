@@ -29,14 +29,18 @@
     es: {
       kicker: 'Cola virtual',
       waiting: (n) => (n === 0 ? 'No hay nadie esperando' : n === 1 ? '1 persona esperando' : `${n} personas esperando`),
-      wait: (m) => `Espera aproximada: unos ${m} min`,
+      wait: (m) => (m <= 1 ? 'Espera aproximada: 1 min' : `Espera aproximada: unos ${m} min`),
       noPace: 'La espera aproximada sale cuando avancen los primeros',
       login: 'Entrar para coger número',
       help: (x) => `Te avisamos en el móvil cuando te toque. Tendrás ${x} minutos para presentarte.`,
       none: 'Hoy no hay cola virtual',
       noneBody: (b) => `${b} no ha abierto la cola. Pregunta en la puerta.`,
+      ended: 'La cola de hoy ha terminado',
+      endedBody: (b) => `${b} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.`,
+      unavailable: 'La cola no está disponible',
+      unavailableBody: (b) => `Ahora mismo ${b} no tiene la cola virtual. Pregunta en la puerta.`,
       closed: 'La cola está cerrada',
-      closedBody: 'Hoy ya no se apunta nadie más.',
+      closedBody: 'Ahora no se apunta nadie más.',
       full: 'La cola está llena',
       fullBody: 'Prueba dentro de un rato.',
       bad: 'Este cartel ya no funciona',
@@ -48,14 +52,18 @@
     en: {
       kicker: 'Virtual queue',
       waiting: (n) => (n === 0 ? 'Nobody is waiting' : n === 1 ? '1 person waiting' : `${n} people waiting`),
-      wait: (m) => `Estimated wait: about ${m} min`,
+      wait: (m) => (m <= 1 ? 'Approximate wait: 1 min' : `Approximate wait: about ${m} min`),
       noPace: 'The estimated wait appears once the first people have been seen',
       login: 'Log in to get a number',
       help: (x) => `We'll let you know on your phone when it's your turn. You'll have ${x} minutes to get there.`,
       none: 'No virtual queue today',
       noneBody: (b) => `${b} hasn't opened the queue. Ask at the door.`,
+      ended: "Today's queue has finished",
+      endedBody: (b) => `${b} isn't calling anyone else from the queue today. Ask at the door.`,
+      unavailable: "The queue isn't available",
+      unavailableBody: (b) => `${b} doesn't have the virtual queue right now. Ask at the door.`,
       closed: 'The queue is closed',
-      closedBody: 'Nobody else can join today.',
+      closedBody: 'Nobody else can join right now.',
       full: 'The queue is full',
       fullBody: 'Try again in a while.',
       bad: 'This poster no longer works',
@@ -104,6 +112,14 @@
     const b = info.business;
     const q = info.queue;
     const verLocal = (cls) => `<a class="pill${cls ? ` ${cls}` : ''}" href="${esc(ficha(lang, b))}">${esc(S.venue)}</a>`;
+    // El cartel es bueno, pero el local ahora no sale (bloqueado por el pago,
+    // sin verificar o cerrado): no es que el cartel no funcione.
+    if (info.unavailable) {
+      return vacio(S, S.unavailable, S.unavailableBody(b.name || ''),
+        `<a class="pill accent" href="${en ? '/en/discover' : '/descubre'}">${esc(S.explore)}</a>`);
+    }
+    // Terminada hoy («Terminar por hoy») no es lo mismo que sin abrir.
+    if (!q && info.ended_today) return vacio(S, S.ended, S.endedBody(b.name || ''), verLocal('accent'));
     if (!q) return vacio(S, S.none, S.noneBody(b.name || ''), verLocal('accent'));
     const dir = direccionCorta(b.address, b.city);
     const cab = `<header class="cola-cab">
@@ -112,7 +128,8 @@
           <h1>${esc(b.name || '')}</h1>
           ${dir ? `<p class="muted">${esc(dir)}</p>` : ''}</div>
       </header>`;
-    const n = Number(q.waiting) || 0;
+    // Personas, no grupos (como la app; una base de antes, los turnos).
+    const n = Number(q.waiting_people ?? q.waiting) || 0;
     // Siempre, también sin nadie, y redondeada como la app (`roundWait`).
     const redondea = (m) => (m < 15 ? m : Math.floor((m + 2) / 5) * 5);
     const espera = `<p class="muted">${esc(q.wait_minutes != null ? S.wait(redondea(q.wait_minutes)) : S.noPace)}</p>`;
@@ -130,12 +147,12 @@
       <section class="cola-estado">
         <p class="cola-cuantos">${esc(S.waiting(n))}</p>
         ${espera}
+        ${b.adults_only ? `<p class="cola-mayores">${esc(S.adults)}</p>` : ''}
         <div class="vacio-botones">
           <a class="pill accent" href="${esc(entrar(lang, code))}" rel="nofollow">${esc(S.login)}</a>
           ${verLocal('')}
         </div>
         <p class="muted cola-ayuda">${esc(S.help(q.call_minutes || 5))}</p>
-        ${b.adults_only ? `<p class="muted cola-ayuda">${esc(S.adults)}</p>` : ''}
       </section>`;
   }
 

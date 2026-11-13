@@ -3875,5 +3875,13 @@ KL_DIC('ca', {
   "−25 % en piercing": "−25 % en pírcings",
   "−25 % en repostería": "−25 % en rebosteria",
   "−30 % en el primer mes": "−30 % el primer mes",
-  "−30 % en la primera cuota": "−30 % en la primera quota"
+  "−30 % en la primera cuota": "−30 % en la primera quota",
+  "La cola está cerrada.": "La cua està tancada.",
+  "Ya está en la cola.": "Ja és a la cua.",
+  "Devuelto a la cola": "Retornat a la cua",
+  "{waiting} esperando · 1 atendido": "{waiting} esperant · 1 atès",
+  "Devolver a la cola": "Retorna a la cua",
+  "Cerrada · {espera} esperando": "Tancada · {espera} esperant",
+  "Sin abrir hoy": "Sense obrir avui",
+  "Ir a la cola": "Ves a la cua"
 });

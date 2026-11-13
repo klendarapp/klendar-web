@@ -33,6 +33,8 @@ const COLA_ERR = {
   not_called: 'Todavía no le has avisado.',
   bad_name: 'Escribe su nombre.',
   bad_party: 'Elige cuántos son, de 1 a 20.',
+  queue_closed: 'La cola está cerrada.',
+  not_done: 'Ya está en la cola.',
 };
 const colaError = (code) => I18N.t(COLA_ERR[code] || friendly(code));
 /** Llama a la base; si dice que no, lanza el error ya en palabras. */
@@ -52,9 +54,12 @@ const colaPersonas = (n) => bi(n === 1 ? '1 persona' : `${n} personas`, n === 1 
 const colaNombre = (e) => (e.guest
   ? `${e.name || ''} ${I18N.t('(sin la app)')}`
   : (e.name || I18N.t('Usuario de Klendar')));
+/** Lo que va la hora del servidor por delante de la de este ordenador (`now`
+ * de cada respuesta): «Le quedan» se cuenta con la del servidor. */
+let COLA_DESFASE = 0;
 /** «3:12» que quedan hasta `iso`. */
 const colaQueda = (iso) => {
-  const s = Math.max(0, Math.round((new Date(iso).getTime() - Date.now()) / 1000));
+  const s = Math.max(0, Math.round((new Date(iso).getTime() - (Date.now() + COLA_DESFASE)) / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 const colaCartelUrl = (code) => `${I18N.pub === 'en' ? '/en/poster/queue/' : '/cartel/cola/'}${encodeURIComponent(code || '')}`;
@@ -62,6 +67,8 @@ const colaCartelUrl = (code) => `${I18N.pub === 'en' ? '/en/poster/queue/' : '/c
 PAGES.cola = async (v) => {
   let d = await colaRpc('business_queue', { p_business: BIZ.id });
   let firma = '';
+  const desfase = () => { const x = Date.parse(d?.now || ''); if (Number.isFinite(x)) COLA_DESFASE = x - Date.now(); };
+  desfase();
 
   const firmaDe = (x) => JSON.stringify([x.code, x.queue && [x.queue.status, x.queue.waiting, x.queue.served, x.queue.pace_minutes,
     x.queue.auto_paused, (x.queue.entries || []).map((e) => [e.id, e.status])]]);
@@ -112,7 +119,8 @@ PAGES.cola = async (v) => {
     const esperan = es.filter((e) => e.status === 'waiting');
     const hechos = es.filter((e) => e.status !== 'called' && e.status !== 'waiting');
     const abierta = q.status === 'open';
-    const ritmo = q.pace_minutes != null ? Number(q.pace_minutes).toLocaleString(LOC(), { maximumFractionDigits: 1 }) : null;
+    // «Uno cada 0,3 min» avisando seguido no dice nada: desde 1 min (como la app).
+    const ritmo = q.pace_minutes != null && Number(q.pace_minutes) >= 1 ? Number(q.pace_minutes).toLocaleString(LOC(), { maximumFractionDigits: 1 }) : null;
     const fila = (e, extra) => `<div class="cola-fila" data-entrada="${esc(e.id)}">
         <div class="cola-fila-t"><b>${esc(`${colaNumero(e.number)} · ${colaNombre(e)}`)}</b>
           <span class="muted">${esc(colaPersonas(e.party_size))}${e.status === 'waiting' ? esc(bi(` · desde las ${fmtHora(e.joined_at)}`, ` · since ${fmtHora(e.joined_at)}`)) : ''}</span></div>
@@ -121,7 +129,7 @@ PAGES.cola = async (v) => {
       <div class="page-head"><h1>Cola virtual</h1><span class="tag ${abierta ? 'st-active' : 'dim'}">${esc(I18N.t(abierta ? 'Abierta' : 'Cerrada'))}</span></div>
       ${q.auto_paused ? `<div class="scan-result warn cola-pausa">${esc(I18N.t('Tres seguidos no han venido: ya no avisamos solos. Toca «Avisar al siguiente» cuando puedas atender.'))}</div>` : ''}
       <div class="card cola-cifras">
-        <p class="cola-n">${esc(bi(`${fmtNum(q.waiting)} esperando · ${fmtNum(q.served)} atendidos`, `${fmtNum(q.waiting)} waiting · ${fmtNum(q.served)} served`))}</p>
+        <p class="cola-n">${esc(bi(`${fmtNum(q.waiting)} esperando · ${Number(q.served) === 1 ? '1 atendido' : `${fmtNum(q.served)} atendidos`}`, `${fmtNum(q.waiting)} waiting · ${fmtNum(q.served)} served`))}</p>
         ${ritmo ? `<p class="muted">${esc(bi(`Uno cada ${ritmo} min`, `One every ${ritmo} min`))}</p>` : ''}
         ${!abierta ? `<p class="muted">${esc(I18N.t('No entra nadie más. Los que ya están siguen en su turno.'))}</p>` : ''}
         <button class="btn primary cola-avisar" type="button" data-cola="avisar"${q.waiting ? '' : ' disabled'}>${esc(I18N.t(q.waiting ? 'Avisar al siguiente' : 'No hay nadie esperando'))}</button>
@@ -138,7 +146,8 @@ PAGES.cola = async (v) => {
               <button type="button" class="bad" data-quita="${esc(e.id)}">${esc(I18N.t('Quitar de la cola'))}</button></div></details>`)).join('')}</div>`
       : `<p class="muted">${esc(I18N.t('No hay nadie esperando.'))}</p>`}
       ${hechos.length ? `<details class="help cola-hechos"><summary>${esc(bi(`Terminados (${hechos.length})`, `Finished (${hechos.length})`))}</summary>
-        <div class="cola-lista">${hechos.map((e) => fila(e, `<span class="tag ${e.status === 'served' ? 'st-active' : 'dim'}">${esc(I18N.t(COLA_ESTADO[e.status] || e.status))}</span>`)).join('')}</div></details>` : ''}
+        <div class="cola-lista">${hechos.map((e) => fila(e, `<span class="tag ${e.status === 'served' ? 'st-active' : 'dim'}">${esc(I18N.t(COLA_ESTADO[e.status] || e.status))}</span>
+          ${e.status === 'left' ? '' : `<button class="btn sm" type="button" data-devuelve="${esc(e.id)}">${esc(I18N.t('Devolver a la cola'))}</button>`}`)).join('')}</div></details>` : ''}
       <div class="card">
         <div class="cola-acciones">
           ${abierta ? `<button class="btn" type="button" data-cola="apuntar">${esc(I18N.t('Apuntar a alguien'))}</button>` : ''}
@@ -157,6 +166,7 @@ PAGES.cola = async (v) => {
   const recarga = async (nuevo = null) => {
     try {
       d = nuevo || await colaRpc('business_queue', { p_business: BIZ.id });
+      desfase();
     } catch (e) { if (nuevo === null) return; toast(e.message, true); return; }
     if (!v.isConnected) return;
     if (nuevo || firmaDe(d) !== firma) { pinta(); I18N.translate(v); }
@@ -173,6 +183,24 @@ PAGES.cola = async (v) => {
       if (boton?.isConnected) boton.disabled = false;
       recarga();
     }
+  };
+
+  /** «Ha llegado», «No vino» o «Quitar»: lo hace y deja unos segundos para
+   * deshacerlo (un clic sin querer no le quita el turno a nadie; como la app). */
+  const marca = async (boton, id, estado) => {
+    const e = (d.queue?.entries || []).find((x) => x.id === id);
+    if (boton) boton.disabled = true;
+    try {
+      const r = await colaRpc('queue_set_status', { p_entry: id, p_status: estado });
+      await recarga(r);
+    } catch (err) {
+      toast(err.message, true);
+      if (boton?.isConnected) boton.disabled = false;
+      recarga();
+      return;
+    }
+    colaToastDeshacer(`${e ? `${colaNumero(e.number)} · ` : ''}${I18N.t(COLA_ESTADO[estado])}`,
+      () => haz(null, 'queue_return', { p_entry: id }));
   };
 
   function engancha() {
@@ -196,7 +224,7 @@ PAGES.cola = async (v) => {
             intro: esc(I18N.t('Para quien no tiene la app: le llamas tú cuando le toque.')),
             fields: [
               { name: 'name', label: I18N.t('Nombre'), maxlength: 40, required: true },
-              { name: 'party', label: I18N.t('¿Cuántos son?'), type: 'select', value: '1', options: Array.from({ length: 20 }, (_, i) => [String(i + 1), String(i + 1)]) },
+              { name: 'party', label: I18N.t('¿Cuántas personas?'), type: 'select', value: '1', options: Array.from({ length: 20 }, (_, i) => [String(i + 1), String(i + 1)]) },
             ],
             submit: I18N.t('Apuntar'),
           });
@@ -231,13 +259,14 @@ PAGES.cola = async (v) => {
         return null;
       };
     });
-    $$('[data-llega]', v).forEach((b) => { b.onclick = () => haz(b, 'queue_set_status', { p_entry: b.dataset.llega, p_status: 'served' }); });
-    $$('[data-novino]', v).forEach((b) => { b.onclick = () => haz(b, 'queue_set_status', { p_entry: b.dataset.novino, p_status: 'no_show' }); });
+    $$('[data-llega]', v).forEach((b) => { b.onclick = () => marca(b, b.dataset.llega, 'served'); });
+    $$('[data-novino]', v).forEach((b) => { b.onclick = () => marca(b, b.dataset.novino, 'no_show'); });
+    $$('[data-devuelve]', v).forEach((b) => { b.onclick = () => haz(b, 'queue_return', { p_entry: b.dataset.devuelve }, 'Devuelto a la cola'); });
     $$('[data-quita]', v).forEach((b) => {
       b.onclick = async () => {
         const e = (d.queue?.entries || []).find((x) => x.id === b.dataset.quita);
         if (!await confirmDlg(I18N.t('¿Quitar de la cola?'), esc(bi(`Se le avisa de que ya no está en la cola${e ? ` (${colaNumero(e.number)})` : ''}.`, `We'll let them know they're no longer in the queue${e ? ` (${colaNumero(e.number)})` : ''}.`)), { submit: I18N.t('Quitar de la cola'), danger: true })) return;
-        haz(null, 'queue_set_status', { p_entry: b.dataset.quita, p_status: 'removed' }, 'Quitado de la cola');
+        marca(null, b.dataset.quita, 'removed');
       };
     });
   }
@@ -256,14 +285,26 @@ PAGES.cola = async (v) => {
   }, 1000);
 };
 
+/** Un aviso con «Deshacer» unos segundos (como el de la app). */
+function colaToastDeshacer(msg, alDeshacer) {
+  const aviso = document.createElement('div');
+  aviso.className = 'toast';
+  aviso.innerHTML = `<span>${esc(msg)}</span> <button type="button" class="toast-accion">${esc(I18N.t('Deshacer'))}</button>`;
+  $('#toasts').appendChild(aviso);
+  const fuera = () => aviso.isConnected && aviso.parentNode.removeChild(aviso);
+  aviso.querySelector('button').onclick = () => { fuera(); alDeshacer(); };
+  setTimeout(fuera, 6000);
+}
+
 // ── En el inicio del panel ──────────────────────────────────────────────────
-/** «Cola virtual · 3 esperando», si hoy está abierta. Si falla, nada. */
+/** «Cola virtual · 3 esperando», si hoy hay cola (abierta o cerrada: los de
+ * dentro siguen; como la app). Si falla, nada. */
 async function resumenCola(caja) {
   if (!caja) return;
   const negocio = BIZ.id;
   const q = await rpc('business_queue', { p_business: negocio }).catch(() => null);
   if (!caja.isConnected || BIZ?.id !== negocio) return;
-  if (q?.ok === false || !q?.queue || q.queue.status !== 'open') { caja.innerHTML = ''; return; }
+  if (q?.ok === false || !q?.queue) { caja.innerHTML = ''; return; }
   const n = Number(q.queue.waiting) || 0;
   caja.innerHTML = `<div class="filas-inicio"><a class="fila-inicio" href="#/cola">${svg('cola')}<span>${esc(bi(`Cola virtual · ${n} esperando`, `Virtual queue · ${n} waiting`))}</span>${ms('chevron_right')}</a></div>`;
 }

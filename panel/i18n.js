@@ -3,6 +3,12 @@
 'use strict';
 
 const I18N = makeI18N({
+    // ── Cola virtual: arreglos (2026-11-13) ─────────────────────────────
+    "La cola está cerrada.": "The queue is closed.",
+    "Ya está en la cola.": "Already in the queue.",
+    "Devuelto a la cola": "Put back in the queue",
+    "Devolver a la cola": "Put back in the queue",
+    "¿Cuántas personas?": "How many people?",
     // ── Entrada ───────────────────────────────────────────────────────────
     'Entra en tu panel': 'Log in to your dashboard',
     'Email': 'Email',

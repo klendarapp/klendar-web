@@ -2,6 +2,12 @@
 'use strict';
 
 const APP_EN = {
+  // Cola virtual: arreglos (2026-11-13)
+  "La cola no está disponible": "The queue isn't available",
+  "La cola de hoy ha terminado": "Today's queue has finished",
+  "Ahora no se apunta nadie más.": "Nobody else can join right now.",
+  "Menos": "Fewer",
+  "Espera aproximada: 1 min": "Approximate wait: 1 min",
   // «Tus datos» y «Quitar de tu lista» (2026-11-13)
   "Tus datos": "Your data",
   "Qué guardamos, descargarlo y borrar tus historiales": "What we store, downloading it and clearing your history",

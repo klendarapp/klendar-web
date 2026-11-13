@@ -656,7 +656,22 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .cola-turno h2 { margin: 0 0 6px; font-size: 22px; }
 .cola-turno p { margin: 0 0 6px; }
 .cola-turno.llamado { border: 2px solid var(--ink); }
-.cola-tu { font-weight: 800; }
+.cola-tu { font-weight: 800; color: var(--ink-2); }
+/* Cabecera como la app: logo, nombre y dirección corta. */
+.cola-cab { display: flex; align-items: center; gap: 14px; margin: 0 0 14px; }
+.cola-cab .cola-h1 { margin: 2px 0 2px; }
+.cola-cab .muted { margin: 0; }
+.cola-logo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none; }
+.cola-campana { color: var(--ink); margin: 0 0 4px; }
+.cola-turno.llamado .cola-tu { margin-top: 14px; }
+/* +18 antes de coger número, a la vista (no en letra pequeña debajo). */
+.cola-mayores { font-weight: 700; margin: 12px 0 0; }
+/* «¿Cuántos sois?» con − y +, como la app. */
+.cola-paso-t { font-weight: 600; color: var(--ink-2); margin: 0; }
+.cola-paso { display: grid; grid-template-columns: 48px 1fr 48px; align-items: center; border: 1px solid var(--glass-border); background: var(--glass); border-radius: 16px; padding: 4px 6px; }
+.cola-paso-b { min-width: 44px; min-height: 44px; border: 0; background: transparent; color: var(--ink); font-size: 1.5rem; line-height: 1; border-radius: 12px; cursor: pointer; }
+.cola-paso-b:disabled { color: var(--ink-3, var(--ink-2)); opacity: .4; cursor: default; }
+.cola-paso-v { text-align: center; font-weight: 700; font-size: 1.0625rem; }
 .cola-toca { font-family: var(--display); font-weight: 800; font-size: 30px; letter-spacing: -.02em; }
 .cola-turno .cola-numero { font-family: var(--display); font-weight: 800; font-size: 64px; line-height: 1; letter-spacing: -.03em; margin: 6px 0 14px; }
 .cola-cuenta { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 22px; }

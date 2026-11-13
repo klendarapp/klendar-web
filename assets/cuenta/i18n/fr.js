@@ -2169,5 +2169,12 @@ KL_DIC('fr', {
   "¿Ya no lo esperas?": "Tu n’attends plus ?",
   "¿Ya tienes cuenta?": "Tu as déjà un compte ?",
   "Última actualización: {x}": "Dernière mise à jour : {x}",
-  "Último aviso: hay una plaza libre y tienes hasta las {hora} para cogerla.": "Dernier rappel : une place s’est libérée et tu as jusqu’à {hora} pour la prendre."
+  "Último aviso: hay una plaza libre y tienes hasta las {hora} para cogerla.": "Dernier rappel : une place s’est libérée et tu as jusqu’à {hora} pour la prendre.",
+  "La cola no está disponible": "La file n’est pas disponible",
+  "La cola de hoy ha terminado": "La file d’aujourd’hui est terminée",
+  "Ahora no se apunta nadie más.": "Plus personne ne peut s’inscrire pour le moment.",
+  "Menos": "Moins",
+  "Espera aproximada: 1 min": "Attente estimée : 1 min",
+  "Ahora mismo {name} no tiene la cola virtual. Pregunta en la puerta.": "{name} n’a pas la file virtuelle pour le moment. Demandez à l’entrée.",
+  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} n’appelle plus personne de la file aujourd’hui. Demandez à l’entrée."
 });

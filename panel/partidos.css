@@ -6,21 +6,21 @@
 .pt-solo { margin: 0 0 14px; }
 .pt-grupo { padding: 4px 18px 6px; }
 .pt-cab { display: flex; align-items: center; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; padding: 12px 0 8px; }
-.card .pt-cab h2, .pt-cab h2 { margin: 0; font-size: 16px; }
+.card .pt-cab h2, .pt-cab h2 { margin: 0; font-size: 1rem; }
 .pt-fila { display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--glass-border); }
 .pt-info { flex: 1; min-width: 0; display: grid; gap: 2px; }
 .pt-info b { overflow-wrap: anywhere; }
-.pt-cuando { font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.pt-cuando { font-size: .8125rem; color: var(--ink-2); font-weight: 600; }
 .pt-linea { margin-top: 4px; }
-.pt-oferta { color: var(--accent-text); font-weight: 700; font-size: 14px; background: none; border: 0; padding: 0; font-family: inherit; text-align: left; }
+.pt-oferta { color: var(--accent-text); font-weight: 700; font-size: .875rem; background: none; border: 0; padding: 0; font-family: inherit; text-align: left; }
 button.pt-oferta { cursor: pointer; }
 button.pt-oferta:hover { text-decoration: underline; text-underline-offset: 3px; }
-.pt-oferta-nueva { font-size: 14px; }
+.pt-oferta-nueva { font-size: .875rem; }
 /* «Lo ponemos»: un chip que se marca (con ✓), como en la app. */
 .pt-chip { position: relative; display: inline-flex; flex: none; }
 .pt-chip input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
 .pt-chip span { display: inline-flex; align-items: center; min-height: 40px; padding: 8px 14px; border-radius: 999px; box-sizing: border-box;
-  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); font-weight: 600; font-size: 14px; white-space: nowrap; cursor: pointer; }
+  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); font-weight: 600; font-size: .875rem; white-space: nowrap; cursor: pointer; }
 .pt-chip input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); } /* sin negrita: no cambia de ancho (Iván, 11-11) */
 .pt-chip input:checked + span::before { content: '✓'; margin-right: 6px; }
 .pt-chip input:focus-visible + span { outline: 2px solid var(--ink); outline-offset: 2px; }
@@ -28,21 +28,21 @@ button.pt-oferta:hover { text-decoration: underline; text-underline-offset: 3px;
 /* La hoja de la oferta: los botones uno debajo de otro y del mismo ancho. */
 .pt-hoja { display: grid; gap: 10px; margin: 16px 0 4px; }
 .pt-hoja .btn { width: 100%; justify-content: center; white-space: normal; text-align: center; }
-.pt-fuente { font-size: 12px; color: var(--ink-2); margin: 14px 0 0; }
+.pt-fuente { font-size: .75rem; color: var(--ink-2); margin: 14px 0 0; }
 .pt-fuente a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px; }
 .pt-nuevo { max-width: 640px; display: grid; gap: 14px; }
 
 /* «Pones siempre» (las reglas) y el «⋯» de cada fila («Poner siempre…»). */
 .pt-siempre { padding: 14px 18px; }
-.pt-siempre h2 { font-size: 16px; margin: 0 0 8px; }
+.pt-siempre h2 { font-size: 1rem; margin: 0 0 8px; }
 .pt-reglas { display: flex; flex-wrap: wrap; gap: 8px; }
 .pt-regla { display: inline-flex; align-items: center; gap: 4px; min-height: 36px; padding: 4px 6px 4px 14px; border-radius: 999px;
   border: 1px solid var(--glass-border); background: var(--surface); font-weight: 600; }
-.pt-regla-x { border: 0; background: transparent; color: var(--ink-2); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: 14px; }
+.pt-regla-x { border: 0; background: transparent; color: var(--ink-2); width: 32px; height: 32px; border-radius: 50%; cursor: pointer; font-size: .875rem; }
 .pt-regla-x:hover, .pt-regla-x:focus-visible { background: var(--glass-border); color: var(--ink); }
 .pt-mas { position: relative; flex: none; }
 .pt-mas summary { list-style: none; cursor: pointer; width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%;
-  color: var(--ink-2); font-size: 20px; line-height: 1; }
+  color: var(--ink-2); font-size: 1.25rem; line-height: 1; }
 .pt-mas summary::-webkit-details-marker { display: none; }
 .pt-mas summary:hover, .pt-mas[open] summary, .pt-mas summary:focus-visible { background: var(--glass-border); color: var(--ink); }
 .pt-mas-menu { position: absolute; right: 0; top: 44px; z-index: 5; min-width: 240px; max-width: min(320px, 80vw); padding: 6px;
@@ -50,7 +50,7 @@ button.pt-oferta:hover { text-decoration: underline; text-underline-offset: 3px;
   display: flex; flex-direction: column; }
 .pt-mas-menu .linkbtn { text-align: left; padding: 10px 12px; border-radius: 10px; text-decoration: none; }
 .pt-mas-menu .linkbtn:hover, .pt-mas-menu .linkbtn:focus-visible { background: var(--glass-border); }
-.pt-info small.muted { display: block; font-size: 12px; margin-top: 2px; }
+.pt-info small.muted { display: block; font-size: .75rem; margin-top: 2px; }
 
 /* «Poner siempre…» y su buscador (equipos, deportistas y competiciones). */
 .pt-siempre-mas { font-weight: 700; }

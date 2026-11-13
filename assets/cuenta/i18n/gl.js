@@ -2169,5 +2169,12 @@ KL_DIC('gl', {
   "¿Ya no lo esperas?": "Xa non o esperas?",
   "¿Ya tienes cuenta?": "Xa tes conta?",
   "Última actualización: {x}": "Última actualización: {x}",
-  "Último aviso: hay una plaza libre y tienes hasta las {hora} para cogerla.": "Último aviso: hai unha praza libre e tes ata as {hora} para collela."
+  "Último aviso: hay una plaza libre y tienes hasta las {hora} para cogerla.": "Último aviso: hai unha praza libre e tes ata as {hora} para collela.",
+  "La cola no está disponible": "A cola non está dispoñible",
+  "La cola de hoy ha terminado": "A cola de hoxe rematou",
+  "Ahora no se apunta nadie más.": "Agora non se apunta ninguén máis.",
+  "Menos": "Menos",
+  "Espera aproximada: 1 min": "Espera aproximada: 1 min",
+  "Ahora mismo {name} no tiene la cola virtual. Pregunta en la puerta.": "Agora mesmo {name} non ten a cola virtual. Pregunta na porta.",
+  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} hoxe xa non atende a ninguén máis da cola. Pregunta na porta."
 });

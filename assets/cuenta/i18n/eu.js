@@ -2169,5 +2169,12 @@ KL_DIC('eu', {
   "¿Ya no lo esperas?": "Ez duzu gehiago itxarongo?",
   "¿Ya tienes cuenta?": "Baduzu konturik?",
   "Última actualización: {x}": "Azken eguneraketa: {x}",
-  "Último aviso: hay una plaza libre y tienes hasta las {hora} para cogerla.": "Azken abisua: plaza bat libre dago, eta ordu honetara arte duzu hartzeko: {hora}."
+  "Último aviso: hay una plaza libre y tienes hasta las {hora} para cogerla.": "Azken abisua: plaza bat libre dago, eta ordu honetara arte duzu hartzeko: {hora}.",
+  "La cola no está disponible": "Ilara ez dago erabilgarri",
+  "La cola de hoy ha terminado": "Gaurko ilara amaitu da",
+  "Ahora no se apunta nadie más.": "Orain ez du beste inork izena ematen.",
+  "Menos": "Gutxiago",
+  "Espera aproximada: 1 min": "Gutxi gorabeherako itxaronaldia: min 1",
+  "Ahora mismo {name} no tiene la cola virtual. Pregunta en la puerta.": "{name}: orain ez dago ilara birtualik. Galdetu atean.",
+  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name}: gaur ez da ilarako beste inor artatuko. Galdetu atean."
 });

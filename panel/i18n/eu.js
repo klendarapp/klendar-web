@@ -3875,5 +3875,13 @@ KL_DIC('eu', {
   "−25 % en piercing": "−% 25 piercingetan",
   "−25 % en repostería": "−% 25 gozogintzan",
   "−30 % en el primer mes": "−% 30 lehen hilabetean",
-  "−30 % en la primera cuota": "−% 30 lehen kuotan"
+  "−30 % en la primera cuota": "−% 30 lehen kuotan",
+  "La cola está cerrada.": "Ilara itxita dago.",
+  "Ya está en la cola.": "Ilaran dago jada.",
+  "Devuelto a la cola": "Ilarara itzulia",
+  "{waiting} esperando · 1 atendido": "{waiting} zain · 1 artatuta",
+  "Devolver a la cola": "Itzuli ilarara",
+  "Cerrada · {espera} esperando": "Itxita · {espera} zain",
+  "Sin abrir hoy": "Gaur ireki gabe",
+  "Ir a la cola": "Joan ilarara"
 });

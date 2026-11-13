@@ -13,7 +13,7 @@ import { esc, html, rpc, supabasePublic } from './page.js';
 import { publicPage } from './public.js';
 import KC from '../../assets/cola.js';
 
-export const COLA_JS_V = 4;
+export const COLA_JS_V = 5;
 
 const HEAD = `<meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
@@ -32,6 +32,7 @@ const HEAD = `<meta name="robots" content="noindex, nofollow">
 .cola-cuantos { font-family: var(--display); font-size: 28px; font-weight: 800; line-height: 1.2; letter-spacing: -.02em; }
 .cola-estado .vacio-botones { margin-top: 18px; }
 .cola-estado .cola-ayuda { font-size: 14px; margin: 14px auto 0; max-width: 40ch; }
+.cola-estado .cola-mayores { font-weight: 700; margin: 12px 0 0; }
 </style>`;
 
 export async function queuePublicPage(rawCode, lang) {
@@ -43,9 +44,10 @@ export async function queuePublicPage(rawCode, lang) {
   const sp = supabasePublic();
   const S = KC.T[en ? 'en' : 'es'];
   const descripcion = !vale ? S.badBody
-    : !info.queue ? S.noneBody(info.business.name || '')
-      : info.queue.status !== 'open' ? S.closedBody
-        : S.waiting(Number(info.queue.waiting) || 0);
+    : info.unavailable ? S.unavailableBody(info.business.name || '')
+      : !info.queue ? (info.ended_today ? S.endedBody(info.business.name || '') : S.noneBody(info.business.name || ''))
+        : info.queue.status !== 'open' ? S.closedBody
+          : S.waiting(Number(info.queue.waiting_people ?? info.queue.waiting) || 0);
   const body = `
   <div id="cola-pub" class="cola-pub" data-code="${esc(code)}" data-estado="${vale ? 'ok' : 'bad'}">${KC.cuerpo(info, lang, code)}</div>
   ${vale ? `<script src="/assets/cola.js?v=${COLA_JS_V}" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>` : ''}`;

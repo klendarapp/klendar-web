@@ -6,7 +6,7 @@
 .afd-cifra { margin: 8px 0 0; font-family: Sora, Manrope, system-ui, sans-serif; line-height: 1; font-variant-numeric: tabular-nums; }
 .afd-cifra b { font-size: clamp(64px, 18vw, 120px); font-weight: 800; letter-spacing: -.02em; }
 .afd-max { font-size: clamp(28px, 7vw, 44px); font-weight: 700; color: var(--ink-2); }
-.afd-nivel { margin: 8px 0 0; min-height: 1.4em; font-size: 20px; font-weight: 700; }
+.afd-nivel { margin: 8px 0 0; min-height: 1.4em; font-size: 1.25rem; font-weight: 700; }
 /* −1 y +1: enormes e iguales (mismo estilo y tamaño), a prueba de dedos. */
 .afd-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 22px 0 0; }
 .afd-btn { min-height: clamp(150px, 30vh, 260px); border-radius: 28px; border: 0; cursor: pointer;
@@ -28,14 +28,14 @@
 .afd-con-unidad input { flex: 1; min-width: 0; }
 .afd-aviso { margin: 0; }
 
-.afd-cifras-t { margin: 0 0 10px; font-size: 16px; }
+.afd-cifras-t { margin: 0 0 10px; font-size: 1rem; }
 .afd-noches { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; margin: 0 0 12px; scrollbar-width: thin; }
 .afd-noches .btn { flex: none; }
 .afd-noches .btn.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 .afd-grafica { display: block; width: 100%; max-width: 640px; height: auto; margin: 0 0 10px; }
 .afd-grafica rect { fill: var(--ink); }
 .afd-grafica .afd-tope { stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 5 4; vector-effect: non-scaling-stroke; }
-.afd-grafica text { fill: var(--ink-2); font-size: 11px; }
+.afd-grafica text { fill: var(--ink-2); font-size: .6875rem; }
 .afd-dato { margin: 2px 0 0; }
 /* En el móvil, el título y el icono de ajustes en la misma fila. */
 @media (max-width: 760px) {

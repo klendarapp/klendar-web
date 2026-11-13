@@ -3875,5 +3875,13 @@ KL_DIC('it', {
   "−25 % en piercing": "−25% sui piercing",
   "−25 % en repostería": "−25% sulla pasticceria",
   "−30 % en el primer mes": "−30 % il primo mese",
-  "−30 % en la primera cuota": "−30% sulla prima quota"
+  "−30 % en la primera cuota": "−30% sulla prima quota",
+  "La cola está cerrada.": "La coda è chiusa.",
+  "Ya está en la cola.": "È già in coda.",
+  "Devuelto a la cola": "Rimesso in coda",
+  "{waiting} esperando · 1 atendido": "{waiting} in attesa · 1 servito",
+  "Devolver a la cola": "Rimetti in coda",
+  "Cerrada · {espera} esperando": "Chiusa · {espera} in attesa",
+  "Sin abrir hoy": "Non aperta oggi",
+  "Ir a la cola": "Vai alla coda"
 });

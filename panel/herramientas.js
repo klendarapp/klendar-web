@@ -195,7 +195,8 @@ function herrFilas(o, demanda, { cajaFilas, cajaPendiente }) {
       : bi('Menú del día · publicar el de hoy', 'Daily menu · publish today’s')) : '',
     // La cola abierta ya sale en su fila (panel/cola.js); si la usa y ahora
     // está cerrada, la fila para abrirla.
-    !ent && !herrSi(o, 'queue', 'open') && herrSi(o, 'queue', 'used_30d') ? fila('#/cola', 'cola', bi('Cola virtual · cerrada', 'Virtual queue · closed')) : '',
+    // Con cola hoy (abierta o cerrada) ya sale su fila «· N esperando».
+    !ent && !herrSi(o, 'queue', 'open') && !herrSi(o, 'queue', 'today') && herrSi(o, 'queue', 'used_30d') ? fila('#/cola', 'cola', bi('Cola virtual · cerrada', 'Virtual queue · closed')) : '',
     gestiona() && !org && bc.suggested && (bc.live || bc.reminder_at) ? fila('#/antes-de-cerrar', 'bolsa', bc.live
       ? bi('Antes de cerrar · publicada hoy', 'Before closing · published today')
       : bi(`Antes de cerrar · aviso a las ${bc.reminder_at}`, `Before closing · reminder at ${bc.reminder_at}`)) : '',
@@ -390,9 +391,11 @@ PAGES.herramientas = async (v) => {
       grupo: 'local', usa: herrSi(o, 'queue', 'open') || herrSi(o, 'queue', 'used_30d'),
       icon: 'cola', titulo: bi('Cola virtual', 'Virtual queue'),
       frase: bi('Para que no hagan cola en la puerta: se apuntan con el QR del cartel y les avisamos cuando les toca.', 'So nobody queues at the door: people join with the poster’s QR and we tell them when it’s their turn.'),
+      // Como la app: abierta, cerrada con gente o sin abrir hoy.
       estado: herrSi(o, 'queue', 'open') ? bi(`Abierta · ${espera} esperando`, `Open · ${espera} waiting`)
-        : herrSi(o, 'queue', 'used_30d') ? bi('Cerrada ahora', 'Closed now') : bi('Apagado', 'Off'),
-      on: herrSi(o, 'queue', 'open'), botones: [[abrir, '#/cola']],
+        : herrSi(o, 'queue', 'today') ? bi(`Cerrada · ${espera} esperando`, `Closed · ${espera} waiting`) : bi('Sin abrir hoy', 'Not open today'),
+      // «Abrir» se confundía con abrir la cola: lleva a la cola.
+      on: herrSi(o, 'queue', 'open'), botones: [[bi('Ir a la cola', 'Go to the queue'), '#/cola']],
     }),
     // Te aviso cuando esté listo (panel/listo.js): el avisador de pedidos
     // del mostrador. Activarlo, propietario o encargado (dentro de «Pedidos

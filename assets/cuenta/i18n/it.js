@@ -2169,5 +2169,12 @@ KL_DIC('it', {
   "¿Ya no lo esperas?": "Non lo aspetti più?",
   "¿Ya tienes cuenta?": "Hai già un account?",
   "Última actualización: {x}": "Ultimo aggiornamento: {x}",
-  "Último aviso: hay una plaza libre y tienes hasta las {hora} para cogerla.": "Ultimo avviso: c’è un posto libero e hai tempo fino alle {hora} per prenderlo."
+  "Último aviso: hay una plaza libre y tienes hasta las {hora} para cogerla.": "Ultimo avviso: c’è un posto libero e hai tempo fino alle {hora} per prenderlo.",
+  "La cola no está disponible": "La coda non è disponibile",
+  "La cola de hoy ha terminado": "La coda di oggi è finita",
+  "Ahora no se apunta nadie más.": "Ora non si iscrive più nessuno.",
+  "Menos": "Meno",
+  "Espera aproximada: 1 min": "Attesa stimata: 1 min",
+  "Ahora mismo {name} no tiene la cola virtual. Pregunta en la puerta.": "Al momento {name} non ha la coda virtuale. Chiedi alla porta.",
+  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} oggi non chiama più nessuno dalla coda. Chiedi alla porta."
 });

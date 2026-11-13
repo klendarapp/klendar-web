@@ -28,6 +28,7 @@ const COLA_ERR = {
   team: 'Eres del equipo de este local.',
   adults_only: 'Solo para mayores de 18 años.',
   bad_code: 'Este cartel ya no funciona.',
+  unavailable: 'La cola no está disponible',
 };
 const colaError = (e) => (COLA_ERR[e?.clave] ? t(COLA_ERR[e.clave]) : (e?.message || amable('')));
 
@@ -35,7 +36,12 @@ const colaError = (e) => (COLA_ERR[e?.clave] ? t(COLA_ERR[e.clave]) : (e?.messag
  * fuente recortada de «Tu cuenta». */
 const COLA_SVG = '<svg class="ms-svg" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M2 17h2v.5H3v1h1v.5H2v1h3v-4H2v1zm1-9h1V4H2v1h1v3zm-1 3h1.8L2 13.1v.9h3v-1H3.2L5 10.9V10H2v1zm5-6v2h14V5H7zm0 14h14v-2H7v2zm0-6h14v-2H7v2z"/></svg>';
 
+/** La campana de «¡Te toca!» (notifications_active), como la app. */
+const COLA_CAMPANA = '<svg class="ms-svg" viewBox="0 0 24 24" width="36" height="36" aria-hidden="true"><path fill="currentColor" d="M7.58 4.08 6.15 2.65C3.75 4.48 2.17 7.3 2.03 10.5h2a8.445 8.445 0 0 1 3.55-6.42zm12.39 6.42h2c-.15-3.2-1.73-6.02-4.12-7.85l-1.42 1.43a8.495 8.495 0 0 1 3.54 6.42zM18 11c0-3.07-1.64-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2v-5zm-6 11c.14 0 .27-.01.4-.04.65-.14 1.18-.58 1.44-1.18.1-.24.15-.5.15-.78h-4c.01 1.1.9 2 2.01 2z"/></svg>';
+
 const colaNumero = (n) => (EN ? `No. ${n}` : t(`Nº ${n}`));
+/** «1 persona» / «3 personas» (lo de «¿Cuántos sois?»). */
+const colaGente = (n) => (EN ? (n === 1 ? '1 person' : `${n} people`) : (n === 1 ? '1 persona' : `${n} personas`));
 const colaEsperando = (n) => (EN
   ? (n === 0 ? 'Nobody is waiting' : n === 1 ? '1 person waiting' : `${n} people waiting`)
   : (n === 0 ? 'No hay nadie esperando' : n === 1 ? '1 persona esperando' : `${n} personas esperando`));
@@ -45,8 +51,21 @@ const colaDelante = (n) => (EN
 /** Los minutos de espera redondeados como la app (`roundWait`): tal cual por
  * debajo de 15 y, desde ahí, de 5 en 5. */
 const colaRedondea = (m) => (m < 15 ? m : Math.floor((m + 2) / 5) * 5);
+// «1 min», nunca «unos 1 min» (como la app).
 const colaEspera = (m) => (m == null ? t('La espera aproximada sale cuando avancen los primeros')
-  : (EN ? `Estimated wait: about ${colaRedondea(m)} min` : `Espera aproximada: unos ${colaRedondea(m)} min`));
+  : colaRedondea(m) <= 1 ? (EN ? 'Approximate wait: 1 min' : t('Espera aproximada: 1 min'))
+    : (EN ? `Approximate wait: about ${colaRedondea(m)} min` : `Espera aproximada: unos ${colaRedondea(m)} min`));
+/** Personas, no grupos: lo que dice la base (`waiting_people`, `ahead_people`;
+ * una base de antes, los turnos). «Eres el siguiente» va por turnos. */
+const colaPersonasEsperando = (q) => Number(q?.waiting_people ?? q?.waiting) || 0;
+const colaPersonasDelante = (me) => (Number(me?.ahead) ? Number(me.ahead_people ?? me.ahead) || 0 : 0);
+/** Lo que va la hora del servidor por delante de la de este dispositivo (`now`
+ * de cada respuesta): la cuenta atrás se cuenta con la del servidor. */
+let COLA_DESFASE = 0;
+const colaDesfase = (d) => {
+  const s = Date.parse(d?.now || '');
+  if (Number.isFinite(s)) COLA_DESFASE = s - Date.now();
+};
 const colaAyuda = (x) => (EN ? `We'll let you know on your phone when it's your turn. You'll have ${x} minutes to get there.`
   : `Te avisamos en el móvil cuando te toque. Tendrás ${x} minutos para presentarte.`);
 
@@ -59,7 +78,7 @@ const colaAntesDe = (iso, tz) => {
 };
 /** «3:12» que quedan hasta `iso` (0:00 si ya ha pasado). */
 const colaQueda = (iso) => {
-  const s = Math.max(0, Math.round((new Date(iso).getTime() - Date.now()) / 1000));
+  const s = Math.max(0, Math.round((new Date(iso).getTime() - (Date.now() + COLA_DESFASE)) / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 const colaFicha = (b) => `${pre}/b/${encodeURIComponent(b?.slug || b?.id || '')}`;
@@ -142,20 +161,41 @@ RUTAS.cola = async ([code]) => {
 
   // Lo que se ve de cada estado. `firma`: si no cambia, no se repinta (no
   // se pierde el foco ni lo elegido en «¿Cuántos sois?»).
-  const firmaDe = (d) => JSON.stringify([d.team, d.queue && [d.queue.status, d.queue.waiting, d.queue.full, d.queue.wait_minutes, d.queue.call_minutes],
-    d.me && [d.me.id, d.me.status, d.me.ahead, d.me.wait_minutes, d.me.call_deadline]]);
+  const firmaDe = (d) => JSON.stringify([d.team, d.unavailable, d.ended_today,
+    d.queue && [d.queue.status, d.queue.waiting, d.queue.waiting_people, d.queue.full, d.queue.wait_minutes, d.queue.call_minutes],
+    d.me && [d.me.id, d.me.status, d.me.ahead, d.me.ahead_people, d.me.wait_minutes, d.me.call_deadline]]);
 
-  const cabecera = (b) => `
-    <p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
-    <p class="cola-kicker">${esc(t('Cola virtual'))}</p>
-    <h1 class="cola-h1">${esc(b.name || '')}</h1>`;
+  // Como la app: el logo, el nombre y la dirección corta del local (se llega
+  // por el cartel, no desde «Tus códigos»).
+  const cabecera = (b) => {
+    const dir = [String(b.address || '').split(',')[0].trim(), String(b.city || '').trim()].filter(Boolean).join(', ');
+    return `<header class="cola-cab">
+      ${b.logo_url && /^https:\/\//.test(b.logo_url) ? `<img class="cola-logo" src="${esc(b.logo_url)}" alt="" width="56" height="56">` : ''}
+      <div><p class="cola-kicker">${esc(t('Cola virtual'))}</p>
+        <h1 class="cola-h1">${esc(b.name || '')}</h1>
+        ${dir ? `<p class="muted">${esc(dir)}</p>` : ''}</div>
+    </header>`;
+  };
 
   const pintaCola = (d) => {
     firma = firmaDe(d);
+    colaDesfase(d);
     const b = d.business || {};
     const q = d.queue;
     const me = d.me;
     document.title = `${me?.status === 'called' ? `${t('¡Te toca!')} · ` : ''}${t('Cola virtual')} · Klendar`;
+    // El cartel es bueno, pero el local ahora no sale (bloqueado por el pago,
+    // sin verificar o cerrado): no es que el cartel no funcione.
+    if (d.unavailable) {
+      pinta(pantallaVacia({
+        icono: 'block', h: 'h1',
+        titulo: t('La cola no está disponible'),
+        texto: EN ? `${b.name} doesn't have the virtual queue right now. Ask at the door.`
+          : `Ahora mismo ${b.name} no tiene la cola virtual. Pregunta en la puerta.`,
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Ver qué hay cerca'))}</a>`,
+      }));
+      return;
+    }
     // Del equipo: la cola se lleva desde el panel.
     if (d.team && !me) {
       pinta(pantallaVacia({
@@ -171,14 +211,16 @@ RUTAS.cola = async ([code]) => {
       const avisos = !llamado && typeof Notification !== 'undefined' && Notification.permission === 'default';
       pinta(`${cabecera(b)}
         <section class="cola-turno${llamado ? ' llamado' : ''}" aria-live="polite">
-          ${llamado ? `<p class="cola-toca">${esc(t('¡Te toca!'))}</p>` : `<p class="cola-tu">${esc(t('Tu número'))}</p>`}
+          ${llamado ? `
+            <p class="cola-campana">${COLA_CAMPANA}</p>
+            <p class="cola-toca">${esc(t('¡Te toca!'))}</p>
+            <p class="cola-linea"><b>${esc(EN ? `Get to the door ${colaAntesDe(me.call_deadline, tz)}` : `Preséntate en la puerta ${colaAntesDe(me.call_deadline, tz)}`)}</b></p>
+            <p class="cola-cuenta" id="cola-cuenta" aria-live="off">${esc(EN ? `You have ${colaQueda(me.call_deadline)} left` : `Te quedan ${colaQueda(me.call_deadline)}`)}</p>` : ''}
+          <p class="cola-tu">${esc(t('Tu número'))}</p>
           <p class="cola-numero">${esc(colaNumero(me.number))}</p>
           ${me.party_size ? `<p class="muted">${esc(EN ? (me.party_size === 1 ? '1 person' : `${me.party_size} people`) : (me.party_size === 1 ? '1 persona' : `${me.party_size} personas`))}</p>` : ''}
-          ${llamado ? `
-            <p class="cola-linea"><b>${esc(EN ? `Get to the door ${colaAntesDe(me.call_deadline, tz)}` : `Preséntate en la puerta ${colaAntesDe(me.call_deadline, tz)}`)}</b></p>
-            <p class="cola-cuenta" id="cola-cuenta" aria-live="off">${esc(EN ? `You have ${colaQueda(me.call_deadline)} left` : `Te quedan ${colaQueda(me.call_deadline)}`)}</p>`
-          : `
-            <p class="cola-linea"><b>${esc(colaDelante(me.ahead || 0))}</b></p>
+          ${llamado ? '' : `
+            <p class="cola-linea"><b>${esc(colaDelante(colaPersonasDelante(me)))}</b></p>
             <p class="muted">${esc(colaEspera(me.wait_minutes))}</p>`}
         </section>
         ${llamado ? '' : `<p class="muted cola-nota">${esc(t('Deja esta página abierta: sonará y vibrará cuando te toque.'))}</p>`}
@@ -214,11 +256,21 @@ RUTAS.cola = async ([code]) => {
         left: ['logout', 'Saliste de la cola', 'Si ha sido sin querer, pregunta en la puerta: pueden apuntarte.'],
         removed: ['block', 'Ya no estás en la cola', 'El local te ha quitado de la cola. Si es un error, pregunta en la puerta.'],
       }[me.status] || ['block', 'Ya no estás en la cola', 'El local te ha quitado de la cola. Si es un error, pregunta en la puerta.'];
-      pinta(`<p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
-        ${pantallaVacia({
-          icono: fin[0], h: 'h1', titulo: t(fin[1]), texto: t(fin[2]),
-          botones: `<a class="pill accent" href="${esc(colaFicha(b))}">${esc(t('Ver el local'))}</a>`,
-        }).replace('<section class="vacio">', `<section class="vacio"><p class="cola-kicker">${esc(b.name || '')} · ${esc(colaNumero(me.number))}</p>`)}`);
+      pinta(pantallaVacia({
+        icono: fin[0], h: 'h1', titulo: t(fin[1]), texto: t(fin[2]),
+        botones: `<a class="pill accent" href="${esc(colaFicha(b))}">${esc(t('Ver el local'))}</a>`,
+      }).replace('<section class="vacio">', `<section class="vacio"><p class="cola-kicker">${esc(b.name || '')} · ${esc(colaNumero(me.number))}</p>`));
+      return;
+    }
+    if (!q && d.ended_today) {
+      // Terminada hoy («Terminar por hoy»): no es que no la haya abierto.
+      pinta(pantallaVacia({
+        icono: 'storefront', h: 'h1',
+        titulo: t('La cola de hoy ha terminado'),
+        texto: EN ? `${b.name} isn't calling anyone else from the queue today. Ask at the door.`
+          : `${b.name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.`,
+        botones: `<a class="pill accent" href="${esc(colaFicha(b))}">${esc(t('Ver el local'))}</a>`,
+      }));
       return;
     }
     if (!q) {
@@ -230,13 +282,13 @@ RUTAS.cola = async ([code]) => {
       }));
       return;
     }
-    const n = Number(q.waiting) || 0;
+    const n = colaPersonasEsperando(q);
     if (q.status !== 'open' || q.full) {
       const cerrada = q.status !== 'open';
       pinta(`${cabecera(b)}
         <section class="cola-turno">
           <h2>${esc(t(cerrada ? 'La cola está cerrada' : 'La cola está llena'))}</h2>
-          <p>${esc(t(cerrada ? 'Hoy ya no se apunta nadie más.' : 'Prueba dentro de un rato.'))}</p>
+          <p>${esc(t(cerrada ? 'Ahora no se apunta nadie más.' : 'Prueba dentro de un rato.'))}</p>
           <p class="muted">${esc(colaEsperando(n))}</p>
         </section>
         <div class="cola-botones"><a class="pill" href="${esc(colaFicha(b))}">${esc(t('Ver el local'))}</a></div>`);
@@ -246,16 +298,32 @@ RUTAS.cola = async ([code]) => {
       <section class="cola-turno">
         <p class="cola-cuantos">${esc(colaEsperando(n))}</p>
         <p class="muted">${esc(colaEspera(q.wait_minutes))}</p>
+        ${b.adults_only ? `<p class="cola-mayores">${esc(t('Solo para mayores de 18 años.'))}</p>` : ''}
         ${YO ? `<form class="formu cola-form" id="f-cola" novalidate>
-          <label>${esc(t('¿Cuántos sois?'))}<select name="party">${Array.from({ length: 20 }, (_, i) => `<option value="${i + 1}"${i + 1 === party ? ' selected' : ''}>${i + 1}</option>`).join('')}</select></label>
+          <p class="cola-paso-t" id="cola-paso-t">${esc(t('¿Cuántos sois?'))}</p>
+          <div class="cola-paso" role="group" aria-labelledby="cola-paso-t">
+            <button type="button" class="cola-paso-b" data-paso="-1" aria-label="${esc(t('Menos'))}"${party <= 1 ? ' disabled' : ''}>−</button>
+            <output class="cola-paso-v" name="party_txt" aria-live="polite">${esc(colaGente(party))}</output>
+            <button type="button" class="cola-paso-b" data-paso="1" aria-label="${esc(t('Más'))}"${party >= 20 ? ' disabled' : ''}>+</button>
+          </div>
+          <input type="hidden" name="party" value="${party}">
           <button class="pill accent" type="submit">${esc(t('Coger número'))}</button>
         </form>` : `<div class="cola-botones"><a class="pill accent" href="/cuenta/entrar?siguiente=${encodeURIComponent(`cola/${codigo}`)}">${esc(t('Entrar para coger número'))}</a></div>`}
         <p class="muted cola-ayuda">${esc(colaAyuda(q.call_minutes || 5))}</p>
-        ${b.adults_only ? `<p class="muted cola-ayuda">${esc(t('Solo para mayores de 18 años.'))}</p>` : ''}
       </section>`);
     const f = $('#f-cola');
     if (!f) return;
-    f.party.onchange = () => { party = Number(f.party.value) || 1; };
+    // «¿Cuántos sois?» con − y +, como la app («1 persona»).
+    f.querySelectorAll('[data-paso]').forEach((bt) => {
+      bt.onclick = () => {
+        party = Math.min(20, Math.max(1, party + Number(bt.dataset.paso)));
+        f.party.value = String(party);
+        f.party_txt.value = colaGente(party);
+        f.querySelector('[data-paso="-1"]').disabled = party <= 1;
+        f.querySelector('[data-paso="1"]').disabled = party >= 20;
+        I18N.translate(f);
+      };
+    });
     f.onsubmit = (ev) => {
       ev.preventDefault();
       colaPreparaSonido();
@@ -295,7 +363,7 @@ RUTAS.cola = async ([code]) => {
     if (!c || info.me?.status !== 'called') return;
     c.textContent = EN ? `You have ${colaQueda(info.me.call_deadline)} left` : `Te quedan ${colaQueda(info.me.call_deadline)}`;
     // Se acabó el tiempo: la base dirá «No vino» (o que ya te atendieron).
-    if (new Date(info.me.call_deadline).getTime() <= Date.now() - 2000 && !mirando) mira(true);
+    if (new Date(info.me.call_deadline).getTime() <= Date.now() + COLA_DESFASE - 2000 && !mirando) mira(true);
   }, 1000);
   const alVolver = () => { if (document.visibilityState === 'visible') mira(); };
   document.addEventListener('visibilitychange', alVolver);
@@ -322,8 +390,10 @@ async function colaTarjetasHtml(turnos) {
       ? `${t('¡Te toca!')} ${EN ? `Before ${colaHora(x.call_deadline, tz)}` : t(`Antes de las ${colaHora(x.call_deadline, tz)}`)}`
       : [colaNumero(x.number),
         // Cada trozo por el diccionario: unidos con « · » ya no casan con él.
-        x.ahead ? (EN ? `${x.ahead} ahead` : t(`${x.ahead} delante`)) : (EN ? "You're next" : t('Eres el siguiente')),
-        x.wait_minutes != null ? (EN ? `about ${colaRedondea(x.wait_minutes)} min` : t(`unos ${colaRedondea(x.wait_minutes)} min`)) : ''].filter(Boolean).join(' · ');
+        // Personas, no grupos (como la app).
+        x.ahead ? (EN ? `${colaPersonasDelante(x)} ahead` : t(`${colaPersonasDelante(x)} delante`)) : (EN ? "You're next" : t('Eres el siguiente')),
+        x.wait_minutes != null ? (colaRedondea(x.wait_minutes) <= 1 ? '1 min'
+          : (EN ? `about ${colaRedondea(x.wait_minutes)} min` : t(`unos ${colaRedondea(x.wait_minutes)} min`))) : ''].filter(Boolean).join(' · ');
     return `<a class="ocard cola-tarjeta${x.status === 'called' ? ' llamado' : ''}" href="/cuenta/cola/${esc(x.code)}">
         ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="" loading="lazy">` : `<span class="ph">${COLA_SVG}</span>`}
         <span class="ocard-body"><b>${esc(EN ? `Your turn at ${b.name || ''}` : t(`Tu turno en ${b.name || ''}`))}</b>

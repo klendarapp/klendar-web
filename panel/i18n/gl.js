@@ -3875,5 +3875,13 @@ KL_DIC('gl', {
   "−25 % en piercing": "−25 % en piercing",
   "−25 % en repostería": "−25 % en repostaría",
   "−30 % en el primer mes": "−30 % no primeiro mes",
-  "−30 % en la primera cuota": "−30 % na primeira cota"
+  "−30 % en la primera cuota": "−30 % na primeira cota",
+  "La cola está cerrada.": "A cola está pechada.",
+  "Ya está en la cola.": "Xa está na cola.",
+  "Devuelto a la cola": "Devolto á cola",
+  "{waiting} esperando · 1 atendido": "{waiting} agardando · 1 atendido",
+  "Devolver a la cola": "Devolver á cola",
+  "Cerrada · {espera} esperando": "Pechada · {espera} agardando",
+  "Sin abrir hoy": "Sen abrir hoxe",
+  "Ir a la cola": "Ir á cola"
 });
