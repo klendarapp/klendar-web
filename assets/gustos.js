@@ -197,25 +197,28 @@
   var fijo = form.hasAttribute('data-panel-fijo');
   var hojaLupa = fijo ? form.closest('details') : null;
   var hT = fijo ? 'h3' : 'h2';
-  // «O mira por tipo de sitio»: lo pinta la página; aquí va al final del
-  // panel. Los grupos plegados enseñan «N más».
+  // «Por tipo de sitio»: lo pinta la página (todos abiertos, para quien no
+  // tiene JavaScript); aquí se pliegan y va al final del panel. Cada botón
+  // de grupo despliega sus tipos debajo de su fila (uno a la vez).
   var tipos = document.querySelector('[data-busq-tipos]');
-  if (tipos) {
-    Array.prototype.forEach.call(tipos.querySelectorAll('[data-plegado]'), function (g) {
-      var mas = g.querySelector('[data-mas-grupo]');
-      if (!mas) return;
-      Array.prototype.forEach.call(g.querySelectorAll('a.busq-cat'), function (a) { a.hidden = true; });
-      mas.hidden = false;
-      mas.addEventListener('click', function () {
-        var primera = null;
-        Array.prototype.forEach.call(g.querySelectorAll('a.busq-cat'), function (a) { a.hidden = false; if (!primera) primera = a; });
-        // Escondido, no quitado: un clic en algo que ya no está en la página
-        // cerraba la hoja (/assets/tarjetas.js lo toma por un clic fuera).
-        mas.hidden = true;
-        if (primera) primera.focus();
-      });
+  var botonesGrupo = tipos ? Array.prototype.slice.call(tipos.querySelectorAll('[data-grupo-b]')) : [];
+  function despliega(abre) {
+    botonesGrupo.forEach(function (b) {
+      var si = b === abre && b.getAttribute('aria-expanded') !== 'true';
+      b.setAttribute('aria-expanded', si ? 'true' : 'false');
+      var t = document.getElementById(b.getAttribute('aria-controls'));
+      if (t) t.hidden = !si;
     });
   }
+  despliega(null);
+  botonesGrupo.forEach(function (b) {
+    b.addEventListener('click', function () { despliega(b); });
+  });
+  // Los atajos: su frase de ayuda, solo la primera vez (como la app).
+  var atajosSec = fijo && hojaLupa ? hojaLupa.querySelector('.busq-sec') : null;
+  var notaAtajos = atajosSec && atajosSec.querySelector('[data-atajos-nota]');
+  var KN = 'klendar.atajosNota';
+  if (notaAtajos && lee(KN)) notaAtajos.hidden = true;
 
   var T = {};
   try { T = JSON.parse(form.dataset.textos || '{}'); } catch (e) { /* sin textos */ }
@@ -251,7 +254,11 @@
     + '.busq-atajo{display:flex;align-items:center;gap:12px;min-height:48px;color:var(--ink);text-decoration:none}.busq-atajo:hover{text-decoration:none}'
     + '.busq-atajo svg{flex:none;color:var(--ink-2)}.busq-atajo span{display:grid;gap:2px;min-width:0;flex:1}.busq-atajo b{font-size:15px}.busq-atajo small{margin:0}'
     + '.busq-panel.fijo{margin:0;padding:0;border:0;border-radius:0;background:none}div.busq-panel.fijo h3{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:0 0 8px;font-size:15px}'
-    + 'div.busq-panel>.busq-tipos{margin-top:18px}';
+    + 'div.busq-panel>.busq-tipos{margin-top:18px}div.busq-panel>.busq-sec{margin:16px 0 0}div.busq-panel>.busq-sec:first-child{margin-top:0}div.busq-panel>.busq-sec+section{margin-top:18px}'
+    + '.busq-fila{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;padding:2px 0}.busq-fila::-webkit-scrollbar{display:none}.busq-fila>.busq-chip{flex:none}'
+    + '.busq-formas{display:grid;grid-template-columns:1fr 1fr;gap:10px}'
+    + '.busq-formas .busq-atajo{border:1px solid var(--glass-border);border-radius:18px;padding:8px 14px;min-height:56px;background:var(--elevated,var(--surface))}'
+    + '.busq-formas .busq-atajo b{font-size:15px;line-height:1.25}';
   document.head.appendChild(estilo);
 
   var panel = document.createElement('div');
@@ -296,22 +303,25 @@
   // «Borrar» todo: preguntando (el paso de confirmar) y lo borrado, para «Deshacer».
   var preguntando = false;
   var deshacer = null;
+  // «Ver todo» (lo que buscaste) y «Ver más» (lo más buscado), abiertos.
+  var verTodas = false;
+  var popTodas = false;
   function pinta(pop) {
     var rec = recientes();
     var html = '';
-    // Los accesos del buscador en reposo, como la app: «Dónde ver el
-    // partido», «Grupos y empresas» y «Sorteos» (tanda C).
+    // «Más formas de buscar» (Iván, 2026-11-13, como la app): «Dónde
+    // verlo», «Grupos y empresas», «Sorteos» y «Pedir un local», en 2×2 y
+    // sin su explicación a la vista (la dice el lector; está dentro de cada
+    // página).
     var atajos = [[T.partidos, /^\/(en\/matches|partidos)([/?]|$)/, BALON],
       [T.grupos, /^\/(en\/groups|grupos)([/?]|$)/, GRUPOS], [T.sorteos, /^\/(en\/giveaways|sorteos)([/?]|$)/, SORTEO],
       // «Pedir un local» (a «Tu cuenta»), como la app.
       [T.pedir, /^\/cuenta\/pedir-local/, TIENDA]]
       .filter(function (x) { return x[0] && x[0].t && x[1].test(String(x[0].href || '')); });
-    if (atajos.length) {
-      html += '<section>' + atajos.map(function (x) {
-        return '<a class="busq-atajo" href="' + esc(x[0].href) + '"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="' + x[2] + '"/></svg>'
-          + '<span><b>' + esc(x[0].t) + '</b><small>' + esc(x[0].s || '') + '</small></span></a>';
-      }).join('') + '</section>';
-    }
+    var formas = atajos.length ? '<section><' + hT + '>' + esc(T.moreWays || '') + '</' + hT + '><div class="busq-formas">' + atajos.map(function (x) {
+      return '<a class="busq-atajo" href="' + esc(x[0].href) + '"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="' + x[2] + '"/></svg>'
+        + '<span><b>' + esc(x[0].t) + '</b>' + (x[0].s ? '<span class="sr">' + esc(x[0].s) + '</span>' : '') + '</span></a>';
+    }).join('') + '</div></section>' : '';
     // «Borrar» todo, en dos pasos (como la app): primero se pregunta y,
     // borradas, «Deshacer» las devuelve (hasta que se vuelve a pintar).
     if (preguntando && rec.length && T.clearAsk) {
@@ -322,20 +332,34 @@
       html += '<section><p class="busq-pregunta" role="status" style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 8px;font-weight:600">' + esc(T.cleared)
         + ' <button type="button" class="busq-borrar" data-deshacer>' + esc(T.undo || '') + '</button></p></section>';
     }
+    // Lo que buscaste, arriba: en una fila que se desliza, 5 a la vista;
+    // «Ver todo» enseña las 10 con su × y «Borrar» (sin los textos nuevos,
+    // una página de antes en caché, como antes: todas y «Borrar»).
     if (rec.length && !preguntando) {
-      html += '<section><' + hT + '><span>' + esc(T.recent) + '</span><button type="button" class="busq-borrar" data-borrar-todo>' + esc(T.clear) + '</button></' + hT + '>'
-        + '<div class="busq-chips">' + rec.map(function (t) {
+      var todas = verTodas || !T.seeAll;
+      html += '<section><' + hT + '><span>' + esc(T.recent) + '</span>'
+        + (todas ? '<button type="button" class="busq-borrar" data-borrar-todo>' + esc(T.clear) + '</button>'
+          : '<button type="button" class="busq-borrar" data-ver-todas>' + esc(T.seeAll) + '</button>') + '</' + hT + '>'
+        + '<div class="' + (todas ? 'busq-chips' : 'busq-fila') + '">' + (todas ? rec : rec.slice(0, 5)).map(function (t) {
           return '<span class="busq-chip"><button type="button" data-busca="' + esc(t) + '">' + esc(t) + '</button>'
-            + '<button type="button" class="busq-x" data-quita="' + esc(t) + '" aria-label="' + esc(rellena(T.remove, { q: t })) + '">×</button></span>';
+            + (todas ? '<button type="button" class="busq-x" data-quita="' + esc(t) + '" aria-label="' + esc(rellena(T.remove, { q: t })) + '">×</button>' : '') + '</span>';
         }).join('') + '</div><small>' + esc(T.local) + '</small></section>';
     }
+    // «Lo más buscado»: siempre, 5 a la vista y «Ver más» para las 8.
+    var mas = '';
     if (pop && pop.length && ciudadPop) {
-      html += '<section><' + hT + '><span>' + esc(rellena(T.popular, { city: ciudadPop.name })) + '</span></' + hT + '><div class="busq-chips">'
-        + pop.map(function (t) {
+      var verMas = !popTodas && T.seeMore && pop.length > 5;
+      mas += '<section><' + hT + '><span>' + esc(rellena(T.popular, { city: ciudadPop.name })) + '</span>'
+        + (verMas ? '<button type="button" class="busq-borrar" data-pop-todas>' + esc(T.seeMore) + '</button>' : '') + '</' + hT + '><div class="busq-chips">'
+        + (verMas ? pop.slice(0, 5) : pop).map(function (t) {
           return '<span class="busq-chip"><button type="button" data-busca="' + esc(t) + '">↗ ' + esc(t) + '</button></span>';
         }).join('') + '</div><small>' + esc(T.popularHint) + '</small></section>';
     }
+    // El orden (como la app): lo tuyo, los atajos, lo más buscado, «Más
+    // formas de buscar» y «Por tipo de sitio».
     panel.innerHTML = html;
+    if (atajosSec) panel.appendChild(atajosSec);
+    panel.insertAdjacentHTML('beforeend', mas + formas);
     if (tipos) { panel.appendChild(tipos); tipos.hidden = false; }
     panel.hidden = !panel.firstChild || campo.value.trim() !== '';
   }
@@ -344,6 +368,8 @@
     return fijo ? Boolean(hojaLupa && hojaLupa.open) : document.activeElement === campo || panel.contains(document.activeElement);
   };
   function abre() {
+    // La frase de los atajos ya se ha visto: la próxima vez, sin ella.
+    if (notaAtajos && !notaAtajos.hidden) pon(KN, 1);
     pinta(null);
     pidePopulares().then(function (pop) { if (abierto()) pinta(pop); });
   }
@@ -359,8 +385,10 @@
   form.addEventListener('submit', function () { anade(campo.value); });
   panel.addEventListener('click', function (e) {
     var b = e.target instanceof Element ? e.target.closest('button') : null;
-    if (!b || b.hasAttribute('data-mas-grupo')) return;
+    if (!b || b.hasAttribute('data-grupo-b') || (atajosSec && atajosSec.contains(b))) return;
     if (b.hasAttribute('data-busca')) { busca(b.getAttribute('data-busca')); return; }
+    if (b.hasAttribute('data-ver-todas')) verTodas = true;
+    if (b.hasAttribute('data-pop-todas')) popTodas = true;
     if (b.hasAttribute('data-quita')) {
       var t = b.getAttribute('data-quita');
       pon(KB, recientes().filter(function (x) { return x !== t; }));

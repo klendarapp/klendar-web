@@ -199,7 +199,9 @@ const T = (en) => en
       placesRatedHint: 'By rating; when level, the ones with plans today first, then those with a photo and opening hours.',
       eatSoon: 'Food right now', tonightNear: 'Tonight nearby',
       shortcutsHint: 'Each shortcut sets its filters; you see them at the top, in the row, and remove them like any other.',
-      browseTypes: 'Or browse by type of place', moreN: (n) => `${n} more`, moreInGroup: (n, g) => `Show ${n} more in ${g}`,
+      browseTypes: 'By type of place', groupTypes: (n) => (n === 1 ? '1 type' : `${n} types`),
+      moreWays: 'More ways to search', seeAllRecent: 'See all', seeMorePopular: 'See more',
+      moreN: (n) => `${n} more`, moreInGroup: (n, g) => `Show ${n} more in ${g}`,
       picksSub: 'Hand-picked for this week.', picksNone: 'No picks this week yet. Have a look in Discover or Explore.',
     }
   : {
@@ -341,7 +343,9 @@ const T = (en) => en
       placesRatedHint: 'Por su valoración; a la par, los que tienen planes hoy y luego los que tienen foto y horario.',
       eatSoon: 'Para comer ya', tonightNear: 'Esta noche cerca',
       shortcutsHint: 'Cada atajo pone sus filtros; se ven arriba, en la fila, y se quitan como cualquier otro.',
-      browseTypes: 'O mira por tipo de sitio', moreN: (n) => `${n} más`, moreInGroup: (n, g) => `Ver ${n} más de ${g}`,
+      browseTypes: 'Por tipo de sitio', groupTypes: (n) => (n === 1 ? '1 tipo' : `${n} tipos`),
+      moreWays: 'Más formas de buscar', seeAllRecent: 'Ver todo', seeMorePopular: 'Ver más',
+      moreN: (n) => `${n} más`, moreInGroup: (n, g) => `Ver ${n} más de ${g}`,
       picksSub: 'Lo que tiene sentido esta semana, elegido a mano.', picksNone: 'Esta semana aún no hay selecciones. Mira en Descubre o en Explorar.',
     };
 
@@ -2135,6 +2139,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // «Borrar» todo: se pregunta antes y luego se puede deshacer (como la app).
     clearAsk: S.searchClearAsk, cleared: S.searchCleared, undo: S.searchUndo, cancel: S.searchCancel,
     popular: S.searchPopular, popularHint: S.searchPopularHint, remove: S.searchRemove,
+    // «Ordenar la lupa» (Iván, 2026-11-13): «Ver todo», «Ver más» y «Más
+    // formas de buscar», como la app.
+    seeAll: S.seeAllRecent, seeMore: S.seeMorePopular, moreWays: S.moreWays,
     // «Dónde ver el partido» con su subtítulo, arriba del panel en reposo.
     partidos: { t: KE.t(lang).title, s: KE.t(lang).lead, href: `${partidosBase(lang)}${zonaDeExplorar(e, lang) ? `?${zonaDeExplorar(e, lang)}` : ''}` },
     // «Grupos y empresas» y «Sorteos» (tanda C), detrás, como en la app.
@@ -2163,21 +2170,27 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     const s = query(b, lang);
     return `${destino}${s ? `?${s}` : ''}`;
   };
-  // «O mira por tipo de sitio» (como la lupa de la app): las categorías por
-  // los cinco grupos; los dos primeros abiertos y los demás con «N más».
-  // Tocar una busca por su nombre. /assets/gustos.js la pone en el panel del
-  // buscador, debajo de lo buscado.
+  // «Por tipo de sitio» (como la lupa de la app, «Ordenar la lupa», Iván,
+  // 2026-11-13): un botón por grupo («Comer y beber · 13 tipos») que
+  // despliega sus tipos debajo de su fila. Tocar un tipo abre Explorar ›
+  // Sitios con esa categoría puesta en ¿Qué? (sin texto: se sigue afinando).
+  // Sin JavaScript, todos abiertos; /assets/gustos.js los pliega y la pone en
+  // el panel del buscador, al final.
   const gruposBusq = KC.agrupa(catsHoja, '').filter((g) => g.cats.length);
   // Va en la hoja «Buscar» (en Descubre y en Explorar).
   const hT = 'h3';
-  const hG = 'h4';
+  const icGrupo = { food: 'restaurant', night: 'nightclub', leisure: 'theme_park', sports: 'padel', care: 'wellness', health: 'health', events: 'event_venue', stay: 'lodging', shops: 'market', services: 'home' };
+  const botonGrupo = (g) => `<button type="button" class="busq-g" data-grupo-b aria-expanded="true" aria-controls="busqG-${esc(g.id)}">${icCat(icGrupo[g.id] || 'other', 22)}
+          <span><b>${esc(KC.nombreGrupo(g.id, lang))}</b><small>${esc(S.groupTypes(g.cats.length))}</small></span></button>`;
+  const tiposGrupo = (g) => `<div class="busq-g-tipos busq-chips" id="busqG-${esc(g.id)}" role="group" aria-label="${esc(KC.nombreGrupo(g.id, lang))}">${g.cats.map((c) => `<a class="busq-cat" href="${esc(linkA(exploreBase(lang), { que: 'places', cat: c.slug, cats: [c.slug] }))}">${esc(catName(c, en))}</a>`).join('')}</div>`;
+  const filasGrupos = [];
+  for (let i = 0; i < gruposBusq.length; i += 2) {
+    const par = gruposBusq.slice(i, i + 2);
+    filasGrupos.push(par.map(botonGrupo).join(''), par.map(tiposGrupo).join(''));
+  }
   const tiposBusq = gruposBusq.length ? `<div class="busq-tipos" role="group" data-busq-tipos aria-labelledby="busqTipos" hidden>
       <${hT} id="busqTipos">${esc(S.browseTypes)}</${hT}>
-      ${gruposBusq.map((g, i) => `<div class="busq-grupo"${i >= 2 ? ' data-plegado' : ''}>
-        <${hG}>${esc(KC.nombreGrupo(g.id, lang))}</${hG}>
-        <div class="busq-chips">${g.cats.map((c) => `<a class="busq-cat" href="${esc(linkA(exploreBase(lang), { q: catName(c, en) }))}">${esc(catName(c, en))}</a>`).join('')}${i >= 2
-          ? `<button type="button" class="busq-cat busq-mas" data-mas-grupo aria-label="${esc(S.moreInGroup(g.cats.length, KC.nombreGrupo(g.id, lang)))}" hidden>${esc(S.moreN(g.cats.length))}${ic('abajo', 18)}</button>` : ''}</div>
-      </div>`).join('')}
+      <div class="busq-rejilla">${filasGrupos.join('')}</div>
     </div>` : '';
 
   // La fila (opción A): ☰ · ¿Dónde? · ¿Cuándo? · ¿Qué? · el orden. Con el
@@ -2201,7 +2214,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script>${FILA_MIDE}</script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=7" defer></script>
-  <script src="/assets/gustos.js?v=20261113tusdatos" defer data-lang="${en ? 'en' : 'es'}"></script>
+  <script src="/assets/gustos.js?v=20261113lupa" defer data-lang="${en ? 'en' : 'es'}"></script>
   <script src="/assets/municipios.js?v=20261111sinbarra" defer></script>
   <link rel="stylesheet" href="/assets/barra-filtro.css?v=20261112">
   <script src="/assets/barra-filtro.js?v=20261112" defer></script>`;
@@ -2243,7 +2256,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const hojaBuscar = hojaSimple('buscar', S.search, `${formBuscar(true)}
       <div class="busq-sec" role="group" aria-labelledby="busqAtajos"><h3 id="busqAtajos">${esc(S.shortcuts)}</h3>
         <div class="ops">${atajosLupa}</div>
-        <p class="hoja-nota hoja-nota-bajo">${esc(S.shortcutsHint)}</p></div>
+        <p class="hoja-nota hoja-nota-bajo" data-atajos-nota>${esc(S.shortcutsHint)}</p></div>
       <div data-busq-panel></div>
       ${tiposBusq}`, { abierta: e.buscar, cerrar: e.buscar ? link({}) : '#buscar' });
   // «Selecciones» (✨ de la cabecera, en todas las páginas): la hoja vive en

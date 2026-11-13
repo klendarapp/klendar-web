@@ -366,7 +366,11 @@ ACTUALIZADO = {
     # 2026-11-12 (QA4, aprobado por Iván el 12-11): la fila «Cuenta de
     # negocio» sin las agendas conectadas (EN3), porque «Conecta tu agenda» se
     # quitó el 12-11 (RUNBOOK §4zk). Informativo, sin versión nueva ni aviso.
-    'privacidad': {'es': '12 de noviembre de 2026', 'en': '12 November 2026'},
+    # 2026-11-13 (RA1, aprobado por Iván el 13-11): fila nueva «Avisos sobre
+    # respuestas de la IA» (la bandera de las respuestas hechas con IA, app
+    # 13-11), junto a «Sugerencias y mejoras». Añade información y no quita
+    # derechos: informativo, sin versión nueva ni aviso de 15 días.
+    'privacidad': {'es': '13 de noviembre de 2026', 'en': '13 November 2026'},
     # 2026-10-14 (C52, aprobado por Iván el 14-10): dos claves de la
     # administración que faltaban en la tabla. Informativo.
     # 2026-11-04 (L5 de la revisión del 5-11, aprobado por Iván el 4-11 y
@@ -558,6 +562,10 @@ CAMBIOS = {
          "The owner's tax ID, address and phone number are filled in."),
         _INICIO],
     'privacidad': [
+        ('13 de noviembre de 2026',
+         'Fila nueva «Avisos sobre respuestas de la IA»: si nos avisas de una respuesta hecha con IA, qué guardamos, para qué y cuándo lo borramos.',
+         '13 November 2026',
+         'New “Reports about AI answers” row: if you tell us about an answer made with AI, what we keep, what for and when we delete it.'),
         ('12 de noviembre de 2026',
          'La fila «Cuenta de negocio» ya no habla de las agendas que conectaban las entidades: «Conecta tu agenda» se ha quitado y no guardamos nada de ella.',
          '12 November 2026',
@@ -1617,6 +1625,7 @@ def textos(D, resaltar=False):
 {TS['es']['fila']}<tr><td>Seguridad</td><td>Resumen cifrado de tu conexión (cambia cada día, nunca la IP), dispositivos de confianza para entrar con huella o Face ID, códigos para confirmar que eres tú, errores técnicos de la web (sin datos personales)</td><td>Frenar abusos, entrar sin contraseña en tus dispositivos, proteger los cambios de contraseña y la eliminación de la cuenta, detectar fallos</td><td>Interés legítimo (art. 6.1.f)</td><td>Resumen 24 h; dispositivos 90 días sin uso; códigos 1 h; errores 30 días</td></tr>
 <tr><td>Historial de consentimientos</td><td>Qué has aceptado o retirado y cuándo</td><td>Poder demostrarlo (art. 7.1 RGPD)</td><td>Obligación legal (art. 6.1.c)</td><td>Mientras exista la cuenta</td></tr>
 <tr><td>Sugerencias y mejoras</td><td>Tu cuenta; lo que nos escribes y de qué se trata («Sugerencia», «Algo falla», «Soy un negocio» u «Otra cosa»); la versión de la app, si la usas en Android, iPhone o la web, y el idioma (en la web, también la página de la que venías); y, si las añades, hasta 3 capturas o fotos de tu galería</td><td>Entender y arreglar los fallos que nos cuentas, atender tus sugerencias y contestarte (la respuesta te llega como aviso en la app). Antes de subir una captura la reducimos (1.600 px como mucho) y le quitamos los datos que lleva dentro, como la ubicación o el modelo del móvil. Las capturas se guardan en un almacenamiento privado y solo las ve el equipo de Klendar: ni otras personas usuarias ni los negocios. No se analizan de forma automática. Si en una captura salen datos de otras personas que no hacen falta, mejor tápalos</td><td>Ejecución del contrato (atender lo que nos mandas) e interés legítimo (art. 6.1.f RGPD) en arreglar fallos y mejorar Klendar. Las capturas son opcionales</td><td>El mensaje, hasta 1 año después de cerrarlo; si eliminas tu cuenta, se queda sin tu nombre ni tu cuenta. Las capturas, hasta que se borra el mensaje o eliminas tu cuenta, lo que pase antes; las que eliges pero no llegas a enviar, en 1 o 2 días</td></tr>
+<tr><td>Avisos sobre respuestas de la IA</td><td>Si nos avisas de una respuesta hecha con IA: esa respuesta, el motivo, tu nota y, si tienes cuenta, quién avisa</td><td>Revisarla y mejorar el servicio</td><td>Interés legítimo (art. 6.1.f RGPD) en revisar las respuestas hechas con IA y mejorar Klendar. Avisar es opcional</td><td>Lo borramos un año después de revisarlo</td></tr>
 {TEL['es']}<tr><td>Soporte</td><td>Email y contenido de tu mensaje</td><td>Atender tus consultas</td><td>Ejecución del contrato / interés legítimo</td><td>1 año desde el cierre</td></tr>
 </table>
 <p>Para crear la cuenta son obligatorios el correo (o tu cuenta de Google o Apple), tu nombre (el que verán los negocios y tus amigos; puede ser un apodo), la fecha de nacimiento y aceptar los términos; sin ellos no se puede usar la cuenta. Todo lo demás es opcional.</p>
@@ -1734,6 +1743,7 @@ def textos(D, resaltar=False):
 {TS['en']['fila']}<tr><td>Security</td><td>Encrypted digest of your connection (changes daily, never the IP address), trusted devices for fingerprint or Face ID login, codes to confirm it's you, technical website errors (no personal data)</td><td>Stop abuse, log in without a password on your devices, protect password changes and account deletion, detect failures</td><td>Legitimate interest (art. 6(1)(f))</td><td>Digest 24 h; devices 90 days unused; codes 1 h; errors 30 days</td></tr>
 <tr><td>Consent history</td><td>What you have accepted or withdrawn and when</td><td>Being able to prove it (art. 7(1) GDPR)</td><td>Legal obligation (art. 6(1)(c))</td><td>While the account exists</td></tr>
 <tr><td>Ideas and feedback</td><td>Your account; what you write to us and what it's about (“Suggestion”, “Something's broken”, “I run a business” or “Something else”); the app version, whether you use Android, iPhone or the website, and the language (on the website, also the page you came from); and, if you add them, up to 3 screenshots or photos from your gallery</td><td>Understand and fix the problems you tell us about, look into your suggestions and reply to you (the reply reaches you as a notification in the app). Before uploading a screenshot we make it smaller (1,600 px at most) and remove the data stored inside it, such as the location or the phone model. Screenshots are kept in private storage and only the Klendar team sees them: not other users or businesses. They are not analysed automatically. If a screenshot shows other people's details that aren't needed, it's best to cover them</td><td>Performance of a contract (dealing with what you send us) and legitimate interest (art. 6.1.f GDPR) in fixing problems and improving Klendar. Screenshots are optional</td><td>The message, up to 1 year after we close it; if you delete your account, it stays without your name or your account. Screenshots, until the message is deleted or you delete your account, whichever comes first; those you pick but don't send, within 1 or 2 days</td></tr>
+<tr><td>Reports about AI answers</td><td>If you tell us about an answer made with AI: that answer, the reason, your note and, if you have an account, who reported it</td><td>Reviewing it and improving the service</td><td>Legitimate interest (art. 6.1.f GDPR) in reviewing answers made with AI and improving Klendar. Reporting is optional</td><td>We delete it one year after reviewing it</td></tr>
 {TEL['en']}<tr><td>Support</td><td>Email and the content of your message</td><td>Answer your enquiries</td><td>Performance of a contract / legitimate interest</td><td>1 year after closure</td></tr>
 </table>
 <p>To create an account you must give your email (or use your Google or Apple account), your name (the one businesses and your friends will see; it can be a nickname), your date of birth and accept the terms; without them the account can't be used. Everything else is optional.</p>

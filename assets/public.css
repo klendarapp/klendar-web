@@ -1112,8 +1112,25 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .pub .hoja-lupa h3, .pub .busq-tipos > h2 { margin: 0 0 8px; font-size: 15px; font-weight: 800; }
 .busq-sec { margin: 0 0 18px; }
 .busq-tipos { margin-top: 18px; }
-.pub .busq-grupo :is(h3, h4) { margin: 14px 0 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+/* «Por tipo de sitio» (Iván, 2026-11-13): un botón por grupo, de dos en dos,
+   y sus tipos debajo de su fila, a lo ancho. */
+.busq-rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.busq-g { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 10px 12px; border-radius: 18px; border: 1px solid var(--glass-border);
+  background: var(--elevated, var(--surface)); color: var(--ink); font: inherit; text-align: start; cursor: pointer; min-width: 0; }
+.busq-g > span { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.busq-g b { font-size: 15px; font-weight: 600; line-height: 1.25; overflow-wrap: break-word; hyphens: auto; }
+.busq-g small { color: var(--ink-2); font-size: 13px; }
+/* Abierto: el nombre en negrita y el borde en tinta (sin flecha: no cabe a 360). */
+.busq-g > .ic { flex: none; }
+.busq-g[aria-expanded="true"] b { font-weight: 800; }
+.busq-g[aria-expanded="true"] { border-color: var(--ink); }
+.busq-g:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.busq-g-tipos { grid-column: 1 / -1; }
+.busq-g-tipos[hidden] { display: none; }
 .busq-tipos .busq-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.busq-sec .ops { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 2px 0; }
+.busq-sec .ops::-webkit-scrollbar { display: none; }
+.busq-sec .ops > * { flex: none; }
 .busq-cat { display: inline-flex; align-items: center; gap: 2px; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--glass-border);
   background: var(--glass); color: var(--ink); font: inherit; font-size: 14px; font-weight: 500; cursor: pointer; }
 .busq-cat:hover { text-decoration: none; border-color: var(--ink-2); }

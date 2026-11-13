@@ -112,8 +112,9 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
           abierta: h.open, foco: document.activeElement?.name,
           atajos: atajos.map((a) => [a.textContent.trim(), a.getAttribute('href') || a.getAttribute('data-cerca-a')]),
           accesos: [...h.querySelectorAll('.busq-atajo b')].map((b) => b.textContent),
-          tipos: tipos && !tipos.hidden && tipos.closest('.busq-panel') ? [...tipos.querySelectorAll('.busq-grupo')].map((g) => [g.querySelector('h4').textContent,
-            g.querySelectorAll('a.busq-cat:not([hidden])').length, Boolean(g.querySelector('[data-mas-grupo]:not([hidden])'))]) : null,
+          tipos: tipos && !tipos.hidden && tipos.closest('.busq-panel') ? [...tipos.querySelectorAll('[data-grupo-b]')].map((b) => [b.querySelector('b').textContent,
+            b.getAttribute('aria-expanded'), document.getElementById(b.getAttribute('aria-controls')).hidden]) : null,
+          orden: [...h.querySelectorAll('.busq-panel > section > h3, .busq-panel > .busq-sec > h3, .busq-panel > .busq-tipos > h3')].map((x) => x.textContent.replace(/(Ver todo|Ver más|Borrar)$/, '').trim()),
           nota: h.querySelector('.busq-sec .hoja-nota')?.textContent,
           anchoHoja: h.querySelector('.hoja-cuerpo').getBoundingClientRect().width,
           anim: getComputedStyle(h.querySelector('.hoja-cuerpo')).animationName,
@@ -125,20 +126,23 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
         `${t} los atajos llevan a Descubre (y «Para comer ya», a Sitios)`);
       ok(/Cada atajo pone sus filtros/.test(hoja.nota || ''), `${t} la nota de los atajos, como la app`);
       ok(hoja.accesos.includes('Dónde verlo') && hoja.accesos.includes('Pedir un local'), `${t} los accesos del buscador (${hoja.accesos.join(' · ')})`);
-      ok(hoja.tipos && hoja.tipos.length >= 3 && hoja.tipos[0][1] > 0 && hoja.tipos[1][1] > 0 && hoja.tipos[2][1] === 0 && hoja.tipos[2][2],
-        `${t} «O mira por tipo de sitio»: dos grupos abiertos y los demás con «N más» (${JSON.stringify(hoja.tipos)})`);
+      ok(hoja.tipos && hoja.tipos.length >= 3 && hoja.tipos.every(([n, ex, oculto]) => / · |\S/.test(n) && ex === 'false' && oculto),
+        `${t} «Por tipo de sitio»: un botón por grupo, todos plegados (${JSON.stringify(hoja.tipos)})`);
+      ok(hoja.orden.indexOf('Atajos') >= 0 && hoja.orden.indexOf('Atajos') < hoja.orden.indexOf('Más formas de buscar')
+        && hoja.orden.indexOf('Más formas de buscar') < hoja.orden.indexOf('Por tipo de sitio'), `${t} el orden de la lupa, como la app (${hoja.orden.join(' · ')})`);
       if (!movil) ok(hoja.anchoHoja <= 562, `${t} escritorio: la hoja centrada de 560 (${Math.round(hoja.anchoHoja)})`);
       await page.screenshot({ path: `${OUT}/lupa-${nombre}-${ancho}-${tema}-buscar.png` });
-      // «N más» abre el grupo y el foco va a su primera categoría.
-      await page.click('#buscar [data-mas-grupo] >> nth=0');
+      // Un grupo despliega sus tipos debajo de su fila sin cerrar nada.
+      await page.click('#buscar [data-grupo-b] >> nth=2');
       const abierto = await page.evaluate(() => {
-        const g = document.querySelectorAll('#buscar .busq-grupo')[2];
-        return { n: g.querySelectorAll('a.busq-cat:not([hidden])').length, foco: document.activeElement?.closest('.busq-grupo') === g, panel: !document.querySelector('#buscar .busq-panel').hidden };
+        const b = document.querySelectorAll('#buscar [data-grupo-b]')[2];
+        const g = document.getElementById(b.getAttribute('aria-controls'));
+        return { n: g.hidden ? 0 : g.querySelectorAll('a.busq-cat').length, ex: b.getAttribute('aria-expanded'), abierta: document.getElementById('buscar').open, panel: !document.querySelector('#buscar .busq-panel').hidden };
       });
-      ok(abierto.n > 0 && abierto.foco && abierto.panel, `${t} «N más» abre su grupo sin cerrar nada`);
-      // Una categoría busca por su nombre en Explorar, con la misma zona.
+      ok(abierto.n > 0 && abierto.ex === 'true' && abierto.abierta && abierto.panel, `${t} un grupo despliega sus tipos sin cerrar nada`);
+      // Un tipo abre Explorar › Sitios con esa categoría puesta (sin texto), con la misma zona.
       const cat = await page.evaluate(() => document.querySelector('#buscar a.busq-cat').getAttribute('href'));
-      ok(/^\/explorar\?.*q=/.test(cat) && /lat=/.test(cat), `${t} tocar una categoría busca por su nombre (${cat})`);
+      ok(/^\/explorar\?/.test(cat) && /que=sitios/.test(cat) && /categoria=/.test(cat) && !/[?&]q=/.test(cat) && /lat=/.test(cat), `${t} tocar un tipo abre Sitios con su categoría (${cat})`);
       // Escape la cierra y el foco vuelve a la lupa.
       await page.keyboard.press('Escape');
       await page.waitForTimeout(250);
@@ -171,7 +175,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       ok(ex.length === 6 && ex.every(([n, h]) => (n === 'Para comer ya' ? /que=sitios/.test(h) : /^\/descubre([?#]|$)/.test(h))), `${t} Explorar: la lupa abre «Buscar» y sus atajos llevan a Descubre, como la app`);
       ok(!(await page.locator('.atajos-fila').count()), `${t} Explorar: sin fila de atajos en la página`);
       const panel = await page.evaluate(() => { const p = document.getElementById('busq-panel'); return p && !p.hidden && Boolean(p.querySelector('[data-busq-tipos]:not([hidden])')); });
-      ok(panel, `${t} Explorar: el panel del buscador con «O mira por tipo de sitio»`);
+      ok(panel, `${t} Explorar: el panel del buscador con «Por tipo de sitio»`);
       await ve(page, `${BASE}/explorar?${POS}&km=1&cuando=esta-noche&categoria=peluquerias`);
       const vacio = await page.evaluate(() => ({ vacio: Boolean(document.querySelector('.vacio')), resumen: document.querySelector('.resumen-n')?.textContent || '' }));
       ok(!vacio.vacio || vacio.resumen === '', `${t} Explorar vacío, sin «0 resultados» encima (${vacio.vacio ? 'vacío' : 'con algo'}: «${vacio.resumen}»)`);

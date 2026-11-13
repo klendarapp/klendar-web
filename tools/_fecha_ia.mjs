@@ -30,7 +30,20 @@ export const IA = m[1] === 'None' ? null : {
 export const PAGINAS_IA = new Set(['/privacidad', '/en/privacy', '/terminos', '/en/terms', '/negocios', '/en/business-terms',
   '/normas', '/en/community-guidelines', '/cookies', '/en/cookies', '/soporte', '/en/support']);
 
+// Retoques publicados después de los textos de IA (la fecha más nueva manda):
+// RA1, la fila «Avisos sobre respuestas de la IA» (13-11-2026).
+export const POSTERIOR = {
+  '/privacidad': { es: '13 de noviembre de 2026', en: '13 November 2026' },
+  '/en/privacy': { es: '13 de noviembre de 2026', en: '13 November 2026' },
+};
+
 export function fechaLegal(ruta, cabecera) {
+  const p = POSTERIOR[ruta];
+  if (p) {
+    return cabecera
+      .replace(/(Última actualización: )\d{1,2} de \p{L}+ de \d{4}/u, `$1${p.es}`)
+      .replace(/(Last updated: )\d{1,2} \p{L}+ \d{4}/u, `$1${p.en}`);
+  }
   if (!IA || !PAGINAS_IA.has(ruta)) return cabecera;
   let c = cabecera
     .replace(/(Última actualización: )\d{1,2} de \p{L}+ de \d{4}/u, `$1${IA.es}`)

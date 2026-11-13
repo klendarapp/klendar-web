@@ -25,7 +25,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_ia_check.mjs
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
-import { IA } from './_fecha_ia.mjs';
+import { IA, POSTERIOR } from './_fecha_ia.mjs';
 
 if (!IA) {
   console.log('IA_DESDE = None en legal_ia.py: no hay textos de IA que mirar.');
@@ -52,7 +52,7 @@ const APAGADO = [
 ];
 
 const PAGINAS = [
-  ['/privacidad', `Última actualización: ${IA.es}`, [
+  ['/privacidad', `Última actualización: ${POSTERIOR['/privacidad'].es}`, [
     /Funciones con inteligencia artificial \(IA\)\s+Algunas funciones usan Claude, la IA de Anthropic, que trata los datos por encargo nuestro \(apartado 3\)/,
     /Lo envía nuestro servidor, no tu móvil\./,
     /Función\s+Datos\s+Finalidad\s+Base jurídica\s+Conservación en Klendar\s+Moderador automático/,
@@ -66,9 +66,10 @@ const PAGINAS = [
     /solo si alguien la ha pedido y Claude no está disponible/,
     /Anthropic \(Anthropic Ireland, Limited; lo trata en Estados Unidos y, según la carga, en otros países: Claude/,
     /Decisiones automáticas\. Cuando una decisión la toma un sistema automático \(el traspaso de una ficha con el código de «¿Es tu negocio\?», o que el moderador no publique algo tuyo\)/,
-    new RegExp(`Historial de cambios\\s+${ES}: Apartado nuevo «Funciones con inteligencia artificial»`),
+    // Encima puede ir lo publicado después (RA1, 13-11).
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,2}?${ES}: Apartado nuevo «Funciones con inteligencia artificial»`),
   ], 1],
-  ['/en/privacy', `Last updated: ${IA.en}`, [
+  ['/en/privacy', `Last updated: ${POSTERIOR['/en/privacy'].en}`, [
     /Artificial intelligence \(AI\) features\s+Some features use Claude, the AI from Anthropic/,
     /Feature\s+Data\s+Purpose\s+Legal basis\s+Retention at Klendar\s+Automatic moderator/,
     /The AI doesn't close reports or hide or take down anything: that person always decides/,
@@ -78,7 +79,7 @@ const PAGINAS = [
     /“Is this your business\?” with a code[\s\S]*?It is an automated decision/,
     /only when someone has asked for it and Claude isn't available/,
     /Automated decisions\. When an automated system takes a decision/,
-    new RegExp(`Change history\\s+${EN}: New “Artificial intelligence features” part`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,2}?${EN}: New “Artificial intelligence features” part`),
   ], 1],
   ['/terminos', `Última actualización: ${IA.es}`, [
     /Funciones con inteligencia artificial\. Algunas funciones usan una IA, Claude, de Anthropic/,
