@@ -3883,5 +3883,20 @@ KL_DIC('fr', {
   "Devolver a la cola": "Remettre dans la file",
   "Cerrada · {espera} esperando": "Fermée · {espera} en attente",
   "Sin abrir hoy": "Pas ouverte aujourd’hui",
-  "Ir a la cola": "Aller à la file"
+  "Ir a la cola": "Aller à la file",
+  "Pantalla para la puerta": "Écran pour l’entrée",
+  "Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.": "Ouvrez-le sur une télé ou une tablette : il montre les numéros appelés, sans les noms.",
+  "Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente». A quien no tenga la app lo apuntas tú y le llamas en voz alta. La lista se borra sola a las 6:00.": "Les clients scannent l’affiche de la porte, prennent un numéro et on les prévient sur leur téléphone quand c’est leur tour. Vous n’avez qu’à toucher « Appeler le suivant ». Ceux qui n’ont pas l’app, vous les inscrivez vous-même et les appelez à voix haute. La liste s’efface toute seule à 6 h.",
+  "Sin la app: llámale en voz alta": "Sans l’app : appelez-le à voix haute",
+  "Va de camino": "En route",
+  "Cifras de la cola": "Chiffres de la file",
+  "Llámale en voz alta": "Appelez-le à voix haute",
+  "No tiene la app: no le llega ningún aviso.": "Il n’a pas l’app : aucune notification ne lui arrive.",
+  "Aceptar": "OK",
+  "1 atendido": "1 servi",
+  "{served} atendidos": "{served} servis",
+  "Últimos 30 días": "30 derniers jours",
+  "1 no vino": "1 absent",
+  "{no_show} no vinieron": "{no_show} absents",
+  "espera media {avg_wait_minutes} min": "attente moyenne {avg_wait_minutes} min"
 });

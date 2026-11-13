@@ -3883,5 +3883,20 @@ KL_DIC('it', {
   "Devolver a la cola": "Rimetti in coda",
   "Cerrada · {espera} esperando": "Chiusa · {espera} in attesa",
   "Sin abrir hoy": "Non aperta oggi",
-  "Ir a la cola": "Vai alla coda"
+  "Ir a la cola": "Vai alla coda",
+  "Pantalla para la puerta": "Schermo per la porta",
+  "Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.": "Aprilo su una TV o un tablet: mostra i numeri chiamati, senza nomi.",
+  "Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente». A quien no tenga la app lo apuntas tú y le llamas en voz alta. La lista se borra sola a las 6:00.": "Chi arriva scansiona il cartello sulla porta, prende il numero e lo avvisiamo sul telefono quando tocca a lui. Tu tocchi solo «Avvisa il prossimo». Chi non ha l’app lo segni tu e lo chiami a voce alta. La lista si cancella da sola alle 6:00.",
+  "Sin la app: llámale en voz alta": "Senza app: chiamalo a voce alta",
+  "Va de camino": "Sta arrivando",
+  "Cifras de la cola": "Numeri della coda",
+  "Llámale en voz alta": "Chiamalo a voce alta",
+  "No tiene la app: no le llega ningún aviso.": "Non ha l’app: non gli arriva nessun avviso.",
+  "Aceptar": "OK",
+  "1 atendido": "1 servito",
+  "{served} atendidos": "{served} serviti",
+  "Últimos 30 días": "Ultimi 30 giorni",
+  "1 no vino": "1 non è venuto",
+  "{no_show} no vinieron": "{no_show} non sono venuti",
+  "espera media {avg_wait_minutes} min": "attesa media {avg_wait_minutes} min"
 });

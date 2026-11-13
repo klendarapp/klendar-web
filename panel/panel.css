@@ -861,6 +861,11 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .sorteo-form .opcion, .grupo-ajustes .opcion { align-items: flex-start; }
 .sorteo-form .opcion input, .grupo-ajustes .opcion input { width: 18px; height: 18px; flex: none; margin-top: 3px; }
 /* Cola virtual (panel/cola.js). */
+/* Lo que el equipo tiene que ver de un vistazo: sin la app, va de camino. */
+.cola-nota-fuerte { margin: 4px 0 0; font-weight: 800; display: flex; align-items: center; gap: 6px; flex: 1 1 100%; }
+.cola-nota-fuerte .ms { font-size: 1.25rem; }
+.cola-voz { font-family: var(--display); font-weight: 800; font-size: 1.75rem; text-align: center; margin: 4px 0 10px; }
+.cola-stats p { margin: 4px 0 0; }
 /* «Deshacer» en el aviso de «Ha llegado», «No vino» o «Quitar». */
 .toast .toast-accion { margin-left: 10px; min-height: 32px; border: 0; background: none; color: inherit; font: inherit; font-weight: 800; text-decoration: underline; cursor: pointer; }
 .cola-cifras { text-align: center; }

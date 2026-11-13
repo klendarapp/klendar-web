@@ -3883,5 +3883,20 @@ KL_DIC('eu', {
   "Devolver a la cola": "Itzuli ilarara",
   "Cerrada · {espera} esperando": "Itxita · {espera} zain",
   "Sin abrir hoy": "Gaur ireki gabe",
-  "Ir a la cola": "Joan ilarara"
+  "Ir a la cola": "Joan ilarara",
+  "Pantalla para la puerta": "Aterako pantaila",
+  "Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.": "Ireki telebista edo tableta batean: txanda duten zenbakiak erakusten ditu, izenik gabe.",
+  "Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente». A quien no tenga la app lo apuntas tú y le llamas en voz alta. La lista se borra sola a las 6:00.": "Iristen denak ateko kartela eskaneatzen du, zenbakia hartzen du eta txanda iristean mugikorrera abisatzen diogu. Zuk «Abisatu hurrengoari» sakatu besterik ez duzu egin behar. Aplikaziorik ez duenari zuk eman izena eta deitu ozen. Zerrenda bakarrik ezabatzen da 6:00etan.",
+  "Sin la app: llámale en voz alta": "Aplikaziorik gabe: deitu ozen",
+  "Va de camino": "Bidean da",
+  "Cifras de la cola": "Ilararen zifrak",
+  "Llámale en voz alta": "Deitu ozen",
+  "No tiene la app: no le llega ningún aviso.": "Ez du aplikaziorik: ez zaio abisurik iristen.",
+  "Aceptar": "Ados",
+  "1 atendido": "1 artatuta",
+  "{served} atendidos": "{served} artatuta",
+  "Últimos 30 días": "Azken 30 egunak",
+  "1 no vino": "1 ez da etorri",
+  "{no_show} no vinieron": "{no_show} ez dira etorri",
+  "espera media {avg_wait_minutes} min": "batez besteko itxaronaldia {avg_wait_minutes} min"
 });

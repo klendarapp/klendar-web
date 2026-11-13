@@ -3883,5 +3883,20 @@ KL_DIC('de', {
   "Devolver a la cola": "Zurück in die Schlange",
   "Cerrada · {espera} esperando": "Geschlossen · {espera} warten",
   "Sin abrir hoy": "Heute nicht geöffnet",
-  "Ir a la cola": "Zur Warteschlange"
+  "Ir a la cola": "Zur Warteschlange",
+  "Pantalla para la puerta": "Bildschirm für die Tür",
+  "Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.": "Öffne ihn auf einem Fernseher oder Tablet: Er zeigt die aufgerufenen Nummern, ohne Namen.",
+  "Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente». A quien no tenga la app lo apuntas tú y le llamas en voz alta. La lista se borra sola a las 6:00.": "Wer kommt, scannt das Plakat an der Tür, zieht eine Nummer und wir sagen auf dem Handy Bescheid, wenn er dran ist. Du tippst nur auf „Nächsten aufrufen“. Wer die App nicht hat, trägst du selbst ein und rufst ihn laut auf. Die Liste löscht sich um 6:00 von selbst.",
+  "Sin la app: llámale en voz alta": "Ohne App: laut aufrufen",
+  "Va de camino": "Unterwegs",
+  "Cifras de la cola": "Zahlen der Warteschlange",
+  "Llámale en voz alta": "Ruf laut auf",
+  "No tiene la app: no le llega ningún aviso.": "Keine App: Es kommt keine Benachrichtigung an.",
+  "Aceptar": "OK",
+  "1 atendido": "1 bedient",
+  "{served} atendidos": "{served} bedient",
+  "Últimos 30 días": "Letzte 30 Tage",
+  "1 no vino": "1 nicht gekommen",
+  "{no_show} no vinieron": "{no_show} nicht gekommen",
+  "espera media {avg_wait_minutes} min": "Ø Wartezeit {avg_wait_minutes} Min."
 });

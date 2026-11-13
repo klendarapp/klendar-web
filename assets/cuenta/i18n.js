@@ -2,6 +2,15 @@
 'use strict';
 
 const APP_EN = {
+  // Cola virtual: mejoras (2026-11-13)
+  "No hay nadie detrás: no hace falta.": "There's nobody behind you: no need.",
+  "Ya dejaste pasar a alguien en este turno.": "You already let someone go first this turn.",
+  "Ya voy": "I'm on my way",
+  "Le hemos dicho al local que vas de camino.": "We've told the venue you're on your way.",
+  "Dejar pasar al siguiente": "Let the next one go first",
+  "¿Dejar pasar al siguiente?": "Let the next one go first?",
+  "Avisamos al siguiente y tú vuelves a esperar el primero: te toca justo después. Solo una vez.": "We'll call the next one and you go back to waiting first in line: you're straight after. Only once.",
+  "Dejar pasar": "Let them go first",
   // Cola virtual: arreglos (2026-11-13)
   "La cola no está disponible": "The queue isn't available",
   "La cola de hoy ha terminado": "Today's queue has finished",

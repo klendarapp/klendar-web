@@ -3883,5 +3883,20 @@ KL_DIC('ca', {
   "Devolver a la cola": "Retorna a la cua",
   "Cerrada · {espera} esperando": "Tancada · {espera} esperant",
   "Sin abrir hoy": "Sense obrir avui",
-  "Ir a la cola": "Ves a la cua"
+  "Ir a la cola": "Ves a la cua",
+  "Pantalla para la puerta": "Pantalla per a la porta",
+  "Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.": "Obre-la en una tele o una tauleta: mostra els números que toquen, sense noms.",
+  "Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente». A quien no tenga la app lo apuntas tú y le llamas en voz alta. La lista se borra sola a las 6:00.": "Qui arriba escaneja el cartell de la porta, agafa número i l'avisem al mòbil quan li toqui. Tu només toques «Avisa el següent». Qui no tingui l'app, l'apuntes tu i el crides en veu alta. La llista s'esborra sola a les 6:00.",
+  "Sin la app: llámale en voz alta": "Sense l'app: crida’l en veu alta",
+  "Va de camino": "Ja hi va",
+  "Cifras de la cola": "Xifres de la cua",
+  "Llámale en voz alta": "Crida’l en veu alta",
+  "No tiene la app: no le llega ningún aviso.": "No té l'app: no li arriba cap avís.",
+  "Aceptar": "D'acord",
+  "1 atendido": "1 atès",
+  "{served} atendidos": "{served} atesos",
+  "Últimos 30 días": "Últims 30 dies",
+  "1 no vino": "1 no ha vingut",
+  "{no_show} no vinieron": "{no_show} no han vingut",
+  "espera media {avg_wait_minutes} min": "espera mitjana {avg_wait_minutes} min"
 });

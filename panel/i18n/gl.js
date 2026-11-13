@@ -3883,5 +3883,20 @@ KL_DIC('gl', {
   "Devolver a la cola": "Devolver á cola",
   "Cerrada · {espera} esperando": "Pechada · {espera} agardando",
   "Sin abrir hoy": "Sen abrir hoxe",
-  "Ir a la cola": "Ir á cola"
+  "Ir a la cola": "Ir á cola",
+  "Pantalla para la puerta": "Pantalla para a porta",
+  "Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.": "Ábrea nunha tele ou nunha tableta: amosa os números que tocan, sen nomes.",
+  "Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente». A quien no tenga la app lo apuntas tú y le llamas en voz alta. La lista se borra sola a las 6:00.": "Quen chega escanea o cartel da porta, colle número e avisámolo no móbil cando lle toque. Ti só tocas «Avisar ao seguinte». A quen non teña a app apúntalo ti e chámalo en voz alta. A lista bórrase soa ás 6:00.",
+  "Sin la app: llámale en voz alta": "Sen a app: chámao en voz alta",
+  "Va de camino": "Vai de camiño",
+  "Cifras de la cola": "Cifras da cola",
+  "Llámale en voz alta": "Chámao en voz alta",
+  "No tiene la app: no le llega ningún aviso.": "Non ten a app: non lle chega ningún aviso.",
+  "Aceptar": "Aceptar",
+  "1 atendido": "1 atendido",
+  "{served} atendidos": "{served} atendidos",
+  "Últimos 30 días": "Últimos 30 días",
+  "1 no vino": "1 non veu",
+  "{no_show} no vinieron": "{no_show} non viñeron",
+  "espera media {avg_wait_minutes} min": "espera media {avg_wait_minutes} min"
 });

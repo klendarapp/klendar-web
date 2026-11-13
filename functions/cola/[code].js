@@ -1,6 +1,6 @@
 import { configure, pickLang } from '../_lib/page.js';
 import { guard } from '../_lib/public.js';
-import { queuePublicPage } from '../_lib/cola.js';
+import { queuePublicPage, queueScreenPage } from '../_lib/cola.js';
 
 // klendar.app/cola/<código>: el QR del «Cartel para la puerta» (cola
 // virtual). Con la app instalada lo abre la app (App Link / enlace
@@ -13,6 +13,8 @@ export const onRequestGet = (ctx) => {
   const url = new URL(ctx.request.url);
   const pedido = url.searchParams.get('lang');
   const lang = pedido === 'en' || pedido === 'es' ? pedido : pickLang(ctx.request);
+  // `?pantalla=1`: la pantalla de la puerta (tele o tablet), no la página.
+  if (url.searchParams.has('pantalla')) return guard(lang, url.pathname, () => queueScreenPage(String(ctx.params.code || ''), lang));
   return guard(lang, url.pathname, () => queuePublicPage(String(ctx.params.code || ''), lang));
 };
 

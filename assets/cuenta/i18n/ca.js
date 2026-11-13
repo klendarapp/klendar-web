@@ -2176,5 +2176,13 @@ KL_DIC('ca', {
   "Menos": "Menys",
   "Espera aproximada: 1 min": "Espera aproximada: 1 min",
   "Ahora mismo {name} no tiene la cola virtual. Pregunta en la puerta.": "Ara mateix {name} no té la cua virtual. Pregunta a la porta.",
-  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} avui ja no atén ningú més de la cua. Pregunta a la porta."
+  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} avui ja no atén ningú més de la cua. Pregunta a la porta.",
+  "No hay nadie detrás: no hace falta.": "No hi ha ningú darrere: no cal.",
+  "Ya dejaste pasar a alguien en este turno.": "Ja has deixat passar algú en aquest torn.",
+  "Ya voy": "Ja vinc",
+  "Le hemos dicho al local que vas de camino.": "Hem dit al local que ja hi vas.",
+  "Dejar pasar al siguiente": "Deixa passar el següent",
+  "¿Dejar pasar al siguiente?": "Vols deixar passar el següent?",
+  "Avisamos al siguiente y tú vuelves a esperar el primero: te toca justo después. Solo una vez.": "Avisem el següent i tu tornes a esperar el primer: et toca just després. Només un cop.",
+  "Dejar pasar": "Deixa passar"
 });

@@ -29,6 +29,8 @@ const COLA_ERR = {
   adults_only: 'Solo para mayores de 18 años.',
   bad_code: 'Este cartel ya no funciona.',
   unavailable: 'La cola no está disponible',
+  nobody_behind: 'No hay nadie detrás: no hace falta.',
+  already_passed: 'Ya dejaste pasar a alguien en este turno.',
 };
 const colaError = (e) => (COLA_ERR[e?.clave] ? t(COLA_ERR[e.clave]) : (e?.message || amable('')));
 
@@ -133,6 +135,32 @@ function colaAvisa(negocio, numero, limite) {
   } catch { /* Android Chrome no deja crear avisos sin service worker: suena y vibra */ }
 }
 
+/** «Añadir a favoritos» de «Mientras esperas» (lo pinta `listoMientras`):
+ * optimista, como la app; si la base dice que no, vuelve atrás y lo dice. */
+function colaEnganchaFav(b) {
+  const boton = $('#listo-fav');
+  if (!boton) return;
+  const pintaFav = (on) => {
+    boton.classList.toggle('on', on);
+    boton.setAttribute('aria-pressed', String(on));
+    boton.innerHTML = `${ic(on ? 'favorite' : 'favorite_border')}${esc(t(on ? 'Quitar de favoritos' : 'Añadir a favoritos'))}`;
+  };
+  let enCurso = false;
+  boton.onclick = async () => {
+    if (enCurso) return;
+    enCurso = true;
+    const antes = boton.getAttribute('aria-pressed') === 'true';
+    pintaFav(!antes);
+    try {
+      await llamar('toggle_favorite', { p_business_id: b.id });
+    } catch (e) {
+      pintaFav(antes);
+      toast(e?.message || amable(''), true);
+    }
+    enCurso = false;
+  };
+}
+
 // ── La pantalla ──────────────────────────────────────────────────────────
 /** El código del cartel ya no vale. */
 const colaCartelMalo = () => pinta(pantallaVacia({
@@ -163,7 +191,7 @@ RUTAS.cola = async ([code]) => {
   // se pierde el foco ni lo elegido en «¿Cuántos sois?»).
   const firmaDe = (d) => JSON.stringify([d.team, d.unavailable, d.ended_today,
     d.queue && [d.queue.status, d.queue.waiting, d.queue.waiting_people, d.queue.full, d.queue.wait_minutes, d.queue.call_minutes],
-    d.me && [d.me.id, d.me.status, d.me.ahead, d.me.ahead_people, d.me.wait_minutes, d.me.call_deadline]]);
+    d.me && [d.me.id, d.me.status, d.me.ahead, d.me.ahead_people, d.me.wait_minutes, d.me.call_deadline, d.me.on_way_at, d.me.passed_at]]);
 
   // Como la app: el logo, el nombre y la dirección corta del local (se llega
   // por el cartel, no desde «Tus códigos»).
@@ -180,6 +208,7 @@ RUTAS.cola = async ([code]) => {
   const pintaCola = (d) => {
     firma = firmaDe(d);
     colaDesfase(d);
+    document.body.classList.remove('cola-llamado');
     const b = d.business || {};
     const q = d.queue;
     const me = d.me;
@@ -225,9 +254,41 @@ RUTAS.cola = async ([code]) => {
         </section>
         ${llamado ? '' : `<p class="muted cola-nota">${esc(t('Deja esta página abierta: sonará y vibrará cuando te toque.'))}</p>`}
         <div class="cola-botones">
+          ${llamado && !me.on_way_at ? `<button type="button" class="pill accent" id="cola-voy">${esc(t('Ya voy'))}</button>` : ''}
+          ${llamado && me.on_way_at ? `<p class="cola-voy-hecho">${esc(t('Le hemos dicho al local que vas de camino.'))}</p>` : ''}
+          ${llamado && !me.passed_at ? `<button type="button" class="pill" id="cola-pasa">${esc(t('Dejar pasar al siguiente'))}</button>` : ''}
           ${avisos ? `<button type="button" class="pill" id="cola-avisos">${esc(t('Activar avisos'))}</button>` : ''}
           <button type="button" class="pill" id="cola-salir">${esc(t('Salir de la cola'))}</button>
-        </div>`);
+        </div>
+        ${llamado ? '' : '<div id="cola-mientras"></div>'}`);
+      // «¡Te toca!» a pantalla completa (en tinta, como la app).
+      document.body.classList.toggle('cola-llamado', llamado);
+      // «Ya voy» y «Dejar pasar al siguiente» (como la app).
+      const accion = async (boton, fn) => ocupado(boton, async () => {
+        try { await llamar(fn, { p_entry: me.id }); } catch (e) { toast(colaError(e), true); }
+        await mira(true);
+      });
+      $('#cola-voy')?.addEventListener('click', (ev) => accion(ev.currentTarget, 'queue_on_my_way'));
+      $('#cola-pasa')?.addEventListener('click', async (ev) => {
+        const boton = ev.currentTarget;
+        const ok = await confirma({
+          titulo: t('¿Dejar pasar al siguiente?'),
+          texto: t('Avisamos al siguiente y tú vuelves a esperar el primero: te toca justo después. Solo una vez.'),
+          aceptar: t('Dejar pasar'), cancelar: t('Cancelar'),
+        });
+        if (ok) await accion(boton, 'queue_let_pass');
+      });
+      // Mientras espera: favoritos y lo de hoy del local (como «Te aviso
+      // cuando esté listo», assets/cuenta/listo.js).
+      if (!llamado && typeof listoMientras === 'function') {
+        const caja = $('#cola-mientras');
+        listoMientras(b).then((h) => {
+          if (!caja.isConnected) return;
+          caja.innerHTML = h;
+          I18N.translate(caja);
+          colaEnganchaFav(b);
+        }).catch(() => {});
+      }
       $('#cola-avisos')?.addEventListener('click', async (ev) => {
         colaPreparaSonido();
         try { await Notification.requestPermission(); } catch { /* navegador viejo */ }
@@ -374,6 +435,7 @@ RUTAS.cola = async ([code]) => {
     document.removeEventListener('visibilitychange', alVolver);
     document.removeEventListener('pointerdown', colaPreparaSonido, { capture: true });
     document.title = `${t('Tu cuenta')} · Klendar`;
+    document.body.classList.remove('cola-llamado');
   });
 };
 

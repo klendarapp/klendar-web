@@ -70,3 +70,98 @@ export async function queuePublicPage(rawCode, lang) {
   res.headers.set('x-robots-tag', 'noindex, nofollow');
   return res;
 }
+
+// ── La pantalla de la puerta (`/cola/<código>?pantalla=1`) ───────────────────
+// Para una tele o una tablet en la entrada: los números avisados (el último,
+// grande) y los siguientes, sin nombres (`queue_screen`, sin sesión), y el QR
+// para coger número. Se vuelve a pedir cada 5 s. Oscura y a pantalla
+// completa: se lee de lejos.
+
+const TP = {
+  es: {
+    title: 'Pantalla de la cola', now: 'Ahora', next: 'Siguientes', none: 'Nadie esperando',
+    closed: 'La cola está cerrada', noQueue: 'Hoy no hay cola virtual', join: 'Escanea para coger número',
+    bad: 'Este cartel ya no funciona', wait: (m) => (m <= 1 ? 'Espera aproximada: 1 min' : `Espera aproximada: unos ${m} min`),
+  },
+  en: {
+    title: 'Queue screen', now: 'Now', next: 'Next', none: 'Nobody waiting',
+    closed: 'The queue is closed', noQueue: 'No virtual queue today', join: 'Scan to get a number',
+    bad: 'This poster no longer works', wait: (m) => (m <= 1 ? 'Approximate wait: 1 min' : `Approximate wait: about ${m} min`),
+  },
+};
+
+export async function queueScreenPage(rawCode, lang) {
+  const en = lang === 'en';
+  const S = TP[en ? 'en' : 'es'];
+  const code = KC.codigoValido(rawCode);
+  const info = code ? await rpc('queue_screen', { p_code: code }) : null;
+  const vale = info?.ok === true && !!info.business;
+  const sp = supabasePublic();
+  const joinUrl = `https://klendar.app${en ? '/en/queue' : '/cola'}/${code}`;
+  return html(`<!doctype html>
+<html lang="${en ? 'en' : 'es'}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>${esc(S.title)} · ${esc(info?.business?.name || 'Klendar')}</title>
+<link rel="stylesheet" href="/assets/site.css?v=20261112movil">
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #0A0A0A; color: #FFFFFF; font-family: Manrope, system-ui, sans-serif; }
+  .pantalla { min-height: 100%; box-sizing: border-box; display: grid; grid-template-columns: 1fr auto; gap: 4vw; padding: 4vw 5vw; align-items: center; }
+  .pantalla h1 { font-family: Sora, sans-serif; font-weight: 800; font-size: clamp(22px, 3.2vw, 48px); margin: 0 0 3vw; }
+  .et { font-weight: 700; font-size: clamp(16px, 2.2vw, 34px); letter-spacing: .06em; text-transform: uppercase; color: #BDBDBD; margin: 0; }
+  .ahora { font-family: Sora, sans-serif; font-weight: 800; font-size: clamp(64px, 16vw, 260px); line-height: 1; letter-spacing: -.03em; margin: .5vw 0 2vw; }
+  .ahora small { font-size: .35em; letter-spacing: 0; color: #BDBDBD; margin-left: .3em; }
+  .sig { font-family: Sora, sans-serif; font-weight: 700; font-size: clamp(28px, 5vw, 80px); margin: .5vw 0 1.5vw; }
+  .espera, .vacia { font-size: clamp(16px, 2vw, 30px); color: #BDBDBD; margin: 0; }
+  .lado { text-align: center; background: #FFFFFF; color: #0A0A0A; border-radius: 24px; padding: 2vw; width: clamp(160px, 22vw, 360px); }
+  .lado .qr svg { width: 100%; height: auto; display: block; }
+  .lado p { font-weight: 700; font-size: clamp(14px, 1.6vw, 24px); margin: 1vw 0 0; }
+  @media (max-aspect-ratio: 1/1) { .pantalla { grid-template-columns: 1fr; } .lado { margin: 0 auto; } }
+</style>
+</head>
+<body>
+<main class="pantalla" id="pantalla" data-code="${esc(code)}">
+  <div id="numeros">${vale ? '' : `<h1>${esc(S.bad)}</h1>`}</div>
+  ${vale && !info.unavailable ? `<aside class="lado"><div class="qr" role="img" aria-label="QR ${esc(joinUrl)}"></div><p>${esc(S.join)}</p></aside>` : ''}
+</main>
+${vale ? `<script src="/assets/vendor/qrcode.js?v=1"></script>
+<script>
+(function () {
+  var S = ${JSON.stringify({ ...S, wait: undefined })};
+  var esperaTxt = ${en ? `function (m) { return m <= 1 ? 'Approximate wait: 1 min' : 'Approximate wait: about ' + m + ' min'; }` : `function (m) { return m <= 1 ? 'Espera aproximada: 1 min' : 'Espera aproximada: unos ' + m + ' min'; }`};
+  var qr = qrcode(0, 'M'); qr.addData(${JSON.stringify(joinUrl)}); qr.make();
+  var caja = document.querySelector('.lado .qr'); if (caja) caja.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
+  var pre = ${JSON.stringify(en ? 'No. ' : 'Nº ')};
+  function pinta(d) {
+    var b = (d && d.business) || {}; var q = d && d.queue;
+    var h = '<h1>' + esc(b.name) + '</h1>';
+    if (!q) h += '<p class="vacia">' + esc(S.noQueue) + '</p>';
+    else {
+      var llam = q.called || [];
+      h += '<p class="et">' + esc(S.now) + '</p>';
+      h += llam.length ? '<p class="ahora">' + esc(pre + llam[0]) + (llam.length > 1 ? '<small>' + esc(llam.slice(1, 4).map(function (n) { return pre + n; }).join(' · ')) + '</small>' : '') + '</p>' : '<p class="ahora">—</p>';
+      h += '<p class="et">' + esc(S.next) + '</p>';
+      h += (q.next || []).length ? '<p class="sig">' + esc(q.next.map(function (n) { return pre + n; }).join(' · ')) + '</p>' : '<p class="vacia">' + esc(S.none) + '</p>';
+      if (q.status !== 'open') h += '<p class="espera">' + esc(S.closed) + '</p>';
+      else if (q.wait_minutes != null && (q.next || []).length) h += '<p class="espera">' + esc(esperaTxt(q.wait_minutes < 15 ? q.wait_minutes : Math.floor((q.wait_minutes + 2) / 5) * 5)) + '</p>';
+    }
+    document.getElementById('numeros').innerHTML = h;
+  }
+  pinta(${JSON.stringify(info)});
+  setInterval(function () {
+    fetch(${JSON.stringify(`${sp.url}/rest/v1/rpc/queue_screen`)}, {
+      method: 'POST',
+      headers: { apikey: ${JSON.stringify(sp.key)}, Authorization: 'Bearer ' + ${JSON.stringify(sp.key)}, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_code: ${JSON.stringify(code)} }),
+    }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { if (d && d.ok) pinta(d); }).catch(function () {});
+  }, 5000);
+})();
+</script>` : ''}
+</body>
+</html>`, vale ? 200 : 404, 'private, no-store');
+}

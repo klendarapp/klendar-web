@@ -2176,5 +2176,13 @@ KL_DIC('gl', {
   "Menos": "Menos",
   "Espera aproximada: 1 min": "Espera aproximada: 1 min",
   "Ahora mismo {name} no tiene la cola virtual. Pregunta en la puerta.": "Agora mesmo {name} non ten a cola virtual. Pregunta na porta.",
-  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} hoxe xa non atende a ninguén máis da cola. Pregunta na porta."
+  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} hoxe xa non atende a ninguén máis da cola. Pregunta na porta.",
+  "No hay nadie detrás: no hace falta.": "Non hai ninguén detrás: non fai falta.",
+  "Ya dejaste pasar a alguien en este turno.": "Xa deixaches pasar a alguén nesta quenda.",
+  "Ya voy": "Xa vou",
+  "Le hemos dicho al local que vas de camino.": "Dixémoslle ao local que vas de camiño.",
+  "Dejar pasar al siguiente": "Deixar pasar ao seguinte",
+  "¿Dejar pasar al siguiente?": "Deixar pasar ao seguinte?",
+  "Avisamos al siguiente y tú vuelves a esperar el primero: te toca justo después. Solo una vez.": "Avisamos ao seguinte e ti volves agardar o primeiro: tócache xusto despois. Só unha vez.",
+  "Dejar pasar": "Deixar pasar"
 });

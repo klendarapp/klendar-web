@@ -2176,5 +2176,13 @@ KL_DIC('fr', {
   "Menos": "Moins",
   "Espera aproximada: 1 min": "Attente estimée : 1 min",
   "Ahora mismo {name} no tiene la cola virtual. Pregunta en la puerta.": "{name} n’a pas la file virtuelle pour le moment. Demandez à l’entrée.",
-  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} n’appelle plus personne de la file aujourd’hui. Demandez à l’entrée."
+  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name} n’appelle plus personne de la file aujourd’hui. Demandez à l’entrée.",
+  "No hay nadie detrás: no hace falta.": "Il n’y a personne derrière : pas besoin.",
+  "Ya dejaste pasar a alguien en este turno.": "Vous avez déjà laissé passer quelqu’un pour ce tour.",
+  "Ya voy": "J’arrive",
+  "Le hemos dicho al local que vas de camino.": "On a prévenu l’établissement que vous arrivez.",
+  "Dejar pasar al siguiente": "Laisser passer le suivant",
+  "¿Dejar pasar al siguiente?": "Laisser passer le suivant ?",
+  "Avisamos al siguiente y tú vuelves a esperar el primero: te toca justo después. Solo una vez.": "On appelle le suivant et vous attendez de nouveau en premier : c’est votre tour juste après. Une seule fois.",
+  "Dejar pasar": "Laisser passer"
 });

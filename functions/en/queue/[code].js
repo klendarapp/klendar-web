@@ -1,12 +1,13 @@
 import { configure } from '../../_lib/page.js';
 import { guard } from '../../_lib/public.js';
-import { queuePublicPage } from '../../_lib/cola.js';
+import { queuePublicPage, queueScreenPage } from '../../_lib/cola.js';
 
 // klendar.app/en/queue/<code>: the virtual queue page in English (see
 // `functions/cola/[code].js` and `_lib/cola.js`).
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
   const url = new URL(ctx.request.url);
+  if (url.searchParams.has('pantalla')) return guard('en', url.pathname, () => queueScreenPage(String(ctx.params.code || ''), 'en'));
   return guard('en', url.pathname, () => queuePublicPage(String(ctx.params.code || ''), 'en'));
 };
 

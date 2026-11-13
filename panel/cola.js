@@ -62,6 +62,8 @@ const colaQueda = (iso) => {
   const s = Math.max(0, Math.round((new Date(iso).getTime() - (Date.now() + COLA_DESFASE)) / 1000));
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
+/** «8,5» (los minutos de la espera media, con un decimal). */
+const colaMinutos = (m) => Number(m).toLocaleString(LOC(), { maximumFractionDigits: 1 });
 const colaCartelUrl = (code) => `${I18N.pub === 'en' ? '/en/poster/queue/' : '/cartel/cola/'}${encodeURIComponent(code || '')}`;
 
 PAGES.cola = async (v) => {
@@ -93,7 +95,11 @@ PAGES.cola = async (v) => {
       <div class="cola-acciones">
         <a class="btn" href="${esc(colaCartelUrl(d.code))}" target="_blank" rel="noopener">${ms('qr_code_2')}${esc(I18N.t('Cartel para la puerta'))}</a>
         ${d.can_manage ? `<button class="btn" type="button" data-cola="codigo">${esc(I18N.t('Cambiar el código del cartel'))}</button>` : ''}
-      </div></div>`;
+      </div>
+      <h2 class="cola-h2">${esc(I18N.t('Pantalla para la puerta'))}</h2>
+      <p class="muted">${esc(I18N.t('Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.'))}</p>
+      <div class="cola-acciones"><a class="btn" href="${esc(`${I18N.pub === 'en' ? '/en/queue/' : '/cola/'}${encodeURIComponent(d.code || '')}?pantalla=1`)}" target="_blank" rel="noopener">${esc(I18N.t('Pantalla para la puerta'))}</a></div>
+      </div>`;
 
   const pinta = () => {
     firma = firmaDe(d);
@@ -103,7 +109,7 @@ PAGES.cola = async (v) => {
         <div class="page-head"><h1>Cola virtual</h1></div>
         ${d.can_manage ? `
           <form class="card form cola-abrir" id="f-cola" novalidate>
-            <div class="full">${helpBox(I18N.t('¿Cómo funciona?'), `<p>${esc(I18N.t('Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente».'))}</p>`)}</div>
+            <div class="full">${helpBox(I18N.t('¿Cómo funciona?'), `<p>${esc(I18N.t('Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente». A quien no tenga la app lo apuntas tú y le llamas en voz alta. La lista se borra sola a las 6:00.'))}</p>`)}</div>
             ${camposAbrir(d.max_people || 40, d.call_minutes || 5)}
             <p class="err full" id="cola-err" role="alert"></p>
             <div class="full"><button class="btn primary" type="submit">${esc(I18N.t('Abrir la cola de hoy'))}</button></div>
@@ -137,6 +143,8 @@ PAGES.cola = async (v) => {
       ${avisados.length ? `<h2 class="cola-h2">${esc(I18N.t('Avisados'))}</h2>
         <div class="card cola-lista">${avisados.map((e) => fila(e, `
           <p class="cola-queda" data-plazo="${esc(e.call_deadline)}">${esc(bi(`Le quedan ${colaQueda(e.call_deadline)}`, `${colaQueda(e.call_deadline)} left`))}</p>
+          ${e.guest ? `<p class="cola-nota-fuerte">${ms('campaign')}${esc(I18N.t('Sin la app: llámale en voz alta'))}</p>` : ''}
+          ${e.on_way_at ? `<p class="cola-nota-fuerte">${ms('check_circle_outline')}${esc(I18N.t('Va de camino'))}</p>` : ''}
           <div class="cola-dos"><button class="btn" type="button" data-llega="${esc(e.id)}">${esc(I18N.t('Ha llegado'))}</button>
             <button class="btn" type="button" data-novino="${esc(e.id)}">${esc(I18N.t('No vino'))}</button></div>`)).join('')}</div>` : ''}
       <h2 class="cola-h2">${esc(I18N.t('Esperando'))}</h2>
@@ -158,9 +166,34 @@ PAGES.cola = async (v) => {
         </div>
       </div>
       ${cartelCard()}
+      <div id="cola-cifras-caja">${cifrasHtml}</div>
       <p class="muted">${esc(I18N.t('La lista se borra sola al acabar el día (a las 6:00).'))}</p>`;
     engancha();
   };
+
+  // «Cifras de la cola»: hoy y los últimos 30 días (solo números; como la
+  // app). Se piden aparte y cada minuto.
+  let cifrasHtml = '';
+  const cifras = async () => {
+    const c = await rpc('business_queue_stats', { p_business: BIZ.id }).catch(() => null);
+    if (!c || c.ok === false) return;
+    const linea = (et, x) => [
+      `${et}: ${Number(x.served) === 1 ? bi('1 atendido', '1 served') : bi(`${fmtNum(x.served)} atendidos`, `${fmtNum(x.served)} served`)}`,
+      x.no_show ? (Number(x.no_show) === 1 ? bi('1 no vino', "1 didn't come") : bi(`${fmtNum(x.no_show)} no vinieron`, `${fmtNum(x.no_show)} didn't come`)) : '',
+      x.avg_wait_minutes != null ? bi(`espera media ${colaMinutos(x.avg_wait_minutes)} min`, `average wait ${colaMinutos(x.avg_wait_minutes)} min`) : '',
+    ].filter(Boolean).join(' · ');
+    const hoy = c.today || {};
+    const mes = c.month || {};
+    cifrasHtml = !Number(hoy.turns) && !Number(mes.turns) ? '' : `<div class="card cola-stats">
+        <h2 class="cola-h2">${esc(I18N.t('Cifras de la cola'))}</h2>
+        ${Number(hoy.turns) ? `<p>${esc(linea(bi('Hoy', 'Today'), hoy))}</p>` : ''}
+        ${Number(mes.turns) ? `<p class="muted">${esc(linea(bi('Últimos 30 días', 'Last 30 days'), mes))}</p>` : ''}
+      </div>`;
+    const caja = $('#cola-cifras-caja', v);
+    if (caja) { caja.innerHTML = cifrasHtml; I18N.translate(caja); }
+  };
+  cifras();
+  const relojCifras = setInterval(() => { if (!v.isConnected) { clearInterval(relojCifras); return; } cifras(); }, 60000);
 
   /** Vuelve a pedir la cola (o pinta lo que devuelve una acción). */
   const recarga = async (nuevo = null) => {
@@ -183,6 +216,30 @@ PAGES.cola = async (v) => {
       if (boton?.isConnected) boton.disabled = false;
       recarga();
     }
+  };
+
+  /** «Avisar al siguiente». Si al que le toca no tiene la app, se dice en
+   * grande: no le llega ningún aviso y hay que llamarle en voz alta. */
+  const avisar = async (boton) => {
+    boton.disabled = true;
+    let r;
+    try {
+      r = await colaRpc('queue_call_next', { p_business: BIZ.id });
+      await recarga(r);
+    } catch (err) {
+      toast(err.message, true);
+      if (boton.isConnected) boton.disabled = false;
+      recarga();
+      return;
+    }
+    const e = (r?.queue?.entries || []).find((x) => x.id === r.called_id);
+    if (!e?.guest) return;
+    await modal({
+      title: I18N.t('Llámale en voz alta'),
+      html: `<p class="cola-voz">${esc(`${colaNumero(e.number)} · ${e.name || ''}`)}</p>
+        <p>${esc(I18N.t('No tiene la app: no le llega ningún aviso.'))}</p>`,
+      submit: I18N.t('Aceptar'), cancel: '',
+    });
   };
 
   /** «Ha llegado», «No vino» o «Quitar»: lo hace y deja unos segundos para
@@ -217,7 +274,7 @@ PAGES.cola = async (v) => {
     $$('[data-cola]', v).forEach((b) => {
       b.onclick = async () => {
         const que = b.dataset.cola;
-        if (que === 'avisar') return haz(b, 'queue_call_next', { p_business: BIZ.id });
+        if (que === 'avisar') return avisar(b);
         if (que === 'apuntar') {
           const r = await modal({
             title: I18N.t('Apuntar a alguien'),

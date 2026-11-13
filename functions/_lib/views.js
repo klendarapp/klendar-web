@@ -1351,6 +1351,9 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
   // la derecha; en el móvil, al final).
   const festivoAviso = festivo.includes('sin-confirmar') ? festivo : '';
   const flecha = '<svg class="ic flecha" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M7.41 8.59 12 13.17l4.59-4.58L18 10l-6 6-6-6z"/></svg>';
+  // La cola virtual, si hoy está abierta (lo pide el navegador: la página va
+  // en caché): «Cola virtual · 5 esperando · unos 20 min ›» (como la app).
+  const colaFicha = !organizador && !parado;
   const estadoHtml = horario
     ? `<details class="estado-neg">
         <summary><span class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"${cocina ? ` data-cocina="${esc(JSON.stringify(cocina))}"` : ''}${Object.keys(diasOtro).length ? ` data-dias="${esc(JSON.stringify(diasOtro))}"` : ''}></span>${crowdOn ? `<span class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></span>` : ''}<span class="estado-fb">${S.hours}</span>${flecha}</summary>
@@ -1413,6 +1416,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         ${b.redemptions_total ? `<span class="badge">${esc(S.redeemed(Number(b.redemptions_total)))}</span>` : ''}
       </div>
       ${estadoHtml}
+      ${colaFicha ? `<p class="cola-ficha" data-cola-ficha="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" hidden></p>` : ''}
       <nav class="neg-secciones" aria-label="${esc(b.name)}">
         ${nFlash ? `<a class="chip" href="#ahora">${esc(S.now)} <span class="muted">${nFlash}</span></a>` : ''}
         ${nEvents ? `<a class="chip" href="#proximamente">${esc(S.soon)} <span class="muted">${nEvents}</span></a>` : ''}
@@ -1533,7 +1537,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     consulta: pagina > 1 ? `?p=${pagina}` : '', privada: esDeRevision,
     head: `<meta name="robots" content="${esDeRevision ? 'noindex, nofollow' : b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
 ${esDeRevision ? '' : ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=4" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=4" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}${colaFicha ? `\n<script src="/assets/cola-ficha.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : ''}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${conPreguntas ? `
 ${PREGUNTAS_CSS}
 ${preguntasScript}` : ''}${partidos ? `

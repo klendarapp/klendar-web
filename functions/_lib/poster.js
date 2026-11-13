@@ -199,7 +199,7 @@ export async function venuePosterPage(token, lang, mesa) {
  * línea encima de la invitación: «Cola virtual»), la invitación, el QR, la
  * dirección corta y klendar.app; arriba, la barra con la ayuda, `nav` y
  * «Imprimir». Lo comparten el cartel del local y el de la cola. */
-function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', queIcono = '', invita, ayuda, numeros = [] }) {
+function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', queIcono = '', invita, ayuda, numeros = [], notas = [], marca = 'klendar.app' }) {
   const dir = direccionCorta(b.address, b.city);
   const logo = b.logo_url || '';
   const cartel = (num = '') => `
@@ -210,9 +210,10 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', que
       ${que ? `<p class="que">${queIcono}${esc(que)}</p>` : ''}
       <p class="invita">${esc(invita)}</p>
       <div class="qr" role="img" aria-label="QR ${esc(url)}"></div>
-      <p class="apunta">${esc(S.point)}</p>
+      ${notas.length ? `<div class="bajo-qr"><p class="apunta">${esc(S.point)}</p>${notas.map((n) => `<p class="nota">${esc(n)}</p>`).join('')}</div>`
+    : `<p class="apunta">${esc(S.point)}</p>`}
       ${dir ? `<p class="dir">${esc(dir)}</p>` : ''}
-      <p class="marca"><img src="/assets/symbol.png" alt=""> klendar.app</p>
+      <p class="marca"><img src="/assets/symbol.png" alt=""> ${esc(marca)}</p>
     </section>`;
 
   return html(`${CABEZA(S, titulo)}
@@ -247,6 +248,9 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', que
   .mesa .cartel .qr { width: 26cqw; margin-bottom: 1.3cqw; }
   .cartel .qr svg { width: 100%; height: auto; display: block; }
   .cartel .apunta { font-weight: 700; font-size: 3.3cqw; margin: 0 0 auto; }
+  .cartel .bajo-qr { margin: 0 0 auto; }
+  .cartel .bajo-qr .apunta { margin: 0 0 1.2cqw; }
+  .cartel .nota { font-weight: 600; font-size: 2.8cqw; line-height: 1.3; margin: 0 0 .4cqw; }
   .mesa .cartel .apunta { font-size: 1.65cqw; }
   .cartel .dir { font-size: 2.9cqw; color: #636363; margin: 3cqw 0 1.4cqw; }
   .mesa .cartel .dir { font-size: 1.45cqw; margin: 1.5cqw 0 .7cqw; }
@@ -345,6 +349,8 @@ const TQ = {
     help: 'Para la puerta. Se imprime igual en blanco y negro.',
     changed: 'Este cartel ya no funciona',
     changedBody: 'El local ha cambiado el código del cartel. Imprime el nuevo desde el panel o desde la app.',
+    cuenta: 'Hace falta una cuenta de Klendar (gratis).',
+    sinMovil: '¿Sin móvil? Pregunta en la puerta.',
   },
   en: {
     lang: 'en', title: 'Poster for the door', point: 'Point your phone camera here', print: 'Print',
@@ -353,6 +359,8 @@ const TQ = {
     help: 'For the door. It prints fine in black and white.',
     changed: 'This poster no longer works',
     changedBody: 'The venue has changed the poster code. Print the new one from the dashboard or the app.',
+    cuenta: 'You need a Klendar account (free).',
+    sinMovil: 'No phone? Ask at the door.',
   },
 };
 
@@ -372,6 +380,9 @@ export async function queuePosterPage(code, lang) {
   return paginaCartel({
     S, b, url: `https://klendar.app/cola/${code}`, titulo: `${S.title} · ${b.name}`,
     que: S.que, invita: S.scan, ayuda: S.help,
+    // Que se sepa antes de escanear (como la app): hace falta cuenta, sin
+    // móvil se pregunta en la puerta, y la dirección escrita.
+    notas: [S.cuenta, S.sinMovil], marca: `klendar.app/cola/${code}`,
   });
 }
 

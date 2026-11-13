@@ -2176,5 +2176,13 @@ KL_DIC('eu', {
   "Menos": "Gutxiago",
   "Espera aproximada: 1 min": "Gutxi gorabeherako itxaronaldia: min 1",
   "Ahora mismo {name} no tiene la cola virtual. Pregunta en la puerta.": "{name}: orain ez dago ilara birtualik. Galdetu atean.",
-  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name}: gaur ez da ilarako beste inor artatuko. Galdetu atean."
+  "{name} ya no atiende a nadie más de la cola hoy. Pregunta en la puerta.": "{name}: gaur ez da ilarako beste inor artatuko. Galdetu atean.",
+  "No hay nadie detrás: no hace falta.": "Ez dago inor atzean: ez da beharrezkoa.",
+  "Ya dejaste pasar a alguien en este turno.": "Txanda honetan dagoeneko utzi diozu norbaiti pasatzen.",
+  "Ya voy": "Banoa",
+  "Le hemos dicho al local que vas de camino.": "Lokalari esan diogu bidean zaudela.",
+  "Dejar pasar al siguiente": "Utzi hurrengoari aurretik pasatzen",
+  "¿Dejar pasar al siguiente?": "Hurrengoari aurretik pasatzen utzi?",
+  "Avisamos al siguiente y tú vuelves a esperar el primero: te toca justo después. Solo una vez.": "Hurrengoari abisatuko diogu eta zu lehena zara berriro zain: haren ondoren duzu txanda. Behin bakarrik.",
+  "Dejar pasar": "Utzi pasatzen"
 });

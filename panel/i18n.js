@@ -3,6 +3,16 @@
 'use strict';
 
 const I18N = makeI18N({
+    // Cola virtual: mejoras (2026-11-13)
+    "Pantalla para la puerta": "Screen for the door",
+    "Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.": "Open it on a TV or a tablet: it shows the numbers being called, without names.",
+    "Quien llega escanea el cartel de la puerta, coge número y le avisamos en el móvil cuando le toca. Tú solo tocas «Avisar al siguiente». A quien no tenga la app lo apuntas tú y le llamas en voz alta. La lista se borra sola a las 6:00.": "People arriving scan the poster on the door, get a number and we let them know on their phone when it's their turn. You just tap “Call the next one”. Anyone without the app, you add yourself and call out loud. The list clears itself at 6:00.",
+    "Sin la app: llámale en voz alta": "No app: call them out loud",
+    "Va de camino": "On the way",
+    "Cifras de la cola": "Queue figures",
+    "Llámale en voz alta": "Call them out loud",
+    "No tiene la app: no le llega ningún aviso.": "They don't have the app: no notification reaches them.",
+    "Aceptar": "OK",
     // ── Cola virtual: arreglos (2026-11-13) ─────────────────────────────
     "La cola está cerrada.": "The queue is closed.",
     "Ya está en la cola.": "Already in the queue.",

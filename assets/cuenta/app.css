@@ -663,6 +663,18 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .cola-cab .muted { margin: 0; }
 .cola-logo { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; flex: none; }
 .cola-campana { color: var(--ink); margin: 0 0 4px; }
+/* «¡Te toca!» a pantalla completa, en tinta (como la app; el coral, solo en
+   «Ya voy», el botón principal). */
+body.cola-llamado { background: var(--ink); }
+body.cola-llamado main, body.cola-llamado .cola-cab, body.cola-llamado .cola-kicker,
+body.cola-llamado .cola-cab .muted { color: var(--surface); }
+body.cola-llamado .cola-turno.llamado { background: transparent; border: 0; color: var(--surface); padding: 12px 0; }
+body.cola-llamado .cola-turno .muted, body.cola-llamado .cola-tu { color: var(--surface); opacity: .8; }
+body.cola-llamado .cola-campana { color: var(--surface); }
+body.cola-llamado .cola-turno .cola-numero { font-size: 104px; }
+body.cola-llamado .cola-botones .pill:not(.accent) { background: transparent; color: var(--surface); border-color: var(--surface); }
+.cola-voy-hecho { margin: 0; text-align: center; font-weight: 700; color: var(--surface); }
+#cola-mientras { margin-top: 18px; }
 .cola-turno.llamado .cola-tu { margin-top: 14px; }
 /* +18 antes de coger número, a la vista (no en letra pequeña debajo). */
 .cola-mayores { font-weight: 700; margin: 12px 0 0; }
