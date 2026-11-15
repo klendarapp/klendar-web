@@ -1659,7 +1659,10 @@ PAGES.resumen = async (v) => {
   // sola, en dos toques, y «Completa tu ficha» con lo que falta; lo opcional
   // no frena el alta y se queda aquí hasta 30 días o hasta que esté todo. Lo
   // mismo que en la app (alta rápida, 2026-11-05).
-  const sinNada = !offers.length && !(cuentas?.total);
+  // «Sin nada publicado»: un borrador aún no cuenta (`publicadas`, las que
+  // han salido alguna vez; con una base de antes, el total). Como la app.
+  const sinNada = cuentas?.publicadas != null ? cuentas.publicadas === 0
+    : (!offers.length && !(cuentas?.total));
   // Una entidad, cuando ya se ha comprobado su documento (antes no publica).
   const candidato = gestiona() && BIZ.verification_status !== 'rejected' && !BIZ.entity?.pending
     && (!esEntidad() || BIZ.verification_status === 'verified');
@@ -2333,7 +2336,7 @@ function accionesPub(o) {
     <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
     ${cifras}
     ${asistentes}
-    ${estadoVisible(o) === 'active' ? `<button type="button" class="btn sm ghost" data-act="pause" data-id="${esc(o.id)}">Pausar</button>` : o.status === 'draft' ? `<button type="button" class="btn sm ghost" data-act="activate" data-id="${esc(o.id)}">Activar</button>` : ''}
+    ${estadoVisible(o) === 'active' ? `<button type="button" class="btn sm ghost" data-act="pause" data-id="${esc(o.id)}">Pausar</button>` : o.status === 'draft' && !(finDe(o) && new Date(finDe(o)) < new Date()) ? `<button type="button" class="btn sm ghost" data-act="activate" data-id="${esc(o.id)}">Activar</button>` : ''}
     <details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">
       <a href="${crear}">Crear a partir de esta</a>
       ${repetir ? `<a href="${crear}&repeat=1">${o.kind === 'flash_offer' ? 'Repetir mañana' : 'Repetir'}</a>` : ''}
@@ -2685,7 +2688,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const en = I18N.lang === 'en';
   document.body.classList.add('con-barra-pub');
   // En vivo: lo que estaba publicado se edita con «Guardar cambios».
-  const enVivo = !!id && o.status === 'active';
+  // Agotada también está publicada (se ve, con lista de espera), como en la app:
+  // «Pasar a borrador» · «Guardar cambios».
+  const enVivo = !!id && ['active', 'sold_out'].includes(o.status);
+  // Una foto o un vídeo subiéndose: la barra no guarda hasta que acaba.
+  let subiendo = false;
   let programada = id && o.status === 'draft' && o.publish_at ? o.publish_at : null;
 
   const titulo = () => (kind === 'future_event'
@@ -3116,6 +3123,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
     });
     const subir = $('#photos input[type=file]');
     if (subir) subir.onchange = async (e) => {
+      // Mientras sube, la barra de abajo no guarda (como la app).
+      subiendo = true;
+      $$('#barraPub button', v).forEach((b) => { b.disabled = true; });
+      try {
       for (const elegido of caben(e.target.files, images.length, TOPE.publicacion)) {
         const video = /^video\//.test(elegido.type);
         // Las fotos, reducidas como en la app; los vídeos, tal cual.
@@ -3134,6 +3145,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
         const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
         if (error) { toast(friendly(error.message), true); continue; }
         images.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
+      }
+      } finally {
+        subiendo = false;
+        $$('#barraPub button', v).forEach((b) => { b.disabled = false; });
       }
       renderPhotos();
     };
@@ -3230,6 +3245,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
     // Solo para la primera visita: la base lo refleja aquí desde
     // `offers.first_visit_only` (el sello de la tarjeta).
     first_visit: s2?.first_visit === true,
+    // «Menú del día» (Herramientas): editarla no le quita el sello ni la
+    // comida, como en la app (`OfferStyle.toJson`).
+    daily_menu: s2?.badge === 'daily_menu',
+    meal: typeof s2?.meal === 'string' ? s2.meal : null,
   });
   let estilo = limpiaEstilo(o.style);
   // Desde «Fidelizar» › «Crear oferta de primera visita» (?primera=1).
@@ -3238,7 +3257,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const estiloJson = () => ({
     template: estilo.template,
     ...(estilo.accent ? { accent: estilo.accent } : {}),
-    ...(estilo.before_closing && kind === 'flash_offer' ? { badge: 'before_closing' } : {}),
+    ...(estilo.before_closing && kind === 'flash_offer' ? { badge: 'before_closing' }
+      : estilo.daily_menu && kind === 'flash_offer' ? { badge: 'daily_menu', ...(estilo.meal ? { meal: estilo.meal } : {}) } : {}),
     ...(estilo.first_visit && (val('audience') || 'all') !== 'promoters' ? { first_visit: true } : {}),
   });
   const enPaleta = (c) => PALETA.some(([h]) => h === c);
@@ -3721,8 +3741,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
 
   // ── Guardar: borrador, publicar ya o programada ─────────────────────────
+  // La creada en un intento que falló a medias (ver abajo).
+  let creada = null;
   const guarda = async ({ publicar, alas = null }) => {
     limpiaErrores();
+    // Con una foto o un vídeo subiéndose, se espera (si no, se guardaba sin él).
+    if (subiendo) { toast(bi('Espera a que acabe de subirse la foto o el vídeo.', 'Wait until the photo or video has finished uploading.'), true); return; }
     const f = new FormData($('#form'));
     const flash = kind === 'flash_offer';
     // Mismas reglas que la app (y que la base), en el orden del formulario.
@@ -3748,6 +3772,29 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const dType = val('discount_type');
     if (dType === 'other' && String(f.get('discount_value') || '').trim().length > 24) {
       fallo(campo('discount_value'), I18N.t('El descuento «Otro» cabe en 24 caracteres («2ª unidad −50 %»).')); return;
+    }
+    // Las mismas cifras que admite la app (en la web faltaban: «− %» vacío o
+    // 150 %, precios negativos, aforo 0, 0 canjes por persona).
+    {
+      const num = (k) => parseFloat(String(f.get(k) || '').trim().replace(',', '.'));
+      const vacio = (k) => !String(f.get(k) || '').trim();
+      const importe = bi('Pon un importe mayor que 0, por ejemplo 12,50.', 'Enter an amount greater than 0, for example 12.50.');
+      if (dType === 'percent' && !(num('discount_value') >= 1 && num('discount_value') <= 100)) {
+        fallo(campo('discount_value'), bi('Pon un porcentaje del 1 al 100.', 'Enter a percentage from 1 to 100.')); return;
+      }
+      if (dType === 'fixed' && !(num('discount_value') > 0)) { fallo(campo('discount_value'), importe); return; }
+      if (!vacio('price') && !(num('price') > 0)) { fallo(campo('price'), importe); return; }
+      if (['percent', 'fixed'].includes(dType) && !vacio('prior_price') && !(num('prior_price') > 0)) {
+        fallo(campo('prior_price'), importe); return;
+      }
+      const aforo = String(f.get('max_redemptions') || '').trim();
+      if (aforo && !(/^\d+$/.test(aforo) && Number(aforo) >= 1)) {
+        fallo(campo('max_redemptions'), bi('Pon cuántas plazas hay, de 1 en adelante, o déjalo vacío.', 'Enter how many places there are, from 1 up, or leave it empty.')); return;
+      }
+      const porPersona = Number(f.get('max_per_user') || 1);
+      if (flash && !(Number.isInteger(porPersona) && porPersona >= 1 && porPersona <= 20)) {
+        fallo(campo('max_per_user'), bi('Pon de 1 a 20 canjes por persona.', 'Enter from 1 to 20 redemptions per person.')); return;
+      }
     }
     const priorRaw = (f.get('prior_price') || '').toString().replace(',', '.');
     const prior = priorRaw ? Math.round(parseFloat(priorRaw) * 100) : null;
@@ -3781,6 +3828,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
     // Programada para cuando ya habría terminado: saldría caducada (como la app).
     const acaba = finF || (flash ? null : iniF);
     if (alas && acaba && new Date(alas) >= new Date(acaba)) { toast(I18N.t('Se publicaría cuando ya ha terminado: cambia las fechas o la hora de publicar.'), true); return; }
+    // Publicar ya (o «Guardar cambios») algo que ya ha terminado: saldría
+    // «Publicada» y el cron la daría por terminada al momento (como la app).
+    if (publicar && !alas && acaba && new Date(acaba) <= new Date()) {
+      fallo(campo(finF ? 'end' : 'start'), bi('Ya ha terminado: cambia las fechas para publicarla.', 'It has already ended: change the dates to publish it.')); return;
+    }
     const price = (f.get('price') || '').toString().replace(',', '.');
     const dValue = (f.get('discount_value') || '').toString().replace(',', '.');
     // Bajar el precio con códigos sin usar no es gratis: quien los tenga
@@ -3819,7 +3871,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
           ? ((f.get('discount_value') || '').toString().trim() || null)
           : (dValue ? Number(dValue) : null),
         currency: 'EUR',
-        ...(prior ? { compare_at_cents: prior } : {}),
+        // El precio anterior, solo con % o precio fijo (como la app): al pasar a
+        // 2x1 o «Gratis» el campo escondido seguía lleno y salía un «antes».
+        ...(prior && ['percent', 'fixed'].includes(dType) ? { compare_at_cents: prior } : {}),
         ...(dType === '2x1' ? { alcohol: alcohol === 'yes' } : {}),
       } : null,
       redeem_start_at: flash ? iniF : null,
@@ -3844,10 +3898,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
       first_visit_only: audiencia !== 'promoters' && !!estilo.first_visit,
       // Las columnas de RRPP: las suyas o, si deja de serlo, las de siempre.
       ...(rrpp ? rrpp.cols : o.audience === 'promoters' ? RRPP_COLUMNAS_FUERA : {}),
-      // Borrador, salvo que ya estuviera terminada, agotada o cancelada (se
-      // queda así; editarla no la saca del cajón).
+      // Borrador, salvo que ya estuviera terminada o cancelada (se queda así;
+      // editarla no la saca del cajón). Una agotada está publicada: «Pasar a
+      // borrador» la pausa, como en la app.
       status: alas ? 'draft' : (publicar ? 'active'
-        : (id && ['expired', 'sold_out', 'cancelled'].includes(o.status) ? o.status : 'draft')),
+        : (id && ['expired', 'cancelled'].includes(o.status) ? o.status : 'draft')),
       publish_at: alas,
       style: estiloJson(),
       // Sin sitio propio, la base pone el punto del negocio.
@@ -3878,21 +3933,32 @@ async function offerForm(v, id, kindDefault, desde = null) {
       }
     }
     try {
-      let offerId = id;
-      if (id) {
-        const { error } = await sb.from('offers').update(data).eq('id', id);
+      // Creada en un intento anterior que falló después (fotos, RRPP, artistas):
+      // se reintenta como edición, no se crea otra (como la app).
+      let offerId = id || creada;
+      let viejas = [];
+      if (offerId) {
+        const { error } = await sb.from('offers').update(data).eq('id', offerId);
         if (error) throw error;
-        const { error: eFotos } = await sb.from('offer_images').delete().eq('offer_id', id);
-        if (eFotos) throw eFotos;
+        const { data: antes, error: eAntes } = await sb.from('offer_images').select('id').eq('offer_id', offerId);
+        if (eAntes) throw eAntes;
+        viejas = (antes || []).map((x) => x.id);
       } else {
         if (serieCopia && campo('keep_series')?.checked) data.series_id = serieCopia.id;
         const { data: row, error } = await sb.from('offers').insert(data).select('id').single();
         if (error) throw error;
         offerId = row.id;
+        creada = offerId;
       }
+      // Las fotos nuevas entran antes de quitar las de antes: si fallan, se
+      // quedan las que había (antes se quedaba sin ninguna; como la app).
       if (images.length) {
         const { error: eFotos2 } = await sb.from('offer_images').insert(images.map((url, i) => ({ offer_id: offerId, url, position: i })));
         if (eFotos2) throw eFotos2;
+      }
+      if (viejas.length) {
+        const { error: eFotos } = await sb.from('offer_images').delete().in('id', viejas);
+        if (eFotos) throw eFotos;
       }
       if (rrpp?.cols.promoter_scope === 'some') await rrppGuardaElegidos(offerId, rrpp.ids);
       // «Quién actúa», con la publicación ya guardada. Si falla, ella queda

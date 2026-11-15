@@ -3900,5 +3900,11 @@ KL_DIC('de', {
   "−25 % en piercing": "−25 % auf Piercings",
   "−25 % en repostería": "−25 % auf Kuchen",
   "−30 % en el primer mes": "−30 % im ersten Monat",
-  "−30 % en la primera cuota": "−30 % auf den ersten Monatsbeitrag"
+  "−30 % en la primera cuota": "−30 % auf den ersten Monatsbeitrag",
+  "Pon un porcentaje del 1 al 100.": "Gib einen Prozentsatz von 1 bis 100 ein.",
+  "Pon un importe mayor que 0, por ejemplo 12,50.": "Gib einen Betrag über 0 ein, zum Beispiel 12,50.",
+  "Pon cuántas plazas hay, de 1 en adelante, o déjalo vacío.": "Gib an, wie viele Plätze es gibt (ab 1), oder lass das Feld leer.",
+  "Pon de 1 a 20 canjes por persona.": "Gib 1 bis 20 Einlösungen pro Person an.",
+  "Ya ha terminado: cambia las fechas para publicarla.": "Das ist schon vorbei: Ändere die Daten, um es zu veröffentlichen.",
+  "Espera a que acabe de subirse la foto o el vídeo.": "Warte, bis das Foto oder Video hochgeladen ist."
 });

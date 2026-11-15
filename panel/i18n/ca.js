@@ -3900,5 +3900,11 @@ KL_DIC('ca', {
   "−25 % en piercing": "−25 % en pírcings",
   "−25 % en repostería": "−25 % en rebosteria",
   "−30 % en el primer mes": "−30 % el primer mes",
-  "−30 % en la primera cuota": "−30 % en la primera quota"
+  "−30 % en la primera cuota": "−30 % en la primera quota",
+  "Pon un porcentaje del 1 al 100.": "Posa un percentatge de l'1 al 100.",
+  "Pon un importe mayor que 0, por ejemplo 12,50.": "Posa un import més gran que 0, per exemple 12,50.",
+  "Pon cuántas plazas hay, de 1 en adelante, o déjalo vacío.": "Posa quantes places hi ha, d'1 en endavant, o deixa-ho buit.",
+  "Pon de 1 a 20 canjes por persona.": "Posa d'1 a 20 bescanvis per persona.",
+  "Ya ha terminado: cambia las fechas para publicarla.": "Ja s'ha acabat: canvia les dates per publicar-la.",
+  "Espera a que acabe de subirse la foto o el vídeo.": "Espera que s'acabi de pujar la foto o el vídeo."
 });

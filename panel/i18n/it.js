@@ -3900,5 +3900,11 @@ KL_DIC('it', {
   "−25 % en piercing": "−25% sui piercing",
   "−25 % en repostería": "−25% sulla pasticceria",
   "−30 % en el primer mes": "−30 % il primo mese",
-  "−30 % en la primera cuota": "−30% sulla prima quota"
+  "−30 % en la primera cuota": "−30% sulla prima quota",
+  "Pon un porcentaje del 1 al 100.": "Inserisci una percentuale da 1 a 100.",
+  "Pon un importe mayor que 0, por ejemplo 12,50.": "Inserisci un importo maggiore di 0, ad esempio 12,50.",
+  "Pon cuántas plazas hay, de 1 en adelante, o déjalo vacío.": "Indica quanti posti ci sono, da 1 in su, o lascia vuoto.",
+  "Pon de 1 a 20 canjes por persona.": "Indica da 1 a 20 riscatti per persona.",
+  "Ya ha terminado: cambia las fechas para publicarla.": "È già finita: cambia le date per pubblicarla.",
+  "Espera a que acabe de subirse la foto o el vídeo.": "Aspetta che finisca il caricamento della foto o del video."
 });

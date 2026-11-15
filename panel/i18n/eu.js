@@ -3900,5 +3900,11 @@ KL_DIC('eu', {
   "−25 % en piercing": "−% 25 piercingetan",
   "−25 % en repostería": "−% 25 gozogintzan",
   "−30 % en el primer mes": "−% 30 lehen hilabetean",
-  "−30 % en la primera cuota": "−% 30 lehen kuotan"
+  "−30 % en la primera cuota": "−% 30 lehen kuotan",
+  "Pon un porcentaje del 1 al 100.": "Idatzi 1etik 100erako ehuneko bat.",
+  "Pon un importe mayor que 0, por ejemplo 12,50.": "Idatzi 0 baino handiagoa den zenbateko bat, adibidez 12,50.",
+  "Pon cuántas plazas hay, de 1 en adelante, o déjalo vacío.": "Idatzi zenbat plaza dauden, 1etik aurrera, edo utzi hutsik.",
+  "Pon de 1 a 20 canjes por persona.": "Idatzi 1etik 20ra pertsona bakoitzeko trukeak.",
+  "Ya ha terminado: cambia las fechas para publicarla.": "Amaitu da dagoeneko: aldatu datak argitaratzeko.",
+  "Espera a que acabe de subirse la foto o el vídeo.": "Itxaron argazkia edo bideoa igotzen amaitu arte."
 });
