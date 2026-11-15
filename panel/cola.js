@@ -11,6 +11,9 @@
  *   hoy, cambiar tope y minutos y cambiar el código del cartel, de
  *   propietario y encargado.
  * - «Cartel para la puerta»: /cartel/cola/<código> (functions/_lib/poster.js).
+ *   Debajo, «Dejar coger número desde la ficha» (propietario y encargado,
+ *   apagado de serie, migración 20261282100000): encendido, la ficha pública
+ *   enseña la cola abierta con su enlace; lo decide `business_queue_public`.
  *
  * Se vuelve a pedir cada 10 s. Va después de panel.js y usa lo suyo
  * (`PAGES`, `rpc`, `BIZ`, `gestiona`, `esc`, `ms`, `bi`, `toast`, `modal`,
@@ -72,7 +75,7 @@ PAGES.cola = async (v) => {
   const desfase = () => { const x = Date.parse(d?.now || ''); if (Number.isFinite(x)) COLA_DESFASE = x - Date.now(); };
   desfase();
 
-  const firmaDe = (x) => JSON.stringify([x.code, x.queue && [x.queue.status, x.queue.waiting, x.queue.served, x.queue.pace_minutes,
+  const firmaDe = (x) => JSON.stringify([x.code, x.join_from_profile === true, x.queue && [x.queue.status, x.queue.waiting, x.queue.served, x.queue.pace_minutes,
     x.queue.auto_paused, (x.queue.entries || []).map((e) => [e.id, e.status])]]);
 
   /** Ajustes para abrir (o cambiar tope y minutos). */
@@ -96,6 +99,10 @@ PAGES.cola = async (v) => {
         <a class="btn" href="${esc(colaCartelUrl(d.code))}" target="_blank" rel="noopener">${ms('qr_code_2')}${esc(I18N.t('Cartel para la puerta'))}</a>
         ${d.can_manage ? `<button class="btn" type="button" data-cola="codigo">${esc(I18N.t('Cambiar el código del cartel'))}</button>` : ''}
       </div>
+      ${d.can_manage ? `<div class="form" style="grid-template-columns:1fr;margin:12px 0 0">
+        <label class="f full casilla"><input type="checkbox" id="cola-ficha" ${d.join_from_profile === true ? 'checked' : ''}>
+          <span><b>${esc(I18N.t('Dejar coger número desde la ficha'))}</b> <small class="muted">${esc(I18N.t('Encendido, tu ficha en Klendar enseña la cola abierta y se puede coger número sin estar en la puerta. Apagado, solo con el cartel.'))}</small></span></label>
+      </div>` : ''}
       <h2 class="cola-h2">${esc(I18N.t('Pantalla para la puerta'))}</h2>
       <p class="muted">${esc(I18N.t('Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.'))}</p>
       <div class="cola-acciones"><a class="btn" href="${esc(`${I18N.pub === 'en' ? '/en/queue/' : '/cola/'}${encodeURIComponent(d.code || '')}?pantalla=1`)}" target="_blank" rel="noopener">${esc(I18N.t('Pantalla para la puerta'))}</a></div>
@@ -261,6 +268,17 @@ PAGES.cola = async (v) => {
   };
 
   function engancha() {
+    // «Dejar coger número desde la ficha»: se guarda al tocarlo (como la app;
+    // migración 20261282100000). Apagado, la ficha no enseña la cola.
+    const ficha = $('#cola-ficha', v);
+    if (ficha) {
+      ficha.onchange = async () => {
+        const on = ficha.checked;
+        await haz(ficha, 'queue_set_from_profile', { p_business: BIZ.id, p_on: on }, 'Guardado');
+        // Si no se ha guardado, vuelve a como está en la base.
+        if (ficha.isConnected && (d.join_from_profile === true) !== on) ficha.checked = d.join_from_profile === true;
+      };
+    }
     const f = $('#f-cola', v);
     if (f) {
       f.onsubmit = async (ev) => {

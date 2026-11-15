@@ -1454,6 +1454,8 @@ const I18N = makeI18N({
     "¿Quitar de la cola?": "Remove from the queue?",
     "Apuntar a alguien": "Add someone",
     "Cambiar tope y minutos": "Change limit and minutes",
+    "Dejar coger número desde la ficha": "Let people get a number from your page",
+    "Encendido, tu ficha en Klendar enseña la cola abierta y se puede coger número sin estar en la puerta. Apagado, solo con el cartel.": "On: your Klendar page shows the open queue and people can get a number without being at the door. Off: only with the poster.",
     "Cerrar la cola": "Close the queue",
     "Volver a abrir": "Open again",
     "Terminar por hoy": "Finish for today",

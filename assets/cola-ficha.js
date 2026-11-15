@@ -3,8 +3,9 @@
 // (la página del cartel). Como la app (`QueueFichaRow`).
 //
 // La ficha va en caché: lo pide el navegador a la base sin sesión
-// (`business_queue_public`, migración 20261281900000). Sin cola abierta, o si
-// falla, no sale nada.
+// (`business_queue_public`, migraciones 20261281900000 y 20261282100000). Sin
+// cola abierta, si el negocio no deja coger número desde la ficha (apagado de
+// serie, lo decide la base) o si falla, no sale nada.
 //
 // Uso: `<p data-cola-ficha="<id del negocio>" data-lang="es|en" hidden></p>`
 // y este script con `data-url` y `data-key`.
