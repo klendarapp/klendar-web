@@ -1946,6 +1946,7 @@ KL_DIC('it', {
   "Ya hay sitios en Klendar cerca. Míralos en Descubre.": "Ci sono già posti su Klendar qui vicino. Guardali in Scopri.",
   "Ya hay una cuenta con ese correo. Prueba a entrar.": "Esiste già un account con questa email. Prova ad accedere.",
   "Ya la has canjeado.": "L’hai già riscattata.",
+  "Eres del equipo de este negocio: tus códigos no se pueden validar aquí.": "Fai parte del team di questa attività: i tuoi codici non possono essere convalidati qui.",
   "Ya lo habías pedido": "L'avevi già chiesto",
   "Ya lo han recibido todos": "L’hanno già ricevuto tutti",
   "Ya lo has recibido": "L’hai già ricevuto",

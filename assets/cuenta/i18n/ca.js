@@ -1946,6 +1946,7 @@ KL_DIC('ca', {
   "Ya hay sitios en Klendar cerca. Míralos en Descubre.": "Ja hi ha llocs a Klendar a prop. Mira'ls a Descobreix.",
   "Ya hay una cuenta con ese correo. Prueba a entrar.": "Ja hi ha un compte amb aquest correu. Prova d'entrar.",
   "Ya la has canjeado.": "Ja l'has bescanviat.",
+  "Eres del equipo de este negocio: tus códigos no se pueden validar aquí.": "Ets de l'equip d'aquest negoci: els teus codis no es poden validar aquí.",
   "Ya lo habías pedido": "Ja l'havies demanat",
   "Ya lo han recibido todos": "Ja ho han rebut tots",
   "Ya lo has recibido": "Ja l’has rebut",

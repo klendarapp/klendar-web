@@ -1946,6 +1946,7 @@ KL_DIC('eu', {
   "Ya hay sitios en Klendar cerca. Míralos en Descubre.": "Badaude jada lekuak Klendarren inguruan. Ikusi Aurkitu atalean.",
   "Ya hay una cuenta con ese correo. Prueba a entrar.": "Badago kontu bat helbide horrekin. Saiatu saioa hasten.",
   "Ya la has canjeado.": "Trukatu duzu jada.",
+  "Eres del equipo de este negocio: tus códigos no se pueden validar aquí.": "Negozio honen taldekoa zara: zure kodeak ezin dira hemen balidatu.",
   "Ya lo habías pedido": "Eskatua zenuen jada",
   "Ya lo han recibido todos": "Guztiek jaso dute dagoeneko",
   "Ya lo has recibido": "Jaso duzu dagoeneko",

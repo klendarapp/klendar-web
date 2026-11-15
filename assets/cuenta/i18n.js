@@ -183,6 +183,7 @@ const APP_EN = {
   'Ahora mismo está fuera de su horario.': "It's outside its hours right now.",
   'Esta publicación es solo para mayores de 18.': 'This publication is for over-18s only.',
   'Ya la has canjeado.': "You've already redeemed it.",
+  'Eres del equipo de este negocio: tus códigos no se pueden validar aquí.': "You're on this business's team: your codes can't be validated here.",
   'Se han acabado las plazas.': 'There are no places left.',
   'Ya no quedan tantas plazas. Prueba con menos.': "There aren't that many places left. Try fewer.",
   'Vas muy rápido. Espera un momento y vuelve a probar.': "You're going too fast. Wait a moment and try again.",

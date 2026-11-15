@@ -1946,6 +1946,7 @@ KL_DIC('gl', {
   "Ya hay sitios en Klendar cerca. Míralos en Descubre.": "Xa hai sitios en Klendar preto. Míraos en Descubre.",
   "Ya hay una cuenta con ese correo. Prueba a entrar.": "Xa hai unha conta con ese correo. Proba a entrar.",
   "Ya la has canjeado.": "Xa a canxeaches.",
+  "Eres del equipo de este negocio: tus códigos no se pueden validar aquí.": "Es do equipo deste negocio: os teus códigos non se poden validar aquí.",
   "Ya lo habías pedido": "Xa o pediras",
   "Ya lo han recibido todos": "Xa o recibiron todos",
   "Ya lo has recibido": "Xa o recibiches",

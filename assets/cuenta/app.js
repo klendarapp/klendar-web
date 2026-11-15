@@ -255,6 +255,8 @@ const ERRORES = {
   outside_window: 'Ahora mismo está fuera de su horario.',
   adults_only: 'Esta publicación es solo para mayores de 18.',
   already_redeemed: 'Ya la has canjeado.',
+  // Del equipo del negocio: sus códigos no se validan allí (revisión de códigos, 15-11).
+  team_member: 'Eres del equipo de este negocio: tus códigos no se pueden validar aquí.',
   sold_out: 'Se han acabado las plazas.',
   not_enough_seats: 'Ya no quedan tantas plazas. Prueba con menos.',
   rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',
@@ -629,14 +631,18 @@ async function navegar() {
     console.error(e);
     // Si ya lo canjeaste, lo útil es llevarte a tus códigos, no a un error.
     const yaEsTuyo = /already_redeemed|max_per_user/.test(e.clave || '');
+    // Del equipo del negocio: reintentar no cambia nada (como la app).
+    const sinReintentar = /^(team_member|first_visit_team)$/.test(e.clave || '');
     view.innerHTML = pantallaVacia({
-      icono: yaEsTuyo ? 'qr_code_2' : 'refresh',
+      icono: yaEsTuyo ? 'qr_code_2' : sinReintentar ? 'storefront' : 'refresh',
       titulo: t(yaEsTuyo ? 'Ya lo tienes' : 'Algo ha fallado'),
       texto: e.message || amable(''),
       h: 'h1',
       botones: yaEsTuyo
         ? `<a class="pill accent" href="/cuenta/codigos">${esc(t('Tus códigos'))}</a>
            <a class="pill" href="/cuenta">${esc(t('Volver'))}</a>`
+        : sinReintentar
+        ? `<a class="pill" href="/cuenta">${esc(t('Volver'))}</a>`
         : `<button type="button" class="pill accent" id="reintentar">${esc(t('Reintentar'))}</button>
            <a class="pill" href="/cuenta">${esc(t('Volver'))}</a>`,
     });
@@ -2426,6 +2432,18 @@ function conectaQuitar(raiz, tipo) {
 }
 
 // «Tus códigos» llega por partes: los 50 más recientes y, al final de
+/** Cuándo caduca (ms) el primero de `lista` que aún vale a las `ahora`; null
+ * si ninguno. */
+function proximaCaducidad(lista, ahora) {
+  let prox = null;
+  for (const r of lista) {
+    const at = Date.parse(r.expires_at);
+    if (r.status !== 'pending' || !(at > ahora)) continue;
+    if (prox == null || at < prox) prox = at;
+  }
+  return prox;
+}
+
 // «Pasados», «Ver más» con los siguientes (`my_redemptions`, `p_offset`).
 const CODIGOS_POR_PARTE = 50;
 RUTAS.codigos = async (_partes, params) => {
@@ -2502,6 +2520,13 @@ RUTAS.codigos = async (_partes, params) => {
         botones: `<a class="pill accent" href="/cuenta/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
       })}`);
   $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
+  // Cuando caduca el primero de «Para usar», se vuelve a pintar: si no,
+  // seguía ahí con la página abierta (revisión de códigos, 15-11; como la app).
+  const proxima = proximaCaducidad(lista || [], Date.now());
+  if (proxima != null) {
+    const despierta = setTimeout(() => navegar(), Math.min(proxima - Date.now() + 1000, 2147483000));
+    alSalir(() => clearTimeout(despierta));
+  }
   if (quitar) { conectaQuitar($('#codigosBonos'), 'passes'); conectaQuitar($('#codigosPasados'), 'codes'); }
   // Los bonos gastados o caducados siguientes, al final de «Bonos».
   const masBonos = $('[data-ver-mas="bonos"]');
@@ -2780,6 +2805,13 @@ async function sellosDelCanje(code) {
   } catch { /* sin red: el canje, sin la línea del sello */ }
 }
 
+/** Lo que va el reloj del servidor por delante del ordenador (ms) según su
+ * `now`; 0 si no viene (una base de antes). */
+function horaServidor(now) {
+  const at = now ? Date.parse(now) : NaN;
+  return Number.isFinite(at) ? at - Date.now() : 0;
+}
+
 RUTAS.codigo = async ([id], params, crudo) => {
   // `?rp=` se queda en la ruta si antes hay que entrar o crear la cuenta.
   if (!exigeSesion(`codigo/${id}${params.toString() ? `?${params}` : ''}`)) return;
@@ -2836,7 +2868,11 @@ RUTAS.codigo = async ([id], params, crudo) => {
   }).catch(() => null);
   const url = `https://klendar.app/r/${tk.code}`;
   const caduca = new Date(tk.expires_at);
-  const largo = caduca.getTime() - Date.now() > 3600 * 1000;
+  // La hora del servidor (`now`), no la del ordenador: la cuenta atrás no se
+  // falsea si va mal (revisión de códigos, 15-11).
+  const desfase = horaServidor(tk.now);
+  const ahora = () => Date.now() + desfase;
+  const largo = caduca.getTime() - ahora() > 3600 * 1000;
   const benef = beneficio(tk.discount, tk.price_cents, tk.currency);
   pinta(`
     <p class="crumbs"><a href="/cuenta/codigos">${esc(t('Tus códigos'))}</a></p>
@@ -2867,11 +2903,13 @@ RUTAS.codigo = async ([id], params, crudo) => {
         ? t('Enseña este código en el local para que lo escaneen. Solo vale una vez.')
         // Con el código escrito debajo del QR, qué hacer si no lo pueden escanear (como la app).
         : t('Enseña este código en el local para que lo escaneen. Si no pueden escanearlo, que escriban el código de debajo. Solo vale una vez.'))}</p>
-      ${largo ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
+      ${largo && (tk.offer_kind ?? 'future_event') === 'future_event' ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
     </div>`);
   // El código de debajo del QR se copia de un toque (como en la app).
   $('#copiar')?.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText(tk.code); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
+    // Como se ve (mayúsculas y de cuatro en cuatro), como la app: «Validar»
+    // del panel lo acepta así.
+    try { await navigator.clipboard.writeText(codigoLegible(tk.code)); toast(t('Código copiado')); } catch { toast(t('No se ha podido copiar'), true); }
   });
   // «Ya no voy»: las plazas quedan libres y la lista de espera se entera.
   $('#anular')?.addEventListener('click', async (ev) => {
@@ -2929,7 +2967,7 @@ RUTAS.codigo = async ([id], params, crudo) => {
   const pintaCuenta = () => {
     const el = $('#cuenta');
     if (!el) { clearInterval(reloj); return; }
-    const falta = caduca.getTime() - Date.now();
+    const falta = caduca.getTime() - ahora();
     if (falta <= 0) {
       el.textContent = '';
       $('#qr')?.classList.add('caducado');

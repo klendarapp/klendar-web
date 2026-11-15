@@ -72,6 +72,7 @@
     sinB: 'With “Friends going” you see which plans your friends are going to. Add them with your friend link or QR code: only people who have it can find you.',
     verAmigos: 'See your friends', anadir: 'Add friends', quitar: 'Turn off “Friends going”', free: 'Free',
     myCode: 'See my code', waitLeave: 'Leave the waiting list',
+    usedUp: "You've already redeemed this offer", usedUpEvent: "You've already got in with this reservation",
     waitIn: function (n) { return n > 1 ? 'You\'re on the waiting list (' + n + ' people in total)' : 'You\'re on the waiting list'; },
     waitCount: function (n) { return n === 1 ? '1 person waiting' : n + ' people waiting'; },
     waitHint: 'No commitment: we\'ll only notify you if someone lets their code expire.',
@@ -110,6 +111,7 @@
     sinB: 'Con «Van mis amigos» ves a qué planes van tus amigos. Añádelos con tu enlace de amigo o tu QR: solo te encuentra quien lo tiene.',
     verAmigos: 'Ver tus amigos', anadir: 'Añadir amigos', quitar: 'Quitar «Van mis amigos»', free: 'Gratis',
     myCode: 'Ver mi código', waitLeave: 'Salir de la lista de espera',
+    usedUp: 'Ya has canjeado esta oferta', usedUpEvent: 'Ya has entrado con esta reserva',
     waitIn: function (n) { return n > 1 ? 'Estás en la lista de espera, con ' + n + ' personas en total' : 'Estás en la lista de espera'; },
     waitCount: function (n) { return n === 1 ? '1 persona esperando' : n + ' personas esperando'; },
     waitHint: 'Sin compromiso: solo te avisamos si alguien deja caducar su código.',
@@ -302,6 +304,17 @@
         principal.textContent = T.myCode;
         principal.setAttribute('href', cuenta('codigo/' + id));
         if (nota) nota.hidden = true;
+        return;
+      }
+      // Ya ha usado todos los que le tocan (`max_per_user`): el botón se
+      // apaga y dice por qué, como la app (revisión de códigos, 15-11).
+      var maxUsos = Number(o.max_per_user) || 1;
+      if (tipo === 'codigo' && Number(o.my_redemptions) > 0 && Number(o.my_redemptions) >= maxUsos) {
+        var hecho = document.createElement('span');
+        hecho.className = principal.className.replace(/accent/, '').trim();
+        hecho.setAttribute('aria-disabled', 'true');
+        hecho.textContent = o.kind === 'future_event' ? T.usedUpEvent : T.usedUp;
+        principal.replaceWith(hecho);
         return;
       }
       if (tipo !== 'espera') return;
