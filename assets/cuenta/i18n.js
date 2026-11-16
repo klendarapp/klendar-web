@@ -2,6 +2,10 @@
 'use strict';
 
 const APP_EN = {
+  // Primera visita (revisión de sellos y Fidelizar, 2026-11-17)
+  "Esta oferta es solo para la primera visita a {negocio}, y ya has canjeado allí antes.": "This offer is only for a first visit to {negocio}, and you've redeemed there before.",
+  "Es para clientes nuevos y eres del equipo del negocio.": "It's for new customers and you're on the business's team.",
+  "este negocio": "this business",
   // Contacto de quien reserva (2026-11-17)
   "Teléfono (opcional)": "Phone (optional)",
   "Guardar en mi perfil": "Save it in my profile",

@@ -633,8 +633,9 @@ async function navegar() {
     console.error(e);
     // Si ya lo canjeaste, lo útil es llevarte a tus códigos, no a un error.
     const yaEsTuyo = /already_redeemed|max_per_user/.test(e.clave || '');
-    // Del equipo del negocio: reintentar no cambia nada (como la app).
-    const sinReintentar = /^(team_member|first_visit_team)$/.test(e.clave || '');
+    // Del equipo del negocio o una primera visita que ya no toca: reintentar
+    // no cambia nada (como la app).
+    const sinReintentar = /^(team_member|first_visit_team|first_visit_only)$/.test(e.clave || '');
     view.innerHTML = pantallaVacia({
       icono: yaEsTuyo ? 'qr_code_2' : sinReintentar ? 'storefront' : 'refresh',
       titulo: t(yaEsTuyo ? 'Ya lo tienes' : 'Algo ha fallado'),
@@ -2852,6 +2853,15 @@ RUTAS.codigo = async ([id], params, crudo) => {
     if (e.clave === 'audience_only') {
       pintaExclusiva(e.datos?.audience, e.datos?.business_id, e.datos?.business_name);
       return;
+    }
+    // Solo para la primera visita (como la app, `redeemErrorFirstVisit`): por
+    // qué no, con el nombre del negocio; antes salía «Algo no ha ido bien».
+    if (e.clave === 'first_visit_only' || e.clave === 'first_visit_team') {
+      e.message = e.clave === 'first_visit_team'
+        ? t('Es para clientes nuevos y eres del equipo del negocio.')
+        : t('Esta oferta es solo para la primera visita a {negocio}, y ya has canjeado allí antes.')
+          .replace('{negocio}', e.datos?.business_name || t('este negocio'));
+      throw e;
     }
     // De RRPP (solo con su enlace, sin plazas en su lista, ya es tarde, es
     // tu propio enlace o eres del equipo): se cuenta en su pantalla.
