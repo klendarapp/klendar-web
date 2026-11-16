@@ -951,6 +951,9 @@ export async function businessPage(param, lang, search = '') {
   const ver = ['novedades', 'resenas', 'preguntas', 'carta'].includes(qs.get('ver')) ? qs.get('ver') : '';
   const pagina = Math.max(1, Math.min(100, parseInt(qs.get('p') || '1', 10) || 1));
   const desde = (pagina - 1) * (ver ? POR_PAGINA_LISTA : POR_PAGINA_FICHA);
+  // ¿Ayer fue uno de sus días cerrados? (migración 20261284500030 de la app): la
+  // madrugada de después sigue cerrada. Sin la función, como antes.
+  const ayerCerradoP = rpc('business_closed_yesterday', { p_business: id }).then((x) => x === true).catch(() => false);
   const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista, muni] = await Promise.all([
     ver ? [] : rpcAll('business_offers_page', { p_id: id, p_limit: POR_PAGINA_FICHA, p_offset: desde }),
     ver ? null : rpc('business_offer_counts', { p_id: id }).catch(() => null),
@@ -1157,6 +1160,7 @@ export async function businessPage(param, lang, search = '') {
   const where = organizador ? '' : [b.address, b.city].filter(Boolean).join(', ');
   // Todo lo de la ficha, en la hora del negocio (Canarias, una menos).
   const tz = zonaDe(b);
+  const ayerCerrado = await ayerCerradoP;
   const SA = KA.t(lang);
   const fechasOrg = organizador ? events
     .map((o) => ({ offer_id: o.id, title: o.title, starts_at: o.event_at || o.redeem_start_at, time_zone: tz,
@@ -1428,7 +1432,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
   const colaFicha = !organizador && !parado;
   const estadoHtml = horario
     ? `<details class="estado-neg">
-        <summary><span class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify(cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"${cocina ? ` data-cocina="${esc(JSON.stringify(cocina))}"` : ''}${Object.keys(diasOtro).length ? ` data-dias="${esc(JSON.stringify(diasOtro))}"` : ''}></span>${crowdOn ? `<span class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></span>` : ''}<span class="estado-fb">${S.hours}</span>${flecha}</summary>
+        <summary><span class="estado-hoy" hidden data-horario="${esc(JSON.stringify(horas))}" data-cierres="${esc(JSON.stringify([...(ayerCerrado ? [{ starts_on: KZ.hoy(tz, -1), ends_on: KZ.hoy(tz, -1) }] : []), ...cierres.map((c) => ({ starts_on: c.starts_on, ends_on: c.ends_on }))]))}" data-tz="${esc(tz)}" data-lang="${en ? 'en' : 'es'}"${cocina ? ` data-cocina="${esc(JSON.stringify(cocina))}"` : ''}${Object.keys(diasOtro).length ? ` data-dias="${esc(JSON.stringify(diasOtro))}"` : ''}></span>${crowdOn ? `<span class="sitio-ahora" data-sitio-ahora="${esc(b.id)}" hidden></span>` : ''}<span class="estado-fb">${S.hours}</span>${flecha}</summary>
         <div class="estado-dentro">
           <h3 class="side-h">${S.hours}</h3>${horario}${horarioCocina}
           ${festivoAviso ? '' : festivo}
@@ -1610,7 +1614,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     consulta: pagina > 1 ? `?p=${pagina}` : '', privada: esDeRevision,
     head: `<meta name="robots" content="${esDeRevision ? 'noindex, nofollow' : b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
 ${esDeRevision ? '' : ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=4" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}${colaFicha ? `\n<script src="/assets/cola-ficha.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : ''}${parado ? '' : `\n<script src="/assets/encargo-ficha.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>`}
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=5" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}${colaFicha ? `\n<script src="/assets/cola-ficha.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : ''}${parado ? '' : `\n<script src="/assets/encargo-ficha.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>`}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${conPreguntas ? `
 ${PREGUNTAS_CSS}
 ${preguntasScript}` : ''}${partidos ? `

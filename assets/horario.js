@@ -92,8 +92,8 @@
     const ahora = p.h * 60 + p.min;
     const hoy = KZ.diaSemana(tz);
     const iso = hoyIso();
-    // Hoy cerrado: ni lo de hoy ni lo que venía de anoche; sí cuándo abre.
-    const hoyCerrado = cerradoEn(iso);
+    // Un día cerrado cancela lo que abre ese día, también lo de después de
+    // medianoche; lo de anoche sigue hasta su hora (como la base y la app).
     for (const [a, b] of tramos(hoy)) {
       const cruza = b <= a;
       if (cruza ? ahora >= a : ahora >= a && ahora < b) {
@@ -102,7 +102,7 @@
       }
     }
     const ayer = hoy === 1 ? 7 : hoy - 1;
-    for (const [a, b] of hoyCerrado ? [] : tramos(ayer, -1)) {
+    for (const [a, b] of tramos(ayer, -1)) {
       if (b <= a && ahora < b) return { abierto: true, pronto: b - ahora <= 60, texto: T.closesAt(hhmm(b)) };
     }
     for (let n = 0; n < 8; n++) {
