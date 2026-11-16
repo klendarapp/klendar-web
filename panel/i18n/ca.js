@@ -1992,6 +1992,7 @@ KL_DIC('ca', {
   "Lo escribo a mano": "L’escric a mà",
   "Lo esencial": "L'essencial",
   "Lo estamos revisando": "Ho estem revisant",
+  "Lo estamos revisando; te avisamos en cuanto esté.": "Ho estem revisant; t'avisem tan bon punt estigui.",
   "Lo guardamos en tu negocio para las próximas publicaciones.": "El desem al teu negoci per a les properes publicacions.",
   "Lo hemos ajustado un poco para que el texto encima se lea bien.": "L'hem ajustat una mica perquè el text de sobre es llegeixi bé.",
   "Lo hemos leído, pero no tiene eventos en los próximos 90 días.": "L'hem llegit, però no té esdeveniments en els pròxims 90 dies.",

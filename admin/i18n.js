@@ -67,6 +67,8 @@ const I18N = makeI18N({
   'Pregunta': 'Question',
   'Nombre de perfil': 'Profile name',
   'Condiciones de un grupo': 'Group conditions',
+  'Propuesta a un grupo': 'Proposal to a group',
+  'Motivo de un no a un grupo': 'Reason for turning down a group',
   'Menú del día': 'Daily menu',
   'Local pedido': 'Requested place',
   'Sorteo': 'Giveaway',

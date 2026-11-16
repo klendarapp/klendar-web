@@ -1992,6 +1992,7 @@ KL_DIC('gl', {
   "Lo escribo a mano": "Escríboo a man",
   "Lo esencial": "O esencial",
   "Lo estamos revisando": "Estámolo revisando",
+  "Lo estamos revisando; te avisamos en cuanto esté.": "Estámolo revisando; avisámoste en canto estea.",
   "Lo guardamos en tu negocio para las próximas publicaciones.": "Gardámola no teu negocio para as próximas publicacións.",
   "Lo hemos ajustado un poco para que el texto encima se lea bien.": "Axustámola un pouco para que o texto de enriba se lea ben.",
   "Lo hemos leído, pero no tiene eventos en los próximos 90 días.": "Lémolo, pero non ten eventos nos próximos 90 días.",

@@ -1992,6 +1992,7 @@ KL_DIC('eu', {
   "Lo escribo a mano": "Eskuz idatziko dut",
   "Lo esencial": "Funtsezkoa",
   "Lo estamos revisando": "Berrikusten ari gara",
+  "Lo estamos revisando; te avisamos en cuanto esté.": "Berrikusten ari gara; prest dagoenean abisatuko dizugu.",
   "Lo guardamos en tu negocio para las próximas publicaciones.": "Zure negozioan gordeko dugu hurrengo argitalpenetarako.",
   "Lo hemos ajustado un poco para que el texto encima se lea bien.": "Pixka bat doitu dugu, gainean doan testua ondo irakur dadin.",
   "Lo hemos leído, pero no tiene eventos en los próximos 90 días.": "Irakurri dugu, baina ez du ekitaldirik hurrengo 90 egunetan.",

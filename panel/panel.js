@@ -6491,9 +6491,12 @@ PAGES.novedades = async (v) => {
       // alcohol solo sale al momento, +18.
       const marcas = guardada?.moderation_flags || [];
       toast(guardada?.moderation_status !== 'pending' ? (marcas.includes('alcohol') ? 'Publicada. Menciona alcohol: solo la verán mayores de edad.' : 'Hecho')
-        : !marcas.length || marcas.includes('offensive')
+        : marcas.includes('offensive')
           ? 'Lo revisamos antes de publicarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
-          : 'Lo revisamos antes de publicarlo porque menciona tabaco o apuestas. Normalmente en menos de 24 h.'); route();
+          // Sin marca (el moderador) o con otra: sin motivo (20261284500040, como la app).
+          : marcas.includes('tobacco') || marcas.includes('gambling')
+            ? 'Lo revisamos antes de publicarlo porque menciona tabaco o apuestas. Normalmente en menos de 24 h.'
+            : 'Lo estamos revisando; te avisamos en cuanto esté.'); route();
     } catch (e) { toast(friendly(e.message), true); }
   };
 
@@ -6837,7 +6840,10 @@ PAGES.mensajes = async (v) => {
     const hecho = r.status === 'review'
       ? `<div class="scan-result warn">${esc(I18N.t((r.flags || []).includes('offensive')
         ? 'Lo revisamos antes de enviarlo porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'
-        : 'Lo revisamos antes de enviarlo porque menciona tabaco o apuestas. Normalmente en menos de 24 h.'))}</div>`
+        // Sin marca (el moderador) o con otra: sin motivo (20261284500040, como la app).
+        : (r.flags || []).some((f) => f === 'tobacco' || f === 'gambling')
+          ? 'Lo revisamos antes de enviarlo porque menciona tabaco o apuestas. Normalmente en menos de 24 h.'
+          : 'Lo estamos revisando; te avisamos en cuanto esté.'))}</div>`
       : `<div class="scan-result ok">${ms('check_circle')}${esc(bi(r.recipients === 1 ? 'Mensaje enviado a 1 persona.' : `Mensaje enviado a ${fmtNum(r.recipients || 0)} personas.`,
         r.recipients === 1 ? 'Message sent to 1 person.' : `Message sent to ${fmtNum(r.recipients || 0)} people.`))}</div>`;
     await route();

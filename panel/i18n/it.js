@@ -1992,6 +1992,7 @@ KL_DIC('it', {
   "Lo escribo a mano": "Lo scrivo a mano",
   "Lo esencial": "L’essenziale",
   "Lo estamos revisando": "Lo stiamo controllando",
+  "Lo estamos revisando; te avisamos en cuanto esté.": "Lo stiamo controllando; ti avvisiamo appena è pronto.",
   "Lo guardamos en tu negocio para las próximas publicaciones.": "Lo salviamo nella tua attività per le prossime pubblicazioni.",
   "Lo hemos ajustado un poco para que el texto encima se lea bien.": "L’abbiamo regolato un po’ perché il testo sopra si legga bene.",
   "Lo hemos leído, pero no tiene eventos en los próximos 90 días.": "L'abbiamo letto, ma non ha eventi nei prossimi 90 giorni.",

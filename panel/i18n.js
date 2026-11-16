@@ -427,6 +427,7 @@ const I18N = makeI18N({
     'Todavía no se ha validado ningún código en este periodo.':
       'No code has been validated in this period yet.',
     'Validado por': 'Validated by',
+    'Lo estamos revisando; te avisamos en cuanto esté.': "We're reviewing it; we'll let you know as soon as it's ready.",
     'Sin conexión': 'Offline',
     'Plazas libres': 'Places left',
     'A quien ya canjeó no se le avisa.': "People who have already redeemed won't be notified.",

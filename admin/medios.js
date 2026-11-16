@@ -37,7 +37,7 @@ const TEXTO_TIPO = {
   offer: 'Publicación', post: 'Novedad', review: 'Reseña', review_reply: 'Respuesta a una reseña', business_message: 'Mensaje a clientes',
   business_name: 'Nombre del negocio', business_description: 'Descripción del negocio', menu_section: 'Apartado de la carta', menu_item: 'Plato de la carta',
   closure_reason: 'Motivo de días cerrados', highlight: 'Qué pedir aquí', question: 'Pregunta', question_answer: 'Respuesta a una pregunta',
-  profile_name: 'Nombre de perfil', group_request: 'Petición de grupo', group_conditions: 'Condiciones de un grupo', daily_menu: 'Menú del día',
+  profile_name: 'Nombre de perfil', group_request: 'Petición de grupo', group_conditions: 'Condiciones de un grupo', group_proposal: 'Propuesta a un grupo', group_decline: 'Motivo de un no a un grupo', daily_menu: 'Menú del día',
   venue_request: 'Local pedido', giveaway: 'Sorteo', series: 'Serie', artist: 'Artista', stamp_card: 'Tarjeta de sellos', birthday_gift: 'Regalo de cumpleaños',
   pass_type: 'Bono', loyalty: 'Cupón', loyalty_thanks: 'Agradecimiento', spot: 'Dar en el momento',
 };

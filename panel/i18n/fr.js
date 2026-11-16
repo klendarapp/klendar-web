@@ -1992,6 +1992,7 @@ KL_DIC('fr', {
   "Lo escribo a mano": "Je l’écris moi-même",
   "Lo esencial": "L’essentiel",
   "Lo estamos revisando": "Nous le vérifions",
+  "Lo estamos revisando; te avisamos en cuanto esté.": "Nous le vérifions ; nous te prévenons dès que c’est prêt.",
   "Lo guardamos en tu negocio para las próximas publicaciones.": "Nous l’enregistrons dans ton établissement pour tes prochaines publications.",
   "Lo hemos ajustado un poco para que el texto encima se lea bien.": "On l’a un peu ajustée pour que le texte par-dessus reste lisible.",
   "Lo hemos leído, pero no tiene eventos en los próximos 90 días.": "Nous l'avons lu, mais il n'a aucun événement dans les 90 prochains jours.",
