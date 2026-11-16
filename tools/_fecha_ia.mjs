@@ -47,6 +47,9 @@ export const POSTERIOR = {
   ...(CONTACTO ? { '/negocios': { ...CONTACTO, version: CONTACTO.iso }, '/en/business-terms': { ...CONTACTO, version: CONTACTO.iso } } : {}),
 };
 
+// La versión de las condiciones para negocios que dice la cabecera de /negocios (la más nueva).
+export const VERSION_NEGOCIOS = CONTACTO?.iso || IA?.iso || '2026-11-05';
+
 export function fechaLegal(ruta, cabecera) {
   const p = POSTERIOR[ruta];
   if (p) {

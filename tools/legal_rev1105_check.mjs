@@ -26,7 +26,7 @@
 //
 // Con BASE=https://klendar.app … --en-vivo mira lo publicado (Supabase, simulado igual).
 import { playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
-import { fechaLegal, IA } from './_fecha_ia.mjs';
+import { fechaLegal, IA, VERSION_NEGOCIOS } from './_fecha_ia.mjs';
 import { NUNCA_PRECIO, PRECIOS_APAGADO, segunPrecios } from './_precios.mjs';
 
 const { chromium, webkit } = playwright();
@@ -76,11 +76,11 @@ const PAGINAS = [
     /Tax ID: 79288717N/,
     /4 November 2026: The owner's tax ID, address and phone number are filled in\./,
   ], [], []],
-  ['/negocios', `Versión ${IA ? IA.iso : '2026-11-05'}`, [
+  ['/negocios', `Versión ${VERSION_NEGOCIOS}`, [
     /Para negocios, las partes se someten a los juzgados de Málaga\./,
     /4 de noviembre de 2026: Se completa el fuero \(apartado 9\): los juzgados de Málaga\./,
   ], [], []],
-  ['/en/business-terms', `Version ${IA ? IA.iso : '2026-11-05'}`, [
+  ['/en/business-terms', `Version ${VERSION_NEGOCIOS}`, [
     /For businesses, the parties submit to the courts of Málaga\./,
     /4 November 2026: The jurisdiction is filled in \(section 9\): the courts of Málaga\./,
   ], [], []],

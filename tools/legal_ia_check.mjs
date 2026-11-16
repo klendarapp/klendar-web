@@ -25,7 +25,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_ia_check.mjs
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
-import { IA, POSTERIOR } from './_fecha_ia.mjs';
+import { IA, POSTERIOR, fechaLegal } from './_fecha_ia.mjs';
 
 if (!IA) {
   console.log('IA_DESDE = None en legal_ia.py: no hay textos de IA que mirar.');
@@ -67,7 +67,7 @@ const PAGINAS = [
     /Anthropic \(Anthropic Ireland, Limited; lo trata en Estados Unidos y, según la carga, en otros países: Claude/,
     /Decisiones automáticas\. Cuando una decisión la toma un sistema automático \(el traspaso de una ficha con el código de «¿Es tu negocio\?», o que el moderador no publique algo tuyo\)/,
     // Encima puede ir lo publicado después (RA1, 13-11).
-    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,2}?${ES}: Apartado nuevo «Funciones con inteligencia artificial»`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,3}?${ES}: Apartado nuevo «Funciones con inteligencia artificial»`),
   ], 1],
   ['/en/privacy', `Last updated: ${POSTERIOR['/en/privacy'].en}`, [
     /Artificial intelligence \(AI\) features\s+Some features use Claude, the AI from Anthropic/,
@@ -79,7 +79,7 @@ const PAGINAS = [
     /“Is this your business\?” with a code[\s\S]*?It is an automated decision/,
     /only when someone has asked for it and Claude isn't available/,
     /Automated decisions\. When an automated system takes a decision/,
-    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,2}?${EN}: New “Artificial intelligence features” part`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,3}?${EN}: New “Artificial intelligence features” part`),
   ], 1],
   ['/terminos', `Última actualización: ${IA.es}`, [
     /Funciones con inteligencia artificial\. Algunas funciones usan una IA, Claude, de Anthropic/,
@@ -94,7 +94,7 @@ const PAGINAS = [
     /it's done by Claude, the AI from Anthropic, or, if it isn't available, Google Translate, and it may contain mistakes/,
     new RegExp(`Change history\\s+${EN}: Artificial intelligence features and the help assistant`),
   ], 0],
-  ['/negocios', `Última actualización: ${IA.es} · Versión ${IA.iso}`, [
+  ['/negocios', fechaLegal('/negocios', `Última actualización: ${IA.es} · Versión ${IA.iso}`), [
     /quien verifica es siempre una persona de Klendar\. «Verificado» quiere decir que lo ha revisado una persona de Klendar/,
     /Hay una excepción, lo único que se decide sin una persona: si la ficha tiene un correo publicado/,
     /Lo revisa siempre una persona, también si el correo o la web son de un dominio oficial/,
@@ -103,15 +103,15 @@ const PAGINAS = [
     /6 bis\. Herramientas con inteligencia artificial/, /Rellenar desde una foto, un enlace o un texto\. Lo que lee la IA es una propuesta que el Negocio revisa/,
     /Ayudas de IA\./, /Asistente de ayuda\. Lo que diga el asistente no cambia estas condiciones/,
     new RegExp(`Los cambios del ${ES} \\(apartados 1, 3 bis, 6 y 6 bis\\) se aplican desde el ${APLICA_ES}, también 15 días después\\.`),
-    new RegExp(`Versión\\s+Publicada\\s+Se aplica desde\\s+${esc(IA.iso)}`),
-    new RegExp(`Historial de cambios\\s+${ES}: Verificar lo hace siempre una persona[\\s\\S]*?Se aplica desde el ${APLICA_ES}, 15 días después de publicarlo y avisarte\\.`),
+    new RegExp(`Versión\\s+Publicada\\s+Se aplica desde\\s+(?:.+\\n\\s*){0,3}?${esc(IA.iso)}`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,3}?${ES}: Verificar lo hace siempre una persona[\\s\\S]*?Se aplica desde el ${APLICA_ES}, 15 días después de publicarlo y avisarte\\.`),
   ], 0],
-  ['/en/business-terms', `Last updated: ${IA.en} · Version ${IA.iso}`, [
+  ['/en/business-terms', fechaLegal('/en/business-terms', `Last updated: ${IA.en} · Version ${IA.iso}`), [
     /verification is always done by a person at Klendar/,
     /There is one exception, the only thing decided without a person/,
     /6a\. Artificial intelligence tools/,
     new RegExp(`The changes of ${EN} \\(sections 1, 3a, 6 and 6a\\) apply from ${APLICA_EN}, also 15 days later\\.`),
-    new RegExp(`Version\\s+Published\\s+Applies from\\s+${esc(IA.iso)}`),
+    new RegExp(`Version\\s+Published\\s+Applies from\\s+(?:.+\\n\\s*){0,3}?${esc(IA.iso)}`),
   ], 0],
   ['/normas', `Última actualización: ${IA.es}`, [
     /Un moderador con IA y personas\. Si nos das permiso/,
