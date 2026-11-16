@@ -1,5 +1,5 @@
 {
- "version": "619db37e0f29",
+ "version": "ace65d329ecd",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -79,7 +79,7 @@
     "q": "¿Puedo reservar una plaza en un evento?",
     "a": [
      {
-      "t": "Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local."
+      "t": "Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. Si lo reservas o lo guardas con tiempo, te lo recordamos 24 horas antes, con la hora y el sitio. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local."
      }
     ]
    },
@@ -670,7 +670,7 @@
     "q": "Can I reserve a place at an event?",
     "a": [
      {
-      "t": "If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving isn't a payment; whatever it costs, if anything, is paid at the venue."
+      "t": "If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. If you reserve or save it in advance, we remind you 24 hours before, with the time and the place. Reserving isn't a payment; whatever it costs, if anything, is paid at the venue."
      }
     ]
    },
