@@ -10,6 +10,8 @@
 'use strict';
 
 const I18N = makeI18N({
+  // «Preguntas al reservar» (admin, 2026-11-17)
+  "Preguntas al reservar": "Booking questions",
   // ── Entrada y barra ───────────────────────────────────────────────────
   'Entrar': 'Log in',
   'Email': 'Email',

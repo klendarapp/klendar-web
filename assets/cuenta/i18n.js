@@ -2,6 +2,27 @@
 'use strict';
 
 const APP_EN = {
+  // «Preguntas al reservar» (cuenta, 2026-11-17)
+  "obligatoria": "required",
+  "Sí": "Yes",
+  "No": "No",
+  "Tu respuesta": "Your answer",
+  "No escribas datos de salud.": "Don’t write health information.",
+  "Responde a las preguntas obligatorias.": "Answer the required questions.",
+  "No se han podido guardar tus respuestas: contéstalas desde tu código.": "Your answers couldn’t be saved: answer them from your code.",
+  "{negocio} verá tus respuestas solo para organizar este evento.": "{negocio} will see your answers only to organise this event.",
+  "Tus respuestas": "Your answers",
+  "Aún no has respondido a las preguntas del negocio.": "You haven’t answered the business’s questions yet.",
+  "Cambiar respuestas": "Change answers",
+  "Responder": "Answer",
+  "Cada respuesta, como mucho 200 letras.": "Each answer can be up to 200 characters.",
+  "Tu reserva ya no está en pie: las respuestas ya no se cambian.": "Your booking no longer stands: the answers can’t be changed now.",
+  "Demasiados cambios seguidos. Prueba dentro de un rato.": "Too many changes in a row. Try again in a while.",
+  "No se han podido guardar tus respuestas. Inténtalo de nuevo.": "Your answers couldn’t be saved. Please try again.",
+  "Respuestas guardadas.": "Answers saved.",
+  "Unas preguntas de {negocio}": "A few questions from {negocio}",
+  "Guardar": "Save",
+  "Tu código": "Your code",
   // «Avísame cuando abran» (cuenta, 2026-11-17)
   "Eres del equipo de este negocio: no puedes pedir aviso de lo suyo.": "You’re on this business’s team: you can’t ask to be notified about its events.",
   "Las reservas ya han abierto.": "Reservations are already open.",

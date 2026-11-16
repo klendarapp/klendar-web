@@ -2451,6 +2451,7 @@ async function offerDetail(v, id) {
       <div class="card"><h2>Detalles</h2><dl class="kv">
         <dt>Descripción</dt><dd>${esc(o.description || '—')}</dd>
         <dt>Condiciones</dt><dd>${esc(o.terms || '—')}</dd>
+        ${(o.booking_questions || []).length ? `<dt>Preguntas al reservar</dt><dd>${o.booking_questions.map((q) => `${esc(q.text)}${(q.options || []).length ? ` <span class="muted">(${esc(q.options.join(', '))})</span>` : ''}`).join('<br>')}</dd>` : ''}
         ${o.kind === 'flash_offer' ? `<dt>Canje</dt><dd>${fmtDate(o.redeem_start_at, tz)} → ${fmtDate(o.redeem_end_at, tz)}</dd>` : `<dt>Evento</dt><dd>${fmtDate(o.event_at, tz)}${o.event_end_at ? ` → ${fmtDate(o.event_end_at, tz)}` : ''}</dd>`}
         <dt>Zona horaria</dt><dd>${zonaTxt(tz)}</dd>
         <dt>Descuento / precio</dt><dd>${o.discount ? esc(discountLabel(o.discount)) : '—'} ${o.price_cents != null ? `· ${fmtMoney(o.price_cents, o.currency)}` : ''}</dd>

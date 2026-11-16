@@ -2908,6 +2908,8 @@ RUTAS.codigo = async ([id], params, crudo) => {
   recuerdaCodigos([{ ...tk, offer_id: id, tz }]);
   // El teléfono que dio antes de reservar (una copia, con esta reserva).
   aplicaContacto('reservation', id, tomaContacto(id));
+  // Las respuestas a las preguntas del negocio (si las había).
+  const respuestasP = typeof aplicaRespuestas === 'function' ? aplicaRespuestas(id, tomaRespuestas(id)) : null;
   // Con carné: «Lleva el carné de estudiante: te lo pedirán en el local.»
   // (lo comprueba el local, como en la app). Aparte: un fallo no estorba.
   llamar('offer_marks', { p_offer: id }).then((m) => {
@@ -2955,8 +2957,13 @@ RUTAS.codigo = async ([id], params, crudo) => {
         ? t('Enseña este código en el local para que lo escaneen. Solo vale una vez.')
         // Con el código escrito debajo del QR, qué hacer si no lo pueden escanear (como la app).
         : t('Enseña este código en el local para que lo escaneen. Si no pueden escanearlo, que escriban el código de debajo. Solo vale una vez.'))}</p>
+      <div class="tus-respuestas" id="tusRespuestas" hidden></div>
       ${largo && (tk.offer_kind ?? 'future_event') === 'future_event' ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
     </div>`);
+  // «Tus respuestas» (preguntas al reservar), en un evento con reserva.
+  if ((tk.offer_kind ?? 'future_event') === 'future_event' && typeof pintaTusRespuestas === 'function') {
+    pintaTusRespuestas(id, respuestasP).catch(() => null);
+  }
   // El código de debajo del QR se copia de un toque (como en la app).
   $('#copiar')?.addEventListener('click', async () => {
     // Como se ve (mayúsculas y de cuatro en cuatro), como la app: «Validar»
@@ -3113,10 +3120,31 @@ RUTAS.reservar = async ([id], params) => {
   // por si hay cambios (y, si deja varias, «¿Para cuántos?» en la misma
   // pantalla). Se aplica en cuanto la reserva existe (RUTAS.codigo).
   const yaTiene = (vivo || []).length > 0;
+  // «Preguntas al reservar» (`app_config.booking_questions`), en un evento
+  // con reserva: antes de reservar, las del negocio (y «¿Para cuántos?» en
+  // la misma pantalla). Se mandan en cuanto la reserva existe (RUTAS.codigo).
+  const bq = !yaTiene && o.kind === 'future_event' && o.reservations_enabled && typeof preguntasDe === 'function'
+    ? await preguntasDe(id) : { questions: [] };
+  let plazasElegidas = null;
+  if (typeof guardaRespuestas === 'function') guardaRespuestas(id, null);
+  if ((bq.questions || []).length) {
+    hayIntencion(`reservar/${id}${conRp}`); // se gasta: reservar es el botón de aquí
+    const plazasP = tope > 1 ? `<fieldset class="plazas"><legend>${esc(t('¿Para cuántos?'))}</legend>
+        ${Array.from({ length: tope }, (_, i) => i + 1).map((n) => `<label class="check"><input type="radio" name="plazas" value="${n}"${n === 1 ? ' checked' : ''}>
+          <span>${n === 1 ? esc(t('Solo yo')) : `${n} ${esc(t('personas'))}`}</span></label>`).join('')}
+        <small class="muted">${esc(t('El código vale por todas las plazas: lo enseñas una vez en la puerta.'))}</small></fieldset>` : '';
+    const { answers, form } = await pantallaPreguntas({
+      titulo: t('Unas preguntas de {negocio}').replace('{negocio}', o.business_name || ''), encima: plazasP, qs: bq.questions,
+      negocio: o.business_name, boton: t('Reservar plaza'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
+      crumbs: `<p class="crumbs"><a href="${pre}/o/${esc(id)}${conRp}">${esc(o.title)}</a></p>`,
+    });
+    guardaRespuestas(id, answers);
+    plazasElegidas = Math.max(1, Number(new FormData(form).get('plazas')) || 1);
+  }
   const me = !yaTiene && o.kind === 'future_event' && o.reservations_enabled ? await miContacto() : { enabled: false };
   if (me.enabled) {
     hayIntencion(`reservar/${id}${conRp}`); // se gasta: reservar es el botón de aquí
-    const plazasHtml = tope > 1 ? `<fieldset class="plazas"><legend>${esc(t('¿Para cuántos?'))}</legend>
+    const plazasHtml = tope > 1 && plazasElegidas == null ? `<fieldset class="plazas"><legend>${esc(t('¿Para cuántos?'))}</legend>
         ${Array.from({ length: tope }, (_, i) => i + 1).map((n) => `<label class="check"><input type="radio" name="plazas" value="${n}"${n === 1 ? ' checked' : ''}>
           <span>${n === 1 ? esc(t('Solo yo')) : `${n} ${esc(t('personas'))}`}</span></label>`).join('')}
         <small class="muted">${esc(t('El código vale por todas las plazas: lo enseñas una vez en la puerta.'))}</small></fieldset>` : '';
@@ -3125,10 +3153,17 @@ RUTAS.reservar = async ([id], params) => {
       negocio: o.business_name, boton: t('Reservar plaza'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
       crumbs: `<p class="crumbs"><a href="${pre}/o/${esc(id)}${conRp}">${esc(o.title)}</a></p>`,
     });
-    const n = Math.max(1, Number(new FormData(form).get('plazas')) || 1);
+    const n = plazasElegidas ?? Math.max(1, Number(new FormData(form).get('plazas')) || 1);
     guardaContacto(id, r);
     const ruta = `codigo/${encodeURIComponent(id)}?plazas=${n}${rp ? `&rp=${rp}` : ''}`;
     // Se ha pulsado «Reservar plaza» aquí: el código no vuelve a preguntar.
+    marcaIntencion(ruta);
+    irA(ruta, { reemplaza: true });
+    return;
+  }
+  // Ya ha contestado (y elegido cuántos) y no hay teléfono que pedir.
+  if (plazasElegidas != null) {
+    const ruta = `codigo/${encodeURIComponent(id)}?plazas=${plazasElegidas}${rp ? `&rp=${rp}` : ''}`;
     marcaIntencion(ruta);
     irA(ruta, { reemplaza: true });
     return;

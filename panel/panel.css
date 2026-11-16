@@ -1282,3 +1282,13 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .lista-espera li .contacto-btns { margin-inline-start: 8px; }
 .nota-contacto { display: flex; gap: 6px; align-items: flex-start; font-size: .8125rem; margin: 12px 0 0; }
 .nota-contacto .ms { font-size: 16px; }
+
+/* Preguntas al reservar (2026-11-17): cada pregunta en su recuadro; el aviso
+   de salud, neutro (nunca en coral). */
+.preguntas-reservar fieldset.pregunta { border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 12px; padding: 8px 12px 10px; margin: 10px 0; display: grid; gap: 6px; }
+.preguntas-reservar fieldset.pregunta legend { font-weight: 600; padding: 0 4px; }
+.preguntas-reservar .aviso-salud { margin-top: 8px; }
+.resumen-preguntas dl { display: grid; grid-template-columns: 1fr; gap: 2px 0; margin: 0; }
+.resumen-preguntas dt { font-weight: 600; margin-top: 8px; }
+.resumen-preguntas dd { margin: 0; }
+.respuestas-fila { display: block; font-size: .86em; }

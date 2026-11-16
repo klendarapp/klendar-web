@@ -187,6 +187,9 @@ const ERRORS = {
   opening_after_event: 'Las reservas tienen que abrir antes del evento.',
   opening_has_reservations: 'Ya hay reservas: una apertura las cerraría. Déjalo sin apertura.',
   opening_already_open: 'Las reservas ya han abierto: la apertura ya no se cambia.',
+  // Preguntas al reservar (20261284300000).
+  questions_locked: 'Ya hay respuestas: las preguntas que había no se pueden cambiar ni quitar. Puedes añadir otras al final.',
+  bad_questions: 'Revisa las preguntas: cada una necesita un texto de 3 a 120 letras y, las de elegir, de 2 a 8 opciones distintas.',
   // Organizador sin local fijo (20261205100001).
   offers_at_venue: 'Antes, pasa a «en otro sitio» o retira lo que tienes publicado en el local.',
   address_required: 'Escribe la dirección del local.',
@@ -2756,6 +2759,13 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const aperturaOn = apertura.enabled === true;
   const aperturaAbierta = !!id && !!apertura.opens_at && apertura.open === true;
   const aperturaFmt = (iso) => KZ.fmt(iso, TZ, LOC(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+  // «Preguntas al reservar» (`app_config.booking_questions`, migración
+  // 20261284300000), aparte como en la app: al crear otra a partir de esta
+  // se copian (sin respuestas); al editar, con respuestas ya dadas, las que
+  // hay no se cambian. Si falla, como apagado (ni sale ni se manda).
+  const preguntasInfo = (await rpc('booking_questions_for', { p_offer: origenLugar || null }).catch(() => null)) || {};
+  const preguntasOn = preguntasInfo.enabled === true && typeof editorPreguntas === 'function';
+  const preguntasFijas = id && preguntasInfo.locked ? (preguntasInfo.questions || []).length : 0;
   // «Solo con el enlace de un RRPP»: los RRPP del negocio y los elegidos.
   const datosRrpp = await rrppFormularioCarga(origenLugar, o);
   // «Quién actúa» (panel/artistas.js): los que ya tiene (o la que se copia).
@@ -2946,6 +2956,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
             <p class="hint">Hasta esa hora nadie puede reservar: la ficha dice cuándo abren y quien quiera pulsa «Avísame». Al abrir le llega un aviso. Vacío, se reserva desde que se publica.</p>`}
             ${Number(apertura.alerts) > 0 ? `<p class="hint">${esc(Number(apertura.alerts) === 1 ? '1 persona ha pedido aviso' : `${Number(apertura.alerts)} personas han pedido aviso`)}</p>` : ''}
           </div>` : ''}
+          ${preguntasOn ? '<div id="preguntasRow" class="bl-fila preguntas-reservar"></div>' : ''}
         </div>
         ${rrppHtml.codigo}
         <div id="ttlRow" class="bl-fila">
@@ -2959,6 +2970,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           [I18N.t('Por orden de llegada'), I18N.t('El código no guarda sitio: cuentan los que entran. Para conciertos o fiestas, donde siempre falla alguien. Cuando se llena, los que lleguen después ya no pasan.')],
           [I18N.t('Lista de espera'), I18N.t('Cuando se acaban las plazas, la gente puede apuntarse. Si se libera una, avisamos por orden y cada persona tiene un rato para cogerla (30 minutos en una oferta flash, 2 horas en un evento).')],
           [I18N.t('Reserva de plaza (sin pago)'), I18N.t('La gente reserva desde la app y enseña su código en la puerta. Si el evento se paga, se cobra allí como siempre. A un evento no se va solo: con un mismo código se reservan varias plazas.')],
+          ...(preguntasOn ? [[I18N.t('Preguntas al reservar'), I18N.t('Quien reserva ve tus preguntas al reservar y puede cambiar sus respuestas mientras su reserva siga en pie. Las ves en Asistentes, con un resumen, y en el CSV. Se borran 7 días después del evento. Cuando ya hay respuestas, las preguntas que hay no se cambian: puedes añadir otras al final.')]] : []),
           [I18N.t('¿Cuánto vale el código?'), I18N.t('Desde que la persona lo genera. Para una oferta de barra, pocos minutos; para una entrada que se guarda hasta el día del evento, «sin caducidad».')],
           [I18N.t('Canjes por persona'), I18N.t('Cada canje genera un código QR de un solo uso. Sube el número si quieres que la misma persona pueda repetir (por ejemplo, un café al día).')],
         ])}`)}
@@ -3063,6 +3075,13 @@ async function offerForm(v, id, kindDefault, desde = null) {
     alCambiar: () => { resumenes(); },
   });
   pintaCatOferta(o.category_id ? [o.category_id] : []);
+  // Preguntas al reservar: el bloque (assets/cuenta/reservar_preguntas.js).
+  const editorP = preguntasOn && $('#preguntasRow', v)
+    ? editorPreguntas($('#preguntasRow', v), {
+      inicial: preguntasInfo.questions || [], bloqueadas: preguntasFijas,
+      n: Number(preguntasInfo.answers) || 0, tr: (x) => I18N.t(x),
+    })
+    : null;
 
   // ── El tipo: en el título, y aquí se corrige ────────────────────────────
   const pintaTipo = () => {
@@ -3096,6 +3115,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $('#reservaRow', v).hidden = flash;
     $('#seatsRow', v).hidden = !conReserva;
     if ($('#aperturaRow', v)) $('#aperturaRow', v).hidden = !conReserva;
+    if ($('#preguntasRow', v)) $('#preguntasRow', v).hidden = !conReserva;
     // Nominativas: solo en un evento con reserva y no de RRPP (la base lo
     // deja en «Normales» en lo demás).
     $('#nominativasRow', v).hidden = !conReserva || deRrpp;
@@ -3901,6 +3921,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
         && new Date(abreF).getTime() < Date.now() - 6e4) {
       fallo(campo('reservations_open_at'), I18N.t('Esa hora ya ha pasado: elige una que esté por venir.')); return;
     }
+    // Las preguntas al reservar, como las mira la base.
+    if (editorP && !flash && campo('reservations_enabled').checked && !editorP.valida()) {
+      fallo($('#preguntasRow', v), I18N.t('Revisa las preguntas: cada una necesita un texto de 3 a 120 letras y, las de elegir, de 2 a 8 opciones distintas.')); return;
+    }
     const dType = val('discount_type');
     if (dType === 'other' && String(f.get('discount_value') || '').trim().length > 24) {
       fallo(campo('discount_value'), I18N.t('El descuento «Otro» cabe en 24 caracteres («2ª unidad −50 %»).')); return;
@@ -4022,6 +4046,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
       named_tickets: reservas && audiencia !== 'promoters' && val('named_tickets') === 'si',
       // Solo con el interruptor y si aún no ha abierto (abierta no se cambia).
       ...(aperturaOn && !aperturaAbierta ? { reservations_open_at: reservas ? abreF : null } : {}),
+      // Solo con el interruptor (sin reserva la base no las toca).
+      ...(editorP ? { booking_questions: reservas ? editorP.preguntas() : [] } : {}),
       adults_only: campo('adults_only').checked,
       // null = como el local. Una +18 nunca se marca como apta para niños.
       for_kids: forKids(campo('adults_only').checked, val('for_kids')),
@@ -4137,6 +4163,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
         fallo(campo('venue_address'), SAp().venueRequired);
       } else if (/opening_(in_past|after_event|has_reservations|already_open)/.test(msg) && campo('reservations_open_at')) {
         fallo(campo('reservations_open_at'), I18N.t(friendly(msg)));
+      } else if (/questions_locked|bad_questions/.test(msg) && $('#preguntasRow', v)) {
+        fallo($('#preguntasRow', v), I18N.t(friendly(msg)));
       } else {
         $('#formErr').textContent = I18N.t(friendly(msg));
       }
@@ -5163,14 +5191,28 @@ PAGES.asistentes = async (v, offerId) => {
   // con todos (`offer_attendees_summary`).
   const POR = 50;
   const parte = (q, desde, tam = POR) => rpc('offer_attendees', { p_offer: offerId, p_q: q || null, p_limit: tam, p_offset: desde }).then((x) => x || []);
-  const [offer, primera, resumen, contactos] = await Promise.all([
+  const [offer, primera, resumen, contactos, respuestasP] = await Promise.all([
     miPublicacion(offerId),
     parte('', 0),
     rpc('offer_attendees_summary', { p_offer: offerId }).catch(() => null),
     // Teléfono y correo de cada reserva: todo el equipo del negocio, con
     // `app_config.contact_details` y hasta 7 días después (null: no se ven).
     rpc('offer_attendee_contacts', { p_offer: offerId }).catch(() => null),
+    // Preguntas al reservar: todo el equipo, como la lista (null: no se ven).
+    rpc('offer_booking_answers', { p_offer: offerId }).catch(() => null),
   ]);
+  const KP = typeof KlPreguntas !== 'undefined' ? KlPreguntas : null;
+  const preguntas = KP && respuestasP && (respuestasP.questions || []).length ? respuestasP.questions : null;
+  const trP = (x) => I18N.t(x);
+  const respuestasHtml = !preguntas ? '' : `
+    <div class="card resumen-preguntas"><h2>${esc(I18N.t('Respuestas'))}</h2><dl>
+      ${preguntas.map((q) => `<dt>${esc(q.text)}</dt><dd class="muted">${esc(KP.resumen(q, (respuestasP.summary || []).find((x) => x.id === q.id), respuestasP.reservations, trP))}</dd>`).join('')}
+    </dl></div>`;
+  const respuestasDe = (a) => {
+    const r = preguntas && respuestasP.answers ? respuestasP.answers[a.id] : null;
+    if (!r) return '';
+    return preguntas.filter((q) => r[q.id]).map((q) => `<span class="sub respuestas-fila">${esc(q.text)} <b>${esc(KP.textoRespuesta(q, r[q.id], trP))}</b></span>`).join('');
+  };
   const list = [...primera];
   let hayMas = primera.length >= POR;
   let busca = '';
@@ -5211,14 +5253,16 @@ PAGES.asistentes = async (v, offerId) => {
         `${fmtNum(dentro.length)} de ${fmtNum(nCodigos)} han entrado · ${fmtNum(personasDentro)} de ${fmtNum(personas)} ${personas === 1 ? 'persona' : 'personas'}${offer?.max_redemptions ? ` · aforo ${fmtNum(offer.max_redemptions)}` : ''}`,
         `${fmtNum(dentro.length)} of ${fmtNum(nCodigos)} checked in · ${fmtNum(personasDentro)} of ${fmtNum(personas)} ${personas === 1 ? 'person' : 'people'}${offer?.max_redemptions ? ` · capacity ${fmtNum(offer.max_redemptions)}` : ''}`))}</p></div>
     ${esperaHtml}
+    ${respuestasHtml}
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por nombre o código"></div>
     <div id="list"></div>
-    ${conContacto ? `<p class="muted nota-contacto">${ms('lock')} Úsalos solo para avisar de esta reserva. Se dejan de ver 7 días después del evento.</p>` : ''}`;
+    ${conContacto ? `<p class="muted nota-contacto">${ms('lock')} Úsalos solo para avisar de esta reserva. Se dejan de ver 7 días después del evento.</p>` : ''}
+    ${preguntas ? `<p class="muted nota-contacto">${ms('lock')} Usa las respuestas solo para este evento. Se borran 7 días después.</p>` : ''}`;
   const render = () => {
     const rows = list;
     $('#list', v).innerHTML = table({
       cols: [
-        { h: 'Persona', r: (a) => `<b class="title">${esc(a.user_name || I18N.t('Invitada'))}</b><span class="sub mono">${esc(a.code.slice(0, 8).toUpperCase())}</span>${a.promoter_name ? `<span class="sub">${rrppListaDe(a)}</span>` : ''}` },
+        { h: 'Persona', r: (a) => `<b class="title">${esc(a.user_name || I18N.t('Invitada'))}</b><span class="sub mono">${esc(a.code.slice(0, 8).toUpperCase())}</span>${a.promoter_name ? `<span class="sub">${rrppListaDe(a)}</span>` : ''}${respuestasDe(a)}` },
         { h: 'Plazas', num: true, r: (a) => fmtNum(plazas(a)) },
         { h: 'Estado', r: estado },
         { h: 'Reservó', r: (a) => fmtDate(a.created_at) },
@@ -5294,6 +5338,11 @@ PAGES.asistentes = async (v, offerId) => {
     ['created_at', 'reservó'], ['validated_at', 'entró'],
     ['promoter_name', bi('lista de RRPP', 'promoter list')],
     [(a) => (a.promoter_off_offer ? bi('sí', 'yes') : ''), bi('fuera de su oferta', 'outside their offer')],
+    // Preguntas al reservar: una columna por pregunta.
+    ...(preguntas || []).map((q) => [(a) => {
+      const r = respuestasP.answers?.[a.id]?.[q.id];
+      return r ? KP.textoRespuesta(q, r, trP) : '';
+    }, q.text]),
   ]);
   };
   render();

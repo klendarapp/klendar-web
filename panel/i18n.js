@@ -3,6 +3,31 @@
 'use strict';
 
 const I18N = makeI18N({
+  // «Preguntas al reservar» (panel, 2026-11-17)
+  "Preguntas al reservar": "Booking questions",
+  "Opcional. Pregunta algo a quien reserva, como «¿Menú infantil?» o «¿Talla de camiseta?».": "Optional. Ask people who book something like “Kids’ menu?” or “T-shirt size?”.",
+  "Pregunta {n}": "Question {n}",
+  "Por ejemplo: ¿Menú infantil?": "For example: Kids’ menu?",
+  "Tipo de respuesta": "Answer type",
+  "Respuesta corta": "Short answer",
+  "Sí o no": "Yes or no",
+  "Elegir una opción": "Pick an option",
+  "Opciones": "Options",
+  "S, M, L, XL (separadas por comas)": "S, M, L, XL (separated by commas)",
+  "Obligatoria": "Required",
+  "Quitar la pregunta": "Remove question",
+  "Añadir una pregunta": "Add a question",
+  "Ya ha respondido 1 reserva: las preguntas que hay no se pueden cambiar ni quitar. Puedes añadir otras al final.": "1 booking has already answered: the existing questions can’t be changed or removed. You can add more at the end.",
+  "Ya han respondido {n} reservas: las preguntas que hay no se pueden cambiar ni quitar. Puedes añadir otras al final.": "{n} bookings have already answered: the existing questions can’t be changed or removed. You can add more at the end.",
+  "No pidas datos de salud (alergias, enfermedades…). Usa las respuestas solo para este evento.": "Don’t ask for health information (allergies, illnesses…). Use the answers only for this event.",
+  "Ya hay respuestas: las preguntas que había no se pueden cambiar ni quitar. Puedes añadir otras al final.": "There are answers already: the existing questions can’t be changed or removed. You can add more at the end.",
+  "Revisa las preguntas: cada una necesita un texto de 3 a 120 letras y, las de elegir, de 2 a 8 opciones distintas.": "Check the questions: each needs 3 to 120 characters and, for pick-an-option ones, 2 to 8 different options.",
+  "Quien reserva ve tus preguntas al reservar y puede cambiar sus respuestas mientras su reserva siga en pie. Las ves en Asistentes, con un resumen, y en el CSV. Se borran 7 días después del evento. Cuando ya hay respuestas, las preguntas que hay no se cambian: puedes añadir otras al final.": "People see your questions when they book and can change their answers while their booking stands. You see them in Attendees, with a summary, and in the CSV. They’re deleted 7 days after the event. Once there are answers, the existing questions can’t change: you can add more at the end.",
+  "Respuestas": "Answers",
+  "Usa las respuestas solo para este evento. Se borran 7 días después.": "Use the answers only for this event. They’re deleted 7 days after it.",
+  "Sí": "Yes",
+  "No": "No",
+  "{answered} de {total} han respondido": "{answered} of {total} have answered",
   // «Avísame cuando abran» (panel, 2026-11-17)
   "Abrir reservas el…": "Open reservations on…",
   "Las reservas abrieron el {when}.": "Reservations opened on {when}.",

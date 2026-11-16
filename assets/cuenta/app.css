@@ -854,3 +854,10 @@ a.pl-dia:hover { background: var(--soft); }
 .formu fieldset.plazas { border: 0; padding: 0; margin: 0 0 8px; display: grid; gap: 8px; }
 .formu fieldset.plazas legend { font-weight: 700; margin-bottom: 4px; }
 .td-tel .acciones { display: flex; gap: 8px; justify-content: flex-end; }
+
+/* Preguntas al reservar (2026-11-17). */
+.pregunta { margin: 12px 0; }
+.pregunta input:not([type="radio"]) { width: 100%; }
+.tus-respuestas { text-align: start; margin: 14px 0; }
+.tus-respuestas dt { font-weight: 600; margin-top: 6px; }
+.tus-respuestas dd { margin: 0; }
