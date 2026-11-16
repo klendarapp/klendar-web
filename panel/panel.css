@@ -1288,6 +1288,8 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .preguntas-reservar fieldset.pregunta { border: 1px solid var(--line, rgba(127,127,127,.25)); border-radius: 12px; padding: 8px 12px 10px; margin: 10px 0; display: grid; gap: 6px; }
 .preguntas-reservar fieldset.pregunta legend { font-weight: 600; padding: 0 4px; }
 .preguntas-reservar .aviso-salud { margin-top: 8px; }
+.preguntas-reservar .fila-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.preguntas-reservar .salud-ayuda { display: block; }
 .resumen-preguntas dl { display: grid; grid-template-columns: 1fr; gap: 2px 0; margin: 0; }
 .resumen-preguntas dt { font-weight: 600; margin-top: 8px; }
 .resumen-preguntas dd { margin: 0; }

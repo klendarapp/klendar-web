@@ -3,6 +3,15 @@
 
 const APP_EN = {
   // «Preguntas al reservar» (cuenta, 2026-11-17)
+  "Acepto que {negocio} vea esta respuesta, que puede ser un dato de salud, solo para preparar este evento. Se borra al día siguiente del evento.": "I agree that {negocio} may see this answer, which may be health information, only to prepare this event. It’s deleted the day after the event.",
+  "Dato de salud": "Health data",
+  "Retirar mi consentimiento": "Withdraw my consent",
+  "Consentimiento retirado: hemos borrado tus respuestas de salud.": "Consent withdrawn: we’ve deleted your health answers.",
+  "Para responder a una pregunta de salud, marca su casilla.": "To answer a health question, tick its box.",
+  "Revisa esta respuesta.": "Check this answer.",
+  "De {min} a {max}": "From {min} to {max}",
+  "Desde {min}": "{min} or more",
+  "Hasta {max}": "Up to {max}",
   "obligatoria": "required",
   "Sí": "Yes",
   "No": "No",

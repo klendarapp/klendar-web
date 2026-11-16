@@ -189,7 +189,7 @@ const ERRORS = {
   opening_already_open: 'Las reservas ya han abierto: la apertura ya no se cambia.',
   // Preguntas al reservar (20261284300000).
   questions_locked: 'Ya hay respuestas: las preguntas que había no se pueden cambiar ni quitar. Puedes añadir otras al final.',
-  bad_questions: 'Revisa las preguntas: cada una necesita un texto de 3 a 120 letras y, las de elegir, de 2 a 8 opciones distintas.',
+  bad_questions: 'Revisa las preguntas: cada una necesita un texto de 3 a 120 letras; las de elegir, de 2 a 12 opciones distintas, y las de número, un mínimo que no pase del máximo.',
   // Organizador sin local fijo (20261205100001).
   offers_at_venue: 'Antes, pasa a «en otro sitio» o retira lo que tienes publicado en el local.',
   address_required: 'Escribe la dirección del local.',
@@ -2766,6 +2766,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const preguntasInfo = (await rpc('booking_questions_for', { p_offer: origenLugar || null }).catch(() => null)) || {};
   const preguntasOn = preguntasInfo.enabled === true && typeof editorPreguntas === 'function';
   const preguntasFijas = id && preguntasInfo.locked ? (preguntasInfo.questions || []).length : 0;
+  // Las palabras de salud (la lista de la base, 20261284350000): marcan la
+  // pregunta como de salud al escribir. Sin ella, la base la marca al guardar.
+  const saludTerminos = preguntasOn ? ((await rpc('booking_health_terms', {}).catch(() => null)) || []) : [];
   // «Solo con el enlace de un RRPP»: los RRPP del negocio y los elegidos.
   const datosRrpp = await rrppFormularioCarga(origenLugar, o);
   // «Quién actúa» (panel/artistas.js): los que ya tiene (o la que se copia).
@@ -2970,7 +2973,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           [I18N.t('Por orden de llegada'), I18N.t('El código no guarda sitio: cuentan los que entran. Para conciertos o fiestas, donde siempre falla alguien. Cuando se llena, los que lleguen después ya no pasan.')],
           [I18N.t('Lista de espera'), I18N.t('Cuando se acaban las plazas, la gente puede apuntarse. Si se libera una, avisamos por orden y cada persona tiene un rato para cogerla (30 minutos en una oferta flash, 2 horas en un evento).')],
           [I18N.t('Reserva de plaza (sin pago)'), I18N.t('La gente reserva desde la app y enseña su código en la puerta. Si el evento se paga, se cobra allí como siempre. A un evento no se va solo: con un mismo código se reservan varias plazas.')],
-          ...(preguntasOn ? [[I18N.t('Preguntas al reservar'), I18N.t('Quien reserva ve tus preguntas al reservar y puede cambiar sus respuestas mientras su reserva siga en pie. Las ves en Asistentes, con un resumen, y en el CSV. Se borran 7 días después del evento. Cuando ya hay respuestas, las preguntas que hay no se cambian: puedes añadir otras al final.')]] : []),
+          ...(preguntasOn ? [[I18N.t('Preguntas al reservar'), I18N.t('Quien reserva ve tus preguntas al reservar y puede cambiar sus respuestas mientras su reserva siga en pie. Las ves en Asistentes, con un resumen, y en el CSV. Se borran 7 días después del evento. Cuando ya hay respuestas, las preguntas que hay no se cambian: puedes añadir otras al final. Las preguntas de salud solo se responden con consentimiento y esas respuestas se borran al día siguiente del evento.')]] : []),
           [I18N.t('¿Cuánto vale el código?'), I18N.t('Desde que la persona lo genera. Para una oferta de barra, pocos minutos; para una entrada que se guarda hasta el día del evento, «sin caducidad».')],
           [I18N.t('Canjes por persona'), I18N.t('Cada canje genera un código QR de un solo uso. Sube el número si quieres que la misma persona pueda repetir (por ejemplo, un café al día).')],
         ])}`)}
@@ -3079,7 +3082,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const editorP = preguntasOn && $('#preguntasRow', v)
     ? editorPreguntas($('#preguntasRow', v), {
       inicial: preguntasInfo.questions || [], bloqueadas: preguntasFijas,
-      n: Number(preguntasInfo.answers) || 0, tr: (x) => I18N.t(x),
+      n: Number(preguntasInfo.answers) || 0, salud: saludTerminos, tr: (x) => I18N.t(x),
     })
     : null;
 
@@ -3923,7 +3926,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     }
     // Las preguntas al reservar, como las mira la base.
     if (editorP && !flash && campo('reservations_enabled').checked && !editorP.valida()) {
-      fallo($('#preguntasRow', v), I18N.t('Revisa las preguntas: cada una necesita un texto de 3 a 120 letras y, las de elegir, de 2 a 8 opciones distintas.')); return;
+      fallo($('#preguntasRow', v), I18N.t('Revisa las preguntas: cada una necesita un texto de 3 a 120 letras; las de elegir, de 2 a 12 opciones distintas, y las de número, un mínimo que no pase del máximo.')); return;
     }
     const dType = val('discount_type');
     if (dType === 'other' && String(f.get('discount_value') || '').trim().length > 24) {
@@ -5206,12 +5209,12 @@ PAGES.asistentes = async (v, offerId) => {
   const trP = (x) => I18N.t(x);
   const respuestasHtml = !preguntas ? '' : `
     <div class="card resumen-preguntas"><h2>${esc(I18N.t('Respuestas'))}</h2><dl>
-      ${preguntas.map((q) => `<dt>${esc(q.text)}</dt><dd class="muted">${esc(KP.resumen(q, (respuestasP.summary || []).find((x) => x.id === q.id), respuestasP.reservations, trP))}</dd>`).join('')}
+      ${preguntas.map((q) => `<dt>${esc(KP.etiqueta(q, trP))}</dt><dd class="muted">${esc(KP.resumen(q, (respuestasP.summary || []).find((x) => x.id === q.id), respuestasP.reservations, trP))}</dd>`).join('')}
     </dl></div>`;
   const respuestasDe = (a) => {
     const r = preguntas && respuestasP.answers ? respuestasP.answers[a.id] : null;
     if (!r) return '';
-    return preguntas.filter((q) => r[q.id]).map((q) => `<span class="sub respuestas-fila">${esc(q.text)} <b>${esc(KP.textoRespuesta(q, r[q.id], trP))}</b></span>`).join('');
+    return preguntas.filter((q) => r[q.id]).map((q) => `<span class="sub respuestas-fila">${esc(KP.etiqueta(q, trP))} <b>${esc(KP.textoRespuesta(q, r[q.id], trP))}</b></span>`).join('');
   };
   const list = [...primera];
   let hayMas = primera.length >= POR;
@@ -5257,7 +5260,7 @@ PAGES.asistentes = async (v, offerId) => {
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por nombre o código"></div>
     <div id="list"></div>
     ${conContacto ? `<p class="muted nota-contacto">${ms('lock')} Úsalos solo para avisar de esta reserva. Se dejan de ver 7 días después del evento.</p>` : ''}
-    ${preguntas ? `<p class="muted nota-contacto">${ms('lock')} Usa las respuestas solo para este evento. Se borran 7 días después.</p>` : ''}`;
+    ${preguntas ? `<p class="muted nota-contacto">${ms('lock')} Usa las respuestas solo para este evento. Se borran 7 días después. Las de salud, al día siguiente.</p>` : ''}`;
   const render = () => {
     const rows = list;
     $('#list', v).innerHTML = table({
@@ -5338,11 +5341,12 @@ PAGES.asistentes = async (v, offerId) => {
     ['created_at', 'reservó'], ['validated_at', 'entró'],
     ['promoter_name', bi('lista de RRPP', 'promoter list')],
     [(a) => (a.promoter_off_offer ? bi('sí', 'yes') : ''), bi('fuera de su oferta', 'outside their offer')],
-    // Preguntas al reservar: una columna por pregunta.
+    // Preguntas al reservar: una columna por pregunta (las de salud,
+    // marcadas: se borran al día siguiente del evento).
     ...(preguntas || []).map((q) => [(a) => {
       const r = respuestasP.answers?.[a.id]?.[q.id];
       return r ? KP.textoRespuesta(q, r, trP) : '';
-    }, q.text]),
+    }, q.health ? `${q.text} (${bi('dato de salud', 'health data')})` : q.text]),
   ]);
   };
   render();

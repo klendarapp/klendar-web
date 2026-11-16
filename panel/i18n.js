@@ -4,6 +4,20 @@
 
 const I18N = makeI18N({
   // «Preguntas al reservar» (panel, 2026-11-17)
+  "Elegir varias": "Pick several",
+  "Número": "Number",
+  "Mínimo (opcional)": "Minimum (optional)",
+  "Máximo (opcional)": "Maximum (optional)",
+  "Es sobre salud (alergias, intolerancias…)": "It’s about health (allergies, intolerances…)",
+  "Quien reserva solo responde si da su consentimiento. No puede ser obligatoria y la respuesta se borra al día siguiente del evento.": "People only answer if they give consent. It can’t be required, and the answer is deleted the day after the event.",
+  "Tiene palabras de salud: se marca sola. Quien reserva solo responde si da su consentimiento y no puede ser obligatoria.": "It has health words, so it’s marked automatically. People only answer if they give consent, and it can’t be required.",
+  "Pregunta solo lo que necesites para preparar el evento.": "Only ask what you need to prepare the event.",
+  "Revisa las preguntas: cada una necesita un texto de 3 a 120 letras; las de elegir, de 2 a 12 opciones distintas, y las de número, un mínimo que no pase del máximo.": "Check the questions: each needs 3 to 120 characters; pick ones, 2 to 12 different options; and number ones, a minimum no higher than the maximum.",
+  "Dato de salud": "Health data",
+  "dato de salud": "health data",
+  "Suma {sum} · Media {avg}": "Total {sum} · Average {avg}",
+  "Quien reserva ve tus preguntas al reservar y puede cambiar sus respuestas mientras su reserva siga en pie. Las ves en Asistentes, con un resumen, y en el CSV. Se borran 7 días después del evento. Cuando ya hay respuestas, las preguntas que hay no se cambian: puedes añadir otras al final. Las preguntas de salud solo se responden con consentimiento y esas respuestas se borran al día siguiente del evento.": "People see your questions when they book and can change their answers while their booking stands. You see them in Attendees, with a summary, and in the CSV. They’re deleted 7 days after the event. Once there are answers, the existing questions can’t change: you can add more at the end. Health questions are only answered with consent, and those answers are deleted the day after the event.",
+  "Usa las respuestas solo para este evento. Se borran 7 días después. Las de salud, al día siguiente.": "Use the answers only for this event. They’re deleted 7 days after it. Health ones, the day after.",
   "Preguntas al reservar": "Booking questions",
   "Opcional. Pregunta algo a quien reserva, como «¿Menú infantil?» o «¿Talla de camiseta?».": "Optional. Ask people who book something like “Kids’ menu?” or “T-shirt size?”.",
   "Pregunta {n}": "Question {n}",

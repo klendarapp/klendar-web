@@ -857,7 +857,9 @@ a.pl-dia:hover { background: var(--soft); }
 
 /* Preguntas al reservar (2026-11-17). */
 .pregunta { margin: 12px 0; }
-.pregunta input:not([type="radio"]) { width: 100%; }
+.pregunta input:not([type="radio"]):not([type="checkbox"]) { width: 100%; margin-top: 6px; }
+.pregunta .consentimiento { font-size: 14px; margin: 4px 0; }
+.pregunta input:disabled { opacity: .55; }
 .tus-respuestas { text-align: start; margin: 14px 0; }
 .tus-respuestas dt { font-weight: 600; margin-top: 6px; }
 .tus-respuestas dd { margin: 0; }

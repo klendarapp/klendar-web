@@ -3133,12 +3133,12 @@ RUTAS.reservar = async ([id], params) => {
         ${Array.from({ length: tope }, (_, i) => i + 1).map((n) => `<label class="check"><input type="radio" name="plazas" value="${n}"${n === 1 ? ' checked' : ''}>
           <span>${n === 1 ? esc(t('Solo yo')) : `${n} ${esc(t('personas'))}`}</span></label>`).join('')}
         <small class="muted">${esc(t('El código vale por todas las plazas: lo enseñas una vez en la puerta.'))}</small></fieldset>` : '';
-    const { answers, form } = await pantallaPreguntas({
+    const { answers, consents, form } = await pantallaPreguntas({
       titulo: t('Unas preguntas de {negocio}').replace('{negocio}', o.business_name || ''), encima: plazasP, qs: bq.questions,
       negocio: o.business_name, boton: t('Reservar plaza'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
       crumbs: `<p class="crumbs"><a href="${pre}/o/${esc(id)}${conRp}">${esc(o.title)}</a></p>`,
     });
-    guardaRespuestas(id, answers);
+    guardaRespuestas(id, answers, consents);
     plazasElegidas = Math.max(1, Number(new FormData(form).get('plazas')) || 1);
   }
   const me = !yaTiene && o.kind === 'future_event' && o.reservations_enabled ? await miContacto() : { enabled: false };
