@@ -2,6 +2,8 @@
 'use strict';
 
 const APP_EN = {
+  // Reservas, segunda tanda (2026-11-16)
+  "1 plaza": "1 place",
   // Cola virtual: mejoras (2026-11-13)
   "No hay nadie detrás: no hace falta.": "There's nobody behind you: no need.",
   "Ya dejaste pasar a alguien en este turno.": "You already let someone go first this turn.",

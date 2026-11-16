@@ -3,6 +3,10 @@
 'use strict';
 
 const I18N = makeI18N({
+    // Reservas, segunda tanda (2026-11-16)
+    "Quien tiene reserva o está en la lista de espera no sabe que cierras. «Cancelar y avisar» anula las reservas y se lo decimos a cada persona y a la lista de espera. Si lo dejas, el evento sigue en pie y las reservas siguen valiendo.": "People with a booking or on the waiting list don't know you're closing. “Cancel and let them know” cancels the bookings and we tell each person and the waiting list. If you leave it, the event goes ahead and the bookings are still valid.",
+    "Cancelar y avisar": "Cancel and let them know",
+    "Dejarlo": "Leave it",
     // Cola virtual: mejoras (2026-11-13)
     "Pantalla para la puerta": "Screen for the door",
     "Ábrela en una tele o una tablet: enseña los números que tocan, sin nombres.": "Open it on a TV or a tablet: it shows the numbers being called, without names.",

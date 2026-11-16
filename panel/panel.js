@@ -625,6 +625,51 @@ function modal({ title, intro, html = '', fields = [], submit = 'Guardar', dange
 }
 const confirmDlg = (title, text, opts = {}) => modal({ title, intro: text, submit: opts.submit || 'Confirmar', danger: opts.danger }).then((v) => v !== null);
 
+/** Después de cerrar («Cerrado por hoy», unos «Días cerrados», un festivo
+ * cerrado o «Cerrar hasta nuevo aviso»): si el cierre coge eventos con
+ * reservas o con lista de espera (`closure_events`), se enseñan con
+ * «Cancelar y avisar» (`cancel_offer`: anula las reservas y avisa a cada
+ * persona y a la lista) y «Dejarlo». Como la app. Si la base no contesta, no
+ * se pregunta: el cierre ya está hecho. */
+async function avisaEventosDelCierre(params) {
+  const eventos = await rpc('closure_events', { p_business: BIZ.id, ...params }).catch(() => null);
+  if (!Array.isArray(eventos) || !eventos.length) return;
+  const n = eventos.length;
+  const linea = (e) => [
+    e.event_at ? fmtDate(e.event_at) : '',
+    e.reserved ? bi(e.reserved === 1 ? '1 plaza reservada' : `${fmtNum(e.reserved)} plazas reservadas`,
+      e.reserved === 1 ? '1 place booked' : `${fmtNum(e.reserved)} places booked`) : '',
+    e.waiting ? bi(e.waiting === 1 ? '1 persona en lista de espera' : `${fmtNum(e.waiting)} personas en lista de espera`,
+      e.waiting === 1 ? '1 person on the waiting list' : `${fmtNum(e.waiting)} people on the waiting list`) : '',
+  ].filter(Boolean).join(' · ');
+  const r = await modal({
+    title: bi(n === 1 ? 'Tienes un evento con reservas mientras cierras' : `Tienes ${n} eventos con reservas mientras cierras`,
+      n === 1 ? "You have an event with bookings while you're closed" : `You have ${n} events with bookings while you're closed`),
+    intro: esc(I18N.t('Quien tiene reserva o está en la lista de espera no sabe que cierras. «Cancelar y avisar» anula las reservas y se lo decimos a cada persona y a la lista de espera. Si lo dejas, el evento sigue en pie y las reservas siguen valiendo.')),
+    // Con uno solo no hace falta elegir; con varios, marcados todos.
+    fields: n === 1 ? [] : eventos.map((e, i) => ({ name: `e${i}`, type: 'checkbox', value: true, label: `${e.title} · ${linea(e)}` })),
+    html: n === 1 ? `<p style="margin:0"><b>${esc(eventos[0].title)}</b><br><span class="muted">${esc(linea(eventos[0]))}</span></p>` : '',
+    submit: I18N.t('Cancelar y avisar'),
+    cancel: I18N.t('Dejarlo'),
+    danger: true,
+  });
+  if (!r) return;
+  const elegidos = n === 1 ? eventos : eventos.filter((_, i) => r[`e${i}`]);
+  let hechos = 0;
+  for (const e of elegidos) {
+    try {
+      const res = await rpc('cancel_offer', { p_offer: e.id });
+      if (res?.ok) hechos++; else toast(friendly(res?.error || ''), true);
+    } catch (err) { toast(friendly(err.message), true); }
+  }
+  if (hechos) {
+    toast(bi(hechos === 1 ? 'Evento cancelado. Hemos avisado a quien tenía reserva y a la lista de espera.'
+      : `${hechos} eventos cancelados. Hemos avisado a quien tenía reserva y a la lista de espera.`,
+    hechos === 1 ? 'Event cancelled. We told everyone with a booking and the waiting list.'
+      : `${hechos} events cancelled. We told everyone with a booking and the waiting list.`));
+  }
+}
+
 function downloadCsv(name, rows, cols) {
   const lines = [cols.map((c) => c[1]), ...rows.map((r) => cols.map((c) => {
     const v = typeof c[0] === 'function' ? c[0](r) : r[c[0]];
@@ -1863,7 +1908,10 @@ PAGES.resumen = async (v) => {
       try {
         await rpc('set_business_pause', { p_business: BIZ.id, p_until: cerrar ? hasta.toISOString() : null });
         BIZ.paused_until = cerrar ? hasta.toISOString() : null;
-        toast(cerrar ? 'Cerrado por hoy' : 'Abierto de nuevo'); route();
+        toast(cerrar ? 'Cerrado por hoy' : 'Abierto de nuevo');
+        // Eventos con reservas o lista de espera hasta mañana: ¿cancelar y avisar o dejarlos?
+        if (cerrar) await avisaEventosDelCierre({ p_until: hasta.toISOString() });
+        route();
       } catch (e) { toast(friendly(e.message), true); pausa.disabled = false; }
     };
   }
@@ -5050,12 +5098,24 @@ PAGES.asistentes = async (v, offerId) => {
   const personasDentro = Number(resumen?.people_in ?? 0) || 0;
   const personas = Number(resumen?.people ?? 0) || 0;
   // Los mismos nombres que la app: Dentro, Reservada, Caducada (y Anulada,
-  // si quien reservó dijo «Ya no voy»).
+  // si quien reservó dijo «Ya no voy»). Con el evento ya pasado, lo caducado
+  // es que no vino (`offer_attendees_summary.ended`).
+  const terminado = resumen?.ended === true;
   const estado = (a) => (a.status === 'validated' ? '<span class="tag ok">Dentro</span>'
-    : a.status === 'expired' ? '<span class="tag dim">Caducada</span>'
+    : a.status === 'expired' ? `<span class="tag dim">${terminado ? 'No vino' : 'Caducada'}</span>`
       : a.status === 'cancelled' ? '<span class="tag dim">Anulada</span>'
         : '<span class="tag st-pending">Reservada</span>');
-  const ESTADO_CSV = { validated: 'dentro', expired: 'caducada', cancelled: 'anulada', pending: 'reservada' };
+  const ESTADO_CSV = { validated: 'dentro', expired: terminado ? 'no vino' : 'caducada', cancelled: 'anulada', pending: 'reservada' };
+  // La lista de espera: cuántos y, si la privacidad lo dice
+  // (`app_config.waitlist_names`), quiénes: el nombre visible y, a quien ya
+  // avisamos, hasta cuándo le guardamos la plaza. Nunca correo ni teléfono.
+  const enEspera = Number(resumen?.waiting || 0) || 0;
+  const nombresEspera = Array.isArray(resumen?.waitlist) ? resumen.waitlist : null;
+  const esperaHtml = !enEspera ? '' : `
+    <div class="card"><h2>${esc(bi(enEspera === 1 ? '1 persona en lista de espera' : `${fmtNum(enEspera)} personas en lista de espera`,
+      enEspera === 1 ? '1 person on the waiting list' : `${fmtNum(enEspera)} people on the waiting list`))}</h2>
+      ${nombresEspera ? `<ol class="lista-espera">${nombresEspera.map((p) => `<li><b>${esc(p.name || I18N.t('Invitada'))}</b>${p.notified_until
+        ? ` <span class="muted">· ${esc(bi(`Plaza guardada hasta las ${fmtHora(p.notified_until)}`, `Place held until ${fmtHora(p.notified_until)}`))}</span>` : ''}</li>`).join('')}</ol>` : ''}</div>`;
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>Asistentes</h1><span class="spacer"></span>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
@@ -5063,6 +5123,7 @@ PAGES.asistentes = async (v, offerId) => {
       <p class="muted" style="margin:0">${esc(bi(
         `${fmtNum(dentro.length)} de ${fmtNum(nCodigos)} han entrado · ${fmtNum(personasDentro)} de ${fmtNum(personas)} ${personas === 1 ? 'persona' : 'personas'}${offer?.max_redemptions ? ` · aforo ${fmtNum(offer.max_redemptions)}` : ''}`,
         `${fmtNum(dentro.length)} of ${fmtNum(nCodigos)} checked in · ${fmtNum(personasDentro)} of ${fmtNum(personas)} ${personas === 1 ? 'person' : 'people'}${offer?.max_redemptions ? ` · capacity ${fmtNum(offer.max_redemptions)}` : ''}`))}</p></div>
+    ${esperaHtml}
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por nombre o código"></div>
     <div id="list"></div>`;
   const render = () => {
@@ -5074,7 +5135,9 @@ PAGES.asistentes = async (v, offerId) => {
         { h: 'Estado', r: estado },
         { h: 'Reservó', r: (a) => fmtDate(a.created_at) },
         { h: 'Entró', r: (a) => fmtDate(a.validated_at) },
-        { h: '', r: (a) => a.status === 'pending' ? `<button class="btn sm" data-code="${esc(a.code)}">Dar entrada</button>` : '' },
+        // En tinta, como «Validar» en las listas de RRPP: el coral, solo
+        // para el botón principal.
+        { h: '', r: (a) => a.status === 'pending' ? `<button class="btn sm tinta" data-code="${esc(a.code)}">Dar entrada</button>` : '' },
       ],
       rows,
       empty: busca ? 'Nadie con ese nombre.' : 'Todavía no hay nadie apuntado.',
@@ -7228,7 +7291,10 @@ async function cierresCerrar(hoy, maxDia) {
   if (r.from < hoy || to > maxDia) { toast(I18N.t('Elige días entre hoy y dentro de un año.'), true); return; }
   const res = await rpc('save_business_closure', { p_business: BIZ.id, p_starts: r.from, p_ends: to, p_reason: reason }).catch(() => null);
   if (!res?.ok) { toast(I18N.t(ERR_CIERRE[res?.error] || 'No se ha podido guardar'), true); return; }
-  toast('Días cerrados guardados'); route();
+  toast('Días cerrados guardados');
+  // Eventos con reservas o lista de espera esos días: ¿cancelar y avisar o dejarlos?
+  await avisaEventosDelCierre({ p_starts: r.from, p_ends: to });
+  route();
 }
 
 /** «Abrir con otro horario»: un día y a qué hora abre y cierra. */
@@ -7509,6 +7575,8 @@ PAGES.baja = async (v, param) => {
           vivas === 1 ? "There is 1 unused booking or code: it's still valid. If you won't honour it, cancel that publication." : `There are ${vivas} unused bookings or codes: they're still valid. If you won't honour them, cancel those publications.`))}` : '');
       if (!await confirmDlg(I18N.t('¿Cerrar hasta nuevo aviso?'), texto, { submit: I18N.t('Cerrar') })) return;
       await rpcOk('set_business_closed', { p_business: BIZ.id, p_closed: true });
+      // Eventos por venir con reservas o lista de espera: ¿cancelar y avisar o dejarlos?
+      await avisaEventosDelCierre({});
       await hecho('Cerrado hasta nuevo aviso');
     },
     async abrir() {

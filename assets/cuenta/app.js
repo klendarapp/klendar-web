@@ -2280,6 +2280,9 @@ RUTAS.seguir = async ([id], params, crudo) => {
 /** Un código o un canje en una lista (Tus códigos y Tus planes), como el
  * RedemptionTile de la app: uno vivo vuelve a su QR, uno usado enseña el
  * recibo y el resto, la publicación. `tz`: la zona del negocio. */
+/** «1 plaza», «3 plazas»: las de la reserva, en la fila de «Tus códigos» (como la app). */
+const plazasTxt = (n) => (n === 1 ? t('1 plaza') : `${n} ${t('plazas')}`);
+
 function filaCanje(r, tz, resaltado = false) {
   const vivo = r.status === 'pending' && new Date(r.expires_at).getTime() > Date.now();
   const estado = r.status === 'validated' ? t('Canjeado')
@@ -2291,6 +2294,7 @@ function filaCanje(r, tz, resaltado = false) {
       <span class="ocard-body"><b>${esc(r.offer_title)}</b>
         <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at, undefined, tz))}</span>
         <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span>
+          ${r.event_at || (r.seats || 1) > 1 ? `<span class="muted">${esc(plazasTxt(r.seats || 1))}</span>` : ''}
           ${r.status === 'validated' ? `<span class="muted">${esc(t('Ver recibo'))} →</span>` : ''}</span>
       </span></a>`;
 }
@@ -3113,9 +3117,9 @@ RUTAS.espera = async ([id], params, crudo) => {
   const estado = !dentro ? ''
     : antes?.state === 'notified' && hora
       ? (antes.notices >= 2
-        ? (EN ? `Last notice: a place is free and you have until ${hora} to take it.` : `Último aviso: hay una plaza libre y tienes hasta las ${hora} para cogerla.`)
-        : (EN ? `We’ve told you a place is free: you have until ${hora} to take it. If it’s gone, you go back on the list.`
-          : `Te hemos avisado de una plaza libre: tienes hasta las ${hora} para cogerla. Si ya no queda, vuelves a la lista.`))
+        ? (EN ? `Last notice: a place is free and we’re holding it for you until ${hora}.` : `Último aviso: hay una plaza libre y te la guardamos hasta las ${hora}.`)
+        : (EN ? `We’ve told you a place is free and we’re holding it for you until ${hora}. If you don’t take it, you go back on the list.`
+          : `Te hemos avisado de una plaza libre y te la guardamos hasta las ${hora}. Si no la coges, vuelves a la lista.`))
       : antes?.state === 'waiting' && antes.notices > 0
         ? t('Sigues en la lista de espera. Ya te avisamos una vez; te queda un aviso más.')
         : t('Te avisamos si se libera una plaza');

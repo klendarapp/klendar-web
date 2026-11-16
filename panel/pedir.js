@@ -198,6 +198,10 @@ function pedTarjetaFestivo(q, alContestar) {
       .catch((err) => ({ ok: false, error: err.message }));
     if (!r?.ok) { toast(I18N.t(PED_ERR_DIA[r?.error] || ERR_CIERRE?.[r?.error] || 'No se ha podido guardar'), true); return; }
     toast('Hecho. Ya sale en tu ficha.');
+    // Cerrado ese día con eventos con reservas o lista de espera: ¿cancelar y avisar o dejarlos?
+    if (answer === 'closed' && typeof avisaEventosDelCierre === 'function') {
+      await avisaEventosDelCierre({ p_starts: q.day, p_ends: q.day });
+    }
     alContestar();
   };
   $$('[data-r]', caja).forEach((b) => { b.onclick = () => {
