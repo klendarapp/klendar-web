@@ -106,6 +106,14 @@ const tag = (v, cls) => v ? `<span class="tag ${cls || 'st-' + esc(v)}">${esc(I1
  * está «terminada» aunque el cron aún no la haya marcado. */
 const finDe = (o) => (o.kind === 'flash_offer' ? o.redeem_end_at : (o.event_end_at || o.event_at));
 const estadoVisible = (o) => (o.status === 'active' && finDe(o) && new Date(finDe(o)) < new Date() ? 'expired' : o.status);
+/** Activa o agotada y sin terminar: se puede pausar (una agotada también,
+ * Iván 16-11; al activarla vuelve a «Agotada» si sigue llena). Como
+ * `PanelOffer.canPause` de la app. */
+const sePuedePausar = (o) => ['active', 'sold_out'].includes(o.status) && !(finDe(o) && new Date(finDe(o)) < new Date());
+/** Se ve en Klendar (activa o agotada, aprobada y sin terminar): solo eso se
+ * comparte o tiene cartel; el enlace de una programada daba «Ya no está».
+ * Como `PanelOffer.isShareable` de la app. */
+const seComparte = (o) => o.moderation_status === 'approved' && sePuedePausar(o);
 const toast = (msg, bad = false) => {
   const t = document.createElement('div');
   t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = I18N.t(msg);
@@ -2319,9 +2327,10 @@ function accionesPub(o) {
   if (o.status === 'archived') {
     return `<div class="actions">${cifras}${gestiona() ? `<a class="btn sm ghost" href="${crear}">Crear a partir de esta</a>` : ''}</div>`;
   }
-  // Un cartel o una historia de algo cancelado no se comparte; una oferta de
-  // RRPP tampoco (su QR no la abre sin el enlace de un RRPP).
-  const difundir = o.status !== 'cancelled' && o.audience !== 'promoters'
+  // Solo se comparte lo que se ve: activa o agotada (una programada, un
+  // borrador o una terminada daban «Ya no está»); una oferta de RRPP tampoco
+  // (su QR no la abre sin el enlace de un RRPP).
+  const difundir = seComparte(o) && o.audience !== 'promoters'
     ? `<a href="${I18N.pub === 'en' ? '/en/story/o/' : '/historia/o/'}${esc(o.id)}" target="_blank" rel="noopener">Compartir en historias</a>
       <a href="${I18N.pub === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>` : '';
   // El personal ve cifras, asistentes y lo que se comparte.
@@ -2336,7 +2345,7 @@ function accionesPub(o) {
     <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
     ${cifras}
     ${asistentes}
-    ${estadoVisible(o) === 'active' ? `<button type="button" class="btn sm ghost" data-act="pause" data-id="${esc(o.id)}">Pausar</button>` : o.status === 'draft' && !(finDe(o) && new Date(finDe(o)) < new Date()) ? `<button type="button" class="btn sm ghost" data-act="activate" data-id="${esc(o.id)}">Activar</button>` : ''}
+    ${sePuedePausar(o) ? `<button type="button" class="btn sm ghost" data-act="pause" data-id="${esc(o.id)}">Pausar</button>` : o.status === 'draft' && !(finDe(o) && new Date(finDe(o)) < new Date()) ? `<button type="button" class="btn sm ghost" data-act="activate" data-id="${esc(o.id)}">Activar</button>` : ''}
     <details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">
       <a href="${crear}">Crear a partir de esta</a>
       ${repetir ? `<a href="${crear}&repeat=1">${o.kind === 'flash_offer' ? 'Repetir mañana' : 'Repetir'}</a>` : ''}
@@ -2613,7 +2622,18 @@ async function offerForm(v, id, kindDefault, desde = null) {
         o.event_end_at = src.event_end_at ? new Date(nuevo.getTime() + (new Date(src.event_end_at) - ini)).toISOString() : null;
         o.redeem_start_at = null; o.redeem_end_at = null;
       } else {
-        o.redeem_start_at = null; o.redeem_end_at = null; o.event_at = null; o.event_end_at = null;
+        // «Crear a partir de esta»: fechas nuevas, como la app (Iván, 16-11).
+        // Una oferta flash, desde ahora y 3 horas; un evento, mañana a las
+        // 20:00 en la hora del local, sin fin.
+        const ya = new Date(); ya.setSeconds(0, 0);
+        if (src.kind === 'flash_offer') {
+          o.redeem_start_at = ya.toISOString();
+          o.redeem_end_at = new Date(ya.getTime() + 3 * 36e5).toISOString();
+          o.event_at = null; o.event_end_at = null;
+        } else {
+          o.event_at = enDiasNegocio(1, 20).toISOString();
+          o.event_end_at = null; o.redeem_start_at = null; o.redeem_end_at = null;
+        }
       }
       if (desde.rrpp) o.audience = 'promoters';
     }
@@ -3902,11 +3922,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
       first_visit_only: audiencia !== 'promoters' && !!estilo.first_visit,
       // Las columnas de RRPP: las suyas o, si deja de serlo, las de siempre.
       ...(rrpp ? rrpp.cols : o.audience === 'promoters' ? RRPP_COLUMNAS_FUERA : {}),
-      // Borrador, salvo que ya estuviera terminada o cancelada (se queda así;
-      // editarla no la saca del cajón). Una agotada está publicada: «Pasar a
-      // borrador» la pausa, como en la app.
-      status: alas ? 'draft' : (publicar ? 'active'
-        : (id && ['expired', 'cancelled'].includes(o.status) ? o.status : 'draft')),
+      // Sin publicar, borrador: también una terminada o cancelada (Iván,
+      // 16-11, como la app). Una agotada está publicada: «Pasar a borrador»
+      // la pausa.
+      status: alas ? 'draft' : (publicar ? 'active' : 'draft'),
       publish_at: alas,
       style: estiloJson(),
       // Sin sitio propio, la base pone el punto del negocio.

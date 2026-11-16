@@ -31,7 +31,9 @@ const tiene = (s) => panel.includes(s);
 
 // 1
 ok('1. agotada = publicada', tiene("const enVivo = !!id && ['active', 'sold_out'].includes(o.status);"));
-ok('1. «Pasar a borrador» pausa una agotada', tiene("(id && ['expired', 'cancelled'].includes(o.status) ? o.status : 'draft')")
+// Desde el 16-11, sin publicar es borrador siempre (también terminada o
+// cancelada, como la app): tools/publicar2_check.mjs, punto 4.
+ok('1. «Pasar a borrador» pausa una agotada', tiene("status: alas ? 'draft' : (publicar ? 'active' : 'draft'),")
   && !tiene("['expired', 'sold_out', 'cancelled'].includes(o.status) ? o.status"));
 
 // 2

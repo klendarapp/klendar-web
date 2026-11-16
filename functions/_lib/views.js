@@ -166,7 +166,7 @@ const seguro = (u) => (/^https?:\/\//i.test(String(u || '')) ? String(u) : '');
 /** Una publicación que ya acabó o se borró, o un negocio que ya no está: con
  * la cabecera y el pie de siempre y algo que hacer, no una página suelta.
  * Centrada, como toda pantalla vacía o de error (`.vacio`). */
-export const notFound = (lang, path, kind) => {
+export const notFound = (lang, path, kind, extra = '') => {
   const en = lang === 'en';
   const S = en
     ? {
@@ -192,7 +192,7 @@ export const notFound = (lang, path, kind) => {
     <p>${esc(texto)}</p>
     <div class="vacio-botones"><a class="pill accent" href="${exploreBase(lang)}">${esc(S.exp)}</a>
       <a class="pill" href="${agendaBase(lang)}">${esc(S.agenda)}</a></div>
-  </section>`;
+  </section>${extra}`;
   return html(publicPage({
     lang, path, body, title: pestana || titulo, description: texto, head: '<meta name="robots" content="noindex">',
   }), 404, 'no-store');
@@ -248,6 +248,18 @@ function traducir(lang, ...pedir) {
  */
 export async function offerPage(id, lang, rpRaw = '', request = null) {
   const edad = edadDeclarada(request);
+  // Con la sesión de quien la pide (`/assets/ficha-con-codigo.js`, desde el
+  // «ya no está»): quien tiene código o reserva la ve aunque esté en pausa o
+  // el local cerrado hoy (migración 20261282800000 de la app). Solo para él:
+  // sin caché y fuera de los buscadores.
+  const sesion = sesionDeFicha(request);
+  if (sesion) {
+    const res = await fichaOferta(id, lang, rpRaw, { ...(cabeceraEdad(edad) || {}), Authorization: `Bearer ${sesion}` }, true);
+    res.headers.set('cache-control', 'private, no-store');
+    res.headers.set('vary', 'x-klendar-sesion, Cookie');
+    res.headers.set('x-robots-tag', 'noindex');
+    return res;
+  }
   const res = await fichaOferta(id, lang, rpRaw, cabeceraEdad(edad));
   if (res.status === 404 && !edad && isUuid(id) && (await preguntaEdadEncendida())) {
     const o18 = await rpc('offer_detail', { p_id: id, p_rp: KR.codigoValido(rpRaw) || null }, cabeceraEdad('1')).catch(() => null);
@@ -259,6 +271,18 @@ export async function offerPage(id, lang, rpRaw = '', request = null) {
   }
   return res;
 }
+
+/** El token de la sesión que manda `/assets/ficha-con-codigo.js`
+ * (`x-klendar-sesion`), si tiene forma de token; si no, null. */
+export function sesionDeFicha(request) {
+  const t = request?.headers?.get('x-klendar-sesion') || '';
+  return t.length < 4096 && /^[\w-]+\.[\w-]+\.[\w-]+$/.test(t) ? t : null;
+}
+
+/** En el «ya no está» de una publicación: si el navegador tiene sesión, la
+ * vuelve a pedir con ella (quien tiene código o reserva sí la ve). */
+const fichaConCodigo = (id) => `<span hidden data-ficha-codigo="${esc(id)}"></span>
+<script src="/assets/ficha-con-codigo.js?v=1" defer></script>`;
 
 /** «¿Tienes 18 años o más?» en lugar de una ficha +18 (sin indexar). */
 function puertaEdad(lang, path) {
@@ -282,7 +306,7 @@ function puertaEdad(lang, path) {
   return r;
 }
 
-async function fichaOferta(id, lang, rpRaw, H) {
+async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
   const path = `${pre(lang)}/o/${id}`;
   const en = lang === 'en';
   if (!isUuid(id)) return notFound(lang, path, 'o');
@@ -291,7 +315,10 @@ async function fichaOferta(id, lang, rpRaw, H) {
   // tenga no existe (el 404 de siempre).
   const rp = KR.codigoValido(rpRaw);
   const o = await rpc('offer_detail', { p_id: id, p_rp: rp || null }, H);
-  if (!o) return notFound(lang, path, 'o');
+  if (!o) return notFound(lang, path, 'o', conSesion ? '' : fichaConCodigo(id));
+  // En pausa: solo llega aquí quien tiene su código o su reserva (con su
+  // sesión). Se dice que sigue valiendo y no se comparte.
+  const enPausa = o.status === 'draft';
   const prom = rp && o.promoter && o.promoter.code ? o.promoter : null;
   // Con el enlace (o siendo de RRPP), la página no es para los buscadores:
   // sin canonical ni hreflang y sin caché compartida. «Compartir en
@@ -559,7 +586,10 @@ async function fichaOferta(id, lang, rpRaw, H) {
         const nominativaHtml = nominativa ? `<p class="note">${esc(en
           ? "Named ticket: only for the person who books. It can't be passed on to anyone else."
           : 'Entrada nominativa: solo para quien reserva. No se puede pasar a otra persona.')}</p>` : '';
-        return `${rrppHtml}${cerradaHtml}${principal}${nominativaHtml}
+        const pausaHtml = enPausa ? `<p class="note"><b>${esc(flash || !o.reservations_enabled
+          ? (en ? "Paused: it's no longer shown on Klendar. Your code is still valid." : 'En pausa: ya no se ve en Klendar. Tu código sigue valiendo.')
+          : (en ? "Paused: it's no longer shown on Klendar. Your booking is still valid." : 'En pausa: ya no se ve en Klendar. Tu reserva sigue valiendo.'))}</b></p>` : '';
+        return `${pausaHtml}${rrppHtml}${cerradaHtml}${principal}${nominativaHtml}
           <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}"${conCodigo ? ` data-codigo="${flash ? 'codigo' : 'reservar'}"` : ''}>
             ${entradas ? voy('pill') : ''}
             ${deRrpp ? '' : `<a class="pill" href="${cuenta(lang, `invitar/${id}`)}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a>`}</p>
@@ -568,7 +598,7 @@ async function fichaOferta(id, lang, rpRaw, H) {
           <p class="acciones"><a class="pill" data-solo-equipo hidden href="/panel#/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
             ${deRrpp ? '' : `<a class="pill" data-solo-publico data-plan="${id}" href="${cuenta(lang, `guardar/${id}`)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
             ${openInApp(path + rpQ, S.open, 'pill ghost')}</p>
-          ${deRrpp && !prom ? '' : `<p class="acciones">${compartirBoton(lang, `${BASE}${path}${rpQ}`, o.title)}${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
+          ${(deRrpp && !prom) || enPausa ? '' : `<p class="acciones">${compartirBoton(lang, `${BASE}${path}${rpQ}`, o.title)}${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
       })()}
       ${serieFicha(serie, o.id, lang)}
       <p class="note">${!(flash || o.reservations_enabled) ? S.noteNoCode : entidad ? S.noteEntity : S.note}</p>
