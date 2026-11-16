@@ -31,18 +31,29 @@ export const PAGINAS_IA = new Set(['/privacidad', '/en/privacy', '/terminos', '/
   '/normas', '/en/community-guidelines', '/cookies', '/en/cookies', '/soporte', '/en/support']);
 
 // Retoques publicados después de los textos de IA (la fecha más nueva manda):
-// RA1, la fila «Avisos sobre respuestas de la IA» (13-11-2026).
+// RA1, la fila «Avisos sobre respuestas de la IA» (13-11-2026), y «Contacto de
+// quien reserva» (legal_contacto.py, CONTACTO_DESDE: la privacidad y las
+// condiciones para negocios, con su versión, 16-11-2026).
+const fc = fs.readFileSync(new URL('../legal_contacto.py', import.meta.url), 'utf8').match(/^CONTACTO_DESDE = (None|'(\d{4})-(\d{2})-(\d{2})')/m);
+if (!fc) throw new Error('_fecha_ia.mjs: no encuentro CONTACTO_DESDE en legal_contacto.py');
+export const CONTACTO = fc[1] === 'None' ? null : {
+  iso: `${fc[2]}-${fc[3]}-${fc[4]}`,
+  es: `${Number(fc[4])} de ${MESES_ES[Number(fc[3]) - 1]} de ${fc[2]}`,
+  en: `${Number(fc[4])} ${MESES_EN[Number(fc[3]) - 1]} ${fc[2]}`,
+};
 export const POSTERIOR = {
-  '/privacidad': { es: '13 de noviembre de 2026', en: '13 November 2026' },
-  '/en/privacy': { es: '13 de noviembre de 2026', en: '13 November 2026' },
+  '/privacidad': CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
+  '/en/privacy': CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
+  ...(CONTACTO ? { '/negocios': { ...CONTACTO, version: CONTACTO.iso }, '/en/business-terms': { ...CONTACTO, version: CONTACTO.iso } } : {}),
 };
 
 export function fechaLegal(ruta, cabecera) {
   const p = POSTERIOR[ruta];
   if (p) {
-    return cabecera
+    const c = cabecera
       .replace(/(Última actualización: )\d{1,2} de \p{L}+ de \d{4}/u, `$1${p.es}`)
       .replace(/(Last updated: )\d{1,2} \p{L}+ \d{4}/u, `$1${p.en}`);
+    return p.version ? c.replace(/(Versi[óo]n )\d{4}-\d{2}-\d{2}(-[a-z])?/, `$1${p.version}`) : c;
   }
   if (!IA || !PAGINAS_IA.has(ruta)) return cabecera;
   let c = cabecera

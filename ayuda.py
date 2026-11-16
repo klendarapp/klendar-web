@@ -357,6 +357,9 @@ if _os.path.dirname(_os.path.abspath(__file__)) not in _sys.path:  # la carga to
     _sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
 import legal_ia  # noqa: E402
 PREGUNTAS = legal_ia.ayuda(PREGUNTAS, P)
+# Contacto de quien reserva (legal_contacto.py), si tiene fecha: qué ve el negocio y cómo avisar.
+import legal_contacto  # noqa: E402
+PREGUNTAS = legal_contacto.ayuda(PREGUNTAS, P)
 
 PESTANAS = {
     'es': {'ti': 'Para ti', 'negocios': 'Para negocios'},

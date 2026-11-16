@@ -1,5 +1,5 @@
 {
- "version": "75d5cc8d3236",
+ "version": "619db37e0f29",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -80,6 +80,22 @@
     "a": [
      {
       "t": "Si el negocio lo activa, sí: reservas plaza desde la app o desde la web y enseñas tu código en la puerta. La reserva no es un pago; lo que cueste, si cuesta, se paga en el local."
+     }
+    ]
+   },
+   {
+    "id": "que-ve-el-negocio-reserva",
+    "q": "¿Qué ve el negocio cuando reservo, me apunto a la lista de espera o cojo número?",
+    "a": [
+     {
+      "t": "Tu nombre mostrado y tu foto (en la lista de espera, solo el nombre) y, para avisarte si hay algún cambio, tu correo y el teléfono que decidas darle (es opcional). Nunca para publicidad. Lo ve el equipo del negocio y deja de verlo 7 días después del evento (en la cola, al acabar el día). El teléfono que guardas en tu perfil lo cambias o lo borras en «Tus datos». Más en la "
+     },
+     {
+      "t": "política de privacidad",
+      "u": "https://klendar.app/privacidad"
+     },
+     {
+      "t": "."
      }
     ]
    },
@@ -501,6 +517,22 @@
     ]
    },
    {
+    "id": "avisar-a-quien-reserva",
+    "q": "¿Puedo avisar a quien ha reservado?",
+    "a": [
+     {
+      "t": "Sí. En Asistentes, en la lista de espera y en la cola, cada persona tiene un botón para escribirle (su correo) y otro para llamarla, si dejó teléfono. Lo ve todo tu equipo. Úsalos solo para avisar de esa reserva, lista o turno (un cambio de hora, una cancelación, que le toca), nunca para publicidad, y no los copies fuera de Klendar: dejan de verse 7 días después del evento (en la cola, al acabar el día). Está en las "
+     },
+     {
+      "t": "condiciones para negocios",
+      "u": "https://klendar.app/negocios"
+     },
+     {
+      "t": "."
+     }
+    ]
+   },
+   {
     "id": "te-aviso-listo-negocio",
     "q": "¿Cómo aviso a quien pide en el mostrador de que su pedido está listo?",
     "a": [
@@ -639,6 +671,22 @@
     "a": [
      {
       "t": "If the business turns it on, yes: you reserve a place from the app or the website and show your code at the door. Reserving isn't a payment; whatever it costs, if anything, is paid at the venue."
+     }
+    ]
+   },
+   {
+    "id": "que-ve-el-negocio-reserva",
+    "q": "What does the business see when I book, join the waiting list or get a number?",
+    "a": [
+     {
+      "t": "Your display name and photo (on the waiting list, just your name) and, so they can let you know if anything changes, your email and the phone number you decide to give them (it's optional). Never for advertising. The business's team sees them and stops seeing them 7 days after the event (in the queue, at the end of the day). You can change or delete the phone number saved in your profile in “Your data”. More in the "
+     },
+     {
+      "t": "privacy policy",
+      "u": "https://klendar.app/en/privacy"
+     },
+     {
+      "t": "."
      }
     ]
    },
@@ -1056,6 +1104,22 @@
     "a": [
      {
       "t": "In My business → “Virtual queue” (also on the web dashboard): print the “Poster for the door” and open the queue each day with the maximum number of people and the minutes each person has to show up. People scan the poster when they arrive and get a number; you just tap “Call the next one” and we let them know on their phone. You add anyone without the app yourself. The list deletes itself at the end of the day (at 6:00) or when you tap “Finish for today”."
+     }
+    ]
+   },
+   {
+    "id": "avisar-a-quien-reserva",
+    "q": "Can I let people who have booked know about something?",
+    "a": [
+     {
+      "t": "Yes. In Attendees, on the waiting list and in the queue, each person has a button to email them and another to call them, if they left a phone number. Your whole team can see them. Use them only to let people know about that booking, list or turn (a change of time, a cancellation, that it's their turn), never for advertising, and don't copy them outside Klendar: they stop showing 7 days after the event (in the queue, at the end of the day). It's in the "
+     },
+     {
+      "t": "business terms",
+      "u": "https://klendar.app/en/business-terms"
+     },
+     {
+      "t": "."
      }
     ]
    },

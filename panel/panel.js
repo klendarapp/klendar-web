@@ -5076,8 +5076,8 @@ PAGES.validar = async (v) => {
 
 // ── Contacto de quien reserva (como la app: ContactButtons) ─────────────────
 /** Llamar (si dejó teléfono) y escribir (el correo de la cuenta). En tinta:
- * el coral es del botón principal. Lo da la base solo a propietario o
- * encargado, con `app_config.contact_details` (Asistentes, lista de espera y
+ * el coral es del botón principal. Lo da la base a todo el equipo del
+ * negocio, con `app_config.contact_details` (Asistentes, lista de espera y
  * la cola). */
 function botonesContacto(c, nombre) {
   if (!c || (!c.phone && !c.email)) return '';
@@ -5099,7 +5099,7 @@ PAGES.asistentes = async (v, offerId) => {
     miPublicacion(offerId),
     parte('', 0),
     rpc('offer_attendees_summary', { p_offer: offerId }).catch(() => null),
-    // Teléfono y correo de cada reserva: solo propietario o encargado, con
+    // Teléfono y correo de cada reserva: todo el equipo del negocio, con
     // `app_config.contact_details` y hasta 7 días después (null: no se ven).
     rpc('offer_attendee_contacts', { p_offer: offerId }).catch(() => null),
   ]);
@@ -5125,7 +5125,7 @@ PAGES.asistentes = async (v, offerId) => {
   // La lista de espera: cuántos y, si la privacidad lo dice
   // (`app_config.waitlist_names`), quiénes: el nombre visible y, a quien ya
   // avisamos, hasta cuándo le guardamos la plaza. El correo y el teléfono,
-  // solo con `app_config.contact_details` y a propietario o encargado.
+  // solo con `app_config.contact_details` y a todo el equipo del negocio.
   const enEspera = Number(resumen?.waiting || 0) || 0;
   const nombresEspera = Array.isArray(resumen?.waitlist) ? resumen.waitlist : null;
   const conContacto = (contactos && Object.keys(contactos).length > 0)
@@ -5155,7 +5155,7 @@ PAGES.asistentes = async (v, offerId) => {
         { h: 'Estado', r: estado },
         { h: 'Reservó', r: (a) => fmtDate(a.created_at) },
         { h: 'Entró', r: (a) => fmtDate(a.validated_at) },
-        // Llamar o escribir (solo propietario o encargado, con el interruptor).
+        // Llamar o escribir (todo el equipo, con el interruptor).
         ...(contactos ? [{ h: '', r: (a) => (contactos[a.id] ? botonesContacto(contactos[a.id], a.user_name || I18N.t('Invitada')) : '') }] : []),
         // En tinta, como «Validar» en las listas de RRPP: el coral, solo
         // para el botón principal.
