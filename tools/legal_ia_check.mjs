@@ -67,7 +67,7 @@ const PAGINAS = [
     /Anthropic \(Anthropic Ireland, Limited; lo trata en Estados Unidos y, según la carga, en otros países: Claude/,
     /Decisiones automáticas\. Cuando una decisión la toma un sistema automático \(el traspaso de una ficha con el código de «¿Es tu negocio\?», o que el moderador no publique algo tuyo\)/,
     // Encima puede ir lo publicado después (RA1, 13-11).
-    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,3}?${ES}: Apartado nuevo «Funciones con inteligencia artificial»`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,8}?${ES}: Apartado nuevo «Funciones con inteligencia artificial»`),
   ], 1],
   ['/en/privacy', `Last updated: ${POSTERIOR['/en/privacy'].en}`, [
     /Artificial intelligence \(AI\) features\s+Some features use Claude, the AI from Anthropic/,
@@ -79,7 +79,7 @@ const PAGINAS = [
     /“Is this your business\?” with a code[\s\S]*?It is an automated decision/,
     /only when someone has asked for it and Claude isn't available/,
     /Automated decisions\. When an automated system takes a decision/,
-    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,3}?${EN}: New “Artificial intelligence features” part`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,8}?${EN}: New “Artificial intelligence features” part`),
   ], 1],
   // Encima puede ir lo publicado después (Encargos, 16-11).
   ['/terminos', fechaLegal('/terminos', `Última actualización: ${IA.es}`), [

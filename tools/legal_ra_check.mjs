@@ -20,11 +20,11 @@ const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else cons
 const PAGINAS = [
   ['/privacidad', fechaLegal('/privacidad', 'Última actualización: 13 de noviembre de 2026 · Versión 2026-09-29'), [
     /Sugerencias y mejoras[\s\S]+?Avisos sobre respuestas de la IA\s+Si nos avisas de una respuesta hecha con IA: esa respuesta, el motivo, tu nota y, si tienes cuenta, quién avisa\s+Revisarla y mejorar el servicio\s+Interés legítimo \(art\. 6\.1\.f RGPD\)[^\n]*\s+Lo borramos un año después de revisarlo/,
-    /Historial de cambios\s+(?:.+\n\s*){0,2}?13 de noviembre de 2026: Fila nueva «Avisos sobre respuestas de la IA»/,
+    /Historial de cambios\s+(?:.+\n\s*){0,6}?13 de noviembre de 2026: Fila nueva «Avisos sobre respuestas de la IA»/,
   ]],
   ['/en/privacy', fechaLegal('/en/privacy', 'Last updated: 13 November 2026 · Version 2026-09-29'), [
     /Ideas and feedback[\s\S]+?Reports about AI answers\s+If you tell us about an answer made with AI: that answer, the reason, your note and, if you have an account, who reported it\s+Reviewing it and improving the service\s+Legitimate interest[^\n]*\s+We delete it one year after reviewing it/,
-    /Change history\s+(?:.+\n\s*){0,2}?13 November 2026: New “Reports about AI answers” row/,
+    /Change history\s+(?:.+\n\s*){0,6}?13 November 2026: New “Reports about AI answers” row/,
   ]],
 ];
 

@@ -29,6 +29,11 @@ términos dicen que los alérgenos se ven antes de encargar y las condiciones,
 que en comida el negocio los marca. Se publicó el 16-11-2026 (la fecha del
 servidor), el mismo día que el contacto de quien reserva: la versión de las
 condiciones es `2026-11-16-b`.
+
+Retoque del mismo 16-11 (Iván, 17-11), solo en la privacidad: en la fila,
+«Si el negocio puede ver tu contacto» en vez de «Con el contacto activado»
+(EN «If the business can see your contact details»), con su línea en el
+historial en `build_legal.py` (PRIV_AVISAME_DESDE).
 """
 import legal_contacto
 from legal_ia import _aplica_lista, aplica, fecha, fechas
@@ -60,8 +65,8 @@ FILA_ES = (
     'salud: los alérgenos del producto los ves antes de encargar. Si el producto es para mayores de 18, miramos la fecha '
     'de nacimiento de tu perfil</td>'
     '<td>Hacer llegar tu encargo al negocio y avisarte de cómo va. <strong>Qué ve el negocio:</strong> tu nombre '
-    'mostrado, lo encargado y tu nota. Con el contacto activado, ve también tu correo y ese teléfono, solo para avisarte '
-    'de ese encargo</td>'
+    'mostrado, lo encargado y tu nota. Si el negocio puede ver tu contacto, ve también tu correo y ese teléfono, solo para '
+    'avisarte de ese encargo</td>'
     '<td>Ejecución del servicio (art. 6.1.b RGPD)</td>'
     '<td>La nota y el teléfono se borran 7 días después del día de recogida. El resto queda en «Tus códigos» mientras '
     'tengas la cuenta, puedes quitarlo de tu lista y sale en «Descargar mis datos». Si eliminas la cuenta, el encargo '
@@ -74,8 +79,8 @@ FILA_EN = (
     "Please don't put any health details in the note: you can see the product's allergens before you order. If the "
     'product is for over-18s, we check the date of birth in your profile</td>'
     '<td>Getting your pre-order to the business and keeping you posted on it. <strong>What the business sees:</strong> '
-    'your display name, what you ordered and your note. With contact details turned on, it also sees your email and '
-    'that phone number, only to let you know about that pre-order</td>'
+    'your display name, what you ordered and your note. If the business can see your contact details, it also sees your '
+    'email and that phone number, only to let you know about that pre-order</td>'
     '<td>Performance of the service (art. 6(1)(b) GDPR)</td>'
     '<td>The note and the phone number are deleted 7 days after the pick-up day. The rest stays in “Your codes” for as '
     "long as you have your account; you can remove it from your list and it's included in “Download my data”. If you "
