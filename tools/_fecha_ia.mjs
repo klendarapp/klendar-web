@@ -54,17 +54,32 @@ export const ENCARGOS = fe[1] === 'None' ? null : (() => {
     en: `${Number(fe[4])} ${MESES_EN[Number(fe[3]) - 1]} ${fe[2]}`,
   };
 })();
-const NEGOCIOS = ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
+// «Preguntas al reservar» (legal_preguntas.py, PREGUNTAS_DESDE: la privacidad y las condiciones para negocios, con
+// su versión; «-c» si es el mismo día que el contacto y Encargos, «-b» si solo coincide con Encargos).
+const fq = fs.readFileSync(new URL('../legal_preguntas.py', import.meta.url), 'utf8').match(/^PREGUNTAS_DESDE = (None|'(\d{4})-(\d{2})-(\d{2})')/m);
+if (!fq) throw new Error('_fecha_ia.mjs: no encuentro PREGUNTAS_DESDE en legal_preguntas.py');
+export const PREGUNTAS = fq[1] === 'None' ? null : (() => {
+  const iso = `${fq[2]}-${fq[3]}-${fq[4]}`;
+  const conEncargos = ENCARGOS && ENCARGOS.iso === iso;
+  return {
+    iso,
+    version: conEncargos ? `${iso}-${ENCARGOS.version.endsWith('-b') ? 'c' : 'b'}` : iso,
+    es: `${Number(fq[4])} de ${MESES_ES[Number(fq[3]) - 1]} de ${fq[2]}`,
+    en: `${Number(fq[4])} ${MESES_EN[Number(fq[3]) - 1]} ${fq[2]}`,
+  };
+})();
+const NEGOCIOS = PREGUNTAS ? { ...PREGUNTAS } : ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
+const PRIV = PREGUNTAS || ENCARGOS;
 export const POSTERIOR = {
   // Sin `version`: la cabecera de la privacidad dice la de los términos (VERSION), que no cambia.
-  '/privacidad': ENCARGOS ? { es: ENCARGOS.es, en: ENCARGOS.en } : CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
-  '/en/privacy': ENCARGOS ? { es: ENCARGOS.es, en: ENCARGOS.en } : CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
+  '/privacidad': PRIV ? { es: PRIV.es, en: PRIV.en } : CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
+  '/en/privacy': PRIV ? { es: PRIV.es, en: PRIV.en } : CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
   ...(NEGOCIOS ? { '/negocios': NEGOCIOS, '/en/business-terms': NEGOCIOS } : {}),
   ...(ENCARGOS ? { '/terminos': { es: ENCARGOS.es, en: ENCARGOS.en }, '/en/terms': { es: ENCARGOS.es, en: ENCARGOS.en } } : {}),
 };
 
 // La versión de las condiciones para negocios que dice la cabecera de /negocios (la más nueva).
-export const VERSION_NEGOCIOS = ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
+export const VERSION_NEGOCIOS = PREGUNTAS?.version || ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
 
 export function fechaLegal(ruta, cabecera) {
   const p = POSTERIOR[ruta];

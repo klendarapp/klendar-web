@@ -14,6 +14,7 @@ from ayuda import soporte_html
 import legal_ia
 import legal_contacto
 import legal_encargos
+import legal_preguntas
 
 # ════════════════════════════════════════════════════════════════════════════
 # DATOS DEL TITULAR — el único sitio que se toca cuando cambia quién está
@@ -1367,6 +1368,17 @@ _apunta('privacidad', legal_ia.fechas(PRIV_AVISAME_DESDE),
         "whether we've already told you (deleted when the event is over); in “Push notifications”, the notification "
         'that reservations have opened (once per event), which is always sent because you asked for it.', primero=True)
 
+# ════════════════════════════════════════════════════════════════════════════
+# PREGUNTAS AL RESERVAR (Iván, 17-11): sus textos están en legal_preguntas.py,
+# con la fecha del día que se publiquen (PREGUNTAS_DESDE), como los de
+# Encargos: su línea en el historial de la privacidad y las condiciones,
+# «Última actualización» y una versión nueva de las condiciones que se aplica
+# 15 días después (P2B art. 3.2; «-b»/«-c» si ese día ya hay otras).
+# ════════════════════════════════════════════════════════════════════════════
+for _slug, _cuando, _es, _en in legal_preguntas.cambios():
+    _apunta(_slug, _cuando, _es, _en, primero=True)
+VERSIONES_NEGOCIOS[:0] = [v for v in legal_preguntas.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
+
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:
 # el script se niega a publicar nada que los contenga.
 EJEMPLO_SL = dict(TITULAR_DATOS,
@@ -2704,6 +2716,8 @@ def textos(D, resaltar=False):
     legal_contacto.aplicar(ES, EN, E)
     # Encargos (legal_encargos.py), si tiene fecha: después del contacto.
     legal_encargos.aplicar(ES, EN, E)
+    # Preguntas al reservar (legal_preguntas.py), si tiene fecha: después de Encargos.
+    legal_preguntas.aplicar(ES, EN, E)
     return ES, EN
 
 

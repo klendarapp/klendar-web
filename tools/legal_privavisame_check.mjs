@@ -22,7 +22,7 @@ const PAGINAS = [
     /una plaza libre de la lista de espera, que han abierto las reservas de un evento del que pediste «Avísame» \(una vez por evento\), cambios o anulaciones/,
     /\(los avisos de tus reservas, de la lista de espera y de «Avísame» cuando abren las reservas van siempre, porque son de algo que has pedido\)/,
     /Qué ve el negocio: tu nombre mostrado, lo encargado y tu nota\. Si el negocio puede ver tu contacto, ve también tu correo y ese teléfono, solo para avisarte de ese encargo/,
-    /Historial de cambios\s+16 de noviembre de 2026: «Avísame» cuando abren las reservas: en «Favoritos, reseñas, canjes y sellos», los eventos de los que lo pides y si ya te hemos avisado \(se borra cuando pasa el evento\); en «Notificaciones push», el aviso de que han abierto las reservas \(una vez por evento\), que va siempre porque lo has pedido\.\s+16 de noviembre de 2026: Encargos: donde decía «Con el contacto activado» dice ahora «Si el negocio puede ver tu contacto»/,
+    /Historial de cambios\s+(?:.+\n\s*){0,1}?16 de noviembre de 2026: «Avísame» cuando abren las reservas: en «Favoritos, reseñas, canjes y sellos», los eventos de los que lo pides y si ya te hemos avisado \(se borra cuando pasa el evento\); en «Notificaciones push», el aviso de que han abierto las reservas \(una vez por evento\), que va siempre porque lo has pedido\.\s+16 de noviembre de 2026: Encargos: donde decía «Con el contacto activado» dice ahora «Si el negocio puede ver tu contacto»/,
   ], [
     /los avisos de tus reservas y de la lista de espera van siempre/,
     /Con el contacto activado, ve/,
@@ -32,7 +32,7 @@ const PAGINAS = [
     /a free place from the waiting list, that reservations have opened for an event you asked about with “Tell me” \(once per event\), changes to or cancellations/,
     /\(notices about your bookings, the waiting list and “Tell me” when reservations open are always sent, because they're about something you asked for\)/,
     /What the business sees: your display name, what you ordered and your note\. If the business can see your contact details, it also sees your email and that phone number/,
-    /Change history\s+16 November 2026: “Tell me” when reservations open: [^\n]+\s+16 November 2026: Pre-orders: “With contact details turned on” now reads “If the business can see your contact details”/,
+    /Change history\s+(?:.+\n\s*){0,1}?16 November 2026: “Tell me” when reservations open: [^\n]+\s+16 November 2026: Pre-orders: “With contact details turned on” now reads “If the business can see your contact details”/,
   ], [
     /notices about your bookings and the waiting list are always sent/,
     /With contact details turned on, it/,
