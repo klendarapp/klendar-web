@@ -1330,8 +1330,10 @@ document.addEventListener('invalid', (e) => {
 }, true);
 
 // Lo que no es de un empleado: solo propietario y encargados (como la app).
-// «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura.
-const SOLO_GESTION = ['sellos', 'carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar', 'grupos', 'plan', 'menu-del-dia', 'wifi-clientes', 'festivo'];
+// «Regalo de cumpleaños» no está: el personal lo ve, en solo lectura. Las
+// tarjetas de sellos tampoco (20261283400000): el personal las ve y suma o
+// quita sellos a mano; crear, cambiar, poner a 0 y entregar sin código, no.
+const SOLO_GESTION = ['carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'equipo', 'cartel-local', 'tele', 'rrpp', 'antes-de-cerrar', 'grupos', 'plan', 'menu-del-dia', 'wifi-clientes', 'festivo'];
 
 // ── Salir con cambios sin guardar ───────────────────────────────────────────
 // Una vista con cambios se apunta aquí: si se va a otra pantalla, se vuelve
@@ -5323,17 +5325,20 @@ PAGES.sellos = async (v, param) => {
   if (d?.ok === false) throw new Error(friendly(d.error));
   const cards = d.cards || [];
   const lleno = cards.length >= (d.max || 5);
+  // Crear tarjetas y el cartel, la gestión; el personal las ve (sin el dato,
+  // una base de antes: solo la gestión llegaba aquí).
+  const edita = d.can_edit ?? gestiona();
   v.innerHTML = `
     <div class="page-head"><h1>Tarjetas de sellos</h1><span class="spacer"></span>
-      ${esOrganizador() ? '' : '<a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>'}
-      <button class="btn sm primary" type="button" id="nueva" ${lleno ? 'disabled' : ''}>Nueva tarjeta</button></div>
+      ${esOrganizador() || !edita ? '' : '<a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>'}
+      ${edita ? `<button class="btn sm primary" type="button" id="nueva" ${lleno ? 'disabled' : ''}>Nueva tarjeta</button>` : ''}</div>
     ${helpBox('¿Cómo funciona?', bi(`<p>Cada tarjeta tiene su meta, su premio y lo que da sello: todas las publicaciones, solo las ofertas flash, solo los eventos, ciertas categorías o ciertas publicaciones. Cuando validas un código, <b>cada tarjeta encendida que encaje da su sello</b>, como mucho uno al día por persona y tarjeta.</p>
       <p>Si marcas <b>«También por visita con el QR del local»</b>, quien escanee el cartel del local en tu negocio se lleva además un sello, con el mismo tope de uno al día.</p>
       <p>El premio es otro código que validas igual, o lo entregas tú desde la lista de clientes de la tarjeta, donde también puedes añadir o quitar sellos y ponerla a 0. Si apagas una tarjeta, <b>nadie pierde los sellos que tiene</b>.</p>`,
       `<p>Each card has its goal, its reward and what earns a stamp: all publications, flash offers only, events only, certain categories or certain publications. When you validate a code, <b>every card that is on and matches gives its stamp</b>, one a day per person and card at most.</p>
       <p>If you tick <b>“Also per visit with the venue QR code”</b>, whoever scans the venue poster at your place also gets a stamp, with the same limit of one a day.</p>
       <p>The reward is another code you validate the same way, or you hand it over yourself from the card's customer list, where you can also add or remove stamps and reset it to 0. If you turn a card off, <b>nobody loses the stamps they have</b>.</p>`))}
-    ${lleno ? `<p class="muted">${esc(bi(`Ya tienes ${d.max}, el máximo. Borra o cambia alguna para crear otra.`, `You already have ${d.max}, the maximum. Delete or change one to create another.`))}</p>` : ''}
+    ${lleno && edita ? `<p class="muted">${esc(bi(`Ya tienes ${d.max}, el máximo. Borra o cambia alguna para crear otra.`, `You already have ${d.max}, the maximum. Delete or change one to create another.`))}</p>` : ''}
     ${cards.length ? cards.map((c) => `
       <a class="card tarjeta-sellos" href="#/sellos/${esc(c.id)}">
         <div class="ts-top"><h2>${esc(c.name)}</h2>${estadoTarjeta(c)}<span class="ms" aria-hidden="true">chevron_right</span></div>
@@ -5348,13 +5353,16 @@ PAGES.sellos = async (v, param) => {
           `${c.people_old_goal === 1 ? '1 person keeps' : `${fmtNum(c.people_old_goal)} people keep`} an earlier, lower goal until their reward.`))}</p>` : ''}
       </a>`).join('')
     : `<div class="empty"><b>${esc(I18N.t('Todavía no tienes ninguna tarjeta'))}</b><br>${esc(bi(`Crea la primera: «al décimo café, uno gratis». Puedes tener hasta ${d.max || 5}, cada una con lo suyo.`, `Create the first one: “the tenth coffee is on us”. You can have up to ${d.max || 5}, each with its own rules.`))}</div>`}`;
-  $('#nueva', v).onclick = () => { location.hash = '#/sellos/nueva'; };
+  const nueva = $('#nueva', v);
+  if (nueva) nueva.onclick = () => { location.hash = '#/sellos/nueva'; };
 };
 
 /** Crear (id null) o cambiar una tarjeta. */
 async function tarjetaForm(v, id) {
   const d = await rpc('business_stamp_cards', { p_business: BIZ.id });
   if (d?.ok === false) throw new Error(friendly(d.error));
+  // Cambiar las reglas de una tarjeta, solo la gestión.
+  if (!(d.can_edit ?? gestiona())) { location.hash = id ? `#/sellos/${id}` : '#/sellos'; return; }
   const c = id ? (d.cards || []).find((x) => x.id === id) : null;
   if (id && !c) { location.hash = '#/sellos'; return; }
   // Nombre o premio que esperan revisión (lenguaje ofensivo): se enseña lo
@@ -5511,6 +5519,9 @@ async function tarjetaClientes(v, id) {
     throw new Error(friendly(d.error));
   }
   const c = (todas?.cards || []).find((x) => x.id === id) || d.card;
+  // Propietario o encargado: cambiar la tarjeta, entregar el premio sin
+  // código, poner a 0 y ver los cambios a mano. El personal suma y quita.
+  const edita = d.can_edit ?? gestiona();
   // Cada persona con su meta: quien empezó antes de subirla conserva la suya
   // (`stamp_card_customers` la trae; si no, la de la tarjeta).
   const conMeta = (p) => ({ ...p, goal: p.goal || c.goal });
@@ -5524,7 +5535,7 @@ async function tarjetaClientes(v, id) {
   v.innerHTML = `
     <p class="crumbs"><a href="#/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a></p>
     <div class="page-head"><h1>${esc(c.name)}</h1>${estadoTarjeta(c)}<span class="spacer"></span>
-      <a class="btn sm ghost" href="#/sellos/${esc(c.id)}/editar">Editar</a></div>
+      ${edita ? `<a class="btn sm ghost" href="#/sellos/${esc(c.id)}/editar">Editar</a>` : ''}</div>
     <p><b>${esc(metaPremio(c))}</b><br><span class="muted">${esc(filtroSellos(c, todas?.offers || []))}</span></p>
     <div id="cifras"></div>
     <div id="persona"></div>
@@ -5626,11 +5637,13 @@ async function tarjetaClientes(v, id) {
           <button class="btn" type="button" id="quita" ${p.stamps ? '' : 'disabled'}>Quitar</button>
           <button class="btn" type="button" id="pone">Añadir</button>
         </div>
-        <div class="f full"><button class="btn primary" type="button" id="da" ${puedeDar ? '' : 'disabled'}>Entregar el premio</button></div>
-        <div class="f full"><button class="linkbtn peligro" type="button" id="cero" ${p.stamps ? '' : 'disabled'}>Poner a 0</button></div>
+        ${edita ? `<div class="f full"><button class="btn primary" type="button" id="da" ${puedeDar ? '' : 'disabled'}>Entregar el premio</button></div>
+        <div class="f full"><button class="linkbtn peligro" type="button" id="cero" ${p.stamps ? '' : 'disabled'}>Poner a 0</button></div>` : ''}
       </form>
-      <h3>Cambios a mano</h3>
-      ${p.changes?.length ? `<ul class="cambios">${p.changes.map((ch) => `<li>${esc(cambioTxt(ch))}</li>`).join('')}</ul>` : `<p class="muted">${esc(I18N.t('Nadie ha cambiado esta tarjeta a mano.'))}</p>`}
+      ${edita ? `<h3>Cambios a mano</h3>
+      ${p.changes?.length ? `<ul class="cambios">${p.changes.map((ch) => `<li>${esc(cambioTxt(ch))}</li>`).join('')}</ul>` : `<p class="muted">${esc(I18N.t('Nadie ha cambiado esta tarjeta a mano.'))}</p>`}`
+    : `<p class="muted nota-personal">${esc(bi('Puedes sumar o quitar sellos para corregir un error; queda apuntado quién lo hace. Poner a 0, entregar el premio sin código y cambiar la tarjeta es cosa del propietario o de un encargado.',
+      'You can add or remove stamps to fix a mistake; who does it is recorded. Resetting to 0, handing over the reward without a code and changing the card are for the owner or a manager.'))}</p>`}
     </div>`;
     I18N.translate(caja);
     const cuantos = () => Math.min(20, Math.max(1, Math.round(Number($('#fp [name=n]', v).value) || 1)));
@@ -5645,7 +5658,7 @@ async function tarjetaClientes(v, id) {
         esc(I18N.t('Queda apuntado quién lo ha hecho y cuándo.')), { danger: true, submit: 'Quitar' })) return;
       accion('adjust_stamps', { p_card: c.id, p_user: p.user_id, p_delta: -n }, bi(n === 1 ? 'Sello quitado' : `${n} sellos quitados`, n === 1 ? 'Stamp removed' : `${n} stamps removed`));
     };
-    $('#da', v).onclick = async () => {
+    if (edita) $('#da', v).onclick = async () => {
       if (!await confirmDlg(bi(`¿Entregar el premio a ${nombre}?`, `Hand over the reward to ${nombre}?`),
         esc(p.rewards_pending
           ? bi(`«${c.reward}». Ya lo había pedido: su código queda canjeado.`, `“${c.reward}”. They had already claimed it: their code is marked as redeemed.`)
@@ -5653,7 +5666,7 @@ async function tarjetaClientes(v, id) {
         { submit: 'Entregar' })) return;
       accion('give_stamp_reward', { p_card: c.id, p_user: p.user_id }, 'Premio entregado');
     };
-    $('#cero', v).onclick = async () => {
+    if (edita) $('#cero', v).onclick = async () => {
       if (!await confirmDlg(bi(`¿Poner a 0 la tarjeta de ${nombre}?`, `Reset ${nombre}’s card to 0?`),
         esc(bi(`${p.stamps === 1 ? 'Se le quita su sello.' : `Se le quitan sus ${p.stamps} sellos.`} Un premio ya pedido y sin recoger no se toca. Queda apuntado quién lo ha hecho y cuándo.`,
           `${p.stamps === 1 ? 'Their stamp is removed.' : `Their ${p.stamps} stamps are removed.`} A reward already claimed and not collected is kept. Who did it and when is recorded.`)),
@@ -6804,6 +6817,21 @@ function informeFidelizarHtml(l) {
     `Returning: they had redeemed here before. ${nuevos === 0 ? 'No new customers' : nuevos === 1 ? '1 new customer' : `${fmtNum(nuevos)} new customers`} in the period. Gifts: birthday and regulars' gifts.`))}</p></div>`;
 }
 
+/** Tarjetas de sellos en el Informe (`business_report` → `stamps`, migración
+ * 20261283400000 de la app): sellos dados y premios canjeados en el periodo,
+ * y de dónde han salido. Como en la app; sin nada (o una base de antes), no sale. */
+function informeSellosHtml(s) {
+  if (!s || !(s.given || s.rewards_redeemed)) return '';
+  return `<div class="card"><h2>${esc(I18N.t('Tarjetas de sellos'))}</h2>
+    <div class="kpis">
+      <div class="kpi"><b>${fmtNum(s.given)}</b><span>${esc(bi('Sellos dados', 'Stamps given'))}</span></div>
+      <div class="kpi"><b>${fmtNum(s.rewards_redeemed)}</b><span>${esc(bi('Premios canjeados', 'Rewards redeemed'))}</span></div>
+    </div>
+    <p class="muted" style="margin:10px 0 0">${esc(bi('Los sellos que han caído en el periodo en tus tarjetas (los quitados a mano no cuentan) y los premios de sellos canjeados.',
+    'The stamps added to your cards in the period (those removed by hand don’t count) and the stamp rewards redeemed.'))}</p>
+    ${s.given ? `<p class="muted" style="margin:4px 0 0">${esc(origenSellos({ stamps_redemption: s.redemption, stamps_visit: s.visit, stamps_manual: s.manual, stamps_spot: s.spot }))}</p>` : ''}</div>`;
+}
+
 /** «Toques en tus enlaces»: cuántas veces se han tocado «Reservar», «Pedir…»
  * y la carta (archivos y enlace) en el periodo, por tipo y servicio o
  * dominio: «Reservar · TheFork — 12». Sin personas: solo cifras. */
@@ -6997,6 +7025,8 @@ PAGES.informe = async (v, param) => {
     ${conRes(porPublicacion, herrPl((r.offers || []).length, ['1 publicación', 'publicaciones'], ['1 publication', 'publications']))}
 
     ${conRes(audienciaHtml(aud), herrPl(aud?.people || 0, ['1 persona', 'personas'], ['1 person', 'people']))}
+
+    ${conRes(informeSellosHtml(r.stamps), herrPl(r.stamps?.given || 0, ['1 sello', 'sellos'], ['1 stamp', 'stamps']))}
 
     ${conRes(informeFidelizarHtml(r.loyalty), bi(`Repiten: ${fmtNum(loy.repeat_customers)}/${fmtNum(loy.customers)}`, `Come back: ${fmtNum(loy.repeat_customers)}/${fmtNum(loy.customers)}`))}
 

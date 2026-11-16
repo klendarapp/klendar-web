@@ -2384,14 +2384,19 @@ function pintaCodigoGuardado(g) {
 }
 
 // ── «Quitar de tu lista» (migración 20261281000000 de la app) ────────────
-// Los códigos usados, caducados o anulados y los bonos gastados o caducados
-// (los sorteos terminados, en /sorteos: /assets/sorteo.js): uno, con el
+// Los códigos usados, caducados o anulados, los bonos gastados o caducados y
+// los premios de sellos canjeados o caducados (20261283400000; los sorteos
+// terminados, en /sorteos: /assets/sorteo.js): uno, con el
 // botón del ojo tachado, o «Quitar todos» tras confirmar, con «Deshacer».
 // Solo se esconden para ti: siguen guardados, salen en «Descargar mis datos»
 // y el negocio ve sus cifras igual. Lo vivo no se quita. Si la base aún no
 // tiene la función (prod antes de la migración), no sale ningún botón.
 let QUITAR_EN_BASE = null;
 const quitarEnBase = () => (QUITAR_EN_BASE ||= llamar('hide_my_history', { p_kind: 'codes', p_ids: [] })
+  .then(() => true, () => false));
+// Los premios de sellos, desde 20261283400000 (antes, la base no los conoce).
+let QUITAR_PREMIOS_EN_BASE = null;
+const quitarPremiosEnBase = () => (QUITAR_PREMIOS_EN_BASE ||= llamar('hide_my_history', { p_kind: 'rewards', p_ids: [] })
   .then(() => true, () => false));
 /** `html` (una fila) con su botón «Quitar de la lista» si `si`. */
 const quitable = (html, id, si) => (si ? `<div class="quitable">${html}<button type="button" class="aviso-borrar" data-quitar="${esc(id)}"
@@ -2405,7 +2410,7 @@ const deshacerQuitar = (tipo, at, msg) => toastDeshacer(msg, async () => {
   try { await llamar('unhide_my_history', { p_kind: tipo, p_at: at }); } catch (e) { toast(e.message || String(e), true); return; }
   navegar();
 });
-/** Conecta los botones de quitar que haya en `raiz` (`tipo`: 'codes' o 'passes'). */
+/** Conecta los botones de quitar que haya en `raiz` (`tipo`: 'codes', 'passes' o 'rewards'). */
 function conectaQuitar(raiz, tipo) {
   raiz?.querySelectorAll('[data-quitar]').forEach((b) => {
     if (b.dataset.conectado) return;
@@ -2472,8 +2477,12 @@ RUTAS.codigos = async (_partes, params) => {
     llamar('my_orders', {}).catch(() => []),
     // ¿Se puede quitar de la lista? (la base de antes, no: sin botones).
     quitarEnBase(),
+    quitarPremiosEnBase(),
   ]);
   const quitar = await quitarEnBase();
+  const quitarPremios = await quitarPremiosEnBase();
+  // Un premio que aún se puede usar no se quita.
+  const premioVivo = (p) => p.status === 'pending' && !!p.code;
   const zona = await zonasDe(lista);
   const turnoHtml = (await colaTarjetasHtml(turnos)) + listoTarjetasHtml(pedidosListo);
   // Los vivos, guardados para enseñarlos sin cobertura (y fuera los demás).
@@ -2505,8 +2514,8 @@ RUTAS.codigos = async (_partes, params) => {
       ${misBonos.mas ? `<p class="ver-mas"><button type="button" class="pill" data-ver-mas="bonos">${esc(t('Ver más'))}</button></p>` : ''}` : ''}
     ${conRegalos ? `<h2 class="seccion-t">${esc(t('Regalos y cupones'))}</h2>
       <div class="olist">${regalos.map(filaRegalo).join('')}</div>` : ''}
-    ${conPremios ? `<h2 class="seccion-t">${esc(t('Premios de tarjetas de sellos'))}</h2>
-      <div class="olist">${premios.map(filaPremio).join('')}</div>` : ''}
+    ${conPremios ? `${seccionQuitable(t('Premios de tarjetas de sellos'), quitarPremios && premios.some((p) => !premioVivo(p)) ? 'rewards' : '')}
+      <div class="olist" id="codigosPremios">${premios.map((p) => quitable(filaPremio(p), p.id, quitarPremios && !premioVivo(p))).join('')}</div>` : ''}
     ${conDados ? `<h2 class="seccion-t">${esc(t('Te dieron'))}</h2>
       <div class="olist">${dados.map(momentoFila).join('')}</div>` : ''}
     ${(lista || []).length ? [
@@ -2535,6 +2544,7 @@ RUTAS.codigos = async (_partes, params) => {
     alSalir(() => clearTimeout(despierta));
   }
   if (quitar) { conectaQuitar($('#codigosBonos'), 'passes'); conectaQuitar($('#codigosPasados'), 'codes'); }
+  if (quitarPremios) conectaQuitar($('#codigosPremios'), 'rewards');
   // Los bonos gastados o caducados siguientes, al final de «Bonos».
   const masBonos = $('[data-ver-mas="bonos"]');
   if (masBonos) {

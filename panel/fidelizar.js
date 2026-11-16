@@ -105,7 +105,8 @@ PAGES.fidelizar = async (v) => {
     frase: bi('Para premiar a quien repite: cada canje (o cada visita con el QR del local) suma un sello y al llegar a la meta hay premio.', 'To reward people who come back: each redemption (or visit with the venue QR) adds a stamp, and reaching the goal earns a prize.'),
     estado: o ? (sello ? bi(sello === 1 ? '1 tarjeta activa' : `${sello} tarjetas activas`, sello === 1 ? '1 active card' : `${sello} active cards`) : apagado) : '',
     on: sello > 0,
-    boton: edit ? bi('Configurar', 'Set up') : '',
+    // El personal también: las ve y suma o quita sellos a mano.
+    boton: configurar,
     href: '#/sellos',
   })}
       ${fielTarjeta({
@@ -223,8 +224,8 @@ PAGES.cupon = async (v) => {
         ${dias.map((x) => `<option value="${x}" ${Number(c.valid_days || 30) === x ? 'selected' : ''}>${esc(fielDias(x))}</option>`).join('')}</select></label>
       <label class="f"><span>${esc(bi('Como mucho, cupones al mes por persona', 'Maximum coupons per person per month'))}</span><select name="tope" ${ro}>
         ${[1, 2, 3, 4].map((x) => `<option value="${x}" ${Number(c.monthly_cap || 2) === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label>
-      <p class="hint full">${esc(bi('Vale desde el día siguiente al canje y se valida en «Validar códigos», como los demás. Uno por canje; tu equipo no los recibe. Si menciona alcohol, solo lo reciben mayores de edad.',
-    "It's valid from the day after the redemption and you validate it in “Validate codes”, like the others. One per redemption; your team doesn't get them. If it mentions alcohol, only adults get it."))}</p>
+      <p class="hint full">${esc(bi('Vale desde el día siguiente al canje y se valida en «Validar códigos», como los demás. Uno por visita (dos códigos el mismo día dan uno); tu equipo no los recibe. Si menciona alcohol, solo lo reciben mayores de edad.',
+    "It's valid from the day after the redemption and you validate it in “Validate codes”, like the others. One per visit (two codes on the same day get one); your team doesn't get them. If it mentions alcohol, only adults get it."))}</p>
       <p class="hint full" id="alcohol" ${c.adults_only ? '' : 'hidden'}>${esc(bi('Menciona alcohol: solo lo recibirán mayores de edad.', 'It mentions alcohol: only adults will get it.'))}</p>
       ${edita ? `<div class="full"><button class="btn primary" type="submit">${esc(bi('Guardar', 'Save'))}</button></div>` : ''}
       <p class="err full" id="cupErr" role="alert"></p>
