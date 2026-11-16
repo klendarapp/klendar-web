@@ -1274,3 +1274,11 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .ia-abrir small { display: block; font-size: .8125rem; }
 .ia-quitar { flex: none; width: 36px; height: 36px; border: 0; border-radius: 50%; background: none; color: var(--ink-2); font-size: 1.25rem; line-height: 1; cursor: pointer; }
 .ia-proponer { display: inline-flex; gap: 6px; align-items: center; }
+
+/* Contacto de quien reserva (Asistentes, lista de espera y cola): llamar y
+   escribir, en tinta, y la nota de para qué y hasta cuándo. */
+.contacto-btns { display: inline-flex; gap: 4px; vertical-align: middle; }
+.contacto-btns .btn.icono { padding: 4px 8px; min-height: 0; }
+.lista-espera li .contacto-btns { margin-inline-start: 8px; }
+.nota-contacto { display: flex; gap: 6px; align-items: flex-start; font-size: .8125rem; margin: 12px 0 0; }
+.nota-contacto .ms { font-size: 16px; }

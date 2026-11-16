@@ -2,6 +2,23 @@
 'use strict';
 
 const APP_EN = {
+  // Contacto de quien reserva (2026-11-17)
+  "Teléfono (opcional)": "Phone (optional)",
+  "Guardar en mi perfil": "Save it in my profile",
+  "Cambiarlo también en mi perfil": "Change it in my profile too",
+  "Escribe solo números, espacios y «+» (de 9 a 15 cifras).": "Use only numbers, spaces and “+” (9 to 15 digits).",
+  "Por si hay algún cambio": "In case anything changes",
+  "Apuntarme a la lista de espera": "Join the waiting list",
+  "{negocio} verá tu correo y tu teléfono solo para avisarte de esta reserva. Nunca para publicidad.": "{negocio} will see your email and phone only to let you know about this booking. Never for advertising.",
+  "{negocio} verá tu correo solo para avisarte de esta reserva. Nunca para publicidad.": "{negocio} will see your email only to let you know about this booking. Never for advertising.",
+  "{negocio} verá tu correo y tu teléfono solo para avisarte de tu sitio en la lista de espera. Nunca para publicidad.": "{negocio} will see your email and phone only to let you know about your place on the waiting list. Never for advertising.",
+  "{negocio} verá tu correo solo para avisarte de tu sitio en la lista de espera. Nunca para publicidad.": "{negocio} will see your email only to let you know about your place on the waiting list. Never for advertising.",
+  "{negocio} verá tu correo y tu teléfono solo para avisarte de tu turno. Nunca para publicidad.": "{negocio} will see your email and phone only to let you know about your turn. Never for advertising.",
+  "{negocio} verá tu correo solo para avisarte de tu turno. Nunca para publicidad.": "{negocio} will see your email only to let you know about your turn. Never for advertising.",
+  "Teléfono de contacto": "Contact phone",
+  "Solo lo ve el negocio donde tienes una reserva, en la lista o en la cola, y solo para avisarte de eso. Puedes borrarlo cuando quieras.": "Only the business where you have a booking, or are on its waiting list or queue, can see it, and only to let you know about that. You can delete it whenever you like.",
+  "Teléfono guardado": "Phone saved",
+  "Teléfono borrado": "Phone deleted",
   // Reservas, segunda tanda (2026-11-16)
   "1 plaza": "1 place",
   // Cola virtual: mejoras (2026-11-13)

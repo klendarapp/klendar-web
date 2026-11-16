@@ -137,6 +137,7 @@ PAGES.cola = async (v) => {
     const fila = (e, extra) => `<div class="cola-fila" data-entrada="${esc(e.id)}">
         <div class="cola-fila-t"><b>${esc(`${colaNumero(e.number)} · ${colaNombre(e)}`)}</b>
           <span class="muted">${esc(colaPersonas(e.party_size))}${e.status === 'waiting' ? esc(bi(` · desde las ${fmtHora(e.joined_at)}`, ` · since ${fmtHora(e.joined_at)}`)) : ''}</span></div>
+        ${d.contact ? botonesContacto(e, colaNombre(e)) : ''}
         ${extra}</div>`;
     v.innerHTML = `
       <div class="page-head"><h1>Cola virtual</h1><span class="tag ${abierta ? 'st-active' : 'dim'}">${esc(I18N.t(abierta ? 'Abierta' : 'Cerrada'))}</span></div>
@@ -163,6 +164,7 @@ PAGES.cola = async (v) => {
       ${hechos.length ? `<details class="help cola-hechos"><summary>${esc(bi(`Terminados (${hechos.length})`, `Finished (${hechos.length})`))}</summary>
         <div class="cola-lista">${hechos.map((e) => fila(e, `<span class="tag ${e.status === 'served' ? 'st-active' : 'dim'}">${esc(I18N.t(COLA_ESTADO[e.status] || e.status))}</span>
           ${e.status === 'left' ? '' : `<button class="btn sm" type="button" data-devuelve="${esc(e.id)}">${esc(I18N.t('Devolver a la cola'))}</button>`}`)).join('')}</div></details>` : ''}
+      ${d.contact && es.some((e) => e.phone || e.email) ? `<p class="muted nota-contacto">${ms('lock')} ${esc(I18N.t('Úsalos solo para avisar de este turno. Se dejan de ver al acabar el día.'))}</p>` : ''}
       <div class="card">
         <div class="cola-acciones">
           ${abierta ? `<button class="btn" type="button" data-cola="apuntar">${esc(I18N.t('Apuntar a alguien'))}</button>` : ''}

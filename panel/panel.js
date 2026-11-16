@@ -5074,6 +5074,19 @@ PAGES.validar = async (v) => {
   await loadRecent();
 };
 
+// ── Contacto de quien reserva (como la app: ContactButtons) ─────────────────
+/** Llamar (si dejó teléfono) y escribir (el correo de la cuenta). En tinta:
+ * el coral es del botón principal. Lo da la base solo a propietario o
+ * encargado, con `app_config.contact_details` (Asistentes, lista de espera y
+ * la cola). */
+function botonesContacto(c, nombre) {
+  if (!c || (!c.phone && !c.email)) return '';
+  const tel = c.phone ? String(c.phone).replace(/[^0-9+]/g, '') : '';
+  const correo = c.email && /^[^@\s"<>]+@[^@\s"<>]+$/.test(c.email) ? c.email : '';
+  return `<span class="contacto-btns">${tel ? `<a class="btn sm ghost icono" href="tel:${esc(tel)}" title="Llamar a ${esc(nombre)}" aria-label="Llamar a ${esc(nombre)}">${ms('call')}</a>` : ''}${correo
+    ? `<a class="btn sm ghost icono" href="mailto:${esc(correo)}" title="Escribir a ${esc(nombre)}" aria-label="Escribir a ${esc(nombre)}">${ms('mail')}</a>` : ''}</span>`;
+}
+
 // ── Asistentes de un evento ─────────────────────────────────────────────────
 PAGES.asistentes = async (v, offerId) => {
   // Sin evento (enlace cortado o escrito a mano): a Publicaciones, no a un error.
@@ -5082,10 +5095,13 @@ PAGES.asistentes = async (v, offerId) => {
   // con todos (`offer_attendees_summary`).
   const POR = 50;
   const parte = (q, desde, tam = POR) => rpc('offer_attendees', { p_offer: offerId, p_q: q || null, p_limit: tam, p_offset: desde }).then((x) => x || []);
-  const [offer, primera, resumen] = await Promise.all([
+  const [offer, primera, resumen, contactos] = await Promise.all([
     miPublicacion(offerId),
     parte('', 0),
     rpc('offer_attendees_summary', { p_offer: offerId }).catch(() => null),
+    // Teléfono y correo de cada reserva: solo propietario o encargado, con
+    // `app_config.contact_details` y hasta 7 días después (null: no se ven).
+    rpc('offer_attendee_contacts', { p_offer: offerId }).catch(() => null),
   ]);
   const list = [...primera];
   let hayMas = primera.length >= POR;
@@ -5108,14 +5124,17 @@ PAGES.asistentes = async (v, offerId) => {
   const ESTADO_CSV = { validated: 'dentro', expired: terminado ? 'no vino' : 'caducada', cancelled: 'anulada', pending: 'reservada' };
   // La lista de espera: cuántos y, si la privacidad lo dice
   // (`app_config.waitlist_names`), quiénes: el nombre visible y, a quien ya
-  // avisamos, hasta cuándo le guardamos la plaza. Nunca correo ni teléfono.
+  // avisamos, hasta cuándo le guardamos la plaza. El correo y el teléfono,
+  // solo con `app_config.contact_details` y a propietario o encargado.
   const enEspera = Number(resumen?.waiting || 0) || 0;
   const nombresEspera = Array.isArray(resumen?.waitlist) ? resumen.waitlist : null;
+  const conContacto = (contactos && Object.keys(contactos).length > 0)
+    || (resumen?.contact === true && (nombresEspera || []).some((p) => p.phone || p.email));
   const esperaHtml = !enEspera ? '' : `
     <div class="card"><h2>${esc(bi(enEspera === 1 ? '1 persona en lista de espera' : `${fmtNum(enEspera)} personas en lista de espera`,
       enEspera === 1 ? '1 person on the waiting list' : `${fmtNum(enEspera)} people on the waiting list`))}</h2>
       ${nombresEspera ? `<ol class="lista-espera">${nombresEspera.map((p) => `<li><b>${esc(p.name || I18N.t('Invitada'))}</b>${p.notified_until
-        ? ` <span class="muted">· ${esc(bi(`Plaza guardada hasta las ${fmtHora(p.notified_until)}`, `Place held until ${fmtHora(p.notified_until)}`))}</span>` : ''}</li>`).join('')}</ol>` : ''}</div>`;
+        ? ` <span class="muted">· ${esc(bi(`Plaza guardada hasta las ${fmtHora(p.notified_until)}`, `Place held until ${fmtHora(p.notified_until)}`))}</span>` : ''}${resumen?.contact ? botonesContacto(p, p.name || I18N.t('Invitada')) : ''}</li>`).join('')}</ol>` : ''}</div>`;
   v.innerHTML = `
     <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>Asistentes</h1><span class="spacer"></span>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
@@ -5125,7 +5144,8 @@ PAGES.asistentes = async (v, offerId) => {
         `${fmtNum(dentro.length)} of ${fmtNum(nCodigos)} checked in · ${fmtNum(personasDentro)} of ${fmtNum(personas)} ${personas === 1 ? 'person' : 'people'}${offer?.max_redemptions ? ` · capacity ${fmtNum(offer.max_redemptions)}` : ''}`))}</p></div>
     ${esperaHtml}
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por nombre o código"></div>
-    <div id="list"></div>`;
+    <div id="list"></div>
+    ${conContacto ? `<p class="muted nota-contacto">${ms('lock')} Úsalos solo para avisar de esta reserva. Se dejan de ver 7 días después del evento.</p>` : ''}`;
   const render = () => {
     const rows = list;
     $('#list', v).innerHTML = table({
@@ -5135,6 +5155,8 @@ PAGES.asistentes = async (v, offerId) => {
         { h: 'Estado', r: estado },
         { h: 'Reservó', r: (a) => fmtDate(a.created_at) },
         { h: 'Entró', r: (a) => fmtDate(a.validated_at) },
+        // Llamar o escribir (solo propietario o encargado, con el interruptor).
+        ...(contactos ? [{ h: '', r: (a) => (contactos[a.id] ? botonesContacto(contactos[a.id], a.user_name || I18N.t('Invitada')) : '') }] : []),
         // En tinta, como «Validar» en las listas de RRPP: el coral, solo
         // para el botón principal.
         { h: '', r: (a) => a.status === 'pending' ? `<button class="btn sm tinta" data-code="${esc(a.code)}">Dar entrada</button>` : '' },

@@ -3,6 +3,11 @@
 'use strict';
 
 const I18N = makeI18N({
+    // Contacto de quien reserva (2026-11-17)
+    "Úsalos solo para avisar de esta reserva. Se dejan de ver 7 días después del evento.": "Use them only to let people know about this booking. They stop showing 7 days after the event.",
+    "Úsalos solo para avisar de este turno. Se dejan de ver al acabar el día.": "Use them only to let people know about their turn. They stop showing at the end of the day.",
+    "Llamar a {nombre}": "Call {nombre}",
+    "Escribir a {nombre}": "Email {nombre}",
     // Reservas, segunda tanda (2026-11-16)
     "Quien tiene reserva o está en la lista de espera no sabe que cierras. «Cancelar y avisar» anula las reservas y se lo decimos a cada persona y a la lista de espera. Si lo dejas, el evento sigue en pie y las reservas siguen valiendo.": "People with a booking or on the waiting list don't know you're closing. “Cancel and let them know” cancels the bookings and we tell each person and the waiting list. If you leave it, the event goes ahead and the bookings are still valid.",
     "Cancelar y avisar": "Cancel and let them know",

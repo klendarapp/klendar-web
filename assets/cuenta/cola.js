@@ -186,6 +186,10 @@ RUTAS.cola = async ([code]) => {
   let party = 1;
   let firma = '';
   let mirando = false;
+  // «Teléfono (opcional)», con `app_config.contact_details` (como la app):
+  // lo escrito se queda aquí para que un repintado no lo borre.
+  const contactoYo = YO ? await miContacto() : { enabled: false, phone: null };
+  const telCola = { valor: contactoYo.phone || '', tocada: undefined };
 
   // Lo que se ve de cada estado. `firma`: si no cambia, no se repinta (no
   // se pierde el foco ni lo elegido en «¿Cuántos sois?»).
@@ -368,12 +372,15 @@ RUTAS.cola = async ([code]) => {
             <button type="button" class="cola-paso-b" data-paso="1" aria-label="${esc(t('Más'))}"${party >= 20 ? ' disabled' : ''}>+</button>
           </div>
           <input type="hidden" name="party" value="${party}">
+          ${contactoYo.enabled ? campoContacto('c-cola', { perfil: contactoYo.phone, estado: telCola }) : ''}
           <button class="pill accent" type="submit">${esc(t('Coger número'))}</button>
         </form>` : `<div class="cola-botones"><a class="pill accent" href="/cuenta/entrar?siguiente=${encodeURIComponent(`cola/${codigo}`)}">${esc(t('Entrar para coger número'))}</a></div>`}
         <p class="muted cola-ayuda">${esc(colaAyuda(q.call_minutes || 5))}</p>
       </section>`);
     const f = $('#f-cola');
     if (!f) return;
+    const campoCola = contactoYo.enabled
+      ? enlazaContacto($('#c-cola'), { perfil: contactoYo.phone, kind: 'queue', negocio: b.name || '', estado: telCola }) : null;
     // «¿Cuántos sois?» con − y +, como la app («1 persona»).
     f.querySelectorAll('[data-paso]').forEach((bt) => {
       bt.onclick = () => {
@@ -387,10 +394,14 @@ RUTAS.cola = async ([code]) => {
     });
     f.onsubmit = (ev) => {
       ev.preventDefault();
+      const contacto = campoCola ? campoCola.lee() : null;
+      if (campoCola && !contacto) return;
       colaPreparaSonido();
       ocupado(f.querySelector('button[type=submit]'), async () => {
         try {
-          await llamar('join_queue', { p_code: codigo, p_party: Number(f.party.value) || 1 });
+          const turno = await llamar('join_queue', { p_code: codigo, p_party: Number(f.party.value) || 1 });
+          // El teléfono que ha dejado (una copia, con este turno).
+          if (turno?.id) await aplicaContacto('queue', turno.id, contacto);
         } catch (e) {
           toast(colaError(e), true);
         }

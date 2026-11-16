@@ -2862,6 +2862,8 @@ RUTAS.codigo = async ([id], params, crudo) => {
     throw e;
   }
   recuerdaCodigos([{ ...tk, offer_id: id, tz }]);
+  // El teléfono que dio antes de reservar (una copia, con esta reserva).
+  aplicaContacto('reservation', id, tomaContacto(id));
   // Con carné: «Lleva el carné de estudiante: te lo pedirán en el local.»
   // (lo comprueba el local, como en la app). Aparte: un fallo no estorba.
   llamar('offer_marks', { p_offer: id }).then((m) => {
@@ -3063,7 +3065,31 @@ RUTAS.reservar = async ([id], params) => {
   const { data: vivo } = await sb.from('redemptions').select('id').eq('offer_id', id).eq('user_id', YO.id)
     .eq('status', 'pending').gt('expires_at', new Date().toISOString()).limit(1)
     .then((r) => r, () => ({ data: [] }));
-  if (tope <= 1 || (vivo || []).length) {
+  // Con `app_config.contact_details`, en un evento con reserva: el teléfono
+  // por si hay cambios (y, si deja varias, «¿Para cuántos?» en la misma
+  // pantalla). Se aplica en cuanto la reserva existe (RUTAS.codigo).
+  const yaTiene = (vivo || []).length > 0;
+  const me = !yaTiene && o.kind === 'future_event' && o.reservations_enabled ? await miContacto() : { enabled: false };
+  if (me.enabled) {
+    hayIntencion(`reservar/${id}${conRp}`); // se gasta: reservar es el botón de aquí
+    const plazasHtml = tope > 1 ? `<fieldset class="plazas"><legend>${esc(t('¿Para cuántos?'))}</legend>
+        ${Array.from({ length: tope }, (_, i) => i + 1).map((n) => `<label class="check"><input type="radio" name="plazas" value="${n}"${n === 1 ? ' checked' : ''}>
+          <span>${n === 1 ? esc(t('Solo yo')) : `${n} ${esc(t('personas'))}`}</span></label>`).join('')}
+        <small class="muted">${esc(t('El código vale por todas las plazas: lo enseñas una vez en la puerta.'))}</small></fieldset>` : '';
+    const { r, form } = await pantallaContacto({
+      titulo: t('Por si hay algún cambio'), encima: plazasHtml, perfil: me.phone, kind: 'reservation',
+      negocio: o.business_name, boton: t('Reservar plaza'), volver: `${pre}/o/${encodeURIComponent(id)}${conRp}`,
+      crumbs: `<p class="crumbs"><a href="${pre}/o/${esc(id)}${conRp}">${esc(o.title)}</a></p>`,
+    });
+    const n = Math.max(1, Number(new FormData(form).get('plazas')) || 1);
+    guardaContacto(id, r);
+    const ruta = `codigo/${encodeURIComponent(id)}?plazas=${n}${rp ? `&rp=${rp}` : ''}`;
+    // Se ha pulsado «Reservar plaza» aquí: el código no vuelve a preguntar.
+    marcaIntencion(ruta);
+    irA(ruta, { reemplaza: true });
+    return;
+  }
+  if (tope <= 1 || yaTiene) {
     // Venía del botón «Reservar» de la ficha: el código no vuelve a preguntar.
     if (hayIntencion(`reservar/${id}${conRp}`)) marcaIntencion(`codigo/${encodeURIComponent(id)}${conRp}`);
     irA(`codigo/${encodeURIComponent(id)}${conRp}`, { reemplaza: true });
@@ -3110,8 +3136,24 @@ RUTAS.espera = async ([id], params, crudo) => {
     });
     return;
   }
-  const { puesto: dentro } = await ponOQuita('offer_waitlist', 'offer_id', id, quitar,
+  // Al apuntarse, con `app_config.contact_details`: el teléfono por si hay
+  // cambios (como la app). Cancelar vuelve a la publicación sin apuntarse.
+  let contacto = null;
+  if (!quitar && !['waiting', 'notified'].includes(antes?.state)) {
+    const me = await miContacto();
+    if (me.enabled) {
+      const fila = await llamar('offer_detail', { p_id: id, p_rp: null }).catch(() => null);
+      const o = Array.isArray(fila) ? fila[0] : fila;
+      ({ r: contacto } = await pantallaContacto({
+        titulo: t('Por si hay algún cambio'), perfil: me.phone, kind: 'waitlist', negocio: o?.business_name || '',
+        boton: t('Apuntarme a la lista de espera'), volver: `${pre}/o/${encodeURIComponent(id)}`,
+        crumbs: o ? `<p class="crumbs"><a href="${pre}/o/${esc(id)}">${esc(o.title)}</a></p>` : '',
+      }));
+    }
+  }
+  const { puesto: dentro, yaEstaba } = await ponOQuita('offer_waitlist', 'offer_id', id, quitar,
     () => llamar('toggle_waitlist', { p_offer: id }));
+  if (dentro && !yaEstaba) await aplicaContacto('waitlist', id, contacto);
   const hora = antes?.notified_until
     ? new Date(antes.notified_until).toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' }) : '';
   const estado = !dentro ? ''

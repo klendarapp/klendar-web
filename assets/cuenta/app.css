@@ -845,3 +845,12 @@ a.pl-dia:hover { background: var(--soft); }
   display: grid; place-items: center; border: 0; border-radius: 12px; background: none; color: var(--ink-2); cursor: pointer; }
 .clave-ojo .ojo:hover { color: var(--ink); }
 .clave-ojo .ojo:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+/* «Teléfono (opcional)» al reservar, apuntarse o coger número (contacto.js). */
+.contacto { display: grid; gap: 6px; margin: 8px 0; text-align: start; }
+.contacto .check { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+.contacto .check[hidden] { display: none; }
+.contacto .err:empty { display: none; }
+.formu fieldset.plazas { border: 0; padding: 0; margin: 0 0 8px; display: grid; gap: 8px; }
+.formu fieldset.plazas legend { font-weight: 700; margin-bottom: 4px; }
+.td-tel .acciones { display: flex; gap: 8px; justify-content: flex-end; }

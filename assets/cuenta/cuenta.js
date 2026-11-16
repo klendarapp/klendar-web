@@ -1106,6 +1106,10 @@ RUTAS['tus-datos'] = async () => {
   const sorteos = YO && typeof sorteosEnCuenta === 'function' ? await sorteosEnCuenta().catch(() => false) : false;
   const nBusq = busquedasGuardadas().length;
   const nVistos = vistosGuardados();
+  // «Teléfono de contacto» (como la app): con `app_config.contact_details`;
+  // apagado, solo si ya había uno, para verlo y borrarlo.
+  const tel = YO && typeof miContacto === 'function' ? await miContacto() : { enabled: false, phone: null };
+  const conTel = tel.enabled || !!tel.phone;
   const punto = (icono, texto) => `<li>${ic(icono)}<span>${esc(texto)}</span></li>`;
   const filaBorrar = (id, icono, titulo, detalle, activa) => `<div class="fila">${ic(icono)}
         <span class="fila-t"><b>${esc(titulo)}</b><small>${esc(detalle)}</small></span>
@@ -1128,6 +1132,18 @@ RUTAS['tus-datos'] = async () => {
       <button type="button" class="fila fila-btn" id="td-descargar">${ic('download')}
         <span class="fila-t"><b>${esc(t('Descargar mis datos'))}</b><small>${esc(t('Un archivo JSON con todo lo que Klendar guarda de ti (derecho de acceso y portabilidad).'))}</small></span>${ic('chevron_right')}</button>
     </div>` : ''}
+    ${conTel ? `<h2 class="seccion-t">${esc(t('Teléfono de contacto'))}</h2>
+    <form class="lista formu td-tel" id="td-tel" novalidate>
+      <label>${esc(t('Teléfono de contacto'))}
+        <input name="telefono" type="tel" inputmode="tel" autocomplete="tel" maxlength="24" placeholder="+34 600 000 000"
+          value="${esc(tel.phone || '')}"${tel.enabled ? '' : ' readonly aria-readonly="true"'}></label>
+      <p class="err" id="td-tel-err" role="alert"></p>
+      <p class="muted">${esc(t('Solo lo ve el negocio donde tienes una reserva, en la lista o en la cola, y solo para avisarte de eso. Puedes borrarlo cuando quieras.'))}</p>
+      <p class="acciones">
+        ${tel.phone ? `<button type="button" class="pill ghost" id="td-tel-borrar">${esc(t('Borrar'))}</button>` : ''}
+        ${tel.enabled ? `<button class="pill" id="td-tel-guardar">${esc(t('Guardar'))}</button>` : ''}
+      </p>
+    </form>` : ''}
     <h2 class="seccion-t">${esc(t('Tus historiales'))}</h2>
     <div class="lista">
       ${filaBorrar('td-busquedas', 'smartphone', t('Lo que buscaste'),
@@ -1145,6 +1161,29 @@ RUTAS['tus-datos'] = async () => {
       ${YO ? fila({ href: '/cuenta/ajustes/cuenta', icono: 'person_remove', titulo: t('Eliminar mi cuenta'), detalle: t('Se borran para siempre tus datos, tus favoritos, tus planes y tus canjes. Si eres propietario de un negocio, antes tendrás que darlo de baja o traspasarlo. No se puede deshacer.') }) : ''}
     </div>`);
   $('#td-descargar')?.addEventListener('click', (ev) => ocupado(ev.currentTarget, descargaMisDatos));
+  // El teléfono: se guarda o se borra (borrarlo siempre se puede).
+  const ftel = $('#td-tel');
+  const guardaTel = async (valor, boton) => ocupado(boton, async () => {
+    const err = $('#td-tel-err');
+    const limpio = KlContacto.limpio(valor);
+    if (limpio && !KlContacto.valido(limpio)) {
+      err.textContent = t('Escribe solo números, espacios y «+» (de 9 a 15 cifras).');
+      return;
+    }
+    err.textContent = '';
+    const r = await llamar('set_my_contact_phone', { p_phone: limpio || '' });
+    toast(t(r && r.phone ? 'Teléfono guardado' : 'Teléfono borrado'));
+    navegar();
+  });
+  ftel?.telefono.addEventListener('input', () => {
+    const v = ftel.telefono.value.replace(/[^0-9 +]/g, '');
+    if (v !== ftel.telefono.value) ftel.telefono.value = v;
+  });
+  ftel?.addEventListener('submit', (ev) => {
+    ev.preventDefault();
+    if (tel.enabled) guardaTel(ftel.telefono.value, $('#td-tel-guardar'));
+  });
+  $('#td-tel-borrar')?.addEventListener('click', (ev) => guardaTel('', ev.currentTarget));
   // Lo de este navegador: tras confirmar y con «Deshacer» (como la app).
   const borraLocal = async (clave, { titulo, texto, hecho }) => {
     const antes = leeLocal(clave);

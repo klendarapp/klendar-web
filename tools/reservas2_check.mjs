@@ -98,8 +98,9 @@ ok('3. «No vino» con el evento pasado', asis.includes("const terminado = resum
 ok('4. «Dar entrada» en tinta', asis.includes('<button class="btn sm tinta" data-code=') && !asis.includes('<button class="btn sm" data-code='));
 ok('5. la lista de espera: cuántos y, si llegan, los nombres', asis.includes('const enEspera = Number(resumen?.waiting || 0) || 0;')
   && asis.includes('Array.isArray(resumen?.waitlist) ? resumen.waitlist : null') && asis.includes('${esperaHtml}'));
+// El correo y el teléfono, solo con `contact` de la base (contacto: tools/contacto_check.mjs).
 ok('5. solo el nombre (y hasta cuándo se le guarda)', /p\.name \|\| I18N\.t\('Invitada'\)/.test(asis)
-  && !/p\.(email|phone)/.test(asis));
+  && asis.split(/\n/).filter((l) => /p\.(email|phone)/.test(l)).every((l) => l.includes('resumen?.contact')));
 
 // 6: «Tus códigos».
 const fila = cuenta.slice(cuenta.indexOf('function filaCanje('), cuenta.indexOf('// ── Códigos guardados'));
