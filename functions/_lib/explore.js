@@ -1510,7 +1510,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // el orden de lo demás (migración 20261283800000 de la app).
   const guiaP = descubre && page === 1
     ? rpc('current_guide', {
+      // La zona de Descubre: tu punto y su distancia, o la ciudad entera.
       p_lat: cerca ? lat : centroCiudad?.lat ?? null, p_lng: cerca ? lng : centroCiudad?.lng ?? null,
+      p_radius_m: cerca ? km * 1000 : centroCiudad?.radius_m || RADIO_CIUDAD_M,
       p_city: cerca ? null : city || null,
     }).catch(() => null)
     : Promise.resolve(null);
@@ -2490,7 +2492,10 @@ ${GRUPOS_CSS}` : ''}`;
     ${vacio ? lineaPedir : ''}`;
   }
 
-  const guiaHtml = vacio ? '' : bannerGuia(await guiaP, lang);
+  // La guía, con la misma zona que Descubre.
+  const guiaHtml = vacio ? '' : bannerGuia(await guiaP, lang,
+    cerca ? `?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&km=${encodeURIComponent(km)}`
+      : city ? `?${en ? 'city' : 'ciudad'}=${encodeURIComponent(String(city).toLowerCase())}` : '');
   const body = `
   <h1 class="sr" id="arriba">${esc(S.exp)}</h1>
   <div class="que-fila">${que}${acciones}</div>

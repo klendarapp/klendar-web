@@ -1,13 +1,20 @@
-// Guías de temporada (migración 20261283800000 de la app): «Navidad en
-// Málaga», «Semana Santa», «Feria de Agosto»…
+// Guías de temporada generales (migraciones 20261283800000 y 20261283900000
+// de la app): UNA guía («Navidad») que cada sitio llena con sus planes; se
+// ve «Navidad en Málaga» según dónde se mira («… en {sitio}», que el admin
+// puede apagar).
 //
-// /guia/<slug> y /en/guide/<slug>: portada, texto, sitio y fechas, y las
-// publicaciones vivas de la guía con los filtros normales (¿Cuándo? y el
-// tipo, en la dirección: `?cuando=finde&tipo=eventos` / `?when=weekend&type=events`).
-// Pública, con OG (la portada) e indexable; con filtros, noindex con la
-// canónica sin ellos. Fuera de fechas (o archivada): «Esta guía ha
-// terminado» y a Descubre, con 200 y noindex (el año siguiente vuelve a la
-// misma dirección). Una que no existe: 404.
+// /guia/<slug> (y /en/guide/<slug>): portada, texto y fechas, lo de la zona
+// del visitante (la elegida, `?lat=&lng=&km=` como Descubre, o la de su
+// conexión) y «Elige tu sitio» (los municipios con planes). `?ciudad=<m>`
+// lleva con un 301 a la página del municipio.
+// /guia/<slug>/<municipio>: lo de ese municipio, «Navidad en Málaga»,
+// indexable y en el sitemap (lo que trae gente desde Google). Un municipio
+// sin planes: 404 con noindex.
+// Con filtros (¿Cuándo? y el tipo: `?cuando=finde&tipo=eventos` /
+// `?when=weekend&type=events`), noindex con la canónica sin ellos. Fuera de
+// fechas (o archivada): «Esta guía ha terminado» y a Descubre, con 200 y
+// noindex (el año siguiente vuelve a la misma dirección). Una que no
+// existe: 404.
 //
 // Lo mismo que la app (`lib/features/guides/`): mismos textos, mismos
 // filtros, el mismo orden (lo que empieza antes, primero).
@@ -18,8 +25,9 @@ import { rejilla } from './tarjeta.js';
 import { notFound } from './views.js';
 
 export const guiaBase = (lang) => (lang === 'en' ? '/en/guide' : '/guia');
-export const guiaPath = (lang, slug) => `${guiaBase(lang)}/${encodeURIComponent(slug)}`;
+export const guiaPath = (lang, slug, muni = '') => `${guiaBase(lang)}/${encodeURIComponent(slug)}${muni ? `/${encodeURIComponent(muni)}` : ''}`;
 const SLUG = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const RADIO_ZONA_M = 25000;
 
 const T = (en) => (en
   ? {
@@ -31,7 +39,9 @@ const T = (en) => (en
       weekend: 'This weekend', next10: 'Next 10 days', all: 'All', offers: 'Flash offers', events: 'Events',
       plans: (n) => (n === 1 ? '1 plan' : `${n} plans`),
       desc: (place, dates) => `Klendar seasonal guide${place ? ` in ${place}` : ''}${dates ? `: ${dates}` : ''}.`,
-      share: 'Share',
+      titleIn: (t, p) => `${t} in ${p}`, pick: 'Pick your place', more: 'More places', go: 'See',
+      noZone: 'Pick your place to see what is on there.',
+      nothingHereBody: 'Look at other places or come back in a few days.',
     }
   : {
       badge: 'Guía', open: 'Ver la guía', ended: 'Esta guía ha terminado',
@@ -42,7 +52,9 @@ const T = (en) => (en
       weekend: 'Este finde', next10: 'Próximos 10 días', all: 'Todo', offers: 'Ofertas flash', events: 'Eventos',
       plans: (n) => (n === 1 ? '1 plan' : `${n} planes`),
       desc: (place, dates) => `Guía de temporada de Klendar${place ? ` en ${place}` : ''}${dates ? `: ${dates}` : ''}.`,
-      share: 'Compartir',
+      titleIn: (t, p) => `${t} en ${p}`, pick: 'Elige tu sitio', more: 'Más sitios', go: 'Ver',
+      noZone: 'Elige tu sitio para ver lo que hay allí.',
+      nothingHereBody: 'Mira otros sitios o vuelve en unos días.',
     });
 export const textosGuia = (lang) => T(lang === 'en');
 
@@ -57,6 +69,13 @@ const TIPO = { es: { ofertas: 'flash_offer', eventos: 'future_event' }, en: { of
  *  no hay inglés, el español). */
 export const deIdioma = (m, en) => (m && typeof m === 'object' ? (en ? m.en || m.es : m.es || m.en) : '') || '';
 
+/** «Navidad en Málaga» (con el sitio, si la guía lo admite) o «Navidad». */
+export function tituloGuia(g, lang, sitio = g?.place_name) {
+  const S = T(lang === 'en');
+  const t = deIdioma(g?.title, lang === 'en') || g?.slug || '';
+  return g?.title_place !== false && sitio ? S.titleIn(t, sitio) : t;
+}
+
 /** «1 dic – 6 ene» (los días de la guía, sin hora: tal cual). */
 export function fechasGuia(g, lang) {
   if (!g?.starts_on || !g?.ends_on) return '';
@@ -67,6 +86,21 @@ export function fechasGuia(g, lang) {
 
 const diaLargo = (d, lang) => new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
   .format(new Date(`${String(d).slice(0, 10)}T12:00:00Z`));
+
+/** La zona aproximada de la conexión (Cloudflare), como Descubre
+ *  (`zonaDeConexion` de explore.js; aquí aparte para no importarse en
+ *  círculo). Nunca para robots ni fuera de España. */
+function zonaConexion(request) {
+  const cf = request?.cf;
+  if (!cf) return null;
+  const ua = request.headers?.get?.('user-agent') || '';
+  if (/bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram/i.test(ua)) return null;
+  if (String(cf.country || '').toUpperCase() !== 'ES') return null;
+  const lat = Number.parseFloat(cf.latitude);
+  const lng = Number.parseFloat(cf.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { lat: Math.round(lat * 10) / 10, lng: Math.round(lng * 10) / 10 };
+}
 
 const GUIA_CSS = `<style>
 .guia-cab{display:grid;gap:10px;margin:6px 0 14px}
@@ -84,43 +118,78 @@ const GUIA_CSS = `<style>
 .guia-banner .gb-btn{display:inline-flex;align-items:center;gap:6px;width:max-content;background:#fff;color:#000;border-radius:999px;padding:10px 16px;font-weight:600;margin-top:6px}
 .guia-banner.sin-foto{color:inherit}.guia-banner.sin-foto::after{display:none}
 .guia-banner.sin-foto .gb-btn{background:transparent;color:inherit;border:1px solid currentColor}
+.guia-sitios{margin:18px 0;display:grid;gap:10px}
+.guia-sitios .frow{flex-wrap:wrap}
+.guia-sitios form{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.guia-sitios select{min-height:40px;border-radius:999px;padding:0 14px;max-width:100%}
 </style>`;
 export { GUIA_CSS };
 
-/** La franja de la guía de tu ciudad, encima de Descubre (web): sobria, sin
- *  coral. '' si no hay. */
-export function bannerGuia(g, lang) {
+/** La franja de la guía, encima de Descubre (web): sobria, sin coral. Lleva
+ *  a la guía con la misma zona que Descubre (`donde`: `?ciudad=…` o
+ *  `?lat=&lng=&km=`). '' si no hay. */
+export function bannerGuia(g, lang, donde = '') {
   if (!g?.slug || !SLUG.test(g.slug)) return '';
   const en = lang === 'en';
   const S = T(en);
   const foto = /^https:\/\//.test(g.cover_url || '') ? g.cover_url : '';
-  const meta = [g.place_name, fechasGuia(g, lang), g.count > 0 ? S.plans(g.count) : ''].filter(Boolean).join(' · ');
-  return `${GUIA_CSS}<a class="guia-banner${foto ? '' : ' sin-foto'}" href="${esc(guiaPath(lang, g.slug))}" data-guia="${esc(g.slug)}">
+  const meta = [g.title_place === false ? g.place_name : '', fechasGuia(g, lang), g.count > 0 ? S.plans(g.count) : ''].filter(Boolean).join(' · ');
+  return `${GUIA_CSS}<a class="guia-banner${foto ? '' : ' sin-foto'}" href="${esc(guiaPath(lang, g.slug) + (donde || ''))}" data-guia="${esc(g.slug)}">
   ${foto ? `<img src="${esc(foto)}" alt="" loading="lazy" decoding="async">` : ''}
-  <span class="gb-t"><span class="guia-eti">${esc(S.badge)}</span><b>${esc(deIdioma(g.title, en) || g.slug)}</b>
+  <span class="gb-t"><span class="guia-eti">${esc(S.badge)}</span><b>${esc(tituloGuia(g, lang))}</b>
   ${meta ? `<span class="gb-m">${esc(meta)}</span>` : ''}<span class="gb-btn">${esc(S.open)} →</span></span></a>`;
 }
 
-/** /guia/<slug>, /en/guide/<slug>. */
-export async function guiaPage(rawSlug, url, lang) {
+const dec = (x) => { try { return decodeURIComponent(String(x || '')).replace(/\/+$/, '').toLowerCase(); } catch { return ''; } };
+
+/** /guia/<slug>[/<municipio>], /en/guide/<slug>[/<municipio>]. */
+export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
   const en = lang === 'en';
   const S = T(en);
-  let slug = '';
-  try { slug = decodeURIComponent(String(rawSlug || '')).replace(/\/+$/, '').toLowerCase(); } catch { slug = ''; }
-  const path = guiaPath(lang, slug);
-  if (!SLUG.test(slug)) return notFound(lang, path, 'o');
-  const g = await rpc('guide_info', { p_slug: slug });
-  if (!g || !g.id) return notFound(lang, path, 'o');
+  const slug = dec(rawSlug);
+  const muniSlug = rawMuni == null ? '' : dec(rawMuni);
+  const path = guiaPath(lang, slug, muniSlug);
+  if (!SLUG.test(slug) || (rawMuni != null && !SLUG.test(muniSlug))) return notFound(lang, path, 'o');
+  const q = url.searchParams;
 
-  const titulo = deIdioma(g.title, en) || slug;
+  const [g, sitios] = await Promise.all([
+    rpc('guide_info', { p_slug: slug, p_lat: null, p_lng: null, p_city: null }),
+    rpcAll('guide_places', { p_slug: slug, p_limit: 500 }).catch(() => []),
+  ]);
+  if (!g || !g.id) return notFound(lang, path, 'o');
+  const lista = (sitios || []).filter((m) => SLUG.test(m?.slug || ''));
+  const elegido = muniSlug ? lista.find((m) => m.slug === muniSlug) || null : null;
+  // Un municipio sin planes (o que no existe): sin página.
+  if (muniSlug && !elegido) return notFound(lang, path, 'o');
+  // «Elige tu sitio» sin JavaScript: `?ciudad=` → la página del municipio.
+  const pedida = dec(q.get('ciudad') || q.get('city'));
+  if (!muniSlug && pedida && lista.some((m) => m.slug === pedida)) {
+    return new Response(null, { status: 301, headers: { location: guiaPath(lang, slug, pedida), 'cache-control': 'public, max-age=300' } });
+  }
+  // La zona, sin municipio: la de Descubre (`?lat=&lng=&km=`) o la conexión.
+  const lat = Number.parseFloat(q.get('lat') || '');
+  const lng = Number.parseFloat(q.get('lng') || '');
+  const km = Math.min(100, Math.max(1, Number.parseInt(q.get('km') || '', 10) || RADIO_ZONA_M / 1000));
+  const puntoUrl = !muniSlug && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  const conexion = !muniSlug && !puntoUrl ? zonaConexion(request) : null;
+  const punto = puntoUrl ? { lat: Math.round(lat * 100) / 100, lng: Math.round(lng * 100) / 100 } : conexion;
+  const radio = puntoUrl ? km * 1000 : RADIO_ZONA_M;
+  let sitio = elegido?.name || null;
+  if (!sitio && punto) {
+    const gz = await rpc('guide_info', { p_slug: slug, p_lat: punto.lat, p_lng: punto.lng, p_city: null }).catch(() => null);
+    sitio = gz?.place_name || null;
+  }
+
+  const titulo = tituloGuia(g, lang, sitio);
+  const general = tituloGuia(g, lang, null);
   const texto = deIdioma(g.text, en);
   const fechas = fechasGuia(g, lang);
-  const meta = [g.place_name, fechas].filter(Boolean).join(' · ');
+  const meta = [g.title_place === false ? sitio : '', fechas].filter(Boolean).join(' · ');
   const foto = /^https:\/\//.test(g.cover_url || '') ? g.cover_url : undefined;
-  const description = (texto || S.desc(g.place_name, fechas)).replace(/\s+/g, ' ').slice(0, 200);
-  const migas = [['Klendar', en ? '/en' : '/'], [titulo, path]];
+  const description = (texto || S.desc(sitio || g.scope_name, fechas)).replace(/\s+/g, ' ').slice(0, 200);
+  const migas = [['Klendar', en ? '/en' : '/'], [general, guiaPath(lang, slug)], ...(elegido ? [[titulo, path]] : [])];
   const cabecera = `
-  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${discoverBase(lang)}">${en ? 'Discover' : 'Descubre'}</a></p>
+  <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${discoverBase(lang)}">${en ? 'Discover' : 'Descubre'}</a>${elegido ? ` · <a href="${esc(guiaPath(lang, slug))}">${esc(general)}</a>` : ''}</p>
   <div class="guia-cab">
     ${foto ? `<img class="guia-portada" src="${esc(foto)}" alt="" fetchpriority="high" decoding="async">` : ''}
     <span class="guia-eti">${esc(S.badge)}</span>
@@ -142,20 +211,26 @@ export async function guiaPage(rawSlug, url, lang) {
     }), 200, 'public, max-age=300, s-maxage=900');
   }
 
-  const q = url.searchParams;
   const L = en ? 'en' : 'es';
   const cuandoUrl = q.get(en ? 'when' : 'cuando') || '';
   const tipoUrl = q.get(en ? 'type' : 'tipo') || '';
   const when = CUANDO[L][cuandoUrl] || null;
   const kind = TIPO[L][tipoUrl] || null;
   const filtrado = Boolean(when || kind);
-  const res = await rpc('guide_offers', {
-    p_slug: slug, p_filters: { ...(when ? { when } : {}), ...(kind ? { kind } : {}) }, p_lat: null, p_lng: null, p_limit: 60, p_offset: 0,
-  });
+  const zona = Boolean(elegido || punto);
+  const res = zona
+    ? await rpc('guide_offers', {
+      p_slug: slug,
+      p_filters: { ...(when ? { when } : {}), ...(kind ? { kind } : {}), ...(elegido ? { municipality: elegido.code } : { radius_m: radio }) },
+      p_lat: punto?.lat ?? null, p_lng: punto?.lng ?? null, p_limit: 60, p_offset: 0,
+    })
+    : { items: [] };
   const items = res?.items || [];
 
+  // Al cambiar un filtro se conserva la zona elegida en la dirección.
   const enlace = (c, t) => {
     const p = new URLSearchParams();
+    if (puntoUrl) { p.set('lat', String(punto.lat)); p.set('lng', String(punto.lng)); p.set('km', String(km)); }
     if (c) p.set(en ? 'when' : 'cuando', c);
     if (t) p.set(en ? 'type' : 'tipo', t);
     const s = p.toString();
@@ -168,17 +243,27 @@ export async function guiaPage(rawSlug, url, lang) {
   const tipos = en ? [['', S.all], ['offers', S.offers], ['events', S.events]] : [['', S.all], ['ofertas', S.offers], ['eventos', S.events]];
   const cuandoOk = when ? cuandoUrl : '';
   const tipoOk = kind ? tipoUrl : '';
-  const filtros = `<nav class="filters" aria-label="${esc(S.when)}">
+  const filtros = zona ? `<nav class="filters" aria-label="${esc(S.when)}">
     <div class="frow"><span class="flabel">${esc(S.when)}</span>${cuandos.map(([k, n]) => chip(enlace(k, tipoOk), n, k === cuandoOk)).join('')}</div>
     <div class="frow"><span class="flabel">${esc(S.type)}</span>${tipos.map(([k, n]) => chip(enlace(cuandoOk, k), n, k === tipoOk)).join('')}</div>
-  </nav>`;
+  </nav>` : '';
 
+  // «Elige tu sitio»: los municipios con planes (los primeros a la vista y
+  // todos en el desplegable; sin JavaScript, el formulario va a `?ciudad=`).
+  const selector = lista.length ? `<section class="guia-sitios" aria-labelledby="guiaSitios">
+    <h2 id="guiaSitios">${esc(S.pick)}</h2>
+    <div class="frow">${lista.slice(0, 12).map((m) => `<a class="chip${elegido?.code === m.code ? ' on' : ''}" href="${esc(guiaPath(lang, slug, m.slug))}">${esc(m.name)} · ${esc(String(m.count))}</a>`).join('')}</div>
+    ${lista.length > 12 ? `<form method="get" action="${esc(guiaPath(lang, slug))}"><label class="flabel" for="guiaSitio">${esc(S.more)}</label>
+      <select id="guiaSitio" name="${en ? 'city' : 'ciudad'}">${lista.map((m) => `<option value="${esc(m.slug)}"${elegido?.code === m.code ? ' selected' : ''}>${esc(m.name)}${m.province && m.province !== m.name ? ` (${esc(m.province)})` : ''} · ${esc(String(m.count))}</option>`).join('')}</select>
+      <button class="pill" type="submit">${esc(S.go)}</button></form>` : ''}
+  </section>` : '';
+
+  const vacio = `<section class="vacio"><h2>${esc(S.empty)}</h2><p>${esc(zona ? S.nothingHereBody : (lista.length ? S.noZone : S.emptyBody))}</p>
+    <div class="vacio-botones"><a class="pill" href="${discoverBase(lang)}">${esc(S.goDiscover)}</a></div></section>`;
   const body = `${cabecera}
   ${filtros}
-  ${items.length
-    ? rejilla(items, lang, { primera: !foto, h: 'h2' })
-    : `<section class="vacio"><h2>${esc(S.empty)}</h2><p>${esc(S.emptyBody)}</p>
-    <div class="vacio-botones"><a class="pill" href="${discoverBase(lang)}">${esc(S.goDiscover)}</a></div></section>`}`;
+  ${items.length ? rejilla(items, lang, { primera: !foto, h: 'h2' }) : vacio}
+  ${selector}`;
 
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -195,12 +280,17 @@ export async function guiaPage(rawSlug, url, lang) {
     ],
   };
 
-  return html(publicPage({
+  // Con la zona del visitante (su punto o su conexión) no va a ninguna caché
+  // compartida; la del municipio y la general sin zona, sí.
+  const r = html(publicPage({
     lang, path, body, title: titulo, description, image: foto || items.find((o) => o.images?.[0])?.images?.[0],
     head: `${GUIA_CSS}
-${filtrado || !items.length ? '<meta name="robots" content="noindex, follow">\n' : ''}${ldScript(jsonLd)}`,
-  }), 200, 'public, max-age=120, s-maxage=300');
+${filtrado || puntoUrl ? '<meta name="robots" content="noindex, follow">\n' : ''}${ldScript(jsonLd)}`,
+  }), 200, punto ? 'private, max-age=0' : 'public, max-age=120, s-maxage=300');
+  if (conexion) r.headers.set('vary', 'CF-Connecting-IP');
+  return r;
 }
 
-/** Para el sitemap: las guías vivas o por empezar. */
+/** Para el sitemap: las guías vivas o por empezar y sus municipios con planes. */
 export const guiasParaSitemap = () => rpcAll('public_guides', {}).catch(() => []);
+export const sitiosDeGuia = (slug) => rpcAll('guide_places', { p_slug: slug, p_limit: 2000 }).catch(() => []);

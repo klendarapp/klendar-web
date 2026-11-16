@@ -9,7 +9,7 @@ import { guiaPage } from '../../_lib/guias.js';
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
   const url = new URL(ctx.request.url);
-  return guard('en', url.pathname, () => guiaPage(ctx.params.slug, url, 'en'));
+  return guard('en', url.pathname, () => guiaPage(ctx.params.slug, null, url, 'en', ctx.request));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces
