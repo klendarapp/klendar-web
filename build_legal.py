@@ -13,6 +13,7 @@ from build_site import head, footer, T, ALT
 from ayuda import soporte_html
 import legal_ia
 import legal_contacto
+import legal_encargos
 
 # ════════════════════════════════════════════════════════════════════════════
 # DATOS DEL TITULAR — el único sitio que se toca cuando cambia quién está
@@ -1333,6 +1334,17 @@ VERSIONES_NEGOCIOS[:0] = [v for v in legal_ia.versiones_negocios() if v[0] not i
 for _slug, _cuando, _es, _en in legal_contacto.cambios():
     _apunta(_slug, _cuando, _es, _en, primero=True)
 VERSIONES_NEGOCIOS[:0] = [v for v in legal_contacto.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
+
+# ════════════════════════════════════════════════════════════════════════════
+# ENCARGOS (Iván, 17-11): sus textos están en legal_encargos.py, con la fecha
+# del día que se publiquen (ENCARGOS_DESDE), como los del contacto: su línea en
+# el historial de la privacidad, los términos y las condiciones, «Última
+# actualización» y una versión nueva de las condiciones que se aplica 15 días
+# después (P2B art. 3.2; «-b» si ese día ya hay otra). VERSION no se sube.
+# ════════════════════════════════════════════════════════════════════════════
+for _slug, _cuando, _es, _en in legal_encargos.cambios():
+    _apunta(_slug, _cuando, _es, _en, primero=True)
+VERSIONES_NEGOCIOS[:0] = [v for v in legal_encargos.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
 
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:
 # el script se niega a publicar nada que los contenga.
@@ -2669,6 +2681,8 @@ def textos(D, resaltar=False):
     legal_ia.aplicar(ES, EN, E)
     # Contacto de quien reserva (legal_contacto.py), si tiene fecha: después de la IA.
     legal_contacto.aplicar(ES, EN, E)
+    # Encargos (legal_encargos.py), si tiene fecha: después del contacto.
+    legal_encargos.aplicar(ES, EN, E)
     return ES, EN
 
 

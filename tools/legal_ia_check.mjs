@@ -81,18 +81,19 @@ const PAGINAS = [
     /Automated decisions\. When an automated system takes a decision/,
     new RegExp(`Change history\\s+(?:.+\\n\\s*){0,3}?${EN}: New “Artificial intelligence features” part`),
   ], 1],
-  ['/terminos', `Última actualización: ${IA.es}`, [
+  // Encima puede ir lo publicado después (Encargos, 16-11).
+  ['/terminos', fechaLegal('/terminos', `Última actualización: ${IA.es}`), [
     /Funciones con inteligencia artificial\. Algunas funciones usan una IA, Claude, de Anthropic/,
     /El asistente de ayuda es una herramienta automática[\s\S]*?si no coincide con lo publicado, vale lo publicado/,
     /la traducción es automática, la hace Claude, la IA de Anthropic, o, si no está disponible, Google Translate, y puede tener errores/,
     /THIS SERVICE MAY CONTAIN TRANSLATIONS POWERED BY GOOGLE/,
     /si nos das permiso, la hace Claude, la IA de Anthropic, que puede publicarlo, publicarlo solo para mayores de 18, no publicarlo o dejarlo para que lo mire una persona/,
-    new RegExp(`Historial de cambios\\s+${ES}: Funciones con inteligencia artificial y el asistente de ayuda \\(apartado 1\\)`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,6}?${ES}: Funciones con inteligencia artificial y el asistente de ayuda \\(apartado 1\\)`),
   ], 0],
-  ['/en/terms', `Last updated: ${IA.en}`, [
+  ['/en/terms', fechaLegal('/en/terms', `Last updated: ${IA.en}`), [
     /Artificial intelligence features\. Some features use an AI, Claude, from Anthropic/,
     /it's done by Claude, the AI from Anthropic, or, if it isn't available, Google Translate, and it may contain mistakes/,
-    new RegExp(`Change history\\s+${EN}: Artificial intelligence features and the help assistant`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,6}?${EN}: Artificial intelligence features and the help assistant`),
   ], 0],
   ['/negocios', fechaLegal('/negocios', `Última actualización: ${IA.es} · Versión ${IA.iso}`), [
     /quien verifica es siempre una persona de Klendar\. «Verificado» quiere decir que lo ha revisado una persona de Klendar/,

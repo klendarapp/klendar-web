@@ -31,9 +31,9 @@ export const PAGINAS_IA = new Set(['/privacidad', '/en/privacy', '/terminos', '/
   '/normas', '/en/community-guidelines', '/cookies', '/en/cookies', '/soporte', '/en/support']);
 
 // Retoques publicados después de los textos de IA (la fecha más nueva manda):
-// RA1, la fila «Avisos sobre respuestas de la IA» (13-11-2026), y «Contacto de
+// RA1, la fila «Avisos sobre respuestas de la IA» (13-11-2026), «Contacto de
 // quien reserva» (legal_contacto.py, CONTACTO_DESDE: la privacidad y las
-// condiciones para negocios, con su versión, 16-11-2026).
+// condiciones para negocios, con su versión, 16-11-2026) y «Encargos» (abajo).
 const fc = fs.readFileSync(new URL('../legal_contacto.py', import.meta.url), 'utf8').match(/^CONTACTO_DESDE = (None|'(\d{4})-(\d{2})-(\d{2})')/m);
 if (!fc) throw new Error('_fecha_ia.mjs: no encuentro CONTACTO_DESDE en legal_contacto.py');
 export const CONTACTO = fc[1] === 'None' ? null : {
@@ -41,14 +41,30 @@ export const CONTACTO = fc[1] === 'None' ? null : {
   es: `${Number(fc[4])} de ${MESES_ES[Number(fc[3]) - 1]} de ${fc[2]}`,
   en: `${Number(fc[4])} ${MESES_EN[Number(fc[3]) - 1]} ${fc[2]}`,
 };
+// «Encargos» (legal_encargos.py, ENCARGOS_DESDE: la privacidad, los términos y las condiciones para negocios, con su
+// versión; «-b» si es el mismo día que el contacto, 16-11-2026).
+const fe = fs.readFileSync(new URL('../legal_encargos.py', import.meta.url), 'utf8').match(/^ENCARGOS_DESDE = (None|'(\d{4})-(\d{2})-(\d{2})')/m);
+if (!fe) throw new Error('_fecha_ia.mjs: no encuentro ENCARGOS_DESDE en legal_encargos.py');
+export const ENCARGOS = fe[1] === 'None' ? null : (() => {
+  const iso = `${fe[2]}-${fe[3]}-${fe[4]}`;
+  return {
+    iso,
+    version: CONTACTO && CONTACTO.iso === iso ? `${iso}-b` : iso,
+    es: `${Number(fe[4])} de ${MESES_ES[Number(fe[3]) - 1]} de ${fe[2]}`,
+    en: `${Number(fe[4])} ${MESES_EN[Number(fe[3]) - 1]} ${fe[2]}`,
+  };
+})();
+const NEGOCIOS = ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
 export const POSTERIOR = {
-  '/privacidad': CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
-  '/en/privacy': CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
-  ...(CONTACTO ? { '/negocios': { ...CONTACTO, version: CONTACTO.iso }, '/en/business-terms': { ...CONTACTO, version: CONTACTO.iso } } : {}),
+  // Sin `version`: la cabecera de la privacidad dice la de los términos (VERSION), que no cambia.
+  '/privacidad': ENCARGOS ? { es: ENCARGOS.es, en: ENCARGOS.en } : CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
+  '/en/privacy': ENCARGOS ? { es: ENCARGOS.es, en: ENCARGOS.en } : CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
+  ...(NEGOCIOS ? { '/negocios': NEGOCIOS, '/en/business-terms': NEGOCIOS } : {}),
+  ...(ENCARGOS ? { '/terminos': { es: ENCARGOS.es, en: ENCARGOS.en }, '/en/terms': { es: ENCARGOS.es, en: ENCARGOS.en } } : {}),
 };
 
 // La versión de las condiciones para negocios que dice la cabecera de /negocios (la más nueva).
-export const VERSION_NEGOCIOS = CONTACTO?.iso || IA?.iso || '2026-11-05';
+export const VERSION_NEGOCIOS = ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
 
 export function fechaLegal(ruta, cabecera) {
   const p = POSTERIOR[ruta];
