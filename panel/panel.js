@@ -2919,6 +2919,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           [I18N.t('Canjes por persona'), I18N.t('Cada canje genera un código QR de un solo uso. Sube el número si quieres que la misma persona pueda repetir (por ejemplo, un café al día).')],
         ])}`)}
 
+      ${guiasHtml()}
       ${bloque('bMas', I18N.t('Más opciones'), `
         <label class="opcion bl-fila" id="cierreRow"><input type="checkbox" name="before_closing" ${o.style?.badge === 'before_closing' ? 'checked' : ''}><span><b>Antes de cerrar</b><br><small class="muted">Lo que te sobra del día, con descuento y para recoger hasta el cierre. Sale con su sello y en el filtro «Antes de cerrar».</small></span></label>
         <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
@@ -3161,6 +3162,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
   rrppFormularioEngancha(v);
   // «Quién actúa» (panel/artistas.js): chips, buscador y «Añadir … como nuevo».
   const artistas = quienActuaEngancha(v, artistasIni);
+  // «Añadir a «<Guía>»» (guías de temporada, panel/guias.js), como la app.
+  const guias = guiasEngancha(v, id, () => ({ kind, audiencia: val('audience') || 'all' }));
 
   // Fotos
   let images = [...(o.images || [])];
@@ -4055,6 +4058,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
         toast(alas ? bi(`Programada: se publica el ${fmtProgramada(alas)}`, `Scheduled: goes live on ${fmtProgramada(alas)}`)
           : data.status === 'active' ? I18N.t('Cambios guardados')
             : I18N.t('Guardada en borrador'));
+      }
+      // Guías de temporada: lo marcado y, si ya no es para todos, fuera.
+      if (!await guias.guarda(offerId)) {
+        toast(I18N.t('Guardada, pero no se ha podido cambiar la guía. Prueba otra vez al editarla.'), true);
       }
       // Guardado: ya no hay nada que perder al salir.
       GUARDA = null;

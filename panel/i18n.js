@@ -3,6 +3,11 @@
 'use strict';
 
 const I18N = makeI18N({
+    // Guías de temporada (2026-11-17)
+    "Añadir a «{guia}»": "Add to “{guia}”",
+    "Sale en esta guía de temporada de Klendar mientras dure. Puedes quitarla cuando quieras.": "It appears in this Klendar seasonal guide while it lasts. You can take it out whenever you like.",
+    "Klendar la ha quitado de esta guía.": "Klendar has taken it out of this guide.",
+    "Guardada, pero no se ha podido cambiar la guía. Prueba otra vez al editarla.": "Saved, but the guide couldn't be changed. Try again when you edit it.",
     // Contacto de quien reserva (2026-11-17)
     "Úsalos solo para avisar de esta reserva. Se dejan de ver 7 días después del evento.": "Use them only to let people know about this booking. They stop showing 7 days after the event.",
     "Úsalos solo para avisar de este turno. Se dejan de ver al acabar el día.": "Use them only to let people know about their turn. They stop showing at the end of the day.",

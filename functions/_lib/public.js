@@ -235,8 +235,8 @@ export const collectionBase = (lang) => (lang === 'en' ? '/en/collection' : '/co
 /** La misma página en el otro idioma: /o/x ⇄ /en/o/x, /agenda/x ⇄ /en/whats-on/x,
  * /hoy/x ⇄ /en/today/x, /con-ninos/x ⇄ /en/kids/x, /partidos/x ⇄ /en/matches/x,
  * /grupos ⇄ /en/groups, /sorteos ⇄ /en/giveaways, /sorteo/x ⇄ /en/giveaway/x,
- * /sorteo/x/bases ⇄ /en/giveaway/x/rules, /cola/x ⇄ /en/queue/x y /listo/x ⇄
- * /en/ready/x. */
+ * /sorteo/x/bases ⇄ /en/giveaway/x/rules, /cola/x ⇄ /en/queue/x, /listo/x ⇄
+ * /en/ready/x y /guia/x ⇄ /en/guide/x. */
 export const altPath = (path, lang) =>
   lang === 'en'
     ? (path
@@ -246,6 +246,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/explore/, '/explorar')
         .replace(/^\/en\/discover/, '/descubre')
         .replace(/^\/en\/collection/, '/coleccion')
+        .replace(/^\/en\/guide\//, '/guia/')
         .replace(/^\/en\/friend\//, '/amigo/')
         .replace(/^\/en\/story\//, '/historia/')
         .replace(/^\/en\/matches/, '/partidos')
@@ -263,6 +264,7 @@ export const altPath = (path, lang) =>
         .replace(/^\/explorar/, '/explore')
         .replace(/^\/descubre/, '/discover')
         .replace(/^\/coleccion/, '/collection')
+        .replace(/^\/guia\//, '/guide/')
         .replace(/^\/amigo\//, '/friend/')
         .replace(/^\/historia\//, '/story/')
         .replace(/^\/partidos/, '/matches')

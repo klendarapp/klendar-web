@@ -498,7 +498,8 @@ def doc_page(t, path, title, desc, body, pestana=None, extra=''):
 # Aquí solo van las páginas estáticas: /admin es privado y /r/ es un enlace
 # profundo. Las que se generan al vuelo tienen su sitemap dinámico: ciudades,
 # «hoy» y categorías en /sitemap-agenda.xml y las fichas de negocio (/b/) en
-# /sitemap-negocios.xml y las páginas de artista (/a/) en /sitemap-artistas.xml
+# /sitemap-negocios.xml, las páginas de artista (/a/) en /sitemap-artistas.xml
+# y las guías de temporada (/guia/) en /sitemap-guias.xml
 # (vacíos mientras la web enseña los datos de dev).
 # «Dónde ver el partido» (/partidos) es dinámica, pero su dirección es fija:
 # va aquí; cada partido (/partidos/<id>) cambia y pasa, y no se lista. Igual
@@ -541,6 +542,7 @@ def robots():
         f'Sitemap: {BASE}/sitemap-agenda.xml',
         f'Sitemap: {BASE}/sitemap-negocios.xml',
         f'Sitemap: {BASE}/sitemap-artistas.xml',
+        f'Sitemap: {BASE}/sitemap-guias.xml',
         '',
     ])
 

@@ -18,3 +18,4 @@ Sitemap: https://klendar.app/sitemap.xml
 Sitemap: https://klendar.app/sitemap-agenda.xml
 Sitemap: https://klendar.app/sitemap-negocios.xml
 Sitemap: https://klendar.app/sitemap-artistas.xml
+Sitemap: https://klendar.app/sitemap-guias.xml

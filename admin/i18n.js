@@ -44,6 +44,7 @@ const I18N = makeI18N({
   'Notificaciones y push': 'Notifications and push',
   'Sistema': 'System',
   'Colecciones': 'Collections',
+  'Guías': 'Guides',
   'Categorías': 'Categories',
   'Configuración': 'Settings',
   'Administradores': 'Administrators',

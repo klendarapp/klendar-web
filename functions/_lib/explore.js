@@ -42,6 +42,7 @@ import { GRUPOS_CSS, gruposBase } from './grupos.js';
 import { sorteosBase, sorteosEncendidos } from './sorteos.js';
 import { SITIOS_CSS, SITIOS_SCRIPTS, TS, filaSitio, mapaSitios } from './sitios.js';
 import { icCat } from './iconos-cat.js';
+import { bannerGuia } from './guias.js';
 
 /** Una dirección mal codificada no es un 500: se manda al listado (302). */
 const aListado = (loc) => new Response(null, { status: 302, headers: { Location: loc, 'Cache-Control': 'no-store' } });
@@ -1504,6 +1505,15 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const tiempoP = !tiempoOff && enLista && recomendado ? tiempoDeHoy(dondeTiempo({ cerca, lat, lng, city })) : Promise.resolve(null);
   // Las ciudades de Klendar (`ciudadesP`, arriba): de cuál es una búsqueda y,
   // para «Dónde ver el partido», el punto desde el que se cuentan los bares.
+  // La guía de temporada de tu ciudad (Descubre, primera página): una franja
+  // sobria encima de las tarjetas, como la primera página de la app; no toca
+  // el orden de lo demás (migración 20261283800000 de la app).
+  const guiaP = descubre && page === 1
+    ? rpc('current_guide', {
+      p_lat: cerca ? lat : centroCiudad?.lat ?? null, p_lng: cerca ? lng : centroCiudad?.lng ?? null,
+      p_city: cerca ? null : city || null,
+    }).catch(() => null)
+    : Promise.resolve(null);
   const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities, seccionPartidos, seccionArtistas] = await Promise.all([
     negocios
       ? rpc('public_places', {
@@ -2480,6 +2490,7 @@ ${GRUPOS_CSS}` : ''}`;
     ${vacio ? lineaPedir : ''}`;
   }
 
+  const guiaHtml = vacio ? '' : bannerGuia(await guiaP, lang);
   const body = `
   <h1 class="sr" id="arriba">${esc(S.exp)}</h1>
   <div class="que-fila">${que}${acciones}</div>
@@ -2489,6 +2500,7 @@ ${GRUPOS_CSS}` : ''}`;
   ${avisoCerca}
   ${avisoEdad}
   ${resumenN}
+  ${guiaHtml}
   ${resultados}
   ${vacio ? '' : lineaAvisame}
   ${!vacio && !negocios && !mapa && !calendario ? lineaPedir : ''}
