@@ -6618,7 +6618,8 @@ PAGES.equipo = async (v) => {
       { h: 'Persona', r: (m) => `<b class="title">${esc(m.display_name || m.email || '')}</b><span class="sub">${esc(m.email || '')}</span>` },
       { h: 'Rol', r: (m) => tag(m.role) },
       // A uno mismo no (como la app): para irse, «Salir del equipo».
-      { h: '', r: (m) => canManage && m.role !== 'owner' && m.user_id !== ME?.id ? `<div class="actions">
+      // A un encargado solo lo cambia o lo quita el propietario (la base dice que no igualmente; 20261284500020).
+      { h: '', r: (m) => canManage && m.role !== 'owner' && m.user_id !== ME?.id && (BIZ.role === 'owner' || m.role !== 'manager') ? `<div class="actions">
           <button class="btn sm ghost" data-role="${m.role === 'manager' ? 'staff' : 'manager'}" data-user="${esc(m.user_id)}">${m.role === 'manager' ? 'Hacer empleado' : 'Hacer encargado'}</button>
           <button class="btn sm ghost" data-remove="${esc(m.user_id)}">Quitar</button></div>` : '' },
     ],

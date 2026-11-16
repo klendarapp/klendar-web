@@ -638,6 +638,8 @@ PAGES.ficha = async (v, parte) => {
   // Un apartado que no existe (un enlace viejo o mal escrito): el índice.
   if (parte === 'carta') { location.hash = '#/carta'; return; }
   if (parte && !PARTES_FICHA.some((p) => p[0] === parte) && !['datos', 'entidad'].includes(parte)) { location.hash = '#/ficha'; return; }
+  // El NIF/CIF (en un autónomo, su DNI): solo el propietario (20261284500020), como la app.
+  if (parte === 'klendar' && BIZ.role !== 'owner') { location.hash = '#/ficha'; return; }
   if (parte === 'datos' && !esPropietario()) { location.hash = '#/ficha'; return; }
   // Un organizador sin local fijo no tiene horario ni «Cómo es tu local».
   if (esOrganizador() && ['horario', 'local', 'que-pedir'].includes(parte)) { location.hash = '#/ficha'; return; }
@@ -701,7 +703,8 @@ function indiceFicha(v, b, cats, carta) {
     ${sinCategoria || sinDireccion ? `<a class="aviso-falta" href="#/ficha/${sinCategoria ? 'basico' : 'donde'}">${ms('cancel')}<span>${esc(I18N.t(sinCategoria ? 'Elige una categoría.' : 'Falta la dirección o la ciudad.'))}</span>${ms('chevron_right')}</a>` : ''}
     <p class="muted" style="margin:0 0 10px">Toca un apartado para cambiarlo. Cada uno se guarda por separado.</p>
     <nav class="card indice" aria-label="${esc(I18N.t('Apartados de la ficha'))}">
-      ${PARTES_FICHA.filter(([k]) => !((esOrganizador() || esEntidad()) && ['horario', 'local', 'que-pedir'].includes(k))).map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
+      ${PARTES_FICHA.filter(([k]) => !((esOrganizador() || esEntidad()) && ['horario', 'local', 'que-pedir'].includes(k)))
+    .filter(([k]) => k !== 'klendar' || BIZ.role === 'owner').map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
       ${fila('entidad', 'Cuenta de entidad', BIZ.entity?.kind ? entSello(BIZ.entity.kind)
         : BIZ.entity?.application?.status === 'pending' ? I18N.t('Pendiente de comprobar') : I18N.t('Ayuntamiento, asociación u ONG: pídela'))}
     </nav>
