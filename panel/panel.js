@@ -2476,8 +2476,12 @@ async function cifrasDialogo(o) {
       : `Donde más te canjean es entre las ${pad(hora)}:00 y las ${pad((hora + 1) % 24)}:00.`}</p>` : ''}
     ${asis ? `<h3 style="margin:6px 0 0">Asistencia</h3>
       <div class="kpis">
-        <div class="kpi"><b>${fmtNum(asis.reserved)}</b><span>Reservas</span></div>
-        <div class="kpi"><b>${fmtNum(asis.attended)}</b><span>Han entrado</span></div>
+        ${/* En personas, como la app: una reserva para tres son tres (antes
+          «Reservas» contaba códigos sin los ya entrados y «Han entrado», códigos). */
+        o.max_redemptions != null
+          ? `<div class="kpi"><b>${plazasTxt(o, plazasOcupadas(o))}</b><span>Plazas</span></div>`
+          : `<div class="kpi"><b>${fmtNum((asis.reserved_seats ?? asis.reserved) + (asis.attended_seats ?? asis.attended))}</b><span>Reservas</span></div>`}
+        <div class="kpi"><b>${fmtNum(asis.attended_seats ?? asis.attended)}</b><span>Han entrado</span></div>
         ${asis.expected_cents ? `<div class="kpi"><b>${fmtMoney(asis.expected_cents)}</b><span>Si viene todo el mundo</span></div>` : ''}
       </div>
       <p class="muted" style="margin:0">${asis.waitlist ? `${fmtNum(asis.waitlist)} ${I18N.lang === 'en' ? 'on the waiting list' : 'en lista de espera'} · ` : ''}${esc(I18N.t('El cobro es tuyo, en la puerta: aquí solo contamos plazas a precio de tarifa.'))}</p>` : ''}
