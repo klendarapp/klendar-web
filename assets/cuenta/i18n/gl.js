@@ -1947,6 +1947,7 @@ KL_DIC('gl', {
   "Ya hay una cuenta con ese correo. Prueba a entrar.": "Xa hai unha conta con ese correo. Proba a entrar.",
   "Ya la has canjeado.": "Xa a canxeaches.",
   "Eres del equipo de este negocio: tus códigos no se pueden validar aquí.": "Es do equipo deste negocio: os teus códigos non se poden validar aquí.",
+  "Eres del equipo de este negocio: no puedes apuntarte a su lista de espera.": "Es do equipo deste negocio: non podes apuntarte á súa lista de espera.",
   "Ya lo habías pedido": "Xa o pediras",
   "Ya lo han recibido todos": "Xa o recibiron todos",
   "Ya lo has recibido": "Xa o recibiches",

@@ -386,7 +386,7 @@ async function fichaOferta(id, lang, rpRaw, H) {
         bags: (n) => (n === 1 ? '1 bag left' : `${n} bags left`),
         takenBy: (n) => (n === 1 ? '1 person has taken it' : `${n} people have taken it`),
         perUser: (n) => `Up to ${n} per person`,
-        waitHint: "No commitment: we'll only notify you if someone lets their code expire.",
+        waitHint: "No commitment: we'll only notify you if a place opens up.",
         waitCount: (n) => (n === 1 ? '1 person waiting' : `${n} people waiting`),
       }
     : {
@@ -411,7 +411,7 @@ async function fichaOferta(id, lang, rpRaw, H) {
         bags: (n) => (n === 1 ? 'Queda 1 bolsa' : `Quedan ${n} bolsas`),
         takenBy: (n) => (n === 1 ? '1 persona ya lo ha cogido' : `${n} personas ya lo han cogido`),
         perUser: (n) => `Hasta ${n} por persona`,
-        waitHint: 'Sin compromiso: solo te avisamos si alguien deja caducar su código.',
+        waitHint: 'Sin compromiso: solo te avisamos si se libera una plaza.',
         waitCount: (n) => (n === 1 ? '1 persona esperando' : `${n} personas esperando`),
       };
 

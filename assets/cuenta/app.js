@@ -257,6 +257,8 @@ const ERRORES = {
   already_redeemed: 'Ya la has canjeado.',
   // Del equipo del negocio: sus códigos no se validan allí (revisión de códigos, 15-11).
   team_member: 'Eres del equipo de este negocio: tus códigos no se pueden validar aquí.',
+  // Ni a la lista de espera de lo suyo (revisión de reservas, 16-11).
+  waitlist_team: 'Eres del equipo de este negocio: no puedes apuntarte a su lista de espera.',
   sold_out: 'Se han acabado las plazas.',
   not_enough_seats: 'Ya no quedan tantas plazas. Prueba con menos.',
   rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',

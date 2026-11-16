@@ -1947,6 +1947,7 @@ KL_DIC('it', {
   "Ya hay una cuenta con ese correo. Prueba a entrar.": "Esiste già un account con questa email. Prova ad accedere.",
   "Ya la has canjeado.": "L’hai già riscattata.",
   "Eres del equipo de este negocio: tus códigos no se pueden validar aquí.": "Fai parte del team di questa attività: i tuoi codici non possono essere convalidati qui.",
+  "Eres del equipo de este negocio: no puedes apuntarte a su lista de espera.": "Fai parte del team di questa attività: non puoi iscriverti alla sua lista d’attesa.",
   "Ya lo habías pedido": "L'avevi già chiesto",
   "Ya lo han recibido todos": "L’hanno già ricevuto tutti",
   "Ya lo has recibido": "L’hai già ricevuto",
