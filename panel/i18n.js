@@ -3,6 +3,16 @@
 'use strict';
 
 const I18N = makeI18N({
+  // «Avísame cuando abran» (panel, 2026-11-17)
+  "Abrir reservas el…": "Open reservations on…",
+  "Las reservas abrieron el {when}.": "Reservations opened on {when}.",
+  "Hasta esa hora nadie puede reservar: la ficha dice cuándo abren y quien quiera pulsa «Avísame». Al abrir le llega un aviso. Vacío, se reserva desde que se publica.": "Until then nobody can reserve: the page says when reservations open and anyone can tap “Tell me”. They get one notification when they open. Leave it empty to take reservations as soon as it is published.",
+  "1 persona ha pedido aviso": "1 person asked to be notified",
+  "{n} personas han pedido aviso": "{n} people asked to be notified",
+  "Esa hora ya ha pasado: elige una que esté por venir.": "That time has passed: pick one in the future.",
+  "Las reservas tienen que abrir antes del evento.": "Reservations have to open before the event.",
+  "Ya hay reservas: una apertura las cerraría. Déjalo sin apertura.": "There are reservations already: an opening time would close them. Leave it without one.",
+  "Las reservas ya han abierto: la apertura ya no se cambia.": "Reservations are already open: the opening time can no longer change.",
     // Guías de temporada (2026-11-17)
     "Añadir a «{guia}»": "Add to “{guia}”",
     "Sale en esta guía de temporada de Klendar mientras dure. Puedes quitarla cuando quieras.": "It appears in this Klendar seasonal guide while it lasts. You can take it out whenever you like.",

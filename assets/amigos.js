@@ -72,6 +72,7 @@
     sinB: 'With “Friends going” you see which plans your friends are going to. Add them with your friend link or QR code: only people who have it can find you.',
     verAmigos: 'See your friends', anadir: 'Add friends', quitar: 'Turn off “Friends going”', free: 'Free',
     myCode: 'See my code', waitLeave: 'Leave the waiting list',
+    notifyOn: 'You’ll be notified', notifyOnHint: 'We’ll notify you when reservations open. Tap to cancel.',
     usedUp: "You've already redeemed this offer", usedUpEvent: "You've already got in with this reservation",
     waitIn: function (n) { return n > 1 ? 'You\'re on the waiting list (' + n + ' people in total)' : 'You\'re on the waiting list'; },
     waitCount: function (n) { return n === 1 ? '1 person waiting' : n + ' people waiting'; },
@@ -111,6 +112,7 @@
     sinB: 'Con «Van mis amigos» ves a qué planes van tus amigos. Añádelos con tu enlace de amigo o tu QR: solo te encuentra quien lo tiene.',
     verAmigos: 'Ver tus amigos', anadir: 'Añadir amigos', quitar: 'Quitar «Van mis amigos»', free: 'Gratis',
     myCode: 'Ver mi código', waitLeave: 'Salir de la lista de espera',
+    notifyOn: 'Ya te aviso', notifyOnHint: 'Te avisaremos cuando abran. Toca para quitar el aviso.',
     usedUp: 'Ya has canjeado esta oferta', usedUpEvent: 'Ya has entrado con esta reserva',
     waitIn: function (n) { return n > 1 ? 'Estás en la lista de espera, con ' + n + ' personas en total' : 'Estás en la lista de espera'; },
     waitCount: function (n) { return n === 1 ? '1 persona esperando' : n + ' personas esperando'; },
@@ -290,10 +292,13 @@
         .gt('expires_at', new Date().toISOString()).limit(1)
         .then(function (r) { return !!(r && r.data && r.data.length); }, function () { return false; }) : false,
       tipo === 'espera' ? sb.rpc('my_waitlist_status', { p_offer: id }).then(function (r) { return r && r.data; }, function () { return null; }) : null,
+      // «Avísame» cuando abran las reservas: si ya lo has pedido.
+      tipo === 'avisame' ? sb.rpc('reservation_opening_info', { p_offer: id }).then(function (r) { return r && r.data; }, function () { return null; }) : null,
     ]).then(function (r) {
       var o = r[0] || {};
       var mio = r[1];
       var espera = r[2];
+      var apertura = r[3];
       if (porPersona && Number(o.my_redemptions) > 0) {
         var max = Number(porPersona.getAttribute('data-max')) || Number(o.max_per_user) || 1;
         porPersona.textContent = T.left(Math.max(0, max - Number(o.my_redemptions)), max);
@@ -315,6 +320,18 @@
         hecho.setAttribute('aria-disabled', 'true');
         hecho.textContent = o.kind === 'future_event' ? T.usedUpEvent : T.usedUp;
         principal.replaceWith(hecho);
+        return;
+      }
+      if (tipo === 'avisame') {
+        // Ya lo has pedido: «Ya te aviso» (en tinta, como lo elegido); tocarlo lo quita.
+        if (apertura && apertura.alert && document.contains(principal)) {
+          principal.textContent = T.notifyOn;
+          principal.classList.remove('accent');
+          principal.classList.add('on');
+          principal.setAttribute('href', cuenta('avisame/' + id + '?quitar=1'));
+          var an = document.getElementById('avisame-nota');
+          if (an) an.textContent = T.notifyOnHint;
+        }
         return;
       }
       if (tipo !== 'espera') return;

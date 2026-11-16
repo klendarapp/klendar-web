@@ -347,6 +347,12 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
   const nominativaP = o.kind === 'future_event' && o.reservations_enabled && o.audience !== 'promoters'
     ? rows('offers', `select=named_tickets&id=eq.${id}`).then((r) => r[0]?.named_tickets === true).catch(() => false)
     : Promise.resolve(false);
+  // «Avísame cuando abran» (`app_config.reservation_opening`, migración
+  // 20261284200000): si las reservas aún no han abierto, cuándo. Apagado, sin
+  // la función o sin red, la ficha sale como siempre.
+  const aperturaP = o.kind === 'future_event' && o.reservations_enabled
+    ? rpc('reservation_opening_info', { p_offer: id }, H).catch(() => null)
+    : Promise.resolve(null);
   // La ficha del negocio, por su dirección con nombre, y si es una entidad.
   const datosNeg = await datosDeNegocios([o.business_id]);
   const bHref = bizPath(lang, datosNeg.slugs.get(o.business_id) || o.business_id);
@@ -415,6 +421,9 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
         perUser: (n) => `Up to ${n} per person`,
         waitHint: "No commitment: we'll only notify you if a place opens up.",
         waitCount: (n) => (n === 1 ? '1 person waiting' : `${n} people waiting`),
+        notify: 'Tell me', notifyHint: 'We’ll notify you once, when reservations open.',
+        opensOn: (d, h) => `Reservations open on ${d} at ${h}`, opensToday: (h) => `Reservations open today at ${h}`,
+        opensTomorrow: (h) => `Reservations open tomorrow at ${h}`, opensIn: 'Opens in ',
       }
     : {
         when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
@@ -440,6 +449,9 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
         perUser: (n) => `Hasta ${n} por persona`,
         waitHint: 'Sin compromiso: solo te avisamos si se libera una plaza.',
         waitCount: (n) => (n === 1 ? '1 persona esperando' : `${n} personas esperando`),
+        notify: 'Avísame', notifyHint: 'Te avisamos una vez, cuando abran.',
+        opensOn: (d, h) => `Las reservas abren el ${d} a las ${h}`, opensToday: (h) => `Las reservas abren hoy a las ${h}`,
+        opensTomorrow: (h) => `Las reservas abren mañana a las ${h}`, opensIn: 'Abren en ',
       };
 
   // Sin hora, el día entero (de 00:00 a 23:59, como llega la agenda
@@ -474,6 +486,21 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
   const fuente = await fuenteP;
   const actua = await actuaP;
   const nominativa = await nominativaP;
+  const apertura = await aperturaP;
+  const porAbrir = !!(apertura && apertura.enabled && apertura.opens_at && apertura.open === false);
+  // «Las reservas abren el viernes 21 de noviembre a las 10:00» (hoy,
+  // mañana), en la hora del sitio, como la app.
+  const abrenTxt = (() => {
+    if (!porAbrir) return '';
+    const loc = en ? 'en-GB' : 'es-ES';
+    const dia = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+    const at = new Date(apertura.opens_at);
+    const hora = new Intl.DateTimeFormat(loc, { timeZone: tz, hour: '2-digit', minute: '2-digit' }).format(at);
+    if (dia(at) === dia(new Date())) return S.opensToday(hora);
+    if (dia(at) === dia(new Date(Date.now() + 864e5))) return S.opensTomorrow(hora);
+    // «sábado 21 de noviembre», sin la coma de detrás del día (como la app).
+    return S.opensOn(new Intl.DateTimeFormat(loc, { timeZone: tz, weekday: 'long', day: 'numeric', month: 'long' }).format(at).replace(/^(\p{L}+),\s/u, '$1 '), hora);
+  })();
   // Las marcas de la publicación (las mismas que la app).
   const M = KM.t(lang);
   const marcas = (await marcasP) || {};
@@ -563,6 +590,13 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
         const principal = soldOut && conCodigo ? `<a class="pill accent big" data-principal="espera" href="${cuenta(lang, `espera/${id}`)}">${S.wait}</a>
           <p class="note" id="espera-nota" data-n="${Number(o.waitlist_count) || 0}">${esc(Number(o.waitlist_count) > 0 ? S.waitCount(Number(o.waitlist_count)) : S.waitHint)}</p>`
           : noEmpezada ? apagado(S.notYet)
+          // Las reservas aún no han abierto: cuándo y «Avísame» (con sesión,
+          // /assets/amigos.js lo cambia por «Ya te aviso»). Al llegar la hora,
+          // el navegador enseña «Reservar plaza» (la página va en caché).
+          : porAbrir && !listaCerrada ? `<p class="note" id="abren" data-abre="${esc(apertura.opens_at)}"><b>${esc(abrenTxt)}</b><span id="abren-cuenta" hidden></span></p>
+          <a class="pill accent big" data-principal="avisame" href="${cuenta(lang, `avisame/${id}`)}" rel="nofollow">${esc(S.notify)}</a>
+          <a class="pill accent big" id="abren-reservar" hidden href="${cuenta(lang, `reservar/${id}${rpQ}`)}">${S.reserve}</a>
+          <p class="note" id="avisame-nota">${esc(S.notifyHint)}</p>`
           : listaCerrada && conCodigo ? apagado(flash ? S.code : S.reserve)
           // Si deja coger varias plazas, «¿Para cuántos?» antes (`/cuenta/reservar`,
           // que con una sola va directa al código), como la app.
@@ -652,6 +686,14 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
   // La vista cuenta para el negocio (panel e informe), como en la app. Solo
   // desde un navegador de verdad y una vez por sesión: los robots de Google o
   // de WhatsApp no ejecutan esto.
+  // La apertura de las reservas: la cuenta atrás con menos de 24 h y, al
+  // llegar la hora, «Reservar plaza» en lugar de «Avísame».
+  const abren = porAbrir ? `<script>(function(){var p=document.getElementById('abren');if(!p)return;
+var t=Date.parse(p.dataset.abre),c=document.getElementById('abren-cuenta');
+function dur(ms){var m=Math.ceil(ms/60000);if(m>=60)return Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');return Math.max(1,m)+' min';}
+function tic(){var n=Date.now();if(n>=t){var a=document.querySelector('[data-principal="avisame"]'),r=document.getElementById('abren-reservar'),x=document.getElementById('avisame-nota');
+if(a)a.remove();if(x)x.hidden=true;p.hidden=true;if(r){r.hidden=false;r.setAttribute('data-principal','codigo');}return;}
+if(t-n<864e5){c.textContent=' · '+${JSON.stringify(S.opensIn)}+dur(t-n);c.hidden=false;}setTimeout(tic,Math.max(1000,Math.min(30000,t-n)));}tic();})();</script>` : '';
   // La cuenta atrás, como en la app («Quedan 1 h 31 min»): siempre en coral y
   // la urgencia con la negrita (menos de 60 min, menos de 15). Se calcula en el
   // navegador: la página va en caché y una hora escrita aquí saldría vieja.
@@ -669,7 +711,7 @@ el.style.fontWeight=n<ini?600:fin-n<900e3?800:fin-n<3600e3?700:600;el.hidden=fal
 
   if (privada) {
     const res = html(publicPage({
-      lang, path, image: cover || o.business_cover || o.business_logo, body: body + cuentaAtras + vista + MENU_JS + COMPARTIR_JS,
+      lang, path, image: cover || o.business_cover || o.business_logo, body: body + cuentaAtras + abren + vista + MENU_JS + COMPARTIR_JS,
       title: `${o.title} · ${o.business_name}`,
       description, privada: true, consulta: rpQ, contador: false,
       head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `
@@ -681,7 +723,7 @@ ${ARTISTAS_CSS}` : ''}
     return res;
   }
   return html(publicPage({
-    lang, path, image: cover || o.business_cover || o.business_logo, body: body + cuentaAtras + vista + MENU_JS + COMPARTIR_JS,
+    lang, path, image: cover || o.business_cover || o.business_logo, body: body + cuentaAtras + abren + vista + MENU_JS + COMPARTIR_JS,
     title: `${o.title} · ${o.business_name}`,
     description,
     head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `

@@ -2,6 +2,19 @@
 'use strict';
 
 const APP_EN = {
+  // «Avísame cuando abran» (cuenta, 2026-11-17)
+  "Eres del equipo de este negocio: no puedes pedir aviso de lo suyo.": "You’re on this business’s team: you can’t ask to be notified about its events.",
+  "Las reservas ya han abierto.": "Reservations are already open.",
+  "Tienes muchos avisos pedidos. Quita alguno para pedir otro.": "You’ve asked for a lot of notifications. Cancel one to ask for another.",
+  "Las reservas todavía no han abierto": "Reservations aren’t open yet",
+  "¿Quitar el aviso?": "Cancel the notification?",
+  "¿Te avisamos cuando abran las reservas?": "Shall we tell you when reservations open?",
+  "Ya te aviso": "You’ll be notified",
+  "Ya no te avisaremos.": "We won’t notify you.",
+  "Te avisamos una vez, cuando abran.": "We’ll notify you once, when reservations open.",
+  "Las reservas abren hoy a las {hora}": "Reservations open today at {hora}",
+  "Las reservas abren mañana a las {hora}": "Reservations open tomorrow at {hora}",
+  "Las reservas abren el {dia} a las {hora}": "Reservations open on {dia} at {hora}",
   // Primera visita (revisión de sellos y Fidelizar, 2026-11-17)
   "Esta oferta es solo para la primera visita a {negocio}, y ya has canjeado allí antes.": "This offer is only for a first visit to {negocio}, and you've redeemed there before.",
   "Es para clientes nuevos y eres del equipo del negocio.": "It's for new customers and you're on the business's team.",

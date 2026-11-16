@@ -355,7 +355,7 @@
     // sin el idioma ni la vuelta, que se quedan al cambiar de pantalla.
     const qs = u.search.slice(1).split('&').filter((p) => p && !/^(lang|destino|volver)(=|$)/.test(p)).join('&');
     const ruta = u.pathname.slice('/cuenta/'.length).replace(/\/$/, '') + (qs ? `?${qs}` : '');
-    if (!/^(guardar|seguir|voy|espera|codigo|reservar)\//.test(ruta)) return;
+    if (!/^(guardar|seguir|voy|espera|avisame|codigo|reservar)\//.test(ruta)) return;
     try { sessionStorage.setItem('klendar.intencion', JSON.stringify({ r: ruta, t: Date.now() })); } catch { /* sin almacenamiento */ }
   }, true);
 

@@ -259,6 +259,11 @@ const ERRORES = {
   team_member: 'Eres del equipo de este negocio: tus códigos no se pueden validar aquí.',
   // Ni a la lista de espera de lo suyo (revisión de reservas, 16-11).
   waitlist_team: 'Eres del equipo de este negocio: no puedes apuntarte a su lista de espera.',
+  // «Avísame» cuando abran las reservas (20261284200000).
+  opening_team: 'Eres del equipo de este negocio: no puedes pedir aviso de lo suyo.',
+  opening_not_pending: 'Las reservas ya han abierto.',
+  opening_alerts_limit: 'Tienes muchos avisos pedidos. Quita alguno para pedir otro.',
+  opening_off: 'Las reservas ya han abierto.',
   sold_out: 'Se han acabado las plazas.',
   not_enough_seats: 'Ya no quedan tantas plazas. Prueba con menos.',
   rate_limited: 'Vas muy rápido. Espera un momento y vuelve a probar.',
@@ -2868,6 +2873,21 @@ RUTAS.codigo = async ([id], params, crudo) => {
       pintaExclusiva(e.datos?.audience, e.datos?.business_id, e.datos?.business_name);
       return;
     }
+    // Las reservas aún no han abierto (`reservation_opening`): cuándo abren y
+    // «Avísame», como la ficha.
+    if (e.clave === 'not_started' && e.datos?.reason === 'reservations_not_open' && e.datos?.opens_at) {
+      pinta(`
+        <div class="ticket">
+          <h1>${esc(t('Las reservas todavía no han abierto'))}</h1>
+          <p><b>${esc(await queOferta(id, rp))}</b></p>
+          <p class="muted">${esc(abrenTexto(e.datos.opens_at))}.</p>
+          <p class="acciones">
+            <a class="pill accent" href="/cuenta/avisame/${esc(id)}">${esc(t('Avísame'))}</a>
+            <a class="pill" href="${pre}/o/${esc(id)}${conRp}">${esc(t('Volver a la publicación'))}</a>
+          </p>
+        </div>`);
+      return;
+    }
     // Solo para la primera visita (como la app, `redeemErrorFirstVisit`): por
     // qué no, con el nombre del negocio; antes salía «Algo no ha ido bien».
     if (e.clave === 'first_visit_only' || e.clave === 'first_visit_team') {
@@ -3126,6 +3146,46 @@ RUTAS.reservar = async ([id], params) => {
     <div class="hub">${Array.from({ length: tope }, (_, i) => i + 1).map((n) => `
       <a class="hub-i" href="/cuenta/codigo/${esc(id)}?plazas=${n}${rp ? `&rp=${rp}` : ''}"><b>${n === 1 ? esc(t('Solo yo')) : `${n} ${esc(t('personas'))}`}</b></a>`).join('')}
     </div>`);
+};
+
+// ── «Avísame» cuando abran las reservas de un evento ──────────────────────
+/** «Las reservas abren el viernes 21 de noviembre a las 10:00» (hoy, mañana),
+ * en la hora de este ordenador, como la app. */
+function abrenTexto(iso) {
+  const d = new Date(iso);
+  const hora = d.toLocaleTimeString(LOC, { hour: '2-digit', minute: '2-digit' });
+  const dia = (x) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const dif = Math.round((dia(d) - dia(new Date())) / 864e5);
+  if (dif === 0) return t('Las reservas abren hoy a las {hora}').replace('{hora}', hora);
+  if (dif === 1) return t('Las reservas abren mañana a las {hora}').replace('{hora}', hora);
+  return t('Las reservas abren el {dia} a las {hora}')
+    .replace('{dia}', d.toLocaleDateString(LOC, { weekday: 'long', day: 'numeric', month: 'long' }).replace(/^(\p{L}+),\s/u, '$1 '))
+    .replace('{hora}', hora);
+}
+
+RUTAS.avisame = async ([id], params, crudo) => {
+  if (!exigeSesion(`avisame/${id}`)) return;
+  const quitar = params?.get('quitar') === '1';
+  const volver = `${pre}/o/${encodeURIComponent(id)}`;
+  if (!(await confirmaEnlace(crudo, {
+    titulo: t(quitar ? '¿Quitar el aviso?' : '¿Te avisamos cuando abran las reservas?'), que: await queOferta(id),
+    boton: t(quitar ? 'Quitar' : 'Avísame'), volver,
+  }))) return;
+  const antes = await llamar('reservation_opening_info', { p_offer: id }).catch(() => null);
+  // Ya han abierto (o no hay apertura): a reservar, como el botón de la app.
+  if (!quitar && !antes?.alert && !(antes?.enabled && antes.opens_at && !antes.open)) {
+    irA(`reservar/${encodeURIComponent(id)}`, { reemplaza: true });
+    return;
+  }
+  let dentro = !!antes?.alert;
+  if (dentro === quitar) dentro = await llamar('toggle_opening_alert', { p_offer: id });
+  hecho({
+    titulo: dentro ? t('Ya te aviso') : t('Ya no te avisaremos.'),
+    texto: dentro && antes?.opens_at ? `${abrenTexto(antes.opens_at)}. ${t('Te avisamos una vez, cuando abran.')}` : '',
+    volver, volverTxt: t('Volver a la publicación'),
+    lista: '/cuenta', listaTxt: t('Tu cuenta'),
+    deshacer: `avisame/${id}${dentro ? '?quitar=1' : ''}`,
+  });
 };
 
 // ── Lista de espera de algo agotado ───────────────────────────────────────

@@ -182,6 +182,11 @@ const ERRORS = {
   // Lugar propio (20261101100000).
   venue_too_far: 'Ese sitio está a más de 200 km de tu local: revisa la dirección.',
   venue_location_required: 'Marca el sitio en el mapa.',
+  // Apertura de las reservas (20261284200000).
+  opening_in_past: 'Esa hora ya ha pasado: elige una que esté por venir.',
+  opening_after_event: 'Las reservas tienen que abrir antes del evento.',
+  opening_has_reservations: 'Ya hay reservas: una apertura las cerraría. Déjalo sin apertura.',
+  opening_already_open: 'Las reservas ya han abierto: la apertura ya no se cambia.',
   // Organizador sin local fijo (20261205100001).
   offers_at_venue: 'Antes, pasa a «en otro sitio» o retira lo que tienes publicado en el local.',
   address_required: 'Escribe la dirección del local.',
@@ -2744,6 +2749,13 @@ async function offerForm(v, id, kindDefault, desde = null) {
       .then((r) => r, () => ({ data: null }));
     o.named_tickets = nominativas?.named_tickets === true;
   }
+  // «Abrir reservas el…» (`app_config.reservation_opening`, migración
+  // 20261284200000), aparte como en la app: al crear otra a partir de esta
+  // no se copia. Si falla, como apagado (ni sale ni se manda).
+  const apertura = (await rpc('reservation_opening_info', { p_offer: id || null }).catch(() => null)) || {};
+  const aperturaOn = apertura.enabled === true;
+  const aperturaAbierta = !!id && !!apertura.opens_at && apertura.open === true;
+  const aperturaFmt = (iso) => KZ.fmt(iso, TZ, LOC(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   // «Solo con el enlace de un RRPP»: los RRPP del negocio y los elegidos.
   const datosRrpp = await rrppFormularioCarga(origenLugar, o);
   // «Quién actúa» (panel/artistas.js): los que ya tiene (o la que se copia).
@@ -2927,6 +2939,13 @@ async function offerForm(v, id, kindDefault, desde = null) {
             ${elige('named_tickets', [['no', I18N.t('Normales')], ['si', I18N.t('Nominativas')]], o.named_tickets === true ? 'si' : 'no', I18N.t('Entradas'))}
             <p class="hint" id="nominativasAyuda"></p>
           </div>
+          ${aperturaOn ? `<div id="aperturaRow" class="bl-fila">
+            ${aperturaAbierta
+    ? `<p class="etq">Abrir reservas el…</p><p class="hint">${esc(`Las reservas abrieron el ${aperturaFmt(apertura.opens_at)}.`)}</p>`
+    : `<label class="f"><span>Abrir reservas el… <small>(opcional)</small></span><input type="datetime-local" name="reservations_open_at" value="${id ? toLocalInput(apertura.opens_at) : ''}"></label>
+            <p class="hint">Hasta esa hora nadie puede reservar: la ficha dice cuándo abren y quien quiera pulsa «Avísame». Al abrir le llega un aviso. Vacío, se reserva desde que se publica.</p>`}
+            ${Number(apertura.alerts) > 0 ? `<p class="hint">${esc(Number(apertura.alerts) === 1 ? '1 persona ha pedido aviso' : `${Number(apertura.alerts)} personas han pedido aviso`)}</p>` : ''}
+          </div>` : ''}
         </div>
         ${rrppHtml.codigo}
         <div id="ttlRow" class="bl-fila">
@@ -3076,6 +3095,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     if (flash) $('#entradasAyuda', v).hidden = true; else pintaEntradas();
     $('#reservaRow', v).hidden = flash;
     $('#seatsRow', v).hidden = !conReserva;
+    if ($('#aperturaRow', v)) $('#aperturaRow', v).hidden = !conReserva;
     // Nominativas: solo en un evento con reserva y no de RRPP (la base lo
     // deja en «Normales» en lo demás).
     $('#nominativasRow', v).hidden = !conReserva || deRrpp;
@@ -3871,6 +3891,16 @@ async function offerForm(v, id, kindDefault, desde = null) {
     if (finF && new Date(finF) <= new Date(iniF)) {
       fallo(campo('end'), I18N.t('El fin debe ser posterior al inicio.')); return;
     }
+    // La apertura de las reservas: antes del evento y, si se ha cambiado, por venir.
+    const abreF = aperturaOn && !aperturaAbierta && !flash && campo('reservations_enabled').checked
+      ? fromLocalInput(f.get('reservations_open_at')) : null;
+    if (abreF && new Date(abreF) >= new Date(iniF)) {
+      fallo(campo('reservations_open_at'), I18N.t('Las reservas tienen que abrir antes del evento.')); return;
+    }
+    if (abreF && (!id || toLocalInput(apertura.opens_at) !== f.get('reservations_open_at'))
+        && new Date(abreF).getTime() < Date.now() - 6e4) {
+      fallo(campo('reservations_open_at'), I18N.t('Esa hora ya ha pasado: elige una que esté por venir.')); return;
+    }
     const dType = val('discount_type');
     if (dType === 'other' && String(f.get('discount_value') || '').trim().length > 24) {
       fallo(campo('discount_value'), I18N.t('El descuento «Otro» cabe en 24 caracteres («2ª unidad −50 %»).')); return;
@@ -3990,6 +4020,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
       max_seats: reservas ? Number(f.get('max_seats') || 1) : 1,
       // Entradas nominativas: solo con reserva y no de RRPP.
       named_tickets: reservas && audiencia !== 'promoters' && val('named_tickets') === 'si',
+      // Solo con el interruptor y si aún no ha abierto (abierta no se cambia).
+      ...(aperturaOn && !aperturaAbierta ? { reservations_open_at: reservas ? abreF : null } : {}),
       adults_only: campo('adults_only').checked,
       // null = como el local. Una +18 nunca se marca como apta para niños.
       for_kids: forKids(campo('adults_only').checked, val('for_kids')),
@@ -4103,6 +4135,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
         fallo(campo('venue_address'), organizador ? SAp().venueTooFar : I18N.t(friendly(msg)));
       } else if (/venue_required/.test(msg)) {
         fallo(campo('venue_address'), SAp().venueRequired);
+      } else if (/opening_(in_past|after_event|has_reservations|already_open)/.test(msg) && campo('reservations_open_at')) {
+        fallo(campo('reservations_open_at'), I18N.t(friendly(msg)));
       } else {
         $('#formErr').textContent = I18N.t(friendly(msg));
       }

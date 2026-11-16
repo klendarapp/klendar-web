@@ -372,7 +372,7 @@ ${cabeza}
 ${siteHeader(lang, esc(es + (consultas ? consultas.es : consulta)), esc(enPath + (consultas ? consultas.en : consulta)), actual)}
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
-${conAmigos ? `<script src="/assets/amigos.js?v=20261115codigos" defer data-lang="${en ? 'en' : 'es'}"></script>
+${conAmigos ? `<script src="/assets/amigos.js?v=20261117avisame" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261028rp" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261112barras" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
