@@ -71,7 +71,7 @@ PAGES.preguntas = async (v) => {
       <p style="margin:0"><b>${esc(q.question)}</b></p>
       <small class="muted">${esc(fmtDate(q.asked_at))}</small>
       ${q.reported ? ` <span class="tag st-pending">${esc(bi('Denunciada', 'Reported'))}</span>` : ''}
-      ${q.hidden_reason ? `<p class="muted" style="margin:6px 0 0">${esc(`${bi('Oculta', 'Hidden')}: ${pregMotivo(q.hidden_reason)}`)}</p>` : ''}
+      ${q.hidden_reason ? `<p class="muted" style="margin:6px 0 0">${esc(pregMotivo(q.hidden_reason) ? `${bi('Oculta', 'Hidden')}: ${pregMotivo(q.hidden_reason)}` : bi('Oculta', 'Hidden'))}</p>` : ''}
       ${q.answer ? `<div class="respuesta"><b>${esc(bi('Respuesta de', 'Reply from'))} <span>${esc(BIZ.name)}</span></b>${q.answered_at ? `<small class="muted"> · ${esc(fmtDate(q.answered_at))}${q.edited ? ` · ${esc(bi('editada', 'edited'))}` : ''}</small>` : ''}<p>${esc(q.answer).replace(/\n/g, '<br>')}</p></div>` : ''}
       ${puede && PREG_TAB !== 'hidden' ? `<div class="pie">
         <button class="btn sm" type="button" data-ocultar="${i}">${esc(bi('Ocultar', 'Hide'))}</button>

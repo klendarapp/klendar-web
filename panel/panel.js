@@ -703,6 +703,13 @@ async function avisaEventosDelCierre(params) {
   await encargos();
 }
 
+/** Una fecha y hora del CSV en el reloj del negocio («2026-11-17 10:30»), como
+ * el CSV de la app: el timestamptz tal cual sale en UTC y, cerca de medianoche,
+ * de otro día. */
+const csvFecha = (iso) => (iso ? `${KZ.dia(iso, TZ)} ${new Intl.DateTimeFormat('en-GB', {
+  hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: TZ,
+}).format(new Date(iso))}` : '');
+
 function downloadCsv(name, rows, cols) {
   const lines = [cols.map((c) => c[1]), ...rows.map((r) => cols.map((c) => {
     const v = typeof c[0] === 'function' ? c[0](r) : r[c[0]];
@@ -2261,7 +2268,7 @@ PAGES.publicaciones = async (v, param) => {
     downloadCsv(`klendar-${BIZ.name}`, todas, [
     ['title', 'publicación'], [(o) => I18N.t(LABELS[o.kind]), 'tipo'], [(o) => I18N.t(LABELS[estadoVisible(o)]), 'estado'],
     ['views', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'aforo'], [(o) => plazasOcupadas(o), 'plazas ocupadas'],
-    [(o) => o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at, 'cuándo'],
+    [(o) => csvFecha(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at), 'cuándo'],
   ]);
   };
   render();
@@ -5338,7 +5345,7 @@ PAGES.asistentes = async (v, offerId) => {
     b.disabled = false;
     downloadCsv(`asistentes-${offer?.title || ''}`, todos, [
     ['user_name', 'nombre'], ['code', 'código'], [(a) => plazas(a), 'plazas'], [(a) => ESTADO_CSV[a.status] || a.status, 'estado'],
-    ['created_at', 'reservó'], ['validated_at', 'entró'],
+    [(a) => csvFecha(a.created_at), 'reservó'], [(a) => csvFecha(a.validated_at), 'entró'],
     ['promoter_name', bi('lista de RRPP', 'promoter list')],
     [(a) => (a.promoter_off_offer ? bi('sí', 'yes') : ''), bi('fuera de su oferta', 'outside their offer')],
     // Preguntas al reservar: una columna por pregunta (las de salud,
@@ -7196,12 +7203,12 @@ PAGES.informe = async (v, param) => {
   if (typeof listoCifras === 'function') listoCifras($('#informeListo', v));
   if (!gestiona()) return;
   $('#csvOffers').onclick = () => downloadCsv(`cifras-${BIZ.name}`, r.offers || [], [
-    ['title', 'Publicación'], ['kind', 'Tipo'], ['starts_at', 'Fecha'],
+    ['title', 'Publicación'], [(o) => I18N.t(LABELS[o.kind] || o.kind), 'Tipo'], [(o) => csvFecha(o.starts_at), 'Fecha'],
     [(o) => (o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2)), 'Precio'],
     ['views', 'Vistas'], ['codes', 'Códigos'], ['redeemed', 'Canjes'],
     [(o) => ((o.brought_cents || 0) / 100).toFixed(2), 'Ha traído al menos (€)'],
     ['max_redemptions', 'Aforo'], ['seats_left', 'Plazas libres'],
-  ]);
+  ].map(([c, h]) => [c, I18N.t(h)]));
   const masCanjes = () => {
     const b = $('[data-ver-mas="canjes"]', v);
     if (!b) return;
@@ -7227,11 +7234,11 @@ PAGES.informe = async (v, param) => {
     try { todos = r.from ? await todasLasPartes((ultima, tam) => canjesParte(r.from, ultima, tam), 200) : (r.redemptions || []); } catch (e) { toast(friendly(e.message), true); b.disabled = false; return; }
     b.disabled = false;
     downloadCsv(`canjes-${BIZ.name}`, todos, [
-    ['at', 'Fecha y hora'], [(x) => queValidado(x), 'Tipo'], ['title', 'Qué'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'],
+    [(x) => csvFecha(x.at), 'Fecha y hora'], [(x) => queValidado(x), 'Tipo'], ['title', 'Qué'], ['code', 'Código'], [(x) => x.seats ?? 1, 'Plazas'],
     [(x) => (x.paid_cents == null ? '' : (x.paid_cents / 100).toFixed(2)), 'Precio'],
     [(x) => (x.ticket_cents == null ? '' : (x.ticket_cents / 100).toFixed(2)), 'Ticket'], ['by', 'Validado por'],
     [(x) => (x.offline ? bi('sí', 'yes') : ''), 'Sin conexión'],
-  ]);
+  ].map(([c, h]) => [c, I18N.t(h)]));
   };
 };
 
