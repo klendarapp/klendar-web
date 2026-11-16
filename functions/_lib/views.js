@@ -1447,6 +1447,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       </div>
       ${estadoHtml}
       ${colaFicha ? `<p class="cola-ficha" data-cola-ficha="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" hidden></p>` : ''}
+      ${parado ? '' : `<p class="encargo-ficha" data-encargo-ficha="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" hidden></p>`}
       <nav class="neg-secciones" aria-label="${esc(b.name)}">
         ${nFlash ? `<a class="chip" href="#ahora">${esc(S.now)} <span class="muted">${nFlash}</span></a>` : ''}
         ${nEvents ? `<a class="chip" href="#proximamente">${esc(S.soon)} <span class="muted">${nEvents}</span></a>` : ''}
@@ -1567,7 +1568,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     consulta: pagina > 1 ? `?p=${pagina}` : '', privada: esDeRevision,
     head: `<meta name="robots" content="${esDeRevision ? 'noindex, nofollow' : b.adults_only || conVisita || b.closed_indefinitely || parado ? 'noindex' : pagina > 1 ? 'noindex, follow' : 'index, follow'}">
 ${esDeRevision ? '' : ldScript(jsonLd)}${cuentaToques ? `
-<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=4" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}${colaFicha ? `\n<script src="/assets/cola-ficha.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : ''}
+<script src="/assets/enlaces.js?v=3" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-biz="${esc(b.id)}"></script>` : ''}${horario ? '\n<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/horario.js?v=4" defer></script>\n<script src="/assets/cerrado.js?v=1" defer></script>' : ''}${conVisita ? `\n${conVisita}` : ''}${crowdOn ? `\n${sitioAhoraScripts(lang)}` : ''}${colaFicha ? `\n<script src="/assets/cola-ficha.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>` : ''}${parado ? '' : `\n<script src="/assets/encargo-ficha.js?v=1" defer data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}"></script>`}
 ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${conPreguntas ? `
 ${PREGUNTAS_CSS}
 ${preguntasScript}` : ''}${partidos ? `

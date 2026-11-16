@@ -2462,7 +2462,7 @@ RUTAS.codigos = async (_partes, params) => {
   if (!exigeSesion('codigos')) return;
   // Los regalos de cumpleaños van aparte y arriba; si fallan, los códigos
   // salen igual.
-  const [lista, regalos, premios, misBonos, turnos, dados, pedidosListo] = await Promise.all([
+  const [lista, regalos, premios, misBonos, turnos, dados, pedidosListo, encargos] = await Promise.all([
     llamar('my_redemptions', { p_limit: CODIGOS_POR_PARTE }),
     misRegalos().catch(() => []),
     // Los premios de las tarjetas de sellos, también aparte.
@@ -2475,6 +2475,8 @@ RUTAS.codigos = async (_partes, params) => {
     llamar('my_spot_gifts', {}).catch(() => []),
     // El pedido que se prepara (Te aviso cuando esté listo, assets/cuenta/listo.js).
     llamar('my_orders', {}).catch(() => []),
+    // Los encargos (assets/cuenta/encargos.js).
+    llamar('my_preorders', { p_limit: 100, p_offset: 0 }).catch(() => []),
     // ¿Se puede quitar de la lista? (la base de antes, no: sin botones).
     quitarEnBase(),
     quitarPremiosEnBase(),
@@ -2494,7 +2496,8 @@ RUTAS.codigos = async (_partes, params) => {
   const conBonos = bonos.length > 0;
   const conDados = Array.isArray(dados) && dados.length > 0;
   // Con un turno o un pedido a la vista no está vacío (como la app).
-  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados && !turnoHtml;
+  const encargosCaja = typeof encargosHtml === 'function' ? encargosHtml(encargos, quitar) : '';
+  const nada = !(lista || []).length && !conRegalos && !conPremios && !conBonos && !conDados && !turnoHtml && !encargosCaja;
   // Desde una notificación (`/cuenta/codigos?offer=<id>`: cambio de fecha,
   // cancelación…): el código de esa publicación, a la vista y resaltado. El
   // vivo si hay varios; si no, el más reciente (la lista llega ordenada).
@@ -2508,6 +2511,7 @@ RUTAS.codigos = async (_partes, params) => {
     <div class="pl-titulo"><h1>${esc(t('Tus códigos'))}</h1>
       ${navigator.mediaDevices?.getUserMedia ? `<a class="pill" href="/cuenta/escanear">${ic('qr_code_scanner')} ${esc(t('Escanear un QR'))}</a>` : ''}</div>
     ${turnoHtml}
+    ${encargosCaja}
     ${nada ? '' : `<div class="olist">${bonoFilaQr()}</div>`}
     ${conBonos ? `${seccionQuitable(t('Bonos'), quitar && bonos.some((b) => b.state !== 'active') ? 'passes' : '')}
       <div class="olist" id="codigosBonos">${bonos.map((b) => quitable(bonoFila(b), b.id, quitar && b.state !== 'active')).join('')}</div>
@@ -2543,7 +2547,7 @@ RUTAS.codigos = async (_partes, params) => {
     const despierta = setTimeout(() => navegar(), Math.min(proxima - Date.now() + 1000, 2147483000));
     alSalir(() => clearTimeout(despierta));
   }
-  if (quitar) { conectaQuitar($('#codigosBonos'), 'passes'); conectaQuitar($('#codigosPasados'), 'codes'); }
+  if (quitar) { conectaQuitar($('#codigosBonos'), 'passes'); conectaQuitar($('#codigosPasados'), 'codes'); conectaQuitar($('#codigosEncargos'), 'preorders'); }
   if (quitarPremios) conectaQuitar($('#codigosPremios'), 'rewards');
   // Los bonos gastados o caducados siguientes, al final de «Bonos».
   const masBonos = $('[data-ver-mas="bonos"]');

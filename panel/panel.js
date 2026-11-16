@@ -631,9 +631,33 @@ const confirmDlg = (title, text, opts = {}) => modal({ title, intro: text, submi
  * «Cancelar y avisar» (`cancel_offer`: anula las reservas y avisa a cada
  * persona y a la lista) y «Dejarlo». Como la app. Si la base no contesta, no
  * se pregunta: el cierre ya está hecho. */
+
+/** Lo mismo con los encargos de esos días (Encargos, `closure_preorders`):
+ * «Cancelar y avisar» (`cancel_closure_preorders`) o «Dejarlo». */
+async function avisaEncargosDelCierre(params) {
+  const dias = await rpc('closure_preorders', { p_business: BIZ.id, ...params }).catch(() => null);
+  if (!Array.isArray(dias) || !dias.length) return;
+  const n = dias.reduce((a, d) => a + (d.orders || 0), 0);
+  const ok = await confirmDlg(
+    bi(n === 1 ? 'Tienes un encargo para cuando cierras' : `Tienes ${n} encargos para cuando cierras`,
+      n === 1 ? 'You have a pre-order for when you’re closed' : `You have ${n} pre-orders for when you’re closed`),
+    esc(bi('Quien te encargó algo para esos días no sabe que cierras. «Cancelar y avisar» cancela los encargos y se lo decimos a cada persona. Si lo dejas, siguen en pie.', 'People who pre-ordered for those days don’t know you’re closing. “Cancel and let them know” cancels the pre-orders and we tell each person. If you leave it, they stay as they are.')),
+    { submit: I18N.t('Cancelar y avisar'), danger: true });
+  if (!ok) return;
+  try {
+    const r = await rpc('cancel_closure_preorders', { p_business: BIZ.id, ...params });
+    if (r?.ok && r.cancelled) {
+      toast(bi(r.cancelled === 1 ? 'Encargo cancelado. Se lo hemos dicho a quien lo hizo.' : `${r.cancelled} encargos cancelados. Se lo hemos dicho a cada persona.`,
+        r.cancelled === 1 ? 'Pre-order cancelled. We’ve told the person who made it.' : `${r.cancelled} pre-orders cancelled. We’ve told each person.`));
+    } else if (r?.ok === false) toast(friendly(r.error || ''), true);
+  } catch (err) { toast(friendly(err.message), true); }
+}
+
 async function avisaEventosDelCierre(params) {
+  // Después, los encargos de esos días (Encargos, `avisaEncargosDelCierre`).
+  const encargos = () => (typeof avisaEncargosDelCierre === 'function' ? avisaEncargosDelCierre(params) : null);
   const eventos = await rpc('closure_events', { p_business: BIZ.id, ...params }).catch(() => null);
-  if (!Array.isArray(eventos) || !eventos.length) return;
+  if (!Array.isArray(eventos) || !eventos.length) { await encargos(); return; }
   const n = eventos.length;
   const linea = (e) => [
     e.event_at ? fmtDate(e.event_at) : '',
@@ -653,7 +677,7 @@ async function avisaEventosDelCierre(params) {
     cancel: I18N.t('Dejarlo'),
     danger: true,
   });
-  if (!r) return;
+  if (!r) { await encargos(); return; }
   const elegidos = n === 1 ? eventos : eventos.filter((_, i) => r[`e${i}`]);
   let hechos = 0;
   for (const e of elegidos) {
@@ -668,6 +692,7 @@ async function avisaEventosDelCierre(params) {
     hechos === 1 ? 'Event cancelled. We told everyone with a booking and the waiting list.'
       : `${hechos} events cancelled. We told everyone with a booking and the waiting list.`));
   }
+  await encargos();
 }
 
 function downloadCsv(name, rows, cols) {

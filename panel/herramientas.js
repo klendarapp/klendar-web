@@ -397,6 +397,23 @@ PAGES.herramientas = async (v) => {
       // «Abrir» se confundía con abrir la cola: lleva a la cola.
       on: herrSi(o, 'queue', 'open'), botones: [[bi('Ir a la cola', 'Go to the queue'), '#/cola']],
     }),
+    // Encargos (panel/encargos.js): con `app_config.preorders` y en los
+    // tipos que lo llevan (o si ya tiene algo). Crear, propietario y
+    // encargado; con algo puesto, el personal gestiona los encargos.
+    !ent && herrSi(o, 'preorders', 'enabled') && (edit || herrNum(o, 'preorders', 'items_all') > 0)
+      && herrLleva(o, 'preorders', herrNum(o, 'preorders', 'items_all') > 0) ? herrT({
+        grupo: 'menu', usa: herrNum(o, 'preorders', 'items_all') > 0,
+        icon: 'encargo', titulo: bi('Encargos', 'Pre-orders'),
+        frase: bi('Tus clientes encargan desde tu ficha (una tarta, una bandeja, un ramo) y lo recogen y pagan aquí.',
+          'Your customers order from your page (a cake, a platter, a bouquet) and pick it up and pay here.'),
+        estado: herrNum(o, 'preorders', 'items') > 0
+          ? bi(`${fmtNum(herrNum(o, 'preorders', 'items'))} para encargar · ${fmtNum(herrNum(o, 'preorders', 'pending'))} por aceptar`,
+            `${fmtNum(herrNum(o, 'preorders', 'items'))} to pre-order · ${fmtNum(herrNum(o, 'preorders', 'pending'))} to accept`)
+          : bi('Sin preparar', 'Not set up'),
+        on: herrNum(o, 'preorders', 'items') > 0,
+        botones: [[herrNum(o, 'preorders', 'items_all') > 0 ? abrir : configurar,
+          herrNum(o, 'preorders', 'items_all') > 0 ? '#/encargos' : '#/encargos-cosas']],
+      }) : '',
     // Te aviso cuando esté listo (panel/listo.js): el avisador de pedidos
     // del mostrador. Activarlo, propietario o encargado (dentro de «Pedidos
     // de hoy»); activado, lo lleva todo el equipo. Una entidad no lo tiene.
