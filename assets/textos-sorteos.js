@@ -74,6 +74,8 @@
       expired: 'No lo aceptaste a tiempo',
       declined: 'Renunciaste al premio',
       noLuck: 'Esta vez no te ha tocado.',
+      // Suplente en espera, mientras aún puede ganar (migración 20261284800010 de la app).
+      backupWaiting: (n) => `Eres suplente n.º ${n}. Si quien gana no acepta el premio, te avisaremos.`,
       cancelled: (r) => (r ? `Sorteo cancelado: ${r}` : 'Sorteo cancelado'),
       // Retirado por Klendar (migración 20261226100000 de la app).
       removedTag: 'Retirado',
@@ -181,6 +183,7 @@
       expired: "You didn't accept it in time",
       declined: 'You declined the prize',
       noLuck: 'No luck this time.',
+      backupWaiting: (n) => `You're reserve no. ${n}. If the winner doesn't accept the prize, we'll let you know.`,
       cancelled: (r) => (r ? `Giveaway cancelled: ${r}` : 'Giveaway cancelled'),
       removedTag: 'Removed',
       removed: "Klendar has removed this giveaway because it broke the Community guidelines. It won't be drawn.",

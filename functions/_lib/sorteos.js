@@ -44,8 +44,8 @@ const zonaDe = (g) => KZ.zona(g?.business?.time_zone || KZ.porCoordenadas(g?.bus
 /** Lo personal lo pone el navegador (solo con sesión). */
 const sorteoScript = (lang) => {
   const sp = supabasePublic();
-  return `<script src="/assets/textos-sorteos.js?v=6" defer></script>
-<script src="/assets/sorteo.js?v=20261117sorteos" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
+  return `<script src="/assets/textos-sorteos.js?v=7" defer></script>
+<script src="/assets/sorteo.js?v=20261117propuestas" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${lang === 'en' ? 'en' : 'es'}"></script>`;
 };
 
 // ── El interruptor ────────────────────────────────────────────────────────
@@ -67,16 +67,28 @@ export async function sorteosEncendidos() {
 }
 
 /** «Los sorteos no están disponibles», con salida a Descubre. */
-function apagados(lang, path) {
+function apagados(lang, path, id = null) {
   const en = lang === 'en';
   const S = KS.t(lang);
+  // La página de un sorteo: si quien mira ha ganado, /assets/sorteo.js
+  // pinta su caja (aceptar o renunciar) con su sesión; la base solo se lo da
+  // a esa persona (migración 20261284800010 de la app).
+  const ganador = id ? `<div class="detail ficha sorteo sin-media" id="sorteo-ganador" hidden>
+    <div class="d-head"><h1 id="sorteo-ganador-t"></h1><p class="muted" id="sorteo-ganador-n"></p></div>
+    <aside class="side"><div class="sorteo-accion" id="sorteo-accion" data-id="${esc(id)}" data-tz="Europe/Madrid">
+      <div class="sorteo-estado" id="sorteo-estado" hidden></div>
+      <a class="pill accent big" id="sorteo-boton" href="#sorteo-accion" hidden></a>
+      <div class="sorteo-extra" id="sorteo-extra"></div></div></aside>
+  </div>` : '';
   return html(publicPage({
     lang, path, title: S.offTitle, description: S.offText,
     head: `<meta name="robots" content="noindex">
-${GRUPOS_CSS}`,
+${GRUPOS_CSS}${id ? `
+${sorteoScript(lang)}` : ''}`,
     actual: 'explorar',
     body: `<p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
-  <section class="vacio">
+  ${ganador}
+  <section class="vacio" id="sorteos-apagados">
     <span class="vacio-ic" aria-hidden="true">${icSorteo(30)}</span>
     <h1>${esc(S.offTitle)}</h1>
     <p>${esc(S.offText)}</p>
@@ -248,7 +260,9 @@ export async function sorteoPage(rawId, url, lang) {
   const en = lang === 'en';
   const S = KS.t(lang);
   const id = String(rawId || '').toLowerCase();
-  if (!(await sorteosEncendidos())) return apagados(lang, sorteoPath(lang, isUuid(id) ? id : rawId));
+  if (!(await sorteosEncendidos())) {
+    return apagados(lang, sorteoPath(lang, isUuid(id) ? id : rawId), isUuid(id) ? id : null);
+  }
   if (!isUuid(id)) return noEsta(lang, sorteoPath(lang, rawId));
   const path = sorteoPath(lang, id);
   const g = await rpc('giveaway_detail', { p_id: id });

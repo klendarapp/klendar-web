@@ -152,6 +152,20 @@
   function recarga() {
     return sb.rpc('giveaway_detail', { p_id: caja.getAttribute('data-id') }).then(function (r) {
       if (r.error || !r.data || !r.data.me) return;
+      // Con los sorteos apagados, la base solo se lo da a quien ha ganado:
+      // su caja, en vez de «Los sorteos no están disponibles».
+      var ganador = document.getElementById('sorteo-ganador');
+      if (ganador) {
+        if (!r.data.me.prize) return;
+        var t = document.getElementById('sorteo-ganador-t');
+        var n = document.getElementById('sorteo-ganador-n');
+        if (t) t.textContent = r.data.prize || '';
+        if (n) n.textContent = S.by + ' ' + ((r.data.business && r.data.business.name) || '');
+        if (r.data.business && r.data.business.time_zone) caja.setAttribute('data-tz', r.data.business.time_zone);
+        var vacio = document.getElementById('sorteos-apagados');
+        if (vacio) vacio.hidden = true;
+        ganador.hidden = false;
+      }
       pinta(r.data);
     });
   }
@@ -178,26 +192,36 @@
       est = esc(S.cancelled(g.cancel_reason || ''));
     } else if (g.status === 'drawn') {
       var p = me.prize;
+      // Como la app: «¡Has ganado!», lo que toca y tu número debajo.
+      var num = me.number || (p && p.number);
+      var tuNumero = num ? '<p class="note">' + esc(S.youreIn(num)) + '</p>' : '';
+      var renunciar = '<button type="button" class="pill" data-sorteo="decline">' + esc(S.decline) + '</button>';
+      var gana = function (txt) { return '<span class="sorteo-gana"><b>' + esc(S.won) + '</b>' + esc(txt) + '</span>'; };
       if (p && p.status === 'pending') {
-        est = '<span class="sorteo-gana"><b>' + esc(S.won) + '</b>' + esc(S.acceptBy(KS.cuando(p.claim_until, lang, tz))) + '</span>';
+        est = gana(S.acceptBy(KS.cuando(p.claim_until, lang, tz)));
         btn = { texto: S.claim, hace: 'claim' };
-        mas = '<button type="button" class="pill" data-sorteo="decline">' + esc(S.decline) + '</button>';
+        mas = tuNumero + renunciar;
       } else if (p && p.status === 'claimed') {
-        est = '<span class="sorteo-gana"><b>' + esc(S.won) + '</b>' + esc(S.claimed(negocio)) + '</span>';
+        est = gana(S.claimed(negocio));
         // Aceptado y aún sin entregar, se puede renunciar (como en la app).
-        mas = '<button type="button" class="pill" data-sorteo="decline">' + esc(S.decline) + '</button>';
+        mas = tuNumero + renunciar;
       } else if (p && p.status === 'delivered') {
-        est = '<b>' + esc(S.delivered) + '</b>';
+        est = gana(S.delivered);
+        mas = tuNumero;
       } else if (p && p.status === 'expired') {
-        est = '<b>' + esc(S.ended) + '</b><br>' + esc(S.expired);
+        est = gana(S.expired);
+        mas = tuNumero;
       } else if (p && p.status === 'declined') {
-        est = '<b>' + esc(S.ended) + '</b><br>' + esc(S.declined);
+        est = gana(S.declined);
+        mas = tuNumero;
+      } else if (me.backup) {
+        // Suplente en espera: aún puede ganar.
+        est = esc(S.backupWaiting(me.backup));
       } else {
         est = '<b>' + esc(S.ended) + '</b>' + (me.entered ? '<br>' + esc(S.noLuck) : '');
       }
     } else if (KS.terminado(g)) {
       est = '<b>' + esc(S.drawing) + '</b>';
-      if (me.entered && me.number) mas = '<p class="note">' + esc(S.inNumber(me.number)) + '</p>';
     } else if (me.team) {
       est = esc(S.team);
     } else if (me.entered) {
