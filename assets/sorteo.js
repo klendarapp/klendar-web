@@ -184,6 +184,8 @@
         mas = '<button type="button" class="pill" data-sorteo="decline">' + esc(S.decline) + '</button>';
       } else if (p && p.status === 'claimed') {
         est = '<span class="sorteo-gana"><b>' + esc(S.won) + '</b>' + esc(S.claimed(negocio)) + '</span>';
+        // Aceptado y aún sin entregar, se puede renunciar (como en la app).
+        mas = '<button type="button" class="pill" data-sorteo="decline">' + esc(S.decline) + '</button>';
       } else if (p && p.status === 'delivered') {
         est = '<b>' + esc(S.delivered) + '</b>';
       } else if (p && p.status === 'expired') {
