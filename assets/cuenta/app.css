@@ -863,3 +863,13 @@ a.pl-dia:hover { background: var(--soft); }
 .tus-respuestas { text-align: start; margin: 14px 0; }
 .tus-respuestas dt { font-weight: 600; margin-top: 6px; }
 .tus-respuestas dd { margin: 0; }
+
+/* Tu código (o tu plan) arriba (como `ActiveCodeBar` en Descubre de la app):
+   una línea, neutra; el coral, solo en la cuenta atrás del código. */
+#arriba-codigo { margin: 0 0 14px; }
+.arriba-codigo { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 12px 0 16px;
+  border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); color: inherit; }
+.arriba-codigo:hover { text-decoration: none; }
+.arriba-t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.arriba-d { font-weight: 800; font-variant-numeric: tabular-nums; flex: none; }
+.arriba-d.coral { color: var(--accent-text); }

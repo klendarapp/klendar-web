@@ -32,6 +32,9 @@ const APP_EN = {
   "Unas preguntas de {negocio}": "A few questions from {negocio}",
   "Guardar": "Save",
   "Tu código": "Your code",
+  // Tu código (o tu plan) arriba en «Tu cuenta» (2026-11-17)
+  "Tu plan": "Your plan",
+  "Ahora": "Now",
   // «Avísame cuando abran» (cuenta, 2026-11-17)
   "Eres del equipo de este negocio: no puedes pedir aviso de lo suyo.": "You’re on this business’s team: you can’t ask to be notified about its events.",
   "Las reservas ya han abierto.": "Reservations are already open.",

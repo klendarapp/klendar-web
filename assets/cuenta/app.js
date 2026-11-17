@@ -892,6 +892,92 @@ function ajustesSinSesion() {
 // La misma disposición que la pestaña Cuenta de la app: quién eres arriba,
 // lo que más se usa a un toque y lo demás agrupado. Lo irreversible (eliminar
 // la cuenta) vive en Ajustes.
+// ── Tu código (o tu plan) arriba en «Tu cuenta» ─────────────────────────
+// Lo mismo que la app pone fijo arriba en Descubre (`ActiveCodeBar`, docs de
+// la app: GLOSARIO, «Tu código (o tu plan) arriba en Descubre»; Iván,
+// 17-11). La portada de la web no sabe de tu sesión: aquí, en «Tu cuenta».
+// Sin ×: se va sola al validarlo, al caducar o cuando acaba el plan. Las
+// reglas de «Tus planes de hoy» (`PlansWidgetSync`): un código de oferta
+// pendiente, siempre (el más urgente); una reserva de evento, desde 2 h
+// antes; sin código, un plan guardado desde 2 h antes hasta que acaba (un
+// evento guardado dura 3 h).
+const ARRIBA_ANTES = 2 * 3600000;
+const ARRIBA_EVENTO = 3 * 3600000;
+function eligeArriba(canjes, guardados, ahoraMs) {
+  const foco = (r) => {
+    const e = r.event_at ? Date.parse(r.event_at) : NaN;
+    return e > ahoraMs ? e : Date.parse(r.expires_at);
+  };
+  const vivos = (canjes || []).filter((r) => r && r.status === 'pending'
+    && Date.parse(r.expires_at) > ahoraMs
+    && (!r.event_at || Date.parse(r.event_at) - ARRIBA_ANTES <= ahoraMs))
+    .sort((a, b) => foco(a) - foco(b));
+  if (vivos.length) return { codigo: vivos[0] };
+  const planes = [];
+  for (const o of guardados || []) {
+    if (!o) continue;
+    const ev = o.kind === 'future_event';
+    const ini = Date.parse(ev ? o.event_at : o.redeem_start_at);
+    const fin = ev ? ini + ARRIBA_EVENTO : Date.parse(o.redeem_end_at);
+    if (!(ini > 0) || !(fin > ahoraMs) || ini - ARRIBA_ANTES > ahoraMs) continue;
+    planes.push({ o, ini });
+  }
+  planes.sort((a, b) => a.ini - b.ini);
+  return planes.length ? { plan: planes[0].o, ini: planes[0].ini } : null;
+}
+
+/** «04:12» o «1:04:12», como la app. */
+function relojArriba(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(s / 3600);
+  const mm = String(Math.floor(s / 60) % 60).padStart(2, '0');
+  const ss = String(s % 60).padStart(2, '0');
+  return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`;
+}
+
+async function pintaArribaCuenta(caja) {
+  if (!caja) return;
+  const [canjes, guardados] = await Promise.all([
+    llamar('my_redemptions', {}).catch(() => []),
+    llamar('my_saved_offers', { p_when: 'upcoming' }).catch(() => []),
+  ]);
+  const hm = new Intl.DateTimeFormat(I18N.lang || 'es', { hour: '2-digit', minute: '2-digit' });
+  const pinta1 = () => {
+    if (!caja.isConnected) return false;
+    const ahoraMs = Date.now();
+    const a = eligeArriba(canjes, guardados, ahoraMs);
+    if (!a) { caja.innerHTML = ''; caja.hidden = true; return false; }
+    let href; let icono; let etiqueta; let titulo; let derecha; let coral = false;
+    if (a.codigo) {
+      const r = a.codigo;
+      const ev = r.event_at ? Date.parse(r.event_at) : NaN;
+      const falta = (ev > ahoraMs ? ev : Date.parse(r.expires_at)) - ahoraMs;
+      href = `/cuenta/codigo/${esc(r.offer_id)}`;
+      icono = 'qr_code_2';
+      etiqueta = t('Tu código');
+      titulo = r.offer_title;
+      derecha = falta < 6 * 3600000 ? relojArriba(falta) : t('Ver');
+      coral = true;
+    } else {
+      const o = a.plan;
+      href = `${pre}/o/${esc(o.id)}`;
+      icono = o.kind === 'future_event' ? 'event' : 'local_offer';
+      etiqueta = t('Tu plan');
+      titulo = o.title;
+      derecha = a.ini <= ahoraMs ? t('Ahora') : hm.format(new Date(a.ini));
+    }
+    caja.hidden = false;
+    caja.innerHTML = `<a class="arriba-codigo" href="${href}" aria-label="${esc(`${etiqueta}: ${titulo || ''}. ${derecha}`)}">
+      ${ic(icono)}<span class="arriba-t"><b>${esc(etiqueta)}:</b> <span translate="no">${esc(titulo || '')}</span></span>
+      <span class="arriba-d${coral ? ' coral' : ''}">${esc(derecha)}</span>${ic('chevron_right')}</a>`;
+    return true;
+  };
+  if (!pinta1()) return;
+  // Cada segundo: la cuenta atrás y que se vaya sola al caducar. Al salir de
+  // «Tu cuenta» (la caja ya no está) se para.
+  const reloj = setInterval(() => { if (!pinta1()) clearInterval(reloj); }, 1000);
+}
+
 RUTAS[''] = async () => {
   if (!YO) return cuentaSinSesion();
   const foto = YO.user_metadata?.avatar_url;
@@ -927,6 +1013,7 @@ RUTAS[''] = async () => {
     : (nInv === 1 ? t('Tienes una invitación') : (EN ? `You have ${nInv} invitations` : `Tienes ${nInv} invitaciones`));
   pinta(`
     <h1 class="titulo-pagina">${esc(t('Tu cuenta'))}</h1>
+    <div id="arriba-codigo" hidden></div>
     <a class="perfil" href="/cuenta/perfil">
       <span class="avatar">${foto ? `<img src="${esc(foto)}" alt="">` : esc((nombre || '?').charAt(0).toUpperCase())}</span>
       <span class="perfil-t"><b>${esc(nombre)}</b><small>${esc(YO.email || '')}</small><em>${esc(t('Editar perfil'))}</em></span>
@@ -993,6 +1080,7 @@ RUTAS[''] = async () => {
 
     <button class="pill ancho" id="salir">${ic('logout')} ${esc(t('Cerrar sesión'))}</button>`);
   pintaSinLeer();
+  pintaArribaCuenta($('#arriba-codigo'));
   if (typeof pintaAhorroFila === 'function') pintaAhorroFila();
   $('#legal').onclick = abreLegal;
   // Su correo nos devuelve los mensajes: que lo revise o lo cambie.
