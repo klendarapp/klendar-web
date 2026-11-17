@@ -1625,15 +1625,23 @@ function avisoGratisFin(sub) {
 
 /** El negocio parado: bloqueado por no pagar o en pausa por cierre. Lo único
  * que se puede hacer: pagar (o volver a abrir), validar, descargar los datos
- * y darse de baja. Como «Mi negocio» en la app. */
+ * y darse de baja. Como «Mi negocio» en la app. Al personal, sin el motivo:
+ * la base no le da el detalle del cobro (`billing_detail` false, migración
+ * 20261284700000 de la app); solo que no se puede publicar y que hable con
+ * el propietario. */
 function avisoParado(bill) {
   const pausa = bill.hold === 'paused';
   const dispute = bill.block_kind === 'dispute' || bill.dispute;
   const dueno = esPropietario();
+  const personal = !gestiona() || SUB?.billing_detail === false;
   const titulo = pausa
     ? bi(`Cerrado temporalmente hasta el ${planDia(bill.paused_until)}`, `Temporarily closed until ${planDia(bill.paused_until)}`)
+    : personal ? bi('Ahora no se puede publicar', 'Publishing isn’t possible right now')
     : bi('Tu negocio está bloqueado', 'Your business is blocked');
-  const texto = pausa
+  const texto = personal
+    ? bi('Por ahora las publicaciones de este negocio no se ven y no se puede publicar ni cambiar nada. Habla con el propietario del negocio.',
+      'For now this business’s publications are hidden and nothing can be published or changed. Talk to the business owner.')
+    : pausa
     ? bi('Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a quien te tiene en favoritos.',
       'Your publications are hidden and your page says so. Nothing is charged and the days you’d already paid for are kept for when you’re back. It reopens on its own that day and we let the people who have you in their favourites know.')
     : `${motivoBloqueo(bill.block_kind, true)} ${dispute
@@ -1642,7 +1650,8 @@ function avisoParado(bill) {
       'Your publications are hidden and your page says “Not available right now”. Until it’s paid, nobody on the team can publish or change anything. Nothing has been deleted: once paid, everything comes back on its own.')}`;
   const excepcion = bi('Sí puedes validar los códigos y bonos que ya tiene la gente: lo que ya diste se respeta (bonos vendidos, sellos, premios, códigos y sorteos abiertos).',
     'You can still validate the codes and passes people already have: what you’ve already given is honoured (passes sold, stamps, rewards, codes and open giveaways).');
-  const boton = pausa
+  const boton = personal ? ''
+    : pausa
     ? (dueno ? `<button class="btn primary" type="button" id="volver-abrir">${ms('play_circle')}${esc(bi('Volver a abrir', 'Reopen'))}</button>`
       : `<p class="muted small" style="margin:0">${esc(bi('Solo el propietario puede volver a abrirlo.', 'Only the owner can reopen it.'))}</p>`)
     : !dueno ? `<p class="muted small" style="margin:0">${esc(I18N.t('Solo el propietario del negocio puede pagar el plan.'))}</p>`

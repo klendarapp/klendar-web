@@ -7,6 +7,10 @@
 //     baja; cualquier otra pantalla vuelve al resumen; «Tu plan» con el pago
 //     (tarjeta o domiciliación) y, en Canarias, sin IVA y con su nota.
 //  2. Panel bloqueado (encargado): sin «Pagar», «Solo el propietario…».
+//  2b. Panel bloqueado y en pausa (personal): lo que da la base al personal
+//     (`billing_detail` false, migración 20261284700000 de la app): «Ahora
+//     no se puede publicar… Habla con el propietario», sin el motivo ni nada
+//     del cobro, y «Validar códigos».
 //  3. Panel en pausa por cierre: «Cerrado temporalmente hasta el…» y «Volver
 //     a abrir» (manda `resume` a la Edge Function `billing`).
 //  4. Se bloquea pronto: un aviso arriba con «Pagar»; un recibo devuelto, con
@@ -113,6 +117,17 @@ const CASOS = {
   encargado: () => {
     const s = sub({ status: 'none' }, { hold: 'unpaid', blocked: true, block_kind: 'unpaid', block_on: hoy() });
     return { role: 'manager', sub: s, ov: { ...overview(s), is_owner: false, plans: null, locales: null } };
+  },
+  // El personal: solo el plan y si está parado (sin estado, fechas ni motivo).
+  personal: () => {
+    const s = { plan_slug: 'standard', plan_names: NOMBRES, max_active_offers: null, has_analytics: true, boosts_included: 0,
+      active_offers: 0, boosts_used: 0, billing_detail: false, billing: { blocked: true, hold: 'blocked', paused_until: null } };
+    return { role: 'staff', sub: s, ov: { is_owner: false, can_manage: false, ready: false, subscription: s } };
+  },
+  personalPausa: () => {
+    const s = { plan_slug: 'standard', plan_names: NOMBRES, max_active_offers: null, has_analytics: true, boosts_included: 0,
+      active_offers: 0, boosts_used: 0, billing_detail: false, billing: { blocked: true, hold: 'paused', paused_until: '2026-11-03T13:36:31Z' } };
+    return { role: 'staff', sub: s, ov: { is_owner: false, can_manage: false, ready: false, subscription: s } };
   },
   pausa: () => {
     const s = sub({ status: 'paused' }, { hold: 'paused', blocked: true, block_kind: 'paused', paused_until: '2026-11-03T13:36:31Z', paused_since: `${hoy()}T08:00:00Z`, provider: 'manual' });
@@ -285,6 +300,25 @@ async function panelEncargado(nav, nombre, t, vp) {
   if (t === 'escritorio') await p.screenshot({ path: `${OUT}/web-bloqueado-encargado-${nombre}-${t}.png`, fullPage: true });
   ok(errores.length === 0, `${nombre}/${t} encargado sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
+}
+
+async function panelPersonal(nav, nombre, t, vp) {
+  for (const caso of ['personal', 'personalPausa']) {
+    const { ctx, p, errores } = await contextoPanel(nav, vp, caso);
+    await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
+    await p.waitForSelector('.aviso-parado');
+    const v = await texto(p);
+    const titulo = caso === 'personal' ? /Ahora no se puede publicar/ : /Cerrado temporalmente hasta el 3 de noviembre de 2026/;
+    ok(titulo.test(v) && /Habla con el propietario del negocio/.test(v) && /Validar códigos/.test(v),
+      `${nombre}/${t} ${caso}: aviso neutro y «Validar códigos»`);
+    ok(!/bloqueado|pago|pagar|cobra|plan no está|prueba gratis|Volver a abrir/i.test(await p.locator('.aviso-parado').innerText())
+      && await p.locator('.aviso-parado .btn').count() === 0,
+      `${nombre}/${t} ${caso}: nada del cobro ni botones`);
+    ok(!/Tu plan/.test(await menu(p)), `${nombre}/${t} ${caso}: el menú sin «Tu plan»`);
+    if (t === 'escritorio') await p.screenshot({ path: `${OUT}/web-${caso}-${nombre}-${t}.png`, fullPage: true });
+    ok(errores.length === 0, `${nombre}/${t} ${caso} sin errores JS ${errores.join(' | ')}`);
+    await ctx.close();
+  }
 }
 
 async function panelPausa(nav, nombre, t, vp) {
@@ -561,7 +595,7 @@ if (!SOLO || SOLO.includes('ficha')) {
   servidorFichas = await serveDev(FICHA_PORT, { SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' });
 }
 
-const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, encargado: panelEncargado, pausa: panelPausa, pronto: panelPronto, arranque: panelArranque, pausar: panelPausar, admin, ficha: fichas };
+const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, encargado: panelEncargado, personal: panelPersonal, pausa: panelPausa, pronto: panelPronto, arranque: panelArranque, pausar: panelPausar, admin, ficha: fichas };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {
