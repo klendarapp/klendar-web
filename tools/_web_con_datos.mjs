@@ -217,6 +217,8 @@ function respuestas(D) {
     business_public_giveaways: () => [], business_closures: () => [], business_broadcasts_public: () => [], business_menu: () => [],
     business_links: () => [], business_closure_state: () => null, business_is_organizer: (a) => Boolean(D.NEGOCIOS.find((b) => b.id === a.p_business)?.organizer),
     business_municipality_info: (a) => { const b = D.NEGOCIOS.find((x) => x.id === (a.p_business || a.p_id)); const m = D.MUNICIPIOS.find((x) => x.city_id === b?.city_id); return m ? { ...m } : null; },
+    // Lo de la ficha que va apagado o vacío (encargos con el interruptor apagado, sin cola, sin marcas de ahora).
+    preorder_menu: () => ({ enabled: false, items: [] }), business_queue_public: () => null, business_marks: () => [],
     business_ficha_info: () => null, business_group_info: () => null, business_verified_review_count: () => 0, stamp_cards_of: () => [],
     search_municipalities: (a) => {
       const q = plano(a.p_q || '');

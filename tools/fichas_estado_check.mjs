@@ -122,6 +122,12 @@ async function pagina(nav, vp, estado) {
   if (estado) {
     await ctx.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion()]);
     await ctx.route(`${SUPA}/**`, supabaseNavegador(estado));
+  } else {
+    // Sin sesión, la ficha también pide (sin sesión, a la base) sus encargos y
+    // su cola: apagados, como con el interruptor apagado (repaso 17-11).
+    const vacio = (body) => (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
+    await ctx.route(`${SUPA}/rest/v1/rpc/preorder_menu`, vacio({ enabled: false, items: [] }));
+    await ctx.route(`${SUPA}/rest/v1/rpc/business_queue_public`, vacio(null));
   }
   const p = await ctx.newPage();
   const errores = [];
