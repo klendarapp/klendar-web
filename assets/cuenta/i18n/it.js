@@ -830,6 +830,7 @@ KL_DIC('it', {
   "Esta semana": "Questa settimana",
   "Esta serie ya no está disponible": "Questa serie non è più disponibile",
   "Esta vez no te ha tocado.": "Questa volta non hai vinto.",
+  "Eres suplente n.º {n}. Si quien gana no acepta el premio, te avisaremos.": "Sei la riserva n. {n}. Se chi vince non accetta il premio, ti avviseremo.",
   "Estado del servicio": "Stato del servizio",
   "Estadísticas de uso de la app": "Statistiche di utilizzo dell’app",
   "Estas bases las genera Klendar con los datos que ha puesto el organizador.": "Questo regolamento lo genera Klendar con i dati inseriti dall’organizzatore.",

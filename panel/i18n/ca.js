@@ -1503,6 +1503,7 @@ KL_DIC('ca', {
   "Esta semana": "Aquesta setmana",
   "Esta semana no tenemos ideas para ti. El lunes, más.": "Aquesta setmana no tenim idees per a tu. Dilluns, més.",
   "Esta vez no te ha tocado.": "Aquesta vegada no t'ha tocat.",
+  "Eres suplente n.º {n}. Si quien gana no acepta el premio, te avisaremos.": "Ets suplent núm. {n}. Si qui guanya no accepta el premi, t'avisarem.",
   "Estaba cerrado": "Estava tancat",
   "Estado": "Estat",
   "Estamos mirando el documento; normalmente tardamos 24–48 h. Hasta que lo verifiquemos no se puede publicar, pero ya puedes completar la ficha.": "Estem mirant el document; normalment hi dediquem 24–48 h. Fins que no el verifiquem no es pot publicar, però ja pots completar la fitxa.",

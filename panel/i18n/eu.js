@@ -1503,6 +1503,7 @@ KL_DIC('eu', {
   "Esta semana": "Aste honetan",
   "Esta semana no tenemos ideas para ti. El lunes, más.": "Aste honetan ez dugu ideiarik zuretzat. Astelehenean, gehiago.",
   "Esta vez no te ha tocado.": "Oraingoan ez zaizu tokatu.",
+  "Eres suplente n.º {n}. Si quien gana no acepta el premio, te avisaremos.": "{n}. ordezkoa zara. Irabazleak saria onartzen ez badu, abisatuko dizugu.",
   "Estaba cerrado": "Itxita zegoen",
   "Estado": "Egoera",
   "Estamos mirando el documento; normalmente tardamos 24–48 h. Hasta que lo verifiquemos no se puede publicar, pero ya puedes completar la ficha.": "Dokumentua aztertzen ari gara; normalean 24–48 h behar izaten ditugu. Egiaztatu arte ezin da argitaratu, baina fitxa osa dezakezu dagoeneko.",

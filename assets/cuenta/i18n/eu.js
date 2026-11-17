@@ -830,6 +830,7 @@ KL_DIC('eu', {
   "Esta semana": "Aste honetan",
   "Esta serie ya no está disponible": "Serie hau ez dago jada eskuragarri",
   "Esta vez no te ha tocado.": "Oraingoan ez zaizu tokatu.",
+  "Eres suplente n.º {n}. Si quien gana no acepta el premio, te avisaremos.": "{n}. ordezkoa zara. Irabazleak saria onartzen ez badu, abisatuko dizugu.",
   "Estado del servicio": "Zerbitzuaren egoera",
   "Estadísticas de uso de la app": "Aplikazioaren erabilera-estatistikak",
   "Estas bases las genera Klendar con los datos que ha puesto el organizador.": "Oinarri hauek Klendarrek sortzen ditu antolatzaileak jarritako datuekin.",

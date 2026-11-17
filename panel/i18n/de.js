@@ -1503,6 +1503,7 @@ KL_DIC('de', {
   "Esta semana": "Diese Woche",
   "Esta semana no tenemos ideas para ti. El lunes, más.": "Diese Woche haben wir keine Ideen für dich. Am Montag gibt es neue.",
   "Esta vez no te ha tocado.": "Diesmal hat es nicht geklappt.",
+  "Eres suplente n.º {n}. Si quien gana no acepta el premio, te avisaremos.": "Du bist Nachrücker Nr. {n}. Wenn der Gewinner den Preis nicht annimmt, sagen wir dir Bescheid.",
   "Estaba cerrado": "Es war geschlossen",
   "Estado": "Status",
   "Estamos mirando el documento; normalmente tardamos 24–48 h. Hasta que lo verifiquemos no se puede publicar, pero ya puedes completar la ficha.": "Wir sehen uns das Dokument an; das dauert meist 24–48 Std. Bis zur Prüfung kann nichts veröffentlicht werden, aber du kannst deine Seite schon vervollständigen.",

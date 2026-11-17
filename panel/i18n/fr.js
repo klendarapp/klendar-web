@@ -1503,6 +1503,7 @@ KL_DIC('fr', {
   "Esta semana": "Cette semaine",
   "Esta semana no tenemos ideas para ti. El lunes, más.": "Pas d’idée pour toi cette semaine. D’autres lundi.",
   "Esta vez no te ha tocado.": "Pas de chance cette fois-ci.",
+  "Eres suplente n.º {n}. Si quien gana no acepta el premio, te avisaremos.": "Tu es suppléant n° {n}. Si le gagnant n’accepte pas le lot, on te préviendra.",
   "Estaba cerrado": "C’était fermé",
   "Estado": "État",
   "Estamos mirando el documento; normalmente tardamos 24–48 h. Hasta que lo verifiquemos no se puede publicar, pero ya puedes completar la ficha.": "On examine le document ; cela prend en général 24 à 48 h. Tant qu’il n’est pas vérifié, impossible de publier, mais tu peux déjà compléter ta fiche.",

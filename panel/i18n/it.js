@@ -1503,6 +1503,7 @@ KL_DIC('it', {
   "Esta semana": "Questa settimana",
   "Esta semana no tenemos ideas para ti. El lunes, más.": "Questa settimana non abbiamo idee per te. Lunedì, altre.",
   "Esta vez no te ha tocado.": "Questa volta non hai vinto.",
+  "Eres suplente n.º {n}. Si quien gana no acepta el premio, te avisaremos.": "Sei la riserva n. {n}. Se chi vince non accetta il premio, ti avviseremo.",
   "Estaba cerrado": "Era chiuso",
   "Estado": "Stato",
   "Estamos mirando el documento; normalmente tardamos 24–48 h. Hasta que lo verifiquemos no se puede publicar, pero ya puedes completar la ficha.": "Stiamo esaminando il documento; di solito ci vogliono 24–48 h. Finché non lo verifichiamo non si può pubblicare, ma puoi già completare la scheda.",
