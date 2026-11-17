@@ -512,10 +512,23 @@ async function escanerQR(video, alLeer) {
     setTimeout(vuelta, 200);
   };
   vuelta();
+  // Con la cámara puesta, la pantalla no se apaga (como el escáner de la
+  // app). El navegador la suelta al cambiar de pestaña: se vuelve a pedir.
+  let despierta = null;
+  const pideDespierta = async () => {
+    if (!vivo || document.visibilityState !== 'visible' || !navigator.wakeLock) return;
+    try { despierta = await navigator.wakeLock.request('screen'); } catch { despierta = null; }
+  };
+  const alVolver = () => { if (document.visibilityState === 'visible') pideDespierta(); };
+  document.addEventListener('visibilitychange', alVolver);
+  pideDespierta();
   PARA_CAMARA = () => {
     vivo = false;
     flujo.getTracks().forEach((t) => t.stop());
     video.srcObject = null;
+    document.removeEventListener('visibilitychange', alVolver);
+    if (despierta) despierta.release().catch(() => {});
+    despierta = null;
   };
   return PARA_CAMARA;
 }
@@ -4878,6 +4891,7 @@ PAGES.validar = async (v) => {
       <div class="camara" id="camara-caja" hidden><video id="video" muted playsinline></video><span class="mira" aria-hidden="true"></span></div>
       <input id="code" placeholder="Código o enlace del QR" autocomplete="off" autofocus>
       <button class="btn primary" id="go">Validar</button>
+      <p class="validados-sesion muted" id="validadosSesion" hidden></p>
       <div id="result" aria-live="assertive"></div>
       <div id="cola"></div>
     </div>
@@ -4994,6 +5008,22 @@ PAGES.validar = async (v) => {
     });
   };
 
+  // Uno detrás de otro (como el escáner de la app): «3 validados en esta
+  // sesión» mientras sigas en esta pantalla; el campo se vacía y, sin la
+  // cámara, se queda listo para escribir el siguiente.
+  let validadosSesion = 0;
+  const sumaValidado = () => {
+    validadosSesion += 1;
+    const caja = $('#validadosSesion');
+    if (!caja) return;
+    const n = validadosSesion;
+    caja.textContent = I18N.t(n === 1
+      ? (I18N.lang === 'en' ? '1 validated this session' : '1 validado en esta sesión')
+      : (I18N.lang === 'en' ? `${n} validated this session` : `${n} validados en esta sesión`));
+    caja.hidden = false;
+  };
+  const listoParaOtro = () => { if (!PARA_CAMARA) $('#code')?.focus(); };
+
   let validando = false;
   const validate = async () => {
     if (validando) return;
@@ -5064,6 +5094,8 @@ PAGES.validar = async (v) => {
       if (res.ok) {
         if (navigator.vibrate) navigator.vibrate(120);
         $('#code').value = '';
+        sumaValidado();
+        listoParaOtro();
         loadRecent();
       } else if (navigator.vibrate) {
         navigator.vibrate([60, 60, 60]);
@@ -5129,7 +5161,7 @@ PAGES.validar = async (v) => {
   const cajaListas = $('#puertaRrpp');
   rrppPuerta(cajaListas, (res) => {
     pintaResultado(res, res.ok ? 'ok' : 'bad');
-    if (res.ok) { if (navigator.vibrate) navigator.vibrate(120); loadRecent(); }
+    if (res.ok) { if (navigator.vibrate) navigator.vibrate(120); sumaValidado(); loadRecent(); }
     $('#result')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }).then(() => {
     if (!conListas || !cajaListas?.isConnected) return;

@@ -4,6 +4,9 @@
 //   1. Tu código (o tu plan) arriba en «Tu cuenta», con las reglas de la app
 //      (`pickUpNext`): un código de oferta siempre, una reserva desde 2 h
 //      antes, sin código un plan guardado desde 2 h antes hasta que acaba.
+//   3. Panel › Validar códigos, uno detrás de otro: «N validados en esta
+//      sesión», el campo vacío y listo para el siguiente, y la pantalla
+//      encendida mientras la cámara está puesta.
 //
 // Sin navegador ni red: lee assets/cuenta/app.js y prueba sus funciones
 // sueltas. Con BASE (y Playwright en PW o en la caché de npx), además pinta
@@ -57,6 +60,13 @@ ok('1. arriba en «Tu cuenta», sin ×', /<div id="arriba-codigo" hidden><\/div>
   && !/arriba-codigo[^\n]*close/.test(app));
 
 // Con la web local y la base simulada: se pinta, abre el código y se va sola.
+// 3
+const panel = readFileSync(new URL('panel/panel.js', raiz), 'utf8');
+const esc3 = panel.slice(panel.indexOf('async function escanerQR('), panel.indexOf('/** Las fotos que caben'));
+ok('3. la pantalla encendida con la cámara (y se suelta al pararla)', /navigator\.wakeLock\.request\('screen'\)/.test(esc3) && /despierta\.release\(\)/.test(esc3)
+  && /visibilitychange/.test(esc3));
+ok('3. el contador de la sesión, al validar (también desde las listas)', (panel.match(/sumaValidado\(\);/g) || []).length === 2);
+
 const BASE = process.env.BASE;
 if (BASE) {
   const { playwright, REF, SUPA, realtimeMudo, servidorSeguro } = await import('./_supabase_simulado.mjs');
@@ -136,6 +146,64 @@ if (BASE) {
   await prueba('web, nada', {}, async (p) => {
     ok('web: sin código ni plan, nada', await p.locator('#arriba-codigo').isHidden());
   });
+
+  // 3. Panel › Validar: tres seguidos sin recargar.
+  {
+    const BIZ = 'b1000000-0000-4000-8000-0000000097d5';
+    const ctx = await nav.newContext({ viewport: { width: 375, height: 760 }, locale: 'es-ES', timezoneId: 'Europe/Madrid' });
+    await ctx.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); localStorage.setItem('klendar_lang', 'es'); } catch { /* */ } }, [`sb-${REF}-auth-token`, SESION]);
+    const llamadas = [];
+    const rpcs = {
+      my_consents: { terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true },
+      my_businesses: [{ id: BIZ, name: 'Cafetería Prueba', role: 'staff', verification_status: 'verified', is_active: true, time_zone: 'Europe/Madrid', city: 'Madrid' }],
+      business_is_organizer: false,
+      my_entity_application: { entity_kind: null, can_apply: true, why: null, application: null },
+      my_subscription: { plan_slug: 'standard', status: 'active', billing: { blocked: false, hold: null } },
+      business_tools_overview: { ok: true, can_edit: false, team: { members: 2 } },
+      business_recent_validations: [],
+      validate_redemption: (b) => (b.p_code === 'cafecafe0001' ? { ok: false, error: 'already_validated', offer_title: 'Café', validated_at: new Date().toISOString() }
+        : { ok: true, status: 'validated', kind: 'offer', offer_kind: 'flash_offer', offer_title: 'Café −50 %', business_name: 'Cafetería Prueba', business_id: BIZ, seats: 1, user_name: 'Lucía', times_here: 1, validated_at: new Date().toISOString() }),
+    };
+    await ctx.route(`${SUPA}/**`, async (route) => {
+      const req = route.request();
+      const url = new URL(req.url());
+      const json = (b) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(b) });
+      if (url.pathname.startsWith('/auth/v1/')) return json(url.pathname.endsWith('/user') ? USER : {});
+      if (url.pathname.startsWith('/rest/v1/rpc/')) {
+        const fn = url.pathname.slice('/rest/v1/rpc/'.length);
+        let body = {};
+        try { body = req.postDataJSON() || {}; } catch { /* sin cuerpo */ }
+        llamadas.push([fn, body]);
+        const r = rpcs[fn];
+        return json(r === undefined ? null : typeof r === 'function' ? r(body) : r);
+      }
+      if (url.pathname.startsWith('/rest/v1/businesses')) return json([{ id: BIZ, time_zone: 'Europe/Madrid', logo_url: null, cover_image_url: null, gallery: [] }]);
+      return json(req.headers().accept?.includes('vnd.pgrst.object') ? {} : []);
+    });
+    await realtimeMudo(ctx);
+    const p = await ctx.newPage();
+    const errores = [];
+    p.on('pageerror', (e) => errores.push(String(e)));
+    await p.goto(`${BASE}/panel#/validar`, { waitUntil: 'domcontentloaded' });
+    await p.waitForSelector('#code', { timeout: 15000 });
+    ok('panel: sin validar todavía, sin contador', await p.locator('#validadosSesion').isHidden());
+    for (const [i, code] of ['a1b2c3d4e5f6', 'b1b2c3d4e5f6'].entries()) {
+      await p.fill('#code', code);
+      await p.press('#code', 'Enter');
+      await p.waitForFunction((n) => (document.querySelector('#validadosSesion')?.textContent || '').startsWith(String(n)), i + 1, { timeout: 8000 }).catch(() => {});
+    }
+    ok('panel: «2 validados en esta sesión»', (await p.locator('#validadosSesion').innerText()).trim() === '2 validados en esta sesión');
+    ok('panel: el campo, vacío y listo para el siguiente', (await p.inputValue('#code')) === '' && await p.evaluate(() => document.activeElement?.id === 'code'));
+    await p.fill('#code', 'cafecafe0001');
+    await p.click('#go');
+    await p.waitForSelector('.scan-result.bad', { timeout: 8000 }).catch(() => {});
+    ok('panel: uno ya usado no suma y lo dice', (await p.locator('#validadosSesion').innerText()).startsWith('2 ') && (await p.locator('.scan-result.bad').count()) === 1);
+    ok('panel: tres llamadas, sin recargar', llamadas.filter(([fn]) => fn === 'validate_redemption').length === 3);
+    if (process.env.SHOT3) await p.screenshot({ path: process.env.SHOT3, fullPage: true });
+    ok('panel: sin errores', errores.length === 0);
+    if (errores.length) console.log(errores.join(' | '));
+    await ctx.close();
+  }
   await nav.close();
 }
 
