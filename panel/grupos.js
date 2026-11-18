@@ -57,7 +57,10 @@ PAGES.grupos = async (v) => {
       ${['open', 'done', 'all'].map((f) => `<button type="button" class="btn sm${GRUPO_FILTRO === f ? '' : ' ghost'}" aria-pressed="${GRUPO_FILTRO === f}" data-filtro="${f}">${esc(S.segs[f])}</button>`).join('')}
     </div>
     <div class="grupo-peticiones">${(lista || []).length ? lista.map(grupoTarjeta).join('')
-      : `<div class="empty">${esc(bi('Cuando alguien te pida presupuesto para un grupo, lo verás aquí.', 'When someone asks you for a group quote, you’ll see it here.'))}</div>`}</div>
+      : `<div class="empty">${esc(GRUPO_FILTRO === 'done'
+        ? bi('No hay peticiones aquí.', 'No requests here.')
+        // Qué llega aquí, con un ejemplo (como la app, «Ayuda guiada»).
+        : bi('Cuando alguien te pida presupuesto para un grupo, por ejemplo «cena de empresa para 20 personas», lo verás aquí.', 'When someone asks you for a quote for a group, for example “company dinner for 20 people”, you’ll see it here.'))}</div>`}</div>
 
     <details class="card grupo-plegable"${cfg.enabled ? '' : ' open'}>
       <summary><b>${esc(S.weTake)}</b> <span class="muted">${esc(cfg.enabled ? `${S.upTo(cfg.max_people)} · ${kinds.map((k) => KGp.plural(k, L)).join(' · ')}` : bi('Sin activar', 'Off'))}</span></summary>

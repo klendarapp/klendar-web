@@ -173,7 +173,7 @@ PAGES.rrpp = async (v, param) => {
           : `<div class="actions"><a class="btn sm" href="#/rrpp/${esc(p.id)}">${esc(bi('Abrir', 'Open'))}</a></div>`) },
       ],
       rows: filas,
-      empty: bi('Aún no tienes RRPP. Invita al primero con su correo.', "You don't have any promoters yet. Invite your first one with their email."),
+      empty: bi('Aún no tienes RRPP. Invita a alguien por su correo: tendrá su enlace y su QR para traer gente, y solo verá su lista.', "You don't have any promoters yet. Invite someone by email: they'll get their own link and QR code to bring people in, and they'll only see their own list."),
     })}
     ${filas.some((p) => p.status !== 'invited') ? `<p class="muted small" style="margin:10px 0 0">${esc(bi('Apuntados y han entrado: últimos 30 días.', 'Signed up and got in: last 30 days.'))}</p>` : ''}</div>
 
@@ -368,8 +368,9 @@ async function rrppEnlaceModal(l = null) {
 
 /** «Listas de esta noche» sin nadie apuntado todavía. */
 const RRPP_LISTAS_VACIA = () => `<div class="card"><h2>${esc(bi('Listas de esta noche', "Tonight's lists"))}</h2>
-  <p class="muted" style="margin:0">${esc(bi('Nadie se ha apuntado aún esta noche. Cuando haya alguien, aquí lo buscas y le validas en la puerta.',
-    "Nobody has signed up tonight yet. When someone does, you can find them here and validate them at the door."))}</p></div>`;
+  <p style="margin:0"><b>${esc(bi('Nadie en las listas de esta noche', "Nobody on tonight's lists yet"))}</b></p>
+  <p class="muted" style="margin:4px 0 0">${esc(bi('Aquí sale quien se apunta con el enlace de un RRPP, por ejemplo «Lista de Laura · 4 personas». Le buscas por su nombre y le validas en la puerta.',
+    'People who sign up through a promoter’s link show up here, for example “Laura’s list · 4 people”. Search for their name and validate them at the door.'))}</p></div>`;
 
 // ── Las ofertas de RRPP ─────────────────────────────────────────────────────
 /** «Sábado 12, de 23:00 a 6:00». */

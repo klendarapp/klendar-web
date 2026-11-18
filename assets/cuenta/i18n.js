@@ -2,6 +2,12 @@
 'use strict';
 
 const APP_EN = {
+  // «Ayuda guiada» (cuenta, 2026-11-18): los vacíos que enseñan y el primer código, como la app.
+  "Aquí tendrás lo que guardas, tus reservas y tus códigos, por fechas. Cuando algo te guste, dale a «Guardar».": "This is where you’ll have what you save, your bookings and your codes, by date. When you like something, tap “Save”.",
+  "Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí para enseñarlo en el local.": "When you get the code for an offer or reserve a place at an event, it’ll be here for you to show at the venue.",
+  "Funcionan como las de cartón: cada canje en un sitio con tarjeta suma un sello y, al completarla, tienes tu premio. Se abren solas con el primero, o escaneando el QR del local.": "They work like paper ones: each redemption at a place with a card adds a stamp and, when it’s full, you get your reward. They start on their own with the first one, or by scanning the venue QR code.",
+  "Enséñalo en el local para que te lo validen. Lo tienes en Tus códigos.": "Show it at the venue to get it validated. You’ll find it in Your codes.",
+  "Ver ofertas": "See offers",
   // «Preguntas al reservar» (cuenta, 2026-11-17)
   "Acepto que {negocio} vea esta respuesta, que puede ser un dato de salud, solo para preparar este evento. Se borra al día siguiente del evento.": "I agree that {negocio} may see this answer, which may be health information, only to prepare this event. It’s deleted the day after the event.",
   "Dato de salud": "Health data",

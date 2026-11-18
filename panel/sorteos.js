@@ -133,7 +133,7 @@ PAGES.sorteos = async (v, param) => {
         <p class="muted">${esc(sorteoCifras(g.stats))}</p>
       </a>`).join('')
     : `<div class="empty"><b>${esc(bi('Aún no has hecho ningún sorteo', "You haven't run any giveaways yet"))}</b><br>${esc(d.can_manage
-      ? bi('Crea uno: la gente participa gratis y, si quieres, añade tu negocio a favoritos.', 'Create one: people enter for free and, if you like, add your business to their favourites.')
+      ? bi('Sortea algo entre quienes te tienen en favoritos, por ejemplo «una cena para dos»: es gratis para ellos y te trae gente nueva.', 'Give something away to people who have you in their favourites, for example “dinner for two”: it’s free for them and brings you new people.')
       : bi('Cuando quien lleva el negocio cree un sorteo, lo verás aquí.', 'When whoever runs the business creates a giveaway, you’ll see it here.'))}</div>`}
     ${hayMas ? botonVerMas('sorteos') : ''}`;
   const mas = $('[data-ver-mas="sorteos"]', v);

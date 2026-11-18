@@ -122,7 +122,7 @@ PAGES.aforo = async (v, param) => {
     // Apagado: la pantalla vacía de siempre, centrada y con salida.
     v.innerHTML = `<div class="page-head"><h1>${esc(bi('Aforo en directo', 'Live capacity'))}</h1></div>
       <section class="vacio"><h2>${esc(bi('El aforo en directo está apagado', 'Live capacity is off'))}</h2>
-        <p>${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo.', 'Count at the door with +1 and −1, and “Room right now?” sets itself.'))}</p>
+        <p>${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo. Por ejemplo: «32 de 60». Actívalo y pon cuántas personas caben.', 'Count at the door with +1 and −1, and “Room right now?” updates itself. For example: “32 of 60”. Turn it on and say how many people fit.'))}</p>
         <div class="vacio-botones">${puedeAjustar
     ? `<a class="btn primary" href="#/aforo/ajustes">${esc(bi('Activar', 'Turn on'))}</a>`
     : `<a class="btn" href="#/resumen">${esc(bi('Volver al resumen', 'Back to the summary'))}</a>`}</div>

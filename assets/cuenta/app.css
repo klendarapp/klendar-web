@@ -48,6 +48,9 @@ body:has(#view > .cargando) footer { display: none; }
 .ticket h1 { margin: 4px 0 10px; }
 .ticket .nota-carne { margin: 10px auto; padding: 10px 14px; border: 1px solid var(--glass-border); border-radius: 16px; font-weight: 700; }
 .ticket .nota-carne[hidden] { display: none; }
+/* «Tu primer código» (una vez): en tinta, como la tarjeta de la app. */
+.ticket .primer-codigo { margin: 10px auto; padding: 10px 14px; border: 1px solid var(--glass-border); border-radius: 16px; background: var(--glass); text-align: left; display: flex; gap: 10px; align-items: center; }
+.ticket .primer-codigo .ms { color: var(--ink-2); flex: none; }
 .qr { background: #fff; border-radius: 22px; padding: 16px; width: min(280px, 80vw); margin: 16px auto; }
 .qr svg { width: 100%; height: auto; display: block; }
 /* Caducado: el QR se apaga, como en la app, para que nadie lo enseñe. */

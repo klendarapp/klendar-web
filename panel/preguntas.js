@@ -63,7 +63,7 @@ PAGES.preguntas = async (v) => {
     pending: n?.available === false
       ? bi('Desde el 4 de noviembre, la gente podrá preguntarte en tu ficha. Lo que contestes lo verá todo el mundo.',
         'From 4 November, people will be able to ask you questions on your page. Everyone will see your answers.')
-      : bi('No tienes preguntas sin contestar.', 'You have no questions to answer.'),
+      : bi('No tienes preguntas sin contestar. La gente te pregunta desde tu ficha, por ejemplo «¿Hay terraza?», y aquí contestas.', 'You have no questions to answer. People ask you from your page, for example “Is there a terrace?”, and you answer here.'),
     answered: bi('Aún no has contestado ninguna.', "You haven't answered any yet."),
     hidden: bi('No has ocultado ninguna.', "You haven't hidden any."),
   }[PREG_TAB];

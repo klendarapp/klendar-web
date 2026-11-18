@@ -2170,7 +2170,7 @@ RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
       ${pantallaVacia({
         icono: 'bookmark',
         titulo: t('Aún no tienes planes'),
-        texto: t('Cuando algo te guste, dale a «Guardar» y lo tendrás aquí. Tus canjes también aparecerán.'),
+        texto: t('Aquí tendrás lo que guardas, tus reservas y tus códigos, por fechas. Cuando algo te guste, dale a «Guardar».'),
         botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Descubre'))}</a>`,
       })}`);
     return;
@@ -2646,10 +2646,12 @@ RUTAS.codigos = async (_partes, params) => {
       : pantallaVacia({
         icono: 'qr_code_2',
         titulo: t('Todavía no tienes códigos'),
-        texto: t('Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí.'),
-        // Sin nada, el QR de cliente es el botón del vacío (como la app): es
-        // lo que se enseña para comprar el primer bono.
-        botones: `<a class="pill accent" href="/cuenta/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
+        texto: t('Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí para enseñarlo en el local.'),
+        // Para empezar, las ofertas (como la app, «Ayuda guiada»); el QR de
+        // cliente sigue a mano, debajo: es lo que se enseña para comprar el
+        // primer bono.
+        botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Ver ofertas'))}</a>
+          <a class="pill" href="/cuenta/qr-cliente">${esc(t('Tu QR de cliente'))}</a>`,
       })}`);
   $('#codigo-pedido')?.scrollIntoView({ block: 'center' });
   // Cuando caduca el primero de «Para usar», se vuelve a pintar: si no,
@@ -2945,6 +2947,20 @@ function horaServidor(now) {
   return Number.isFinite(at) ? at - Date.now() : 0;
 }
 
+/** «Tu primer código» (como la app, «Ayuda guiada», 18-11): la primera vez
+ * que alguien ve un código suyo, una frase debajo; una sola vez por persona
+ * en este navegador (se apunta al enseñarla; no se borra al cerrar sesión).
+ * En la web no hay pantalla de bloqueo: la frase no la nombra. */
+function primerCodigo() {
+  if (!YO) return false;
+  const k = `klendar.primer_codigo.${YO.id}`;
+  try {
+    if (localStorage.getItem(k)) return false;
+    localStorage.setItem(k, '1');
+    return true;
+  } catch { return false; }
+}
+
 RUTAS.codigo = async ([id], params, crudo) => {
   // `?rp=` se queda en la ruta si antes hay que entrar o crear la cuenta.
   if (!exigeSesion(`codigo/${id}${params.toString() ? `?${params}` : ''}`)) return;
@@ -3064,6 +3080,7 @@ RUTAS.codigo = async ([id], params, crudo) => {
         ? t('Enseña este código en el local para que lo escaneen. Solo vale una vez.')
         // Con el código escrito debajo del QR, qué hacer si no lo pueden escanear (como la app).
         : t('Enseña este código en el local para que lo escaneen. Si no pueden escanearlo, que escriban el código de debajo. Solo vale una vez.'))}</p>
+      ${primerCodigo() ? `<p class="primer-codigo">${ic('storefront')} ${esc(t('Enséñalo en el local para que te lo validen. Lo tienes en Tus códigos.'))}</p>` : ''}
       <div class="tus-respuestas" id="tusRespuestas" hidden></div>
       ${largo && (tk.offer_kind ?? 'future_event') === 'future_event' ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
     </div>`);
@@ -3483,7 +3500,12 @@ RUTAS.sellos = async (_partes, params = new URLSearchParams()) => {
     : pantallaVacia({
       icono: 'local_activity',
       titulo: t('Todavía no tienes ninguna'),
-      texto: t('Se abren solas con tu primer sello: canjea algo en un sitio que tenga tarjeta o escanea el QR del local.'),
+      texto: t('Funcionan como las de cartón: cada canje en un sitio con tarjeta suma un sello y, al completarla, tienes tu premio. Se abren solas con el primero, o escaneando el QR del local.'),
+      // Para empezar, los sitios; o el QR del local, que la abre ya (como la
+      // app). Escanear, solo con cámara.
+      botones: `<a class="pill accent" href="${PUB_EN ? '/en/discover' : '/descubre'}">${esc(t('Descubre'))}</a>${navigator.mediaDevices?.getUserMedia
+        ? `
+        <a class="pill" href="/cuenta/escanear">${esc(t('Escanear un QR'))}</a>` : ''}`,
     })}`);
 
   $$('[data-premio]').forEach((b) => { b.onclick = () => ocupado(b, async () => {

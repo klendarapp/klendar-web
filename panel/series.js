@@ -85,9 +85,10 @@ PAGES.series = async (v) => {
           </div>` : '') },
       ],
       rows: lista,
-      empty: bi('Aún no tienes series. En «Más» de una publicación, «Serie…» la mete en una serie nueva o en una que ya tengas. Lo que se repite solo tiene la suya.',
-        "You don't have any series yet. In a publication's “More”, “Series…” adds it to a new series or one you already have. Anything that repeats automatically has its own."),
-    })}</div>`;
+      empty: bi('Aún no tienes series. Una serie junta las fechas de lo mismo, por ejemplo «Micro abierto de los jueves», y quien la sigue recibe un aviso con cada fecha nueva. Para crear una, en «Más» de una publicación, toca «Serie…».',
+        "You don't have any series yet. A series groups the dates of the same thing, for example “Thursday open mic”, and anyone following it gets a notice for each new date. To create one, tap “Series…” in a publication's “More”."),
+    })}
+    ${!lista.length && gestiona() ? `<p class="actions" style="margin:10px 0 0"><a class="btn sm" href="#/publicaciones">${esc(bi('Ver publicaciones', 'See publications'))}</a></p>` : ''}</div>`;
   $$('[data-rule]', v).forEach((b) => {
     b.onclick = async () => {
       try {

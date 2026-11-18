@@ -5532,7 +5532,10 @@ PAGES.sellos = async (v, param) => {
           `${c.people_old_goal === 1 ? '1 persona sigue' : `${fmtNum(c.people_old_goal)} personas siguen`} con una meta anterior, más baja, hasta su premio.`,
           `${c.people_old_goal === 1 ? '1 person keeps' : `${fmtNum(c.people_old_goal)} people keep`} an earlier, lower goal until their reward.`))}</p>` : ''}
       </a>`).join('')
-    : `<div class="empty"><b>${esc(I18N.t('Todavía no tienes ninguna tarjeta'))}</b><br>${esc(bi(`Crea la primera: «al décimo café, uno gratis». Puedes tener hasta ${d.max || 5}, cada una con lo suyo.`, `Create the first one: “the tenth coffee is on us”. You can have up to ${d.max || 5}, each with its own rules.`))}</div>`}`;
+    : `<div class="empty"><b>${esc(I18N.t('Todavía no tienes ninguna tarjeta'))}</b><br>${esc(edita
+      ? bi(`Crea la primera: «al décimo café, uno gratis». Puedes tener hasta ${d.max || 5}, cada una con lo suyo.`, `Create the first one: “the tenth coffee is on us”. You can have up to ${d.max || 5}, each with its own rules.`)
+      // El personal no crea tarjetas (como la app, «Ayuda guiada»).
+      : bi('Cuando quien lleva el negocio cree una, la verás aquí.', 'When whoever runs the business creates one, you’ll see it here.'))}</div>`}`;
   const nueva = $('#nueva', v);
   if (nueva) nueva.onclick = () => { location.hash = '#/sellos/nueva'; };
 };
@@ -7447,7 +7450,7 @@ PAGES.cerrados = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Días cerrados</h1></div>
     ${helpBox('¿Cómo funciona?', '<p>Vacaciones, festivos, obras. Esos días no se ve nada de tu negocio, como con «Cerrado por hoy», y tu ficha dice hasta cuándo cierras. Al acabar, todo vuelve a verse solo.</p><p>Como mucho tres meses seguidos y doce cierres por delante.</p>')}
-    ${vacio ? `<p class="muted cierres-vacio">${esc(I18N.t('No tienes días cerrados por delante.'))}</p>` : ''}
+    ${vacio ? `<p class="cierres-vacio"><b>${esc(I18N.t('No tienes días cerrados por delante.'))}</b><br><span class="muted">${esc(bi('Marca vacaciones, festivos u obras, por ejemplo «del 1 al 15 de agosto», y tu ficha dirá hasta cuándo cierras.', 'Mark holidays, bank holidays or works, for example “1 to 15 August”, and your page will say until when you’re closed.'))}</span></p>` : ''}
     ${lista.length ? `<div class="card"><h2>Por delante</h2>${table({
       cols: [
         { h: 'Días', r: (c) => `<b class="title">${esc(tramo(c))}</b>${c.starts_on <= hoy && hoy <= c.ends_on ? ` ${tag('Ahora', 'st-pending')}` : ''}` },
@@ -7559,6 +7562,7 @@ async function cierresOtroHorario(hoy, maxDia) {
 PAGES.ayuda = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Preguntas frecuentes</h1></div>
+    <div data-asistente hidden></div>
     <div class="card"><h2>Qué puedes hacer aquí</h2>
       <p>Este panel hace lo mismo que la app, desde el ordenador o desde el navegador del móvil: dar de alta el negocio, publicar ofertas y eventos, ver cómo van, validar códigos en la puerta y llevar el equipo.</p>
       <p class="muted">Para validar, escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR.</p></div>
@@ -7578,6 +7582,10 @@ PAGES.ayuda = async (v) => {
       <p class="muted">Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.</p>
       <p style="margin:8px 0 0"><a class="btn sm" href="${I18N.pub === 'en' ? '/en/faq' : '/preguntas'}#negocios">${ms('help')}${esc(I18N.t('Ver las preguntas frecuentes'))}</a></p></div>
     <div class="card"><h2>¿Algo no cuadra?</h2><p class="muted" style="margin:0">Escríbenos a <a class="link" href="mailto:info@klendar.app">info@klendar.app</a> y lo miramos.</p></div>`;
+  // El asistente de ayuda (assets/asistente.js), arriba y solo si está
+  // encendido y con tope (`assistant_status`): como «Pregúntale al
+  // asistente» en la Ayuda de la app («Ayuda guiada», 18-11).
+  window.KL_ASISTENTE?.monta();
 };
 
 // ── Dar de baja el negocio ──────────────────────────────────────────────────

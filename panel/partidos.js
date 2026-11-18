@@ -106,7 +106,7 @@ PAGES.partidos = async (v, param) => {
       caja.innerHTML = `<section class="vacio">
         <h2>${esc(S.emptyWeek)}</h2>
         <p>${esc(S.emptyWeekText)}</p>
-        ${puede ? `<div class="vacio-botones"><a class="btn" href="#/partidos/nuevo">${esc(S.addAnother)}</a></div>` : ''}
+        ${puede ? `<div class="vacio-botones"><a class="btn primary" href="#/partidos/nuevo">${esc(S.addFirst)}</a></div>` : ''}
       </section>`;
       return;
     }

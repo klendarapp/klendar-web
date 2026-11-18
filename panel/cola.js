@@ -160,7 +160,7 @@ PAGES.cola = async (v) => {
           <details class="mas cola-mas"><summary class="btn sm ghost" aria-label="${esc(bi(`Más opciones para el ${colaNumero(e.number)}`, `More options for ${colaNumero(e.number)}`))}">${ms('more_horiz')}</summary>
             <div class="mas-menu"><button type="button" data-llega="${esc(e.id)}">${esc(I18N.t('Ha llegado'))}</button>
               <button type="button" class="bad" data-quita="${esc(e.id)}">${esc(I18N.t('Quitar de la cola'))}</button></div></details>`)).join('')}</div>`
-      : `<p class="muted">${esc(I18N.t('No hay nadie esperando.'))}</p>`}
+      : `<p class="muted">${esc(bi('No hay nadie esperando. La gente coge número escaneando el cartel de la puerta.', 'Nobody is waiting. People take a number by scanning the poster at the door.'))}</p>`}
       ${hechos.length ? `<details class="help cola-hechos"><summary>${esc(bi(`Terminados (${hechos.length})`, `Finished (${hechos.length})`))}</summary>
         <div class="cola-lista">${hechos.map((e) => fila(e, `<span class="tag ${e.status === 'served' ? 'st-active' : 'dim'}">${esc(I18N.t(COLA_ESTADO[e.status] || e.status))}</span>
           ${e.status === 'left' ? '' : `<button class="btn sm" type="button" data-devuelve="${esc(e.id)}">${esc(I18N.t('Devolver a la cola'))}</button>`}`)).join('')}</div></details>` : ''}
