@@ -2249,8 +2249,41 @@ async function businessAction(a, b, d) {
           options: [['', I18N.lang === 'en' ? '— Not an organisation' : '— No es una entidad'], ...['council', 'district', 'merchants', 'neighbours', 'ngo', 'other'].map((k) => [k, nombreEntidad(k)])] }],
         submit: I18N.lang === 'en' ? 'Save' : 'Guardar' });
       if (!r) return;
-      await rpc('admin_set_entity', { p_business: b.id, p_kind: r.kind || null });
-      toast(r.kind ? (I18N.lang === 'en' ? 'Marked as an organisation' : 'Marcada como entidad') : (I18N.lang === 'en' ? 'No longer an organisation' : 'Ya no es una entidad'));
+      // Quitarla pide un motivo, que le llega al negocio (app y correo) con lo
+      // que le queda y su fecha (migración 20261285400110). Queda en el
+      // registro de actividad.
+      let motivo = null;
+      if (b.entity_kind && !r.kind) {
+        const en = I18N.lang === 'en';
+        motivo = await modal({ title: en ? 'Remove the organisation account' : 'Quitar la cuenta de entidad',
+          warn: en
+            ? `The owner and managers of <b>${esc(b.name)}</b> get a notification and the owner an email, in their language, with the reason and the plan it is left with and its date (its province’s launch offer, the trial it had, or “choose your plan”; with no plan it is blocked). They can reply to the email if they think it’s a mistake.`
+            : `Al propietario y a los encargados de <b>${esc(b.name)}</b> les llega un aviso en la app y al propietario un correo, en su idioma, con el motivo y el plan que le queda y su fecha (el «Gratis de lanzamiento» de su provincia, la prueba que tenía o «elige tu plan»; sin plan, se bloquea). Pueden responder al correo si creen que es un error.`,
+          fields: [
+            { name: 'reason', label: en ? 'Reason (the business will see it)' : 'Motivo (lo verá el negocio)', type: 'textarea', required: true },
+            { name: 'reason_en', label: en ? 'Reason in English (optional)' : 'Motivo en inglés (opcional)', type: 'textarea', help: en ? 'For whoever uses Klendar in English, French, German or Italian. If left empty, they get the Spanish one.' : 'Lo recibe quien tiene Klendar en inglés, francés, alemán o italiano. Si lo dejas vacío, le llega el español.' },
+          ],
+          submit: en ? 'Remove and notify' : 'Quitar y avisar', danger: true });
+        if (!motivo) return;
+      }
+      const res = await rpc('admin_set_entity', { p_business: b.id, p_kind: r.kind || null,
+        p_reason: motivo?.reason || null, p_reason_en: motivo?.reason_en || null });
+      if (r.kind) toast(I18N.lang === 'en' ? 'Marked as an organisation' : 'Marcada como entidad');
+      else if (!motivo) toast(I18N.lang === 'en' ? 'No longer an organisation' : 'Ya no es una entidad');
+      else {
+        const en = I18N.lang === 'en';
+        const hasta = res?.until ? fmtDay(res.until + 'T12:00:00') : '';
+        const queda = {
+          launch_free: en ? `launch offer until ${hasta}` : `«Gratis de lanzamiento» hasta el ${hasta}`,
+          trial: en ? `trial until ${hasta}` : `prueba hasta el ${hasta}`,
+          free: en ? `free until ${hasta}` : `gratis hasta el ${hasta}`,
+          period: en ? `paid until ${hasta}` : `pagado hasta el ${hasta}`,
+          none: en ? 'no plan: it has to choose one' : 'sin plan: tiene que elegir uno',
+          blocked: en ? 'no plan: blocked until it chooses one' : 'sin plan: bloqueado hasta que elija uno',
+          kept: en ? 'its plan stays as it was' : 'su plan sigue como estaba',
+        }[res?.plan] || '';
+        toast((en ? 'No longer an organisation; notified' : 'Ya no es una entidad; avisado') + (queda ? ` · ${queda}` : ''));
+      }
     }
     if (a === 'verify' && !await verificarNegocio(b)) return;
     if (a === 'reject' && !await rechazarNegocio(b)) return;
