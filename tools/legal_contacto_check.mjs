@@ -39,13 +39,13 @@ const PAGINAS = [
     /Contacto de quien reserva\. El correo y el teléfono de quien tiene una reserva, está en su lista de espera o en su cola solo puede usarlos para avisarle de algo de esa reserva, lista o turno \(un cambio de hora, una cancelación, que le toca\)\. Nunca para publicidad ni para meterlo en sus listas\. No puede copiarlos ni guardarlos fuera de Klendar: dejan de verse 7 días después del evento \(en la cola, al acabar el día\)\./,
     new RegExp(`Los del ${CONTACTO.es} \\(apartado 3, «Contacto de quien reserva»\\) se aplican desde el 1 de diciembre de 2026, también 15 días después\\. (?:[^\\n]*?)La «Pausa`),
     new RegExp(`${CONTACTO.iso}\\s+16-11-2026\\s+1-12-2026`),
-    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,4}?${CONTACTO.es}: Apartado 3, «Contacto de quien reserva»[^\\n]+Se aplica desde el 1 de diciembre de 2026`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,5}?${CONTACTO.es}: Apartado 3, «Contacto de quien reserva»[^\\n]+Se aplica desde el 1 de diciembre de 2026`),
   ], []],
   ['/en/business-terms', fechaLegal('/en/business-terms', `Last updated: ${CONTACTO.en} · Version ${VERSION_NEGOCIOS}`), [
     /Contact details of people who book\. It may only use the email and phone number of anyone who has a booking, is on its waiting list or in its queue/,
     new RegExp(`Those of ${CONTACTO.en} \\(section 3, “Contact details of people who book”\\) apply from 1 December 2026, also 15 days later\\. (?:[^\\n]*?)The “Seasonal pause”`),
     new RegExp(`${CONTACTO.iso}\\s+16 Nov 2026\\s+1 Dec 2026`),
-    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,4}?${CONTACTO.en}: Section 3, “Contact details of people who book”`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,5}?${CONTACTO.en}: Section 3, “Contact details of people who book”`),
   ], []],
   ['/preguntas', null, [
     /¿Qué ve el negocio cuando reservo, me apunto a la lista de espera o cojo número\?/,

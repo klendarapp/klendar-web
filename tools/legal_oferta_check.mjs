@@ -30,9 +30,10 @@ const AP_EN = `${aplica.getUTCDate()} ${MES_EN[aplica.getUTCMonth()]} ${aplica.g
 const corto = (x) => `${x.getUTCDate()}-${x.getUTCMonth() + 1}-${x.getUTCFullYear()}`;
 const cortoEn = (x) => `${x.getUTCDate()} ${MES_EN[x.getUTCMonth()].slice(0, 3)} ${x.getUTCFullYear()}`;
 const pub = new Date(Date.UTC(a, m - 1, d));
-// En las condiciones para negocios va encima la línea de «Cuentas de entidad» del mismo día (legal_entidad.py).
-const HES = (t) => new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,1}?${OFERTA.es}: ${t}`);
-const HEN = (t) => new RegExp(`Change history\\s+(?:.+\\n\\s*){0,1}?${OFERTA.en}: ${t}`);
+// En las condiciones para negocios van encima las líneas de «Cuentas de entidad» y «Cada local paga lo suyo» del mismo
+// día (legal_entidad.py, legal_porlocal.py).
+const HES = (t) => new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,2}?${OFERTA.es}: ${t}`);
+const HEN = (t) => new RegExp(`Change history\\s+(?:.+\\n\\s*){0,2}?${OFERTA.en}: ${t}`);
 
 // [ruta, cabecera, lo que tiene que salir, lo que ya no sale]
 const PAGINAS = [

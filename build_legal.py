@@ -17,6 +17,7 @@ import legal_encargos
 import legal_preguntas
 import legal_oferta
 import legal_entidad
+import legal_porlocal
 
 # ════════════════════════════════════════════════════════════════════════════
 # DATOS DEL TITULAR — el único sitio que se toca cuando cambia quién está
@@ -1403,6 +1404,17 @@ for _slug, _cuando, _es, _en in legal_entidad.cambios():
     _apunta(_slug, _cuando, _es, _en, primero=True)
 VERSIONES_NEGOCIOS[:0] = [v for v in legal_entidad.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
 
+# ════════════════════════════════════════════════════════════════════════════
+# CADA LOCAL PAGA LO SUYO (Iván, 18-11): las frases de los apartados 3 bis, 4 y
+# 5 están en legal_porlocal.py, con la fecha del día que se publique
+# (PORLOCAL_DESDE): su línea en el historial de las condiciones, «Última
+# actualización» y una versión nueva que se aplica 15 días después (P2B art.
+# 3.2; la letra siguiente si ese día ya hay otra).
+# ════════════════════════════════════════════════════════════════════════════
+for _slug, _cuando, _es, _en in legal_porlocal.cambios():
+    _apunta(_slug, _cuando, _es, _en, primero=True)
+VERSIONES_NEGOCIOS[:0] = [v for v in legal_porlocal.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
+
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:
 # el script se niega a publicar nada que los contenga.
 EJEMPLO_SL = dict(TITULAR_DATOS,
@@ -2746,6 +2758,8 @@ def textos(D, resaltar=False):
     legal_oferta.aplicar(ES, EN, E)
     # Entidad que ya pagaba (legal_entidad.py), si tiene fecha: detrás de la oferta.
     legal_entidad.aplicar(ES, EN, E)
+    # Cada local paga lo suyo (legal_porlocal.py), si tiene fecha: detrás de la entidad.
+    legal_porlocal.aplicar(ES, EN, E)
     return ES, EN
 
 

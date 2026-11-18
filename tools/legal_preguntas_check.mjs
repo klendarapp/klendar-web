@@ -47,13 +47,13 @@ const PAGINAS = [
     /3 terdecies\. Encargos[\s\S]+?3 quaterdecies\. Preguntas al reservar/,
     new RegExp(`(?:«Preguntas al reservar» \\(apartado 3 quaterdecies\\)[^.]+ se aplica desde el|apartado 3 quaterdecies, «Preguntas al reservar»\\) se aplican desde el) ${esc(AP_ES)}`),
     new RegExp(`${V}\\s+${corto(pub)}\\s+${corto(aplica)}`),
-    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,2}?${PREGUNTAS.es}: Apartado 3 quaterdecies nuevo, «Preguntas al reservar»[^\\n]+Se aplica desde el ${esc(AP_ES)}`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,3}?${PREGUNTAS.es}: Apartado 3 quaterdecies nuevo, «Preguntas al reservar»[^\\n]+Se aplica desde el ${esc(AP_ES)}`),
   ]],
   ['/en/business-terms', fechaLegal('/en/business-terms', `Last updated: ${PREGUNTAS.en} · Version ${PREGUNTAS.version}`), [
     /3m\. Booking questions\s+You may ask the questions you want to people booking an event\. Only ask what you need for that event\.[^\n]+those questions can’t be required and people booking only answer them if they give their consent\.[^\n]+Klendar may remove questions that breach these rules\.\s+4\. Free trial/,
     new RegExp(`(?:“Booking questions” \\(section 3m\\)[^.]+ applies from|section 3m, “Booking questions”\\) apply from) ${esc(AP_EN)}`),
     new RegExp(`${V}\\s+${cortoEn(pub)}\\s+${cortoEn(aplica)}`),
-    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,2}?${PREGUNTAS.en}: New section 3m, “Booking questions”[^\\n]+It applies from ${esc(AP_EN)}`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,3}?${PREGUNTAS.en}: New section 3m, “Booking questions”[^\\n]+It applies from ${esc(AP_EN)}`),
   ]],
 ];
 

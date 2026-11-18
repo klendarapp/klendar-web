@@ -95,7 +95,21 @@ export const ENTIDAD = fen[1] === 'None' ? null : (() => {
     en: `${Number(fen[4])} ${MESES_EN[Number(fen[3]) - 1]} ${fen[2]}`,
   };
 })();
-const NEGOCIOS = ENTIDAD ? { ...ENTIDAD } : OFERTA ? { ...OFERTA } : PREGUNTAS ? { ...PREGUNTAS } : ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
+// Cada local paga lo suyo (legal_porlocal.py, PORLOCAL_DESDE: solo las condiciones para negocios, apartados 3 bis, 4
+// y 5, con su versión; la letra siguiente si es el mismo día que la entidad, 18-11-2026).
+const fpl = fs.readFileSync(new URL('../legal_porlocal.py', import.meta.url), 'utf8').match(/^PORLOCAL_DESDE = (None|'(\d{4})-(\d{2})-(\d{2})')/m);
+if (!fpl) throw new Error('_fecha_ia.mjs: no encuentro PORLOCAL_DESDE en legal_porlocal.py');
+export const PORLOCAL = fpl[1] === 'None' ? null : (() => {
+  const iso = `${fpl[2]}-${fpl[3]}-${fpl[4]}`;
+  const sig = (v) => (v === iso ? `${iso}-b` : `${iso}-${String.fromCharCode(v.charCodeAt(v.length - 1) + 1)}`);
+  return {
+    iso,
+    version: ENTIDAD && ENTIDAD.iso === iso ? sig(ENTIDAD.version) : iso,
+    es: `${Number(fpl[4])} de ${MESES_ES[Number(fpl[3]) - 1]} de ${fpl[2]}`,
+    en: `${Number(fpl[4])} ${MESES_EN[Number(fpl[3]) - 1]} ${fpl[2]}`,
+  };
+})();
+const NEGOCIOS = PORLOCAL ? { ...PORLOCAL } : ENTIDAD ? { ...ENTIDAD } : OFERTA ? { ...OFERTA } : PREGUNTAS ? { ...PREGUNTAS } : ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
 const PRIV = OFERTA || PREGUNTAS || ENCARGOS;
 const TERM = OFERTA || ENCARGOS;
 export const POSTERIOR = {
@@ -108,7 +122,7 @@ export const POSTERIOR = {
 };
 
 // La versión de las condiciones para negocios que dice la cabecera de /negocios (la más nueva).
-export const VERSION_NEGOCIOS = ENTIDAD?.version || OFERTA?.version || PREGUNTAS?.version || ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
+export const VERSION_NEGOCIOS = PORLOCAL?.version || ENTIDAD?.version || OFERTA?.version || PREGUNTAS?.version || ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
 
 export function fechaLegal(ruta, cabecera) {
   const p = POSTERIOR[ruta];

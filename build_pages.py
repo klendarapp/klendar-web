@@ -345,9 +345,9 @@ def tabla_planes(lang):
 PAGINAS['precios'] = (
     'pricing',
     'Precios', 'Pricing',
-    'Pruébalo gratis y, después, un solo plan con todo: 19,90 € + IVA al mes por local (menos por local si tienes varios). '
+    'Pruébalo gratis y, después, un solo plan con todo: 19,90 € + IVA al mes por local, cada uno con su suscripción. '
     'Sin comisiones por canje y sin permanencia.',
-    'Try it free, then one plan with everything: €19.90 + VAT a month per venue (less per venue if you have several). '
+    'Try it free, then one plan with everything: €19.90 + VAT a month per venue, each with its own subscription. '
     'No commission per redemption and no lock-in.',
     f'''
 <p class="lead">Un solo plan con todo incluido, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
@@ -358,13 +358,8 @@ PAGINAS['precios'] = (
 <p>¿Ayuntamiento, asociación u ONG? <a href="/para-entidades">Gratis para siempre</a>.</p>
 
 <h2>¿Varios locales?</h2>
-<p>El precio es <strong>por local</strong>, porque cada uno tiene su público, sus códigos y sus números. El primero paga el precio entero y, a partir del segundo, cada local más paga menos:</p>
-<table class="tiers">
-  <tr><td>El&nbsp;primer&nbsp;local</td><td style="padding-left:14px"><b>19,90 €</b> al mes</td></tr>
-  <tr><td>Del&nbsp;2.º&nbsp;al&nbsp;5.º</td><td style="padding-left:14px"><b>15 €</b> al mes cada uno</td></tr>
-  <tr><td>Desde&nbsp;el&nbsp;6.º</td><td style="padding-left:14px"><b>12 €</b> al mes cada uno, con una persona de contacto</td></tr>
-</table>
-<p class="note">Todo + IVA. Por ejemplo, con 3 locales pagas 19,90 + 15 + 15 = 49,90 € + IVA al mes; con 6, 19,90 + 4 × 15 + 12 = 91,90 € + IVA.</p>
+<p>El precio es <strong>por local</strong>, porque cada uno tiene su público, sus códigos y sus números. <strong>Cada local tiene su propia suscripción</strong>, con su forma de pago y su factura (con los datos fiscales que pongas para ese local), y paga 19,90 € + IVA al mes. Pagar, cambiar la tarjeta, pausar, cancelar o traspasar un local no toca los demás.</p>
+<p><strong>¿Una cadena o un grupo de locales?</strong> Escríbenos a <a href="mailto:info@klendar.app?subject=Varios%20locales">info@klendar.app</a> y lo vemos: si toca, te damos un <strong>código de descuento</strong> que pones al pagar.</p>
 <p><strong>Publicar en varios locales a la vez va incluido.</strong> Escribes la oferta una vez, marcas en qué locales la quieres y cada uno recibe la suya, con su dirección y su propio código; las cifras las ves por separado y sumadas. No cobramos aparte por ahorrarte el trabajo de escribirlo tres veces.</p>
 
 <h2>La letra pequeña</h2>
@@ -391,13 +386,8 @@ PAGINAS['precios'] = (
 <p>Council, association or NGO? <a href="/en/for-organisations">Free, for good</a>.</p>
 
 <h2>Several venues?</h2>
-<p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. The first venue pays the full price and, from the second one on, each extra venue pays less:</p>
-<table class="tiers">
-  <tr><td>Your&nbsp;first&nbsp;venue</td><td style="padding-left:14px"><b>€19.90</b> a month</td></tr>
-  <tr><td>2nd&nbsp;to&nbsp;5th</td><td style="padding-left:14px"><b>€15</b> a month each</td></tr>
-  <tr><td>6th&nbsp;onwards</td><td style="padding-left:14px"><b>€12</b> a month each, with a dedicated contact</td></tr>
-</table>
-<p class="note">All + VAT. For example, with 3 venues you pay 19.90 + 15 + 15 = €49.90 + VAT a month; with 6, 19.90 + 4 × 15 + 12 = €91.90 + VAT.</p>
+<p>The price is <strong>per venue</strong>, because each one has its own audience, its own codes and its own numbers. <strong>Each venue has its own subscription</strong>, with its own payment method and invoice (with the billing details you give for that venue), and pays €19.90 + VAT a month. Paying, changing the card, pausing, cancelling or transferring one venue doesn't touch the others.</p>
+<p><strong>A chain or a group of venues?</strong> Email us at <a href="mailto:info@klendar.app?subject=Several%20venues">info@klendar.app</a> and we'll look at it: where it makes sense, we give you a <strong>discount code</strong> to enter when you pay.</p>
 <p><strong>Publishing to several venues at once is included.</strong> You write the offer once, tick the venues you want and each one gets its own, with its own address and its own code; you see the numbers per venue and added up. We don't charge extra for saving you from typing it three times.</p>
 
 <h2>The small print</h2>
