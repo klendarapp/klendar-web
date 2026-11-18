@@ -25,7 +25,8 @@ import KM from '../../assets/marcas.js';
 import KMO from '../../assets/momentos.js';
 import KE from '../../assets/enlaces.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
-import { textoCarta, tipoCartaDe } from './carta.js';
+import { cartaDeCategoria, categoriaDe, textoCarta } from './carta.js';
+import { direccionLd, esDeComer, horarioLd, tipoSchema, valoracionLd } from './seo.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
 import { GRUPOS_CSS, grupoEnFicha } from './grupos.js';
 import { sorteosEncendidos, sorteosEnFicha } from './sorteos.js';
@@ -661,30 +662,57 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
   const description = [tag, flash ? when : fmtLong(o.event_at, lang, tz), o.business_name, o.business_city]
     .filter(Boolean).join(' · ').slice(0, 200);
 
-  const jsonLd = flash
+  // Datos estructurados (Google y Bing): un evento como `Event` (fecha, sitio
+  // con su dirección postal, organizador, estado y la entrada si se sabe su
+  // precio) y una oferta como `Offer`; las dos con sus migas (Klendar › el
+  // negocio › la publicación). Sin foto, la del local.
+  const fotoLd = cover || o.business_cover || o.business_logo || undefined;
+  const dirLd = direccionLd({ calle: o.venue_address || o.business_address, ciudad: o.business_city || o.city });
+  const lugarLd = {
+    '@type': 'Place', name: o.venue_name || o.business_name, url: o.venue_address ? undefined : `${BASE}${bHref}`,
+    address: dirLd || where || undefined,
+    geo: o.lat && !o.venue_address ? { '@type': 'GeoCoordinates', latitude: Number(o.lat), longitude: Number(o.lng) } : undefined,
+  };
+  const precioLd = o.price_cents != null ? (o.price_cents / 100).toFixed(2) : undefined;
+  // Entradas fuera de Klendar (DICE, la web del sitio…): su enlace.
+  const entradasLd = !(flash || o.reservations_enabled) ? seguro(o.external_url) : '';
+  const principalLd = flash
     ? {
-        '@context': 'https://schema.org', '@type': 'Offer', name: o.title, description: o.description || undefined,
-        url: `${BASE}${path}`, image: cover || undefined, validFrom: o.redeem_start_at, validThrough: o.redeem_end_at,
-        offeredBy: { '@type': 'LocalBusiness', name: o.business_name, url: `${BASE}${bHref}`, address: where || undefined },
-        price: o.price_cents != null ? (o.price_cents / 100).toFixed(2) : undefined,
-        priceCurrency: o.price_cents != null ? (o.currency || 'EUR') : undefined,
+        '@type': 'Offer', name: o.title, description: o.description || undefined,
+        url: `${BASE}${path}`, image: fotoLd, validFrom: o.redeem_start_at || undefined, validThrough: o.redeem_end_at || undefined,
+        offeredBy: { '@type': 'LocalBusiness', name: o.business_name, url: `${BASE}${bHref}`, address: dirLd || where || undefined },
+        price: precioLd,
+        priceCurrency: precioLd ? (o.currency || 'EUR') : undefined,
         availability,
+        areaServed: o.business_city ? { '@type': 'City', name: o.business_city } : undefined,
       }
     : {
-        '@context': 'https://schema.org', '@type': 'Event', name: o.title, description: o.description || undefined,
-        url: `${BASE}${path}`, image: cover || undefined, startDate: o.event_at, endDate: o.event_end_at || undefined,
-        eventStatus: 'https://schema.org/EventScheduled', eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
-        location: { '@type': 'Place', name: o.venue_name || o.business_name, url: `${BASE}${bHref}`, address: where || undefined },
+        '@type': 'Event', name: o.title,
+        description: o.description || [o.title, o.venue_name || o.business_name, o.business_city].filter(Boolean).join(' · '),
+        url: `${BASE}${path}`, image: fotoLd, startDate: o.event_at, endDate: (fin && new Date(fin).toISOString()) || undefined,
+        eventStatus: o.status === 'cancelled' ? 'https://schema.org/EventCancelled' : 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        location: lugarLd,
         organizer: { '@type': 'Organization', name: o.business_name, url: `${BASE}${bHref}` },
         performer: performersLd(actua.lista, lang),
-        offers: o.reservations_enabled
+        // La entrada: reservar en Klendar (sin precio, gratis) o el precio que
+        // dice el negocio. Sin saber el precio, nada (Google pide uno).
+        offers: o.reservations_enabled || precioLd
           ? {
-              '@type': 'Offer', url: `${BASE}${path}`, availability,
-              price: o.price_cents != null ? (o.price_cents / 100).toFixed(2) : '0',
+              '@type': 'Offer', url: entradasLd || `${BASE}${path}`, availability,
+              price: precioLd || '0',
               priceCurrency: o.currency || 'EUR',
+              validFrom: o.created_at || undefined,
             }
           : undefined,
       };
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [principalLd, breadcrumbLd([['Klendar', en ? '/en' : '/'], [o.business_name, bHref], [o.title, path]])],
+  };
+  // Terminada, en pausa, +18 o importada: no es para los buscadores, aunque
+  // la ficha se siga abriendo con el enlace (y no sale en el sitemap).
+  const indexable = !(o.adults_only || fuente || over || enPausa);
 
   // La vista cuenta para el negocio (panel e informe), como en la app. Solo
   // desde un navegador de verdad y una vez por sesión: los robots de Google o
@@ -731,8 +759,8 @@ ${ARTISTAS_CSS}` : ''}
     description,
     head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `
 ${ARTISTAS_CSS}` : ''}
-<meta name="robots" content="${o.adults_only || fuente ? 'noindex' : 'index, follow'}">
-<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>`,
+<meta name="robots" content="${indexable ? 'index, follow' : 'noindex'}">
+${indexable ? ldScript(jsonLd) : ''}`,
   }));
 }
 
@@ -957,7 +985,7 @@ export async function businessPage(param, lang, search = '') {
   // ¿Ayer fue uno de sus días cerrados? (migración 20261284500030 de la app): la
   // madrugada de después sigue cerrada. Sin la función, como antes.
   const ayerCerradoP = rpc('business_closed_yesterday', { p_business: id }).then((x) => x === true).catch(() => false);
-  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista, muni, tipoCarta] = await Promise.all([
+  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista, muni, catNeg] = await Promise.all([
     ver ? [] : rpcAll('business_offers_page', { p_id: id, p_limit: POR_PAGINA_FICHA, p_offset: desde }),
     ver ? null : rpc('business_offer_counts', { p_id: id }).catch(() => null),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
@@ -994,9 +1022,11 @@ export async function businessPage(param, lang, search = '') {
     // Su municipio (por su punto; migración 20261260100040 de la app), para
     // enlazar la página del municipio por su slug. Opcional.
     rpc('business_municipality_info', { p_business: id }).catch(() => null),
-    // Cómo se llama su carta: «Carta», «Servicios y precios»… (Iván, 18-11).
-    tipoCartaDe(id, b.category_id),
+    // Su categoría principal: cómo se llama su carta («Carta», «Servicios y
+    // precios»…, Iván, 18-11) y su tipo para Google (Restaurant, BeautySalon…).
+    categoriaDe(id, b.category_id),
   ]);
+  const tipoCarta = cartaDeCategoria(catNeg);
   // El negocio de revisión de las tiendas (`review_only`, migración
   // 20261263900000): su ficha se abre con el enlace, para el revisor, pero no
   // es para los buscadores: `noindex`, sin datos estructurados ni canonical.
@@ -1577,9 +1607,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
     '@type': 'Organization', '@id': `${BASE}/b/${slug || id}#negocio`, name: b.name, description: b.description || undefined,
     url: `${BASE}${path}`, logo: b.logo || undefined, image: b.cover || b.logo || undefined, telephone: b.phone || undefined,
     areaServed: b.city ? { '@type': 'City', name: b.city } : undefined,
-    aggregateRating: b.rating && b.ratings
-      ? { '@type': 'AggregateRating', ratingValue: Number(b.rating).toFixed(1), reviewCount: b.ratings }
-      : undefined,
+    aggregateRating: valoracionLd(b.rating, b.ratings),
     sameAs: seguro(b.website) ? [b.website] : undefined,
     event: fechasOrg.length ? fechasOrg.slice(0, 20).map((d) => {
       const w = KA.donde(d);
@@ -1587,19 +1615,24 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
         location: { '@type': 'Place', name: w.sitio || b.name, address: d.venue_address || b.city || undefined } };
     }) : undefined,
-  } : {
-    '@type': 'LocalBusiness', '@id': `${BASE}/b/${slug || id}#negocio`, name: b.name, description: b.description || undefined,
-    url: `${BASE}${path}`, image: b.cover || b.logo || undefined, telephone: b.phone || undefined,
-    address: where
-      ? { '@type': 'PostalAddress', streetAddress: b.address || undefined, addressLocality: b.city || undefined, addressCountry: 'ES' }
-      : undefined,
-    geo: b.lat ? { '@type': 'GeoCoordinates', latitude: b.lat, longitude: b.lng } : undefined,
-    aggregateRating: b.rating && b.ratings
-      ? { '@type': 'AggregateRating', ratingValue: Number(b.rating).toFixed(1), reviewCount: b.ratings }
-      : undefined,
-    sameAs: seguro(b.website) ? [b.website] : undefined,
-    hasMenu: enlaceCarta || (pdfsCarta[0] && pdfsCarta[0].url) || (carta.length ? `${BASE}${path}#carta` : undefined),
-  };
+  } : (() => {
+    // El tipo según su categoría (Restaurant, BarOrPub, BeautySalon…;
+    // `_lib/seo.js`), con su dirección postal, el horario de siempre y el
+    // rango de precio («€€»). Parado o cerrado, sin horario (no abre).
+    const tipo = tipoSchema(catNeg?.slug);
+    return {
+      '@type': tipo, '@id': `${BASE}/b/${slug || id}#negocio`, name: b.name, description: b.description || undefined,
+      url: `${BASE}${path}`, image: b.cover || b.logo || undefined, logo: b.logo || undefined, telephone: b.phone || undefined,
+      email: b.contact_email || undefined,
+      address: where ? direccionLd({ calle: b.address, ciudad: b.city || mun?.name, provincia: mun?.province_name || mun?.province }) : undefined,
+      geo: b.lat ? { '@type': 'GeoCoordinates', latitude: Number(b.lat), longitude: Number(b.lng) } : undefined,
+      openingHoursSpecification: horas ? horarioLd(horas) : undefined,
+      priceRange: precio || undefined,
+      aggregateRating: valoracionLd(b.rating, b.ratings),
+      sameAs: seguro(b.website) ? [b.website] : undefined,
+      hasMenu: esDeComer(tipo) ? enlaceCarta || (pdfsCarta[0] && pdfsCarta[0].url) || (carta.length ? `${BASE}${path}#carta` : undefined) : undefined,
+    };
+  })();
   const migas = [['Klendar', en ? '/en' : '/']];
   if (city) migas.push([lugar, city]);
   migas.push([b.name, path]);

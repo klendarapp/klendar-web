@@ -193,6 +193,17 @@ function respuestas(D) {
     // Como la base: `{ city, slug, n }`, las que tienen algo publicado, de más a menos.
     public_cities: () => D.CIUDADES.map((c) => ({ city: c.name, slug: c.id, n: D.PLANES.filter((o) => o.city === c.name).length }))
       .filter((c) => c.n > 0).sort((x, y) => y.n - x.n),
+    // Como la base (`public_seo_places`, migración 20261285500000): cada
+    // municipio con algo, con cuántos planes (sin +18), ofertas, eventos, con
+    // niños, negocios y por categoría.
+    public_seo_places: () => D.MUNICIPIOS.map((m) => {
+      const pl = activos().filter((o) => !o.adults_only && o.audience === 'all' && plano(o.city) === plano(m.name));
+      const negs = D.NEGOCIOS.filter((b) => plano(b.city) === plano(m.name) && !b.adults_only && !b.entity_kind);
+      const cats = D.CATEGORIAS.map((c) => ({ slug: c.slug, n: pl.filter((o) => o.category_slug === c.slug).length })).filter((c) => c.n > 0);
+      return { city: m.name, slug: m.slug, code: m.code, province: m.code.slice(0, 2), province_name: m.province,
+        n: pl.length, flash: pl.filter((o) => o.kind === 'flash_offer').length, events: pl.filter((o) => o.kind === 'future_event').length,
+        kids: pl.filter((o) => (o.traits || []).includes('kids')).length, businesses: negs.length, cats };
+    }).filter((x) => x.n > 0 || x.businesses > 0).sort((x, y) => y.n - x.n),
     public_categories: (a) => D.CATEGORIAS.map((c) => ({ ...c, count: filtra(activos(), { p_city: a.p_city, p_category: c.slug }).length }))
       .filter((c) => c.count > 0),
     public_collections: () => [],

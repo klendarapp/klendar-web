@@ -71,6 +71,8 @@ const MEMO = {
   public_cities: 10 * MIN,
   public_categories: 10 * MIN,
   public_collections: 10 * MIN,
+  // Lo publicado en cada municipio, para los umbrales de los buscadores (`_lib/seo.js`).
+  public_seo_places: 10 * MIN,
   resolve_municipality: 60 * MIN,
   rated_sort_available: 10 * MIN,
   // Solo las «Populares» (sin texto): lo que se escribe va desde el navegador.

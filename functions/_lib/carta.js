@@ -7,21 +7,30 @@
 import KC from '../../assets/categorias.js';
 import { isUuid, rows } from './page.js';
 
-/** 'menu', 'services', 'products' o 'prices' del negocio `id` (o de su
- * categoría `categoryId`, si ya se sabe). Si no se puede saber (sin
- * categoría o sin respuesta), 'menu': como antes. */
-export async function tipoCartaDe(id, categoryId) {
+/** La categoría principal de un negocio (`{ slug, category_group }`) o null.
+ * `categoryId` si ya se sabe; si no, se lee del negocio `id`. La usan el
+ * nombre de la carta y el tipo de los datos estructurados (`_lib/seo.js`). */
+export async function categoriaDe(id, categoryId) {
   try {
     let cat = categoryId;
     if (cat === undefined && isUuid(id)) {
       cat = (await rows('businesses', `select=category_id&id=eq.${id}`))[0]?.category_id;
     }
-    if (!isUuid(cat)) return 'menu';
-    const c = (await rows('categories', `select=slug,category_group&id=eq.${cat}`))[0];
-    return c ? KC.carta(c) : 'menu';
+    if (!isUuid(cat)) return null;
+    return (await rows('categories', `select=slug,category_group&id=eq.${cat}`))[0] || null;
   } catch {
-    return 'menu';
+    return null;
   }
+}
+
+/** 'menu', 'services', 'products' o 'prices' de una categoría (de `categoriaDe`). */
+export const cartaDeCategoria = (c) => (c ? KC.carta(c) : 'menu');
+
+/** 'menu', 'services', 'products' o 'prices' del negocio `id` (o de su
+ * categoría `categoryId`, si ya se sabe). Si no se puede saber (sin
+ * categoría o sin respuesta), 'menu': como antes. */
+export async function tipoCartaDe(id, categoryId) {
+  return cartaDeCategoria(await categoriaDe(id, categoryId));
 }
 
 const I = { menu: 0, services: 1, products: 2, prices: 3 };

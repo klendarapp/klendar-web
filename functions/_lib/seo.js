@@ -1,0 +1,190 @@
+// Lo de los buscadores en un solo sitio (Google y Bing, Iván, 18-11: «que las
+// páginas de negocios y eventos salgan en las búsquedas de Málaga»):
+//
+//  - UMBRALES: cuánto tiene que tener un municipio (o una provincia) para que
+//    sus páginas se indexen. Sin contenido suficiente, `noindex` y fuera del
+//    sitemap: Google castiga las páginas vacías en masa («thin content») y hay
+//    más de 8000 municipios. Lo usan las páginas y los sitemaps, así nunca
+//    sale en el sitemap una dirección que la página manda no indexar
+//    (tools/seo_check.mjs lo comprueba).
+//  - `lugaresSeo()`: lo publicado en cada municipio, de una vez
+//    (`public_seo_places`, migración 20261285500000 de la app; unos minutos en
+//    la memoria de cada copia, ver MEMO en page.js). Sin esa función (prod
+//    antes de su migración), lo de `public_cities` (cuántos planes hay en
+//    cada municipio), que ya se pedía.
+//  - Datos estructurados (schema.org) de las fichas: el tipo de negocio según
+//    su categoría (Restaurant, BarOrPub, BeautySalon…), la dirección, el
+//    horario y el rango de precio.
+
+import { rpcAll } from './page.js';
+
+/** Los umbrales (Iván, 18-11). Se cambian aquí y valen para páginas y sitemaps. */
+export const UMBRALES = {
+  // Planes publicados (ofertas y eventos vivos, sin +18 ni exclusivas) para
+  // que se indexen las páginas de un municipio: hoy, la semana, con niños y
+  // cada categoría.
+  municipio: 3,
+  // En una categoría del municipio («Bares en Málaga»), además del municipio.
+  categoria: 2,
+  // Ofertas vivas para «Ofertas en <municipio>».
+  ofertas: 2,
+  // Planes en toda la provincia para su página («Planes en la provincia de Málaga»).
+  provincia: 5,
+};
+
+const num = (x) => (Number.isFinite(Number(x)) ? Number(x) : 0);
+
+/** Una fila de `public_seo_places` (o de `public_cities`, con lo que trae). */
+function normaliza(f, completa) {
+  return {
+    city: f.city || f.name || '',
+    slug: f.slug || null,
+    code: f.code || null,
+    province: f.province || null,
+    provinceName: f.province_name || null,
+    n: num(f.n),
+    // Sin la función nueva no se sabe: null (la página mira lo suyo).
+    flash: completa ? num(f.flash) : null,
+    events: completa ? num(f.events) : null,
+    kids: completa ? num(f.kids) : null,
+    businesses: completa ? num(f.businesses) : null,
+    cats: completa && Array.isArray(f.cats) ? f.cats.filter((k) => k && k.slug).map((k) => ({ slug: k.slug, n: num(k.n) })) : null,
+    completa,
+  };
+}
+
+/** Lo publicado en cada municipio con algo. `completa`: con la función nueva. */
+export async function lugaresSeo() {
+  try {
+    const l = await rpcAll('public_seo_places', {});
+    return { lugares: l.filter((f) => f && (f.slug || f.city)).map((f) => normaliza(f, true)), completa: true };
+  } catch {
+    const l = await rpcAll('public_cities', {}).catch(() => []);
+    return { lugares: l.filter((f) => f && f.city).map((f) => normaliza(f, false)), completa: false };
+  }
+}
+
+const plano = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+
+/** Lo de un municipio (por su slug o su nombre); sin nada publicado, ceros. */
+export async function lugarSeo(slugOCiudad) {
+  const { lugares, completa } = await lugaresSeo();
+  const k = plano(slugOCiudad);
+  const f = lugares.find((x) => (x.slug && x.slug === slugOCiudad) || plano(x.slug) === k || plano(x.city) === k);
+  return f || normaliza({ slug: slugOCiudad, n: 0 }, completa);
+}
+
+/** ¿Tiene el municipio lo suficiente para indexar sus páginas? */
+export const municipioConContenido = (l) => Boolean(l) && l.n >= UMBRALES.municipio;
+
+/** ¿Y una de sus categorías? `propio`: lo que enseña la página (sin la función nueva). */
+export function categoriaConContenido(l, slug, propio = null) {
+  if (!municipioConContenido(l)) return false;
+  const k = Array.isArray(l.cats) ? l.cats.find((c) => c.slug === slug) : null;
+  const n = k ? k.n : l.cats ? 0 : num(propio);
+  return n >= UMBRALES.categoria;
+}
+
+/** ¿«Ofertas en <municipio>»? */
+export function ofertasConContenido(l, propio = null) {
+  const n = l && l.flash != null ? l.flash : num(propio);
+  return n >= UMBRALES.ofertas;
+}
+
+/** Las provincias con algo: [{ code, name, n, lugares: [...] }], de más a menos. */
+export function provincias(lugares) {
+  const m = new Map();
+  for (const l of lugares) {
+    if (!l.province) continue;
+    if (!m.has(l.province)) m.set(l.province, { code: l.province, name: l.provinceName || '', n: 0, lugares: [] });
+    const p = m.get(l.province);
+    p.n += l.n;
+    p.lugares.push(l);
+    if (!p.name && l.provinceName) p.name = l.provinceName;
+  }
+  return [...m.values()].sort((a, b) => b.n - a.n);
+}
+
+/** ¿Se indexa la página de la provincia? Lo suficiente y algún municipio indexable. */
+export const provinciaConContenido = (p) => Boolean(p) && p.n >= UMBRALES.provincia && p.lugares.some(municipioConContenido);
+
+/** «Málaga» → «malaga» (la dirección de la provincia). */
+export const slugProvincia = (nombre) => plano(nombre).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+// ── Datos estructurados de una ficha ────────────────────────────────────────
+
+// El tipo de schema.org de cada categoría (tool/categorias.json de la app; los
+// slugs de antes de los 96 tipos también están). Solo subtipos de
+// LocalBusiness: lo que Google entiende como un sitio al que ir. Lo que no
+// está, `LocalBusiness`.
+const TIPOS = {
+  bar: 'BarOrPub', cocktail: 'BarOrPub', wine: 'BarOrPub', brewery: 'Brewery',
+  restaurant: 'Restaurant', cafe: 'CafeOrCoffeeShop', bakery: 'Bakery', churros: 'FoodEstablishment',
+  icecream: 'IceCreamShop', takeaway: 'FastFoodRestaurant', foodtruck: 'FoodEstablishment', catering: 'FoodEstablishment',
+  gourmet: 'Store', grocery: 'GroceryStore', market: 'Store',
+  nightclub: 'NightClub', karaoke: 'EntertainmentBusiness', music: 'EntertainmentBusiness', stage: 'EntertainmentBusiness',
+  cinema: 'MovieTheater', culture: 'EntertainmentBusiness', art: 'ArtGallery',
+  games: 'EntertainmentBusiness', escape_room: 'EntertainmentBusiness', bowling: 'BowlingAlley', karting: 'SportsActivityLocation',
+  theme_park: 'AmusementPark', kids_play: 'EntertainmentBusiness', family: 'EntertainmentBusiness', experiences: 'EntertainmentBusiness',
+  sport: 'SportsActivityLocation', gym: 'ExerciseGym', yoga: 'SportsActivityLocation', padel: 'SportsActivityLocation',
+  climbing: 'SportsActivityLocation', pool: 'PublicSwimmingPool', martial_arts: 'SportsActivityLocation',
+  adventure: 'SportsActivityLocation', golf: 'GolfCourse',
+  wellness: 'DaySpa', beauty: 'BeautySalon', hairdresser: 'HairSalon', barber: 'HairSalon', nails: 'NailSalon', tattoo: 'TattooParlor',
+  pharmacy: 'Pharmacy', optician: 'Optician', dentist: 'Dentist', physio: 'Physiotherapy', medical: 'MedicalClinic',
+  hearing: 'MedicalBusiness', podiatry: 'MedicalBusiness', psychology: 'MedicalBusiness', nutrition: 'MedicalBusiness',
+  aesthetic_clinic: 'MedicalBusiness', health: 'MedicalBusiness', vet: 'VeterinaryCare',
+  event_planner: 'ProfessionalService', photo: 'ProfessionalService', print: 'ProfessionalService',
+  lodging: 'Hotel', hostel: 'Hostel', apartments: 'LodgingBusiness', rural: 'LodgingBusiness', camping: 'Campground',
+  fashion: 'ClothingStore', jewelry: 'JewelryStore', florist: 'Florist', gifts: 'Store', books: 'BookStore', stationery: 'Store',
+  kiosk: 'Store', toys: 'ToyStore', sports_shop: 'SportingGoodsStore', electronics: 'ElectronicsStore', home_decor: 'HomeGoodsStore',
+  hardware: 'HardwareStore', cosmetics: 'Store', secondhand: 'Store', shop: 'Store',
+  workshop: 'AutoRepair', home: 'HomeAndConstructionBusiness', laundry: 'DryCleaningOrLaundry', travel: 'TravelAgency',
+  civic: 'GovernmentOffice',
+};
+/** Los tipos que se usan (para tools/seo_check.mjs). */
+export const TIPOS_SCHEMA = new Set(['LocalBusiness', ...Object.values(TIPOS)]);
+/** Los que son de comer y beber (llevan `servesCuisine`/`hasMenu`). */
+const DE_COMER = new Set(['BarOrPub', 'Brewery', 'Restaurant', 'CafeOrCoffeeShop', 'Bakery', 'FoodEstablishment', 'IceCreamShop', 'FastFoodRestaurant']);
+
+/** El tipo de schema.org de un negocio por el slug de su categoría principal. */
+export const tipoSchema = (slug) => TIPOS[slug] || 'LocalBusiness';
+export const esDeComer = (tipo) => DE_COMER.has(tipo);
+
+const DIAS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const HORA = /^([01]\d|2[0-4]):[0-5]\d$/;
+
+/** El horario de la ficha ({"1": [["09:00","14:00"]], …}, 1 = lunes) para Google. */
+export function horarioLd(horas) {
+  if (!horas || typeof horas !== 'object') return undefined;
+  const out = [];
+  for (let d = 1; d <= 7; d += 1) {
+    const tramos = Array.isArray(horas[d]) ? horas[d] : Array.isArray(horas[String(d)]) ? horas[String(d)] : [];
+    for (const t of tramos) {
+      if (!Array.isArray(t) || !HORA.test(String(t[0])) || !HORA.test(String(t[1]))) continue;
+      out.push({ '@type': 'OpeningHoursSpecification', dayOfWeek: `https://schema.org/${DIAS[d - 1]}`, opens: t[0], closes: t[1] });
+    }
+  }
+  return out.length ? out : undefined;
+}
+
+/** «Calle Larios 5, 29005 Málaga» → la dirección postal, con su código postal. */
+export function direccionLd({ calle, ciudad, provincia }) {
+  if (!calle && !ciudad) return undefined;
+  const cp = /(?:^|\D)(\d{5})(?:\D|$)/.exec(String(calle || ''))?.[1];
+  return {
+    '@type': 'PostalAddress',
+    streetAddress: calle || undefined,
+    postalCode: cp || undefined,
+    addressLocality: ciudad || undefined,
+    addressRegion: provincia && !/^\d+$/.test(String(provincia)) && provincia !== ciudad ? provincia : undefined,
+    addressCountry: 'ES',
+  };
+}
+
+/** La valoración media, solo si es real (de quien la ha dejado en Klendar) y se ve en la página. */
+export function valoracionLd(media, cuantas) {
+  const n = Math.floor(num(cuantas));
+  const v = num(media);
+  if (n < 1 || v < 1 || v > 5) return undefined;
+  return { '@type': 'AggregateRating', ratingValue: v.toFixed(1), reviewCount: n, bestRating: 5, worstRating: 1 };
+}
