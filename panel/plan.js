@@ -185,11 +185,12 @@ function planNoPausa(sub, bill, st) {
 
 PAGES.plan = async (v) => {
   const ov = await rpc('billing_overview', { p_business: BIZ.id });
-  const sub = ov.subscription || {};
+  // Una entidad: ni bloqueo ni avisos de cobro (`sinCobroEntidad`, panel.js).
+  const sub = sinCobroEntidad(ov.subscription) || {};
   const bill = sub.billing || {};
   // Lo que se pinta en el resto del panel (el menú, el aviso) va con esto.
-  if (ov.subscription && !!bill.blocked !== bloqueado()) { SUB = ov.subscription; renderNav('plan'); }
-  else if (ov.subscription) SUB = ov.subscription;
+  if (ov.subscription && !!bill.blocked !== bloqueado()) { SUB = sub; renderNav('plan'); }
+  else if (ov.subscription) SUB = sub;
   const st = ov.stripe;
   const duena = ov.is_owner;
   const exento = planExento(ov);

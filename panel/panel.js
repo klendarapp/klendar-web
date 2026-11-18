@@ -54,6 +54,16 @@ const pausado = () => !!BIZ?.paused_until && new Date(BIZ.paused_until) > new Da
 // validar los códigos y bonos que ya tiene la gente. Lo carga
 // `preparaNegocio` y lo refresca el resumen. Como la app.
 let SUB = null;
+/** Una entidad (ayuntamiento, asociación…) o con su alta pendiente no paga:
+ * nunca bloqueo ni avisos de cobro (Iván, 11-11). La base ya no la bloquea
+ * (migración 20261285400070, que manda `billing.entity`); esto es la segunda
+ * defensa, como la app: de lo que la para, solo su propia pausa por cierre. */
+function sinCobroEntidad(s) {
+  const b = s?.billing;
+  const entidad = b?.entity === true || (typeof esEntidad === 'function' && esEntidad());
+  if (!b || !entidad || b.hold === 'paused') return s;
+  return { ...s, billing: { ...b, blocked: false, hold: null, block_soon: false, block_kind: null, block_on: null } };
+}
 const cobro = () => SUB?.billing || {};
 const bloqueado = () => cobro().blocked === true;
 const enPausaCierre = () => bloqueado() && cobro().hold === 'paused';
@@ -65,7 +75,7 @@ async function cargaCobro() {
   if (!negocio) { SUB = null; return; }
   try {
     const s = await rpc('my_subscription', { p_business: negocio });
-    if (BIZ?.id === negocio) SUB = s;
+    if (BIZ?.id === negocio) SUB = sinCobroEntidad(s);
   } catch { if (BIZ?.id === negocio) SUB = null; }
 }
 // ── La hora, la del negocio ─────────────────────────────────────────────────
@@ -1764,7 +1774,7 @@ PAGES.resumen = async (v) => {
     // «Ver todas (N) · M activas»: lo cuenta la base, no lo que se ha traído.
     rpc('my_business_offer_counts', { p_business: BIZ.id }).catch(() => null),
   ]);
-  if (sub) SUB = sub;
+  if (sub) SUB = sinCobroEntidad(sub);
   // Se acaba de bloquear (o de pausar desde otro sitio): a lo que se puede hacer.
   if (bloqueado()) { renderNav('resumen'); return pintaParado(v); }
   if (fallo) throw fallo;
@@ -1799,18 +1809,21 @@ PAGES.resumen = async (v) => {
   // aviso). Como la app. Una entidad que se dio de alta y aún no hemos
   // comprobado lo dice en su lugar (entidades.js).
   const entidad = esEntidad();
+  // Sin cobro: la entidad o lo que diga la base (`billing.entity`, aunque
+  // BIZ.entity aún no haya llegado).
+  const sinCobro = entidad || cobro().entity === true;
   const aviso = cerradoDeVerdad ? avisoCerrado()
     : condiciones ? avisoCondiciones(condiciones)
     : BIZ.verification_status !== 'verified' && BIZ.entity?.pending ? entAvisoPendiente()
     : BIZ.verification_status !== 'verified' ? avisoVerificacion()
       // Se bloquea en 7 días o menos (prueba, gratis, lo pagado o un impago).
       // Una entidad no paga: ningún aviso de cobro ni de bloqueo (Iván, 11-11).
-      : gestiona() && !entidad && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
-      : gestiona() && !entidad && sub?.status === 'past_due' ? avisoCobro()
+      : gestiona() && !sinCobro && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
+      : gestiona() && !sinCobro && sub?.status === 'past_due' ? avisoCobro()
       // El «Gratis de lanzamiento» con fecha de fin: en los últimos 30 días
       // (cuando llegan el push y el correo; migración 20261260100002 de la
       // app). Antes, la fecha va en la tarjeta del plan.
-      : gestiona() && !entidad && gratisAcabaPronto(sub) ? avisoGratisFin(sub)
+      : gestiona() && !sinCobro && gratisAcabaPronto(sub) ? avisoGratisFin(sub)
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
         <p class="muted" style="margin:4px 0 0">${esPropietario()
@@ -1903,7 +1916,7 @@ PAGES.resumen = async (v) => {
       ${gestiona() && !esOrganizador() && !entidad ? negocioBtn('#/cerrados', 'event_busy', 'Días cerrados') : ''}
       ${negocioBtn('#/ayuda', 'help', 'Ayuda')}
     </div>
-    ${sub && gestiona() && !entidad ? planCard(sub) : ''}
+    ${sub && gestiona() && !sinCobro ? planCard(sub) : ''}
     ${esPropietario() ? '' : `<div class="card"><h2>Salir del equipo</h2>
       <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
       <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;

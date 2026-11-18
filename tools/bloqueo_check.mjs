@@ -156,6 +156,18 @@ const CASOS = {
       { block_kind: 'free', block_on: masDias(26), block_from: masDias(6) });
     return { role: 'owner', sub: s, ov: overview(s) };
   },
+  // Una entidad no paga (Iván, 11-11): aunque la base dijera «bloqueado» o
+  // «se bloquea pronto», el panel no lo enseña (`sinCobroEntidad`, segunda
+  // defensa; `billing.entity`, migración 20261285400070 de la app).
+  entidad: () => {
+    const s = sub({ status: 'none', plan_slug: 'free', period_end: null, payment_method: null },
+      { hold: 'ended', blocked: true, block_kind: 'trial', block_on: hoy(), entity: true });
+    return { role: 'owner', sub: s, ov: overview(s), parado: false };
+  },
+  entidadPronto: () => {
+    const s = sub({ status: 'trial', period_end: masDias(4), payment_method: null }, { block_kind: 'trial', block_on: masDias(5), block_soon: true, entity: true });
+    return { role: 'owner', sub: s, ov: overview(s), parado: false };
+  },
   // A más de un mes del fin: todavía sin aviso (la fecha va en «Tu plan»).
   gratisLejos: () => {
     const s = sub({ plan_slug: 'free', plan_names: { es: 'Gratis de lanzamiento', en: 'Launch, free' }, price_cents: 0, period_end: masDias(35), payment_method: null },
@@ -193,6 +205,7 @@ async function contextoPanel(nav, vp, caso, idioma = 'es') {
   const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES', timezoneId: 'Europe/Madrid' });
   await ctx.addInitScript(([k, v, l]) => { try { localStorage.setItem(k, v); localStorage.setItem('klendar_lang', l); } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion(), idioma]);
   const c = CASOS[caso]();
+  const parado = c.parado ?? !!c.sub.billing.blocked;
   const estado = { llamadas: [], funciones: [], rpc: {} };
   Object.assign(estado.rpc, {
     my_consents: { terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true },
@@ -202,11 +215,11 @@ async function contextoPanel(nav, vp, caso, idioma = 'es') {
     my_subscription: () => c.sub,
     billing_overview: () => c.ov,
     // Lo de gestión lo niega la base con el negocio parado.
-    business_stats: c.sub.billing.blocked ? undefined : { redemptions_30d: 0 },
-    my_business_offers: c.sub.billing.blocked ? undefined : [],
+    business_stats: parado ? undefined : { redemptions_30d: 0 },
+    my_business_offers: parado ? undefined : [],
     business_tools_overview: { ok: true, can_edit: true, team: { members: 1 }, series: { rules_active: 0 } },
     // El avisador de pedidos, activado (para ver que parado no se ofrece).
-    business_orders: { ok: true, enabled: true, can_manage: true, blocked: !!c.sub.billing.blocked, paused: false, board: { waiting: 2 }, items: [] },
+    business_orders: { ok: true, enabled: true, can_manage: true, blocked: parado, paused: false, board: { waiting: 2 }, items: [] },
   });
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
   const p = await ctx.newPage();
@@ -404,6 +417,25 @@ async function panelPronto(nav, nombre, t, vp) {
   }
 }
 
+/** Una entidad: ni bloqueo ni avisos de cobro, aunque la base los mandara. */
+async function panelEntidad(nav, nombre, t, vp) {
+  for (const caso of ['entidad', 'entidadPronto']) {
+    const { ctx, p, errores } = await contextoPanel(nav, vp, caso);
+    await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
+    await p.waitForTimeout(400);
+    const v = await texto(p);
+    ok(await p.locator('.aviso-parado').count() === 0 && await p.locator('.aviso-cobro').count() === 0
+      && !/bloquea|Pagar|prueba gratis/i.test(v), `${nombre}/${t} ${caso}: sin bloqueo ni avisos de cobro`);
+    ok(/Publicaciones/.test(await menu(p)), `${nombre}/${t} ${caso}: el menú de siempre`);
+    await p.goto(`${BASE}/panel#/publicaciones`, { waitUntil: 'networkidle' });
+    await p.waitForTimeout(300);
+    ok(/#\/publicaciones$/.test(p.url()), `${nombre}/${t} ${caso}: #/publicaciones se abre (${p.url()})`);
+    if (t === 'escritorio' && caso === 'entidad') await p.screenshot({ path: `${OUT}/web-entidad-${nombre}-${t}.png`, fullPage: false });
+    ok(errores.length === 0, `${nombre}/${t} ${caso} sin errores JS ${errores.join(' | ')}`);
+    await ctx.close();
+  }
+}
+
 async function panelPausar(nav, nombre, t, vp) {
   const { ctx, p, errores, estado } = await contextoPanel(nav, vp, 'pagado');
   await p.goto(`${BASE}/panel#/plan`, { waitUntil: 'networkidle' });
@@ -595,7 +627,7 @@ if (!SOLO || SOLO.includes('ficha')) {
   servidorFichas = await serveDev(FICHA_PORT, { SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' });
 }
 
-const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, encargado: panelEncargado, personal: panelPersonal, pausa: panelPausa, pronto: panelPronto, arranque: panelArranque, pausar: panelPausar, admin, ficha: fichas };
+const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, encargado: panelEncargado, personal: panelPersonal, pausa: panelPausa, pronto: panelPronto, entidad: panelEntidad, arranque: panelArranque, pausar: panelPausar, admin, ficha: fichas };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {
