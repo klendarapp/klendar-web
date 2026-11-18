@@ -2266,8 +2266,9 @@ async function businessAction(a, b, d) {
           submit: en ? 'Remove and notify' : 'Quitar y avisar', danger: true });
         if (!motivo) return;
       }
+      // El motivo solo al quitarla (así, ponerla vale también con la base de antes).
       const res = await rpc('admin_set_entity', { p_business: b.id, p_kind: r.kind || null,
-        p_reason: motivo?.reason || null, p_reason_en: motivo?.reason_en || null });
+        ...(motivo ? { p_reason: motivo.reason, p_reason_en: motivo.reason_en || null } : {}) });
       if (r.kind) toast(I18N.lang === 'en' ? 'Marked as an organisation' : 'Marcada como entidad');
       else if (!motivo) toast(I18N.lang === 'en' ? 'No longer an organisation' : 'Ya no es una entidad');
       else {

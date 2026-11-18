@@ -111,13 +111,13 @@ try {
 
   const p = await prueba(nav, null, 'ngo');
   const lp = p.llamadas.find(([fn]) => fn === 'admin_set_entity');
-  ok(lp && lp[1].p_kind === 'ngo' && lp[1].p_reason === null, `ponerla no pide motivo ${JSON.stringify(lp)}`);
+  ok(lp && lp[1].p_kind === 'ngo' && !('p_reason' in lp[1]), `ponerla no pide motivo ${JSON.stringify(lp)}`);
   ok(p.errores.length === 0, `sin errores JS ${p.errores.join(' | ')}`);
   await p.cierra();
 
   const c = await prueba(nav, 'merchants', 'ngo');
   const lc = c.llamadas.find(([fn]) => fn === 'admin_set_entity');
-  ok(lc && lc[1].p_kind === 'ngo' && lc[1].p_reason === null, `cambiar el tipo no pide motivo ${JSON.stringify(lc)}`);
+  ok(lc && lc[1].p_kind === 'ngo' && !('p_reason' in lc[1]), `cambiar el tipo no pide motivo ${JSON.stringify(lc)}`);
   await c.cierra();
 } finally {
   await nav.close();
