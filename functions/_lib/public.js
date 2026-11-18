@@ -209,9 +209,9 @@ export const kidsBase = (lang) => (lang === 'en' ? '/en/kids' : '/con-ninos');
 
 /**
  * Los enlaces entre las páginas de entrada de una ciudad: hoy, la semana y
- * los planes con niños y cada categoría con algo publicado. Van en todas, para que quien llega
+ * los planes con niños, las ofertas y cada categoría con algo publicado. Van en todas, para que quien llega
  * de Google a una encuentre las otras (y Google también). `actual` marca la
- * que se está viendo: 'hoy', 'semana', 'ninos' o el slug de la categoría.
+ * que se está viendo: 'hoy', 'semana', 'ninos', 'ofertas' o el slug de la categoría.
  */
 export function cityLinks(lang, rawCity, city, cats, actual) {
   const en = lang === 'en';
@@ -222,6 +222,7 @@ export function cityLinks(lang, rawCity, city, cats, actual) {
     ${chip(`${todayBase(lang)}/${c}`, en ? `Today in ${city}` : `Hoy en ${city}`, actual === 'hoy')}
     ${chip(`${agendaBase(lang)}/${c}`, en ? 'This week' : 'Esta semana', actual === 'semana')}
     ${chip(`${kidsBase(lang)}/${c}`, en ? 'With kids' : 'Con niños', actual === 'ninos')}
+    ${chip(`${ofertasBase(lang)}/${c}`, en ? 'Deals' : 'Ofertas', actual === 'ofertas')}
     ${(cats || []).filter((k) => k?.slug).map((k) => chip(`${agendaBase(lang)}/${c}/${encodeURIComponent(k.slug)}`, nombre(k), actual === k.slug)).join('')}
   </div></nav>`;
 }

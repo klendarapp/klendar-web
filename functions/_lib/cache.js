@@ -38,7 +38,7 @@ import { zonaDeConexion } from './conexion.js';
 export const VERSION = 'v2';
 
 // Las páginas públicas que pasan por aquí.
-export const EN_CACHE = /^\/(en\/)?(o|b|a|agenda|whats-on|hoy|today|con-ninos|kids|coleccion|collection|explorar|explore|descubre|discover|guia|guide|partidos|matches|grupos|groups|sorteos|giveaways|sorteo|giveaway|cartel|poster|historia|story|widget|m)(\/|$)|^\/sitemap-[a-z]+\.xml$/;
+export const EN_CACHE = /^\/(en\/)?(o|b|a|agenda|whats-on|hoy|today|con-ninos|kids|ofertas|deals|provincia|province|coleccion|collection|explorar|explore|descubre|discover|guia|guide|partidos|matches|grupos|groups|sorteos|giveaways|sorteo|giveaway|cartel|poster|historia|story|widget|m)(\/|$)|^\/sitemap-[a-z]+\.xml$/;
 
 // Cuánto más se puede servir algo caducado mientras se pinta lo nuevo (s).
 const RESERVA = [

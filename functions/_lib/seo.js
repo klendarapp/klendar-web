@@ -16,7 +16,7 @@
 //    su categoría (Restaurant, BarOrPub, BeautySalon…), la dirección, el
 //    horario y el rango de precio.
 
-import { rpcAll } from './page.js';
+import { esc, rpcAll } from './page.js';
 
 /** Los umbrales (Iván, 18-11). Se cambian aquí y valen para páginas y sitemaps. */
 export const UMBRALES = {
@@ -127,6 +127,17 @@ export const provinciaConContenido = (p) => Boolean(p) && p.n >= UMBRALES.provin
 
 /** «Málaga» → «malaga» (la dirección de la provincia). */
 export const slugProvincia = (nombre) => plano(nombre).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+/** «Más en la provincia de Málaga →» bajo las páginas de un municipio, si la
+ * página de su provincia se indexa ('' si no). */
+export async function enlaceProvincia(lugar, lang) {
+  if (!lugar?.province) return '';
+  const { lugares } = await lugaresSeo();
+  const p = provincias(lugares).find((x) => x.code === lugar.province);
+  if (!provinciaConContenido(p)) return '';
+  const en = lang === 'en';
+  return `<p><a href="${en ? '/en/province' : '/provincia'}/${slugProvincia(p.name)}">${esc(en ? `More in the province of ${p.name}` : `Más en la provincia de ${p.name}`)} →</a></p>`;
+}
 
 // ── Datos estructurados de una ficha ────────────────────────────────────────
 

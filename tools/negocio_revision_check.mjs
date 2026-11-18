@@ -49,6 +49,9 @@ const falso = createServer((req, res) => {
     }
     if (p === '/rest/v1/rpc/public_explore') return json({ total: 0, items: [] });
     if (p === '/rest/v1/rpc/public_cities') return json([{ city: 'Madrid', slug: 'madrid', n: 1 }]);
+    // Prod antes de la migración de los buscadores (20261285900000): sin las
+    // funciones nuevas (404), el sitemap lee `businesses` como antes.
+    if (['/rest/v1/rpc/public_sitemap_businesses', '/rest/v1/rpc/public_seo_places'].includes(p)) return json({ code: 'PGRST202', message: 'not found' }, 404);
     if (p.startsWith('/rest/v1/rpc/')) return json([]);
     if (p === '/rest/v1/businesses') {
       const conFiltro = url.searchParams.get('review_only') === 'eq.false';

@@ -44,6 +44,7 @@ import { sorteosBase, sorteosEncendidos } from './sorteos.js';
 import { SITIOS_CSS, SITIOS_SCRIPTS, TS, filaSitio, mapaSitios } from './sitios.js';
 import { icCat } from './iconos-cat.js';
 import { bannerGuia } from './guias.js';
+import { categoriaConContenido, lugarSeo, municipioConContenido } from './seo.js';
 
 /** Una dirección mal codificada no es un 500: se manda al listado (302). */
 const aListado = (loc) => new Response(null, { status: 302, headers: { Location: loc, 'Cache-Control': 'no-store' } });
@@ -2606,10 +2607,11 @@ export async function categoryPage(rawCity, rawCat, lang) {
   if (mun.respuesta) return mun.respuesta;
   rawc = mun.pCity;
 
-  const [res, cats, negocios] = await Promise.all([
+  const [res, cats, negocios, lugar] = await Promise.all([
     rpc('public_explore', { p_city: rawc, p_category: slug, p_limit: 60 }),
     rpcAll('public_categories', { p_city: rawc }),
     rpc('public_businesses', { p_city: rawc, p_category: slug, p_limit: 24 }),
+    lugarSeo(rawc),
   ]);
   const cat = (cats || []).find((c) => c.slug === slug);
   const items = res?.items || [];
@@ -2639,9 +2641,10 @@ export async function categoryPage(rawCity, rawCat, lang) {
   <p style="margin-top:22px"><a class="pill accent" href="${todayBase(lang)}/${CITY(rawc)}">${esc(S.todayIn)} ${esc(city)}</a> <a class="pill" href="${agendaBase(lang)}/${CITY(rawc)}">${esc(S.weekIn)} ${esc(city)}</a> <a class="pill" href="${exploreBase(lang)}">${esc(S.exp)}</a></p>`;
 
   const description = items.length ? S.catDesc(nombre, city, items.length) : S.catNone(nombre, city);
-  // Se indexa si hay algo que enseñar: publicaciones o negocios de la
-  // categoría. Una categoría inventada en la URL no.
-  const indexable = Boolean(cat) && (items.length || lugares.length);
+  // Se indexa si hay lo suficiente en el municipio y en la categoría (los
+  // umbrales de `_lib/seo.js`, los mismos que el sitemap). Una categoría
+  // inventada en la URL no.
+  const indexable = Boolean(cat) && items.length > 0 && categoriaConContenido(lugar, slug, items.length);
   const jsonLd = listingLd({
     lang, path, name: h1, description, city, items,
     migas: [['Klendar', en ? '/en' : '/'], [S.agenda, `${agendaBase(lang)}`], [city, `${agendaBase(lang)}/${CITY(rawc)}`], [nombre, path]],
@@ -2755,7 +2758,7 @@ export async function kidsPage(rawCity, lang) {
     ? `id=in.(${deAqui.slice(0, 300).join(',') || '00000000-0000-0000-0000-000000000000'})`
     : `city=ilike.${encodeURIComponent(raw.replace(/[*%,()]/g, ''))}`;
 
-  const [res, cats, cities, lugares] = await Promise.all([
+  const [res, cats, cities, lugares, lugar] = await Promise.all([
     rpc('public_explore', { p_city: raw, p_filters: { traits: ['kids'] }, p_limit: 60 }),
     rpcAll('public_categories', { p_city: raw }),
     rpcAll('public_cities', {}),
@@ -2764,6 +2767,7 @@ export async function kidsPage(rawCity, lang) {
     negociosPublicos(`select=id,slug,name,city&${filtroSitio}`
       + '&amenities=ov.%7Bkids,play_area%7D&is_active=eq.true&adults_only=eq.false'
       + '&closed_indefinitely_at=is.null&closed_permanently_at=is.null&order=name.asc&limit=24').catch(() => []),
+    lugarSeo(raw),
   ]);
   const items = res?.items || [];
   const conocida = (cities || []).find((c) => (c.slug && c.slug === raw) || String(c.city || '').toLowerCase() === raw.toLowerCase());
@@ -2827,8 +2831,9 @@ export async function kidsPage(rawCity, lang) {
      <a class="pill" href="${esc(agendaCiudad)}">${esc(S.seeAgenda)}</a></p>` : ''}`;
 
   const description = items.length ? K.desc(items.length) : K.descNone;
-  // Se indexa si hay algo que enseñar: planes o sitios aptos para niños.
-  const indexable = items.length || lugares.length;
+  // Se indexa si hay algo que enseñar (planes o sitios aptos para niños) y el
+  // municipio tiene lo suficiente (el umbral de `_lib/seo.js`).
+  const indexable = (items.length || lugares.length) && municipioConContenido(lugar);
   const jsonLd = listingLd({
     lang, path, name: K.h1, description, city, items,
     migas: [['Klendar', en ? '/en' : '/'], [S.agenda, `${agendaBase(lang)}`], [city, agendaCiudad], [S.withKids, path]],

@@ -26,7 +26,10 @@ import KMO from '../../assets/momentos.js';
 import KE from '../../assets/enlaces.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
 import { cartaDeCategoria, categoriaDe, textoCarta } from './carta.js';
-import { direccionLd, esDeComer, horarioLd, tipoSchema, valoracionLd } from './seo.js';
+import {
+  agendaConContenido, direccionLd, enlaceProvincia, esDeComer, horarioLd, hoyConContenido, lugarSeo, lugaresSeo,
+  provinciaConContenido, provincias, slugProvincia, tipoSchema, valoracionLd,
+} from './seo.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
 import { GRUPOS_CSS, grupoEnFicha } from './grupos.js';
 import { sorteosEncendidos, sorteosEnFicha } from './sorteos.js';
@@ -1682,10 +1685,13 @@ export async function agendaPage(rawCity, lang) {
   if (mun.respuesta) return mun.respuesta;
   raw = mun.pCity;
 
-  const [offers, negocios, cats] = await Promise.all([
+  const [offers, negocios, cats, lugar] = await Promise.all([
     rpcAll('public_city_agenda', { p_city: raw, p_limit: 60 }),
     rpc('public_businesses', { p_city: raw, p_limit: 12 }),
     rpcAll('public_categories', { p_city: raw }),
+    // Lo publicado en el municipio (umbral de los buscadores, `_lib/seo.js`;
+    // la lista de todos, unos minutos en memoria: no es una llamada más).
+    lugarSeo(raw),
   ]);
   const city = mun.nombre || PRETTY(offers[0]?.city || negocios?.items?.[0]?.city || raw);
   // La agenda no trae coordenadas: la zona de cada negocio se lee aparte.
@@ -1760,10 +1766,13 @@ export async function agendaPage(rawCity, lang) {
   <p><a class="pill accent" href="${exploreBase(lang)}?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}">${S.explore}</a>
      <a class="pill" href="${cuenta(lang, 'registro')}" data-sin-sesion>${S.app}</a>
      <a class="pill" href="${en ? '/en/for-business' : '/para-negocios'}">${S.biz}</a></p>
-  <p><a href="${agendaBase(lang)}">${S.all} →</a></p>`;
+  <p><a href="${agendaBase(lang)}">${S.all} →</a></p>
+  ${await enlaceProvincia(lugar, lang)}`;
 
   const description = offers.length ? S.desc(offers.length) : S.none;
-  const jsonLd = offers.length
+  // Se indexa con lo suficiente en el municipio y algo esta semana (los
+  // umbrales de `_lib/seo.js`, los mismos que el sitemap).
+  const jsonLd = agendaConContenido(lugar, offers.length)
     ? listingLd({
         lang, path, name: S.h1, description, city, items: offers,
         migas: [['Klendar', en ? '/en' : '/'], [S.agenda, `${agendaBase(lang)}`], [city, path]],
@@ -1807,11 +1816,12 @@ export async function todayPage(rawCity, lang) {
   if (mun.respuesta) return mun.respuesta;
   raw = mun.pCity;
 
-  const [hoyRes, mananaRes, cats, negocios] = await Promise.all([
+  const [hoyRes, mananaRes, cats, negocios, lugar] = await Promise.all([
     rpc('public_explore', { p_city: raw, p_filters: { when: 'today' }, p_limit: 60 }),
     rpc('public_explore', { p_city: raw, p_filters: { when: 'tomorrow' }, p_limit: 6 }),
     rpcAll('public_categories', { p_city: raw }),
     rpc('public_businesses', { p_city: raw, p_limit: 12 }),
+    lugarSeo(raw),
   ]);
   const hoyItems = hoyRes?.items || [];
   const mananaItems = mananaRes?.items || [];
@@ -1843,6 +1853,7 @@ export async function todayPage(rawCity, lang) {
         places: 'Places in this city', week: `The whole week in ${city}`, agenda: "What's on", today: 'Today',
         explore: 'Explore with filters', biz: 'List your business',
         empty: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
+        cuantos: (n, m) => `Right now there ${n === 1 ? 'is 1 plan' : `are ${n} plans`} published in ${city}${m ? ` and ${m === 1 ? '1 place' : `${m} places`} to discover` : ''} on Klendar.`,
       }
     : {
         h1: `Qué hacer hoy en ${city}`,
@@ -1855,6 +1866,7 @@ export async function todayPage(rawCity, lang) {
         places: 'Negocios de esta ciudad', week: `Toda la semana en ${city}`, agenda: 'Agenda', today: 'Hoy',
         explore: 'Explorar con filtros', biz: 'Publicar mi negocio',
         empty: `Todavía no hay nada publicado en ${city}. Si tienes un negocio aquí, puedes ser el primero.`,
+        cuantos: (n, m) => `Ahora mismo hay ${n === 1 ? '1 plan publicado' : `${n} planes publicados`} en ${city}${m ? ` y ${m === 1 ? '1 sitio' : `${m} sitios`} por descubrir` : ''} en Klendar.`,
       };
 
   const bloque = (titulo, items) => (items.length
@@ -1865,7 +1877,7 @@ export async function todayPage(rawCity, lang) {
   const body = `
   <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${agendaBase(lang)}">${S.agenda}</a> · <a href="${agendaBase(lang)}/${citySeg(raw)}">${esc(city)}</a></p>
   <h1>${esc(S.h1)}</h1>
-  <p class="muted" style="max-width:620px">${esc(S.lead(fecha))}</p>
+  <p class="muted" style="max-width:620px">${esc(S.lead(fecha))}${lugar.n ? ` ${esc(S.cuantos(lugar.n, lugar.businesses || 0))}` : ''}</p>
   ${cityLinks(lang, raw, city, cats, 'hoy')}
   ${bloque(S.now, ahora)}
   ${bloque(S.later, luego)}
@@ -1874,7 +1886,8 @@ export async function todayPage(rawCity, lang) {
   ${placesBlock(negocios, lang, S.places)}
   <p><a class="pill accent" href="${agendaBase(lang)}/${citySeg(raw)}">${esc(S.week)}</a>
      <a class="pill" href="${exploreBase(lang)}?${en ? 'city' : 'ciudad'}=${encodeURIComponent(city)}&amp;${en ? 'when=today' : 'cuando=hoy'}">${esc(S.explore)}</a>
-     <a class="pill" href="${en ? '/en/for-business' : '/para-negocios'}">${esc(S.biz)}</a></p>`;
+     <a class="pill" href="${en ? '/en/for-business' : '/para-negocios'}">${esc(S.biz)}</a></p>
+  ${await enlaceProvincia(lugar, lang)}`;
 
   const description = hoyItems.length ? S.desc(hoyItems.length) : vacia ? S.empty : S.descNone;
   const jsonLd = listingLd({
@@ -1889,15 +1902,20 @@ export async function todayPage(rawCity, lang) {
     image: [...hoyItems, ...mananaItems].map((o) => firstPhoto(o.images)).find(Boolean),
     // Un día sin nada no se desindexa: mañana vuelve a haber, y la página
     // sigue teniendo lo de mañana y los negocios de la ciudad. Un municipio
-    // sin nada de nada, sí (como su agenda).
-    head: vacia ? '<meta name="robots" content="noindex, follow">' : ldScript(jsonLd),
+    // sin nada de nada, o con muy poco (el umbral de `_lib/seo.js`), sí.
+    head: hoyConContenido(lugar, vacia) ? ldScript(jsonLd) : '<meta name="robots" content="noindex, follow">',
   }), 200, 'public, max-age=300, s-maxage=600');
 }
 
 // ── Índice de ciudades ─────────────────────────────────────────────────────
 export async function citiesPage(lang) {
   const en = lang === 'en';
-  const cities = (await rpcAll('public_cities', {})).filter((c) => c.city);
+  const [cities, seo] = await Promise.all([
+    rpcAll('public_cities', {}).then((l) => l.filter((c) => c.city)),
+    // Las provincias con contenido (`_lib/seo.js`; la misma lista, en memoria).
+    lugaresSeo().catch(() => ({ lugares: [] })),
+  ]);
+  const provs = provincias(seo.lugares).filter(provinciaConContenido);
 
   const S = en
     ? {
@@ -1905,12 +1923,14 @@ export async function citiesPage(lang) {
         lead: 'Offers and plans for the next few days, city by city. No account needed.',
         none: 'No city has anything published yet.', biz: 'List your business',
         today: 'Things to do today', todayIn: (c) => `Today in ${c}`,
+        provs: 'By province', provIn: (p) => `Province of ${p}`,
       }
     : {
         h1: 'Agenda local',
         lead: 'Lo que hay en cada ciudad: ofertas y planes de los próximos días. No hace falta cuenta.',
         none: 'Todavía no hay ninguna ciudad con publicaciones.', biz: 'Publicar mi negocio',
         today: 'Qué hacer hoy', todayIn: (c) => `Hoy en ${c}`,
+        provs: 'Por provincias', provIn: (p) => `Provincia de ${p}`,
       };
 
   const body = `
@@ -1922,6 +1942,8 @@ export async function citiesPage(lang) {
     <h2>${S.today}</h2>
     <div class="cities">${cities.map((c) => `<a href="${todayBase(lang)}/${citySeg(c.slug || c.city)}">${esc(S.todayIn(c.city))}</a>`).join('')}</div>`
     : `<p class="empty">${S.none}</p>`}
+  ${provs.length ? `<h2>${S.provs}</h2>
+    <div class="cities">${provs.map((p) => `<a href="${en ? '/en/province' : '/provincia'}/${slugProvincia(p.name)}">${esc(S.provIn(p.name))} <span class="muted">${p.n}</span></a>`).join('')}</div>` : ''}
   <p><a class="pill" href="${en ? '/en/for-business' : '/para-negocios'}">${S.biz}</a></p>`;
 
   return html(publicPage({
