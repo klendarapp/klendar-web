@@ -5,16 +5,16 @@
    "version": "0.1.9",
    "proxima": true,
    "es": [
-    "Elige hasta dónde buscar con una barra, de 1 a 100 km.",
-    "Nuevo «Precio máximo» en los filtros: de Gratis a Sin límite.",
+    "Elige hasta dónde buscar (de 1 a 100 km) y el precio máximo, de Gratis a Sin límite.",
     "Con «Avísame cuando llegue», te avisamos en cuanto haya planes cerca de ti.",
-    "Cuando haya una versión nueva de Klendar, te lo decimos abajo, sin cortarte lo que estás haciendo."
+    "Cuando haya una versión nueva de Klendar, te lo decimos abajo, sin cortarte lo que estás haciendo.",
+    "Para negocios: el modo negocio, con Hoy, Validar, Publicar y Negocio en la barra de abajo. Y lo que publicas es una «Oferta», sin más."
    ],
    "en": [
-    "Choose how far to look with a slider, from 1 to 100 km.",
-    "New “Maximum price” in the filters: from Free to No limit.",
+    "Choose how far to look (from 1 to 100 km) and the maximum price, from Free to No limit.",
     "With “Tell me when it arrives”, we let you know as soon as there are plans near you.",
-    "When there's a new version of Klendar, we tell you at the bottom of the screen, without interrupting what you're doing."
+    "When there's a new version of Klendar, we tell you at the bottom of the screen, without interrupting what you're doing.",
+    "For businesses: business mode, with Today, Validate, Publish and Business in the bottom bar. And what you post is simply an “Offer”."
    ]
   },
   {
