@@ -25,8 +25,8 @@
  * Va después de panel.js y usa lo suyo (`PAGES`, `rpc`, `sb`, `BIZ`,
  * `gestiona`, `esPropietario`, `esc`, `ms`, `bi`, `toast`, `modal`,
  * `confirmDlg`, `fmtMoney`, `LOC`, `I18N`, `KZ`, `TZ`, `diaLargoFecha`,
- * `motivoBloqueo`, `volverAAbrir`, `cargaCobro`, `correoCobro`). Los nombres
- * de aquí empiezan por `plan`.
+ * `motivoBloqueo`, `causaBloqueo`, `colaBloqueo`, `volverAAbrir`,
+ * `cargaCobro`, `correoCobro`). Los nombres de aquí empiezan por `plan`.
  */
 'use strict';
 
@@ -115,6 +115,9 @@ function planEstado(sub, bill, st, pendiente = null) {
         `Temporarily closed until ${planDia(bill.paused_until)}: your publications are hidden and nothing is charged. The days you’d already paid for are kept and used when you’re back.`)];
   }
   if (bill.blocked || bill.hold === 'unpaid' || bill.hold === 'ended') {
+    // Con la causa (migración 20261285610000 de la app), el texto del aviso.
+    const causa = causaBloqueo(bill);
+    if (causa) return ['bad', bi('BLOQUEADO', 'BLOCKED'), `${causa} ${colaBloqueo()}`];
     return ['bad', bi('BLOQUEADO', 'BLOCKED'),
       `${motivoBloqueo(bill.block_kind || (bill.hold === 'unpaid' ? 'unpaid' : 'ended'), true)} ${bi('Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». No se ha borrado nada: al pagar, todo vuelve solo.',
         'Your publications are hidden and your page says “Not available right now”. Nothing has been deleted: once paid, everything comes back on its own.')}`];

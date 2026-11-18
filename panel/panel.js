@@ -1609,6 +1609,42 @@ function motivoBloqueo(kind, yaBloqueado) {
   return bi(es, en);
 }
 
+/** Ya bloqueado, por qué (con su fecha) y qué hacer: el mismo texto que el
+ * aviso del bloqueo en la app (`billing_block_body`, migración 20261285400110
+ * de la app). La causa la da `billing_state.block_cause` y el último día
+ * cubierto `block_ends` (migración 20261285610000). null si no se sabe
+ * (`ended`, una base de antes) o falta la fecha que necesita. */
+function causaBloqueo(bill) {
+  const dia = bill.block_ends ? diaLargoFecha(bill.block_ends) : '';
+  const conDia = ['trial', 'free', 'period', 'cancel'];
+  if (conDia.includes(bill.block_cause) && !dia) return null;
+  switch (bill.block_cause) {
+    case 'trial': return bi(`Tu prueba gratis terminó el ${dia}. Para seguir, elige tu plan.`, `Your free trial ended on ${dia}. To carry on, choose your plan.`);
+    case 'free': return bi(`Tu periodo gratis terminó el ${dia}. Para seguir, elige tu plan.`, `Your free period ended on ${dia}. To carry on, choose your plan.`);
+    case 'period': return bi(`Lo que tenías pagado cubría hasta el ${dia}. Para seguir, paga el siguiente periodo.`, `What you had paid for covered until ${dia}. To carry on, pay for the next period.`);
+    case 'cancel': return bi(`Tu suscripción se canceló y terminó el ${dia}. Para seguir, vuelve a contratar el plan.`, `Your subscription was cancelled and ended on ${dia}. To carry on, sign up for the plan again.`);
+    case 'unpaid': return bi('No hemos podido cobrar el plan y ha pasado el margen para ponerlo al día. Para seguir, paga lo pendiente.', 'We couldn’t take the payment for the plan and the time to settle it has run out. To carry on, pay what’s due.');
+    case 'dispute': return bi('El banco ha devuelto el recibo del plan. Para resolverlo, escríbenos a info@klendar.app.', 'The bank returned the payment for the plan. To sort it out, write to us at info@klendar.app.');
+    case 'entity': return bi('Ya no es una cuenta de entidad y no tiene ningún plan. Para seguir, elige tu plan.', 'It’s no longer an organisation account and has no plan. To carry on, choose your plan.');
+    case 'none': return bi('No tiene ningún plan. Para seguir, elige tu plan.', 'It has no plan. To carry on, choose your plan.');
+    default: return null;
+  }
+}
+
+/** La cola de tranquilidad del aviso del bloqueo (la misma que en la app). */
+const colaBloqueo = () => bi('Tus publicaciones no se ven y no puedes publicar ni editar. Puedes seguir validando los códigos y bonos que ya tiene la gente; no se ha borrado nada.',
+  'Your publications are hidden and you can’t publish or edit. You can still validate the codes and passes people already have; nothing has been deleted.');
+
+/** El botón del propietario con el negocio bloqueado, según la causa (como
+ * el correo del bloqueo): recibo devuelto → «Escríbenos» (no hay factura que
+ * pagar); lo pagado acabado o un impago → «Pagar el plan»; lo demás (la
+ * prueba, el gratis, una suscripción cancelada, sin plan) → «Elegir tu plan». */
+function botonBloqueo(cause) {
+  if (cause === 'dispute') return `<a class="btn primary" href="${esc(correoCobro())}">${ms('mail')}${esc(bi('Escríbenos', 'Write to us'))}</a>`;
+  const pagar = cause === 'period' || cause === 'unpaid';
+  return `<a class="btn primary" href="#/plan">${ms('credit_card')}${esc(pagar ? bi('Pagar el plan', 'Pay for the plan') : bi('Elegir tu plan', 'Choose your plan'))}</a>`;
+}
+
 /** Antes del bloqueo (7 días, `block_soon`): un aviso arriba, el único, con
  * «Pagar» para el propietario (a «Tu plan»). Un recibo devuelto se arregla
  * escribiéndonos. */
@@ -1651,12 +1687,17 @@ function avisoGratisFin(sub) {
  * y darse de baja. Como «Mi negocio» en la app. Al personal, sin el motivo:
  * la base no le da el detalle del cobro (`billing_detail` false, migración
  * 20261284700000 de la app); solo que no se puede publicar y que hable con
- * el propietario. */
+ * el propietario. Con la causa del bloqueo (`block_cause`), el texto del
+ * aviso de la app y el botón que toca («Elegir tu plan», «Pagar el plan» o,
+ * con el recibo devuelto, «Escríbenos»). */
 function avisoParado(bill) {
   const pausa = bill.hold === 'paused';
-  const dispute = bill.block_kind === 'dispute' || bill.dispute;
   const dueno = esPropietario();
   const personal = !gestiona() || SUB?.billing_detail === false;
+  // Con la causa (migración 20261285610000 de la app): el texto del aviso de
+  // la app, la cola de tranquilidad y el botón que toca.
+  const causa = personal || pausa ? null : causaBloqueo(bill);
+  const dispute = causa ? bill.block_cause === 'dispute' : bill.block_kind === 'dispute' || bill.dispute;
   const titulo = pausa
     ? bi(`Cerrado temporalmente hasta el ${planDia(bill.paused_until)}`, `Temporarily closed until ${planDia(bill.paused_until)}`)
     : personal ? bi('Ahora no se puede publicar', 'Publishing isn’t possible right now')
@@ -1667,6 +1708,8 @@ function avisoParado(bill) {
     : pausa
     ? bi('Tus publicaciones no se ven y tu ficha lo dice. No se cobra nada y los días que tenías pagados se guardan para cuando vuelvas. Vuelve solo ese día y avisamos a quien te tiene en favoritos.',
       'Your publications are hidden and your page says so. Nothing is charged and the days you’d already paid for are kept for when you’re back. It reopens on its own that day and we let the people who have you in their favourites know.')
+    : causa
+    ? `${causa} ${colaBloqueo()} ${dueno ? bi('Te hemos enviado los detalles a tu correo.', 'We’ve sent you the details by email.') : ''}`
     : `${motivoBloqueo(bill.block_kind, true)} ${dispute
       ? bi('Escríbenos a info@klendar.app para ponerlo al día.', 'Write to us at info@klendar.app to sort it out.')
       : ''} ${bi('Tus publicaciones no se ven y tu ficha dice «No disponible ahora mismo». Hasta que se pague, nadie del equipo puede publicar ni cambiar nada. No se ha borrado nada: al pagar, todo vuelve solo.',
@@ -1678,12 +1721,14 @@ function avisoParado(bill) {
     ? (dueno ? `<button class="btn primary" type="button" id="volver-abrir">${ms('play_circle')}${esc(bi('Volver a abrir', 'Reopen'))}</button>`
       : `<p class="muted small" style="margin:0">${esc(bi('Solo el propietario puede volver a abrirlo.', 'Only the owner can reopen it.'))}</p>`)
     : !dueno ? `<p class="muted small" style="margin:0">${esc(I18N.t('Solo el propietario del negocio puede pagar el plan.'))}</p>`
-      : dispute ? `<a class="btn primary" href="${esc(correoCobro())}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>`
-        : `<a class="btn primary" href="#/plan">${ms('credit_card')}${esc(bi('Pagar', 'Pay'))}</a>`;
+      : causa ? botonBloqueo(bill.block_cause)
+        : dispute ? `<a class="btn primary" href="${esc(correoCobro())}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>`
+          : `<a class="btn primary" href="#/plan">${ms('credit_card')}${esc(bi('Pagar', 'Pay'))}</a>`;
+  // Con la causa, la cola ya dice que se puede seguir validando.
   return `<div class="card aviso-parado" role="status">
     <h2>${ms(pausa ? 'event_busy' : 'lock_clock')} ${esc(titulo)}</h2>
-    <p style="margin:0 0 8px">${esc(texto.replace(/\s+/g, ' ').trim())}</p>
-    <p class="muted" style="margin:0 0 12px">${esc(excepcion)}</p>
+    <p style="margin:0 0 ${causa ? 12 : 8}px">${esc(texto.replace(/\s+/g, ' ').trim())}</p>
+    ${causa ? '' : `<p class="muted" style="margin:0 0 12px">${esc(excepcion)}</p>`}
     ${boton}</div>`;
 }
 

@@ -6,6 +6,10 @@
 //     (coral, a «Tu plan»), «Validar códigos», descargar los datos y darse de
 //     baja; cualquier otra pantalla vuelve al resumen; «Tu plan» con el pago
 //     (tarjeta o domiciliación) y, en Canarias, sin IVA y con su nota.
+//  1b. Bloqueado con su causa (`block_cause`, migración 20261285610000 de la
+//     app): el texto del aviso de la app con su fecha, la cola de
+//     tranquilidad y «Elegir tu plan» / «Pagar el plan» / «Escríbenos»; el
+//     encargado, sin botón; «Tu plan» igual; en francés, traducido.
 //  2. Panel bloqueado (encargado): sin «Pagar», «Solo el propietario…».
 //  2b. Panel bloqueado y en pausa (personal): lo que da la base al personal
 //     (`billing_detail` false, migración 20261284700000 de la app): «Ahora
@@ -176,6 +180,34 @@ const CASOS = {
   },
 };
 
+// Bloqueado con su causa (`block_cause` y `block_ends`, migración
+// 20261285610000 de la app): el texto del aviso de la app, la cola de
+// tranquilidad y el botón que toca. Como lo da `billing_state`.
+const FIN_CUBIERTO = '2026-11-11';
+const CAUSAS = {
+  trial: ['ended', 'Tu prueba gratis terminó el 11 de noviembre de 2026. Para seguir, elige tu plan.', 'Elegir tu plan'],
+  free: ['ended', 'Tu periodo gratis terminó el 11 de noviembre de 2026. Para seguir, elige tu plan.', 'Elegir tu plan'],
+  period: ['ended', 'Lo que tenías pagado cubría hasta el 11 de noviembre de 2026. Para seguir, paga el siguiente periodo.', 'Pagar el plan'],
+  cancel: ['ended', 'Tu suscripción se canceló y terminó el 11 de noviembre de 2026. Para seguir, vuelve a contratar el plan.', 'Elegir tu plan'],
+  unpaid: ['unpaid', 'No hemos podido cobrar el plan y ha pasado el margen para ponerlo al día. Para seguir, paga lo pendiente.', 'Pagar el plan'],
+  dispute: ['unpaid', 'El banco ha devuelto el recibo del plan. Para resolverlo, escríbenos a info@klendar.app.', 'Escríbenos'],
+  entity: ['ended', 'Ya no es una cuenta de entidad y no tiene ningún plan. Para seguir, elige tu plan.', 'Elegir tu plan'],
+  none: ['ended', 'No tiene ningún plan. Para seguir, elige tu plan.', 'Elegir tu plan'],
+};
+const CON_FECHA = ['trial', 'free', 'period', 'cancel'];
+for (const [causa, [hold]] of Object.entries(CAUSAS)) {
+  const b = () => ({ hold, hold_since: `${hoy()}T08:00:00Z`, blocked: true, block_kind: causa, block_on: '2026-11-12',
+    block_cause: causa, block_ends: CON_FECHA.includes(causa) ? FIN_CUBIERTO : null, dispute: causa === 'dispute' });
+  CASOS[`causa_${causa}`] = () => {
+    const s = sub({ status: 'none', plan_slug: 'free', period_end: null, payment_method: null }, b());
+    return { role: 'owner', sub: s, ov: overview(s) };
+  };
+  CASOS[`causaEncargado_${causa}`] = () => {
+    const s = sub({ status: 'none', plan_slug: 'free', period_end: null, payment_method: null }, b());
+    return { role: 'manager', sub: s, ov: { ...overview(s), is_owner: false, plans: null, locales: null } };
+  };
+}
+
 function supabaseFalso(estado) {
   return async (route) => {
     const req = route.request();
@@ -284,6 +316,65 @@ async function panelBloqueado(nav, nombre, t, vp) {
   ok(await p.locator('#view a[href="#/pedidos"]').count() === 0, `${nombre}/${t} bloqueado: sin «Pedidos de hoy» en Validar`);
   ok(errores.length === 0, `${nombre}/${t} bloqueado sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
+}
+
+/** Bloqueado con su causa: el texto del aviso de la app (por qué, con su
+ * fecha, y qué hacer), la cola de tranquilidad y el botón que toca, como el
+ * correo («Elegir tu plan», «Pagar el plan»; recibo devuelto, «Escríbenos»).
+ * Al encargado, la causa sin botón. «Tu plan» dice lo mismo. En francés,
+ * traducido. */
+async function panelCausa(nav, nombre, t, vp) {
+  const cola = 'Tus publicaciones no se ven y no puedes publicar ni editar. Puedes seguir validando los códigos y bonos que ya tiene la gente; no se ha borrado nada.';
+  const causas = t === 'escritorio' ? Object.keys(CAUSAS) : ['trial', 'dispute'];
+  for (const causa of causas) {
+    const [, frase, boton] = CAUSAS[causa];
+    const { ctx, p, errores } = await contextoPanel(nav, vp, `causa_${causa}`);
+    await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
+    await p.waitForSelector('.aviso-parado');
+    const a = (await p.locator('.aviso-parado').innerText()).replace(/\s+/g, ' ');
+    ok(/Tu negocio está bloqueado/.test(a) && a.includes(`${frase} ${cola} Te hemos enviado los detalles a tu correo.`),
+      `${nombre}/${t} causa ${causa}: el texto del aviso de la app y la cola (${a.slice(0, 160)})`);
+    ok(!/bonos vendidos, sellos|Tu plan no está al día|No disponible ahora mismo/.test(a), `${nombre}/${t} causa ${causa}: sin el texto de siempre`);
+    const b = p.locator('.aviso-parado a.btn.primary');
+    const href = await b.getAttribute('href');
+    ok(await b.count() === 1 && (await b.innerText()).trim().endsWith(boton)
+      && (causa === 'dispute' ? href.startsWith('mailto:info@klendar.app') : href === '#/plan'),
+      `${nombre}/${t} causa ${causa}: botón «${boton}» (${href})`);
+    if (causa === 'trial' || causa === 'period') {
+      await p.goto(`${BASE}/panel#/plan`, { waitUntil: 'networkidle' });
+      await p.waitForSelector('#plan-pagar');
+      const plan = (await texto(p)).replace(/\s+/g, ' ');
+      ok(/BLOQUEADO/.test(plan) && plan.includes(`${frase} ${cola}`), `${nombre}/${t} causa ${causa}: «Tu plan» con la causa`);
+    }
+    if (t === 'escritorio' && nombre === 'chromium') await p.screenshot({ path: `${OUT}/web-causa-${causa}-${nombre}-${t}.png`, fullPage: true });
+    ok(errores.length === 0, `${nombre}/${t} causa ${causa} sin errores JS ${errores.join(' | ')}`);
+    await ctx.close();
+  }
+  // El encargado: la causa, sin botón ni lo del correo.
+  {
+    const { ctx, p, errores } = await contextoPanel(nav, vp, 'causaEncargado_unpaid');
+    await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
+    await p.waitForSelector('.aviso-parado');
+    const a = (await p.locator('.aviso-parado').innerText()).replace(/\s+/g, ' ');
+    ok(a.includes(CAUSAS.unpaid[1]) && /Solo el propietario del negocio puede pagar el plan/.test(a)
+      && !/Te hemos enviado/.test(a) && await p.locator('.aviso-parado .btn').count() === 0,
+      `${nombre}/${t} causa (encargado): la causa sin botón`);
+    ok(errores.length === 0, `${nombre}/${t} causa (encargado) sin errores JS ${errores.join(' | ')}`);
+    await ctx.close();
+  }
+  // En francés: la frase y el botón traducidos.
+  if (t === 'escritorio') {
+    const { ctx, p, errores } = await contextoPanel(nav, vp, 'causa_trial', 'fr');
+    await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
+    await p.waitForSelector('.aviso-parado');
+    await p.waitForTimeout(300);
+    const a = (await p.locator('.aviso-parado').innerText()).replace(/\s+/g, ' ');
+    ok(/Ton essai gratuit s’est terminé le 11 novembre 2026\. Pour continuer, choisis ton abonnement\./.test(a)
+      && /rien n’a été supprimé/.test(a) && /Choisir ton abonnement/.test(a) && !/Tu prueba|Elegir tu plan/.test(a),
+      `${nombre}/${t} causa en francés: traducida (${a.slice(0, 160)})`);
+    ok(errores.length === 0, `${nombre}/${t} causa en francés sin errores JS ${errores.join(' | ')}`);
+    await ctx.close();
+  }
 }
 
 /** En francés (uno de los seis idiomas nuevos): el aviso traducido, también con la fecha dentro. */
@@ -627,7 +718,7 @@ if (!SOLO || SOLO.includes('ficha')) {
   servidorFichas = await serveDev(FICHA_PORT, { SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' });
 }
 
-const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, encargado: panelEncargado, personal: panelPersonal, pausa: panelPausa, pronto: panelPronto, entidad: panelEntidad, arranque: panelArranque, pausar: panelPausar, admin, ficha: fichas };
+const PRUEBAS = { idioma: panelIdioma, bloqueado: panelBloqueado, causa: panelCausa, encargado: panelEncargado, personal: panelPersonal, pausa: panelPausa, pronto: panelPronto, entidad: panelEntidad, arranque: panelArranque, pausar: panelPausar, admin, ficha: fichas };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {
