@@ -10,6 +10,7 @@
 // ofrecen); con `?rp=<código>` válido, el QR lleva ese `?rp=` y la página es
 // privada (sin buscadores ni caché compartida).
 
+import { textoCarta, tipoCartaDe } from './carta.js';
 import { erroresScript, esc, html, isUuid, rpc } from './page.js';
 import { benefit, fmtDay, fmtEnd, fmtTime, zonaDe } from './public.js';
 import { notFound } from './views.js';
@@ -188,10 +189,13 @@ export async function venuePosterPage(token, lang, mesa) {
 
   const url = `https://klendar.app/v/${token}`;
   const sellos = (info.visit_cards || []).length > 0;
+  // «… nuestra carta…», «… nuestros servicios…» según su tipo (Iván, 18-11).
+  const tipo = await tipoCartaDe(b.id);
+  const nuestra = (s) => s.replace(textoCarta('nuestra', 'menu', lang), textoCarta('nuestra', tipo, lang));
   const nav = `<nav aria-label="${esc(S.title)}"><a href="${base}/${esc(token)}"${mesa ? '' : ' aria-current="page"'}>${esc(S.a4)}</a><a href="${base}/${esc(token)}?mesa=1"${mesa ? ' aria-current="page"' : ''}>${esc(S.table)}</a></nav>`;
   return paginaCartel({
     S, b, url, mesa, nav, titulo: `${S.title} · ${b.name}`,
-    invita: sellos ? S.scanStamps : S.scan, ayuda: mesa ? S.helpTable : S.help,
+    invita: nuestra(sellos ? S.scanStamps : S.scan), ayuda: mesa ? S.helpTable : S.help,
   });
 }
 
@@ -325,10 +329,12 @@ export async function tablePosterPage(token, lang, mesas) {
   const b = info?.ok ? info.business : null;
   if (!b?.name) return notFound(S.lang, `${lang === 'en' ? '/en/poster/table' : '/cartel/mesa'}/${token}`, 'b');
   const n = Math.min(Math.max(parseInt(mesas, 10) || 0, 0), 200);
+  // «Ofertas y carta» o «Ofertas y servicios»… según su tipo (Iván, 18-11).
+  const tipo = info.has_wifi ? 'menu' : await tipoCartaDe(b.id);
   const numeros = n > 0 ? Array.from({ length: n }, (_, i) => `${S.table} ${i + 1}`) : ['', '', '', ''];
   return paginaCartel({
     S, b, url: `https://klendar.app/m/${token}`, mesa: true, titulo: `${S.title} · ${b.name}`,
-    que: info.has_wifi ? S.wifi : S.menu, invita: S.scan, ayuda: S.help, numeros,
+    que: info.has_wifi ? S.wifi : textoCarta('mesa', tipo, lang), invita: S.scan, ayuda: S.help, numeros,
     // En blanco y negro, como el resto del cartel (nada de emojis de color).
     queIcono: info.has_wifi ? '<svg class="ic-wifi" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>' : '',
   });

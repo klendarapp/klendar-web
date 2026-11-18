@@ -568,16 +568,18 @@ const socialDe = (d) => Object.fromEntries(['instagram', 'tiktok', 'facebook']
   .map((k) => [k, String(d[k] || '').trim()]).filter(([, x]) => x));
 
 /** Lo que falta para estar completa, en las mismas ocho cosas que la app
- * (`profileCompleteness`). */
+ * (`profileCompleteness`). Un tipo sin carta (un ayuntamiento) no la cuenta,
+ * salvo que ya tenga algo puesto (Iván, 18-11). */
 function fichaCompleta(b, { sitio, carta }) {
   // Un organizador sin local fijo no tiene horario ni «Cómo es tu local».
   const org = esOrganizador();
+  const hayCarta = !!(b.menu_url || (b.menu_images || []).length || (b.menu_files || []).length || (carta || []).length);
   const checks = [
     !!b.logo_url, !!b.cover_image_url, (b.gallery || []).length > 0, !!String(b.description || '').trim(),
     org ? null : hayHorario(b.opening_hours),
     !!(b.phone || b.website || b.contact_email || Object.values(b.social_links || {}).some((x) => String(x || '').trim())),
     org ? null : sitio.length > 0,
-    !!(b.menu_url || (b.menu_images || []).length || (b.menu_files || []).length || (carta || []).length),
+    hayCarta || cartaEncaja(b.category_id) ? hayCarta : null,
   ].filter((x) => x !== null);
   return Math.round(checks.filter(Boolean).length * 100 / checks.length);
 }
@@ -660,7 +662,12 @@ PAGES.ficha = async (v, parte) => {
 function indiceFicha(v, b, cats, carta) {
   const cat = cats.find((c) => c.id === b.category_id);
   const nombreCat = cat ? ((cat.names || {})[I18N.lang] || (cat.names || {})[I18N.pub] || (cat.names || {}).es || cat.slug) : '';
+  BIZ.category_id = b.category_id ?? null;
   const pct = fichaCompleta(b, { sitio: b.amenities, carta });
+  // La carta, con el nombre de su tipo; sin carta en su tipo y sin nada
+  // puesto, ni sale (Iván, 18-11).
+  const hayCarta = !!((carta || []).length || b.menu_url || (b.menu_images || []).length || (b.menu_files || []).length);
+  const conCarta = hayCarta || cartaEncaja(b.category_id);
   const une = (partes, vacio) => (partes.length ? partes.join(' · ') : I18N.t(vacio));
   const foto = (n) => bi(n === 1 ? '1 foto' : `${n} fotos`, n === 1 ? '1 photo' : `${n} photos`);
   const desc = String(b.description || '').trim().replace(/\s+/g, ' ');
@@ -698,13 +705,14 @@ function indiceFicha(v, b, cats, carta) {
       <a class="btn sm" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
     <div class="ficha-cab">
       ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="">` : `<span class="ph" aria-hidden="true">${ms('storefront')}</span>`}
-      <div><b>${esc(b.name)}</b><span class="muted">${esc([nombreCat, b.city, bi(`ficha completa al ${pct} %`, `page ${pct}% complete`)].filter(Boolean).join(' · '))}</span></div>
+      <div><b>${esc(b.name)}</b><span class="muted">${esc([nombreCat, b.city, pct < 100 && bi(`ficha completa al ${pct} %`, `page ${pct}% complete`)].filter(Boolean).join(' · '))}</span></div>
     </div>
     ${sinCategoria || sinDireccion ? `<a class="aviso-falta" href="#/ficha/${sinCategoria ? 'basico' : 'donde'}">${ms('cancel')}<span>${esc(I18N.t(sinCategoria ? 'Elige una categoría.' : 'Falta la dirección o la ciudad.'))}</span>${ms('chevron_right')}</a>` : ''}
     <p class="muted" style="margin:0 0 10px">Toca un apartado para cambiarlo. Cada uno se guarda por separado.</p>
     <nav class="card indice" aria-label="${esc(I18N.t('Apartados de la ficha'))}">
       ${PARTES_FICHA.filter(([k]) => !((esOrganizador() || esEntidad()) && ['horario', 'local', 'que-pedir'].includes(k)))
-    .filter(([k]) => k !== 'klendar' || BIZ.role === 'owner').map(([k, titulo]) => fila(k, titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
+    .filter(([k]) => k !== 'klendar' || BIZ.role === 'owner').filter(([k]) => k !== 'carta' || conCarta)
+    .map(([k, titulo]) => fila(k, k === 'carta' ? CARTA_TITULO[TIPOS_CARTA.indexOf(tipoCarta())] : titulo, resumen[k], { mal: (k === 'basico' && sinCategoria) || (k === 'donde' && sinDireccion) })).join('')}
       ${fila('entidad', 'Cuenta de entidad', BIZ.entity?.kind ? entSello(BIZ.entity.kind)
         : BIZ.entity?.application?.status === 'pending' ? I18N.t('Pendiente de comprobar') : I18N.t('Ayuntamiento, asociación u ONG: pídela'))}
     </nav>

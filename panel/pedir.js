@@ -66,7 +66,7 @@ async function pedQuePedir(v, carta) {
             ${it.image_url ? `<img src="${esc(it.image_url)}" alt="" width="64" height="64">` : ''}
             <button type="button" class="btn sm" data-foto="${i}">${ms('photo_camera')}${esc(I18N.t(it.image_url ? 'Cambiar foto' : 'Añadir foto'))}</button>
             ${it.image_url ? `<button type="button" class="btn sm ghost" data-sin-foto="${i}">${esc(I18N.t('Quitar foto'))}</button>` : ''}
-            ${platos.length ? `<button type="button" class="btn sm ghost" data-carta="${i}">${ms('restaurant_menu')}${esc(I18N.t('Elegir de la carta'))}</button>` : ''}
+            ${platos.length ? `<button type="button" class="btn sm ghost" data-carta="${i}">${ms('restaurant_menu')}${esc(segunCarta([I18N.t('Elegir de la carta'), I18N.t('Elegir de la lista')]))}</button>` : ''}
             <span class="spacer"></span>
             <button type="button" class="btn sm ghost" data-quitar="${i}">${ms('delete')}${esc(I18N.t('Quitar'))}</button>
           </div>
@@ -152,7 +152,7 @@ async function pedQuePedir(v, carta) {
 /** Elegir un plato de la carta (nombre, descripción y foto). */
 async function pedEligePlato(platos) {
   const r = await modal({
-    title: I18N.t('Elegir de la carta'),
+    title: segunCarta([I18N.t('Elegir de la carta'), I18N.t('Elegir de la lista')]),
     fields: [{ type: 'select', name: 'p', label: I18N.t('Plato'),
       options: platos.map((p, i) => [String(i), [p.name, p.seccion].filter(Boolean).join(' · ')]) }],
     submit: I18N.t('Elegir'),

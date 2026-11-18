@@ -25,6 +25,7 @@ import KM from '../../assets/marcas.js';
 import KMO from '../../assets/momentos.js';
 import KE from '../../assets/enlaces.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
+import { textoCarta, tipoCartaDe } from './carta.js';
 import { PARTIDOS_CSS, partidosDelBar } from './partidos.js';
 import { GRUPOS_CSS, grupoEnFicha } from './grupos.js';
 import { sorteosEncendidos, sorteosEnFicha } from './sorteos.js';
@@ -956,7 +957,7 @@ export async function businessPage(param, lang, search = '') {
   // ¿Ayer fue uno de sus días cerrados? (migración 20261284500030 de la app): la
   // madrugada de después sigue cerrada. Sin la función, como antes.
   const ayerCerradoP = rpc('business_closed_yesterday', { p_business: id }).then((x) => x === true).catch(() => false);
-  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista, muni] = await Promise.all([
+  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista, muni, tipoCarta] = await Promise.all([
     ver ? [] : rpcAll('business_offers_page', { p_id: id, p_limit: POR_PAGINA_FICHA, p_offset: desde }),
     ver ? null : rpc('business_offer_counts', { p_id: id }).catch(() => null),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
@@ -993,6 +994,8 @@ export async function businessPage(param, lang, search = '') {
     // Su municipio (por su punto; migración 20261260100040 de la app), para
     // enlazar la página del municipio por su slug. Opcional.
     rpc('business_municipality_info', { p_business: id }).catch(() => null),
+    // Cómo se llama su carta: «Carta», «Servicios y precios»… (Iván, 18-11).
+    tipoCartaDe(id, b.category_id),
   ]);
   // El negocio de revisión de las tiendas (`review_only`, migración
   // 20261263900000): su ficha se abre con el enlace, para el revisor, pero no
@@ -1261,6 +1264,10 @@ export async function businessPage(param, lang, search = '') {
     .filter(([k, v]) => k !== 'web' && typeof v === 'string' && v.trim())
     .map(([k, v]) => `<a href="${esc(redUrl(k, v))}" rel="nofollow noopener" target="_blank">${esc(redNombre[k] || k)}</a>`);
 
+  // La carta con el nombre de su tipo (lo mismo por dentro).
+  S.menu = textoCarta('titulo', tipoCarta, lang);
+  S.menuAll = textoCarta('todo', tipoCarta, lang);
+  S.menuPhotos = textoCarta('fotos', tipoCarta, lang);
   // Los archivos de la carta, en su orden: las fotos (galería con zoom) y
   // cada PDF como una fila que lo abre fuera. Lo que espera la moderación no
   // sale (la ficha va sin sesión).
@@ -1358,14 +1365,14 @@ export async function businessPage(param, lang, search = '') {
         <p class="note">${esc(S.menuNote)}</p>` : '';
   };
   const archivosCartaHtml = `${fotosCarta.length ? `<div class="carta-fotos">${fotosCarta.map((u, i) => miniatura(u, { grupo: 'carta', i, n: fotosCarta.length, clase: 'carta-foto', etiqueta: S.menuPhotos, lang, ancho: 300, alto: 400 })).join('')}</div>` : ''}
-        ${pdfsCarta.length || enlaceCarta ? `<div class="carta-archivos">${pdfsCarta.map((f) => KE.filaCarta(f.url, lang, { pdf: true, nombre: f.name, bytes: f.bytes })).join('')}${enlaceCarta ? KE.filaCarta(enlaceCarta, lang) : ''}</div>` : ''}`;
+        ${pdfsCarta.length || enlaceCarta ? `<div class="carta-archivos">${pdfsCarta.map((f) => KE.filaCarta(f.url, lang, { pdf: true, nombre: f.name, bytes: f.bytes, tipo: tipoCarta })).join('')}${enlaceCarta ? KE.filaCarta(enlaceCarta, lang, { tipo: tipoCarta }) : ''}</div>` : ''}`;
   const hayArchivosCarta = fotosCarta.length > 0 || pdfsCarta.length > 0;
   const cartaFicha = parado ? ''
     : carta.length || hayArchivosCarta
       ? `<h2 id="carta">${S.menu}</h2>${platosHtml(5)}
         ${nPlatos > 5 || hayArchivosCarta || enlaceCarta ? `<p><a class="pill" href="${path}?ver=carta">${icono('carta', 16)} ${esc(S.menuAll)}</a></p>` : ''}`
       // Solo el enlace a su web: su fila, que lo abre.
-      : enlaceCarta ? `<h2 id="carta">${S.menu}</h2><div class="carta-archivos">${KE.filaCarta(enlaceCarta, lang)}</div>` : '';
+      : enlaceCarta ? `<h2 id="carta">${S.menu}</h2><div class="carta-archivos">${KE.filaCarta(enlaceCarta, lang, { tipo: tipoCarta })}</div>` : '';
   // «Ver todas (N)» de las novedades o de las reseñas: solo esa lista, por
   // páginas, sin indexar (la ficha es la buena).
   if (ver === 'carta') {

@@ -292,6 +292,10 @@ window.KFotoRellena = (() => {
    */
   const carta = async (v, { st, tc, alTerminar }) => {
     if (!await permiso(st)) return;
+    // «Carta» o «la lista» (de precios), según su tipo (Iván, 18-11).
+    const esCarta = !tc?.tipo || tc.tipo === 'menu';
+    const tx = (deCarta, deLista) => t(esCarta ? deCarta : deLista);
+    const seccionSin = segunCarta([I18N.t('Carta'), I18N.t('Servicios'), I18N.t('Productos'), I18N.t('Precios')], tc?.tipo || 'menu');
     const maxFotos = st.max_menu_photos || 6;
     const fotos = [];
     const secs = [];
@@ -307,18 +311,18 @@ window.KFotoRellena = (() => {
       alTerminar(x);
     };
 
-    const cabecera = () => `<div class="page-head"><button type="button" class="btn sm ghost" id="fotoVolver">${esc(t('← Volver'))}</button><h1>${esc(t('Carta desde fotos'))}</h1></div>`;
+    const cabecera = () => `<div class="page-head"><button type="button" class="btn sm ghost" id="fotoVolver">${esc(t('← Volver'))}</button><h1>${esc(tx('Carta desde fotos', 'Lista desde fotos'))}</h1></div>`;
     const duda = (txt) => `<p class="foto-duda">${OJO}<span>${esc(txt)}</span></p>`;
     const volver = async () => {
       if (fotos.length || secs.length) {
-        if (!await confirmDlg(t('¿Salir sin guardar?'), esc(t('Lo leído no se ha añadido a tu carta. Si sales, se pierde.')), { submit: t('Salir sin guardar'), danger: true })) return;
+        if (!await confirmDlg(t('¿Salir sin guardar?'), esc(tx('Lo leído no se ha añadido a tu carta. Si sales, se pierde.', 'Lo leído no se ha añadido a tu lista. Si sales, se pierde.')), { submit: t('Salir sin guardar'), danger: true })) return;
       }
       sal(null);
     };
 
     const pintaFotos = () => {
       v.innerHTML = `${cabecera()}
-        <div class="card"><p class="muted" style="margin:0 0 10px">${esc(t('Haz una foto a cada página de tu carta. Leemos las secciones, los nombres y los precios, y tú lo revisas antes de guardar. Las fotos no se guardan.'))}</p>
+        <div class="card"><p class="muted" style="margin:0 0 10px">${esc(tx('Haz una foto a cada página de tu carta. Leemos las secciones, los nombres y los precios, y tú lo revisas antes de guardar. Las fotos no se guardan.', 'Haz una foto a cada página de tu lista de precios. Leemos las secciones, los nombres y los precios, y tú lo revisas antes de guardar. Las fotos no se guardan.'))}</p>
           ${error ? duda(mensaje(error)) : ''}
           <div class="photos foto-fotos">${fotos.map((f, i) => `<div class="ph-item"><img src="${esc(f.url)}" alt=""><button class="rm" type="button" data-q="${i}" title="${esc(t('Quitar'))}">×</button></div>`).join('')}</div>
           ${fotos.length < maxFotos ? `<p class="foto-fuentes">
@@ -347,7 +351,7 @@ window.KFotoRellena = (() => {
 
     const anade = (leida) => {
       for (const s of leida.sections || []) {
-        const nombre = s.name || t('Carta');
+        const nombre = s.name || seccionSin;
         let hay = secs.find((x) => clave(x.name) === clave(nombre));
         if (!hay) { hay = { name: nombre, items: [] }; secs.push(hay); }
         const nombres = new Set(hay.items.map((i) => clave(i.name)));
@@ -394,7 +398,7 @@ window.KFotoRellena = (() => {
       if (inyeccion) avisos.push(duda(t('La foto llevaba instrucciones para una IA. No les hemos hecho caso: míralo todo bien.')));
       if (hayAlergenos()) avisos.push(duda(t('Los alérgenos son los que salen en la foto, nada más. Compruébalos con tu cocina: aquí equivocarse no es una errata.')));
       v.innerHTML = `${cabecera()}
-        <p class="muted foto-aviso-ia" style="margin:0 0 6px">${esc(t('Revísalo y corrige lo que haga falta. Se añade a tu carta, sin quitar lo que ya tienes, y se publica al guardarla.'))}</p>
+        <p class="muted foto-aviso-ia" style="margin:0 0 6px">${esc(tx('Revísalo y corrige lo que haga falta. Se añade a tu carta, sin quitar lo que ya tienes, y se publica al guardarla.', 'Revísalo y corrige lo que haga falta. Se añade a tu lista, sin quitar lo que ya tienes, y se publica al guardarla.'))}</p>
         ${avisos.join('')}
         ${secs.map((s, si) => `<div class="card foto-sec">
           <div class="foto-fila"><label class="f"><span>${esc(t('Nombre de la sección'))}</span><input data-sec="${si}" value="${esc(s.name)}" maxlength="60"></label>
@@ -412,7 +416,7 @@ window.KFotoRellena = (() => {
         </div>`).join('')}
         <div class="foto-fin">
           ${hayAlergenos() ? `<label class="opcion"><input type="checkbox" id="fotoAl" ${comprobados ? 'checked' : ''}><span>${esc(t('He comprobado los alérgenos'))}</span></label>` : ''}
-          <button type="button" class="btn primary" id="fotoAnadir" ${(hayAlergenos() && !comprobados) || !secs.length ? 'disabled' : ''}>${esc(t('Añadir a la carta'))}</button>
+          <button type="button" class="btn primary" id="fotoAnadir" ${(hayAlergenos() && !comprobados) || !secs.length ? 'disabled' : ''}>${esc(tx('Añadir a la carta', 'Añadir a la lista'))}</button>
         </div>`;
       avisoIA($('.foto-aviso-ia', v), 'photo_fill', secs.flatMap((s) => [s.name,
         ...s.items.map((i) => [i.name, i.description, i.price].filter(Boolean).join(' · '))]).filter(Boolean).join('\n'));
@@ -462,7 +466,7 @@ window.KFotoRellena = (() => {
             mal = mal || i.bad;
             items.push({ name, description: String(i.description || '').trim() || null, price_cents: precio == null || i.bad ? null : Math.round(precio * 100), allergens: ALERGENOS.map((a) => a[0]).filter((a) => i.allergens.includes(a)), image_url: null, is_available: true });
           }
-          if (items.length) salida.push({ name: s.name.trim() || t('Carta'), items });
+          if (items.length) salida.push({ name: s.name.trim() || seccionSin, items });
         }
         if (mal) { pintaRevision(); return; }
         sal(salida);

@@ -17,6 +17,7 @@
 //   cambio de contraseña se ve en menos de un minuto, también contando la
 //   caché del navegador.
 
+import { textoCarta, tipoCartaDe } from './carta.js';
 import { enlaceCuenta } from './cuenta.js';
 import { esc, html, isUuid, rpc, rpcAll, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
@@ -76,7 +77,8 @@ const WIFI_IC = '<svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria
 /** La página del QR de mesa. */
 export async function tableQrPage(token, lang) {
   const en = lang === 'en';
-  const S = T[en ? 'en' : 'es'];
+  // `let`: el nombre de la carta, según su tipo, llega después.
+  let S = T[en ? 'en' : 'es'];
   const path = `${en ? '/en' : ''}/m/${token}`;
   const info = /^[A-Za-z0-9_-]{16}$/.test(token || '') ? await rpc('table_qr_info', { p_token: token }) : null;
   const fichaDe = (slug) => `${en ? '/en' : ''}/b/${encodeURIComponent(slug)}`;
@@ -105,10 +107,13 @@ export async function tableQrPage(token, lang) {
   }
 
   const tz = zonaDe(b);
-  const [offers, carta] = await Promise.all([
+  const [offers, carta, tipoCarta] = await Promise.all([
     rpcAll('business_offers', { p_id: b.id }).catch(() => []),
     rpcAll('business_menu', { p_business: b.id }).catch(() => []),
+    // «Carta», «Servicios y precios»… según su tipo (Iván, 18-11).
+    tipoCartaDe(b.id),
   ]);
+  S = { ...S, menu: textoCarta('titulo', tipoCarta, lang), noWifi: textoCarta('sinWifi', tipoCarta, lang) };
   // Lo de hoy: lo que se puede canjear ya o empieza hoy, y los eventos de hoy.
   const hoy = KZ.hoy(tz);
   const ahora = Date.now();

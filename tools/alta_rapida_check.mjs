@@ -108,7 +108,9 @@ async function sugerida(nav, n) {
   const v = await p.locator('.primeros').innerText();
   ok(await p.locator('.primeros [data-sug]').count() === 3, `${n}: tres sugerencias`);
   ok(/Café y tostada por 2,50\s€/.test(v) && /lun, mar, mié, jue · 08:00–11:00/.test(v), `${n}: con su precio, sus días y su hora`);
-  ok(/Completa tu ficha/.test(v) && /Pon tu horario/.test(v) && /cartel del local/.test(v) && /Prefiero escribir otra/.test(v), `${n}: «Completa tu ficha» y «Prefiero escribir otra»`);
+  ok(/Completa tu ficha/.test(v) && /Pon tu horario/.test(v) && /Prefiero escribir otra/.test(v), `${n}: «Completa tu ficha» y «Prefiero escribir otra»`);
+  // Sin el equipo, el cartel ni compartir (Iván, 18-11: siguen en su sitio).
+  ok(!/cartel del local/.test(v) && !/Invita a quien valida/.test(v) && !/Cuéntalo en tus redes/.test(v), `${n}: sin el equipo, el cartel ni compartir`);
   await p.screenshot({ path: `${OUT}/alta-resumen-${n}.png`, fullPage: true });
   await p.click('.primeros [data-sug="0"]');
   await p.waitForSelector('#modal input[name=precio]');

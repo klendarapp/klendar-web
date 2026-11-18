@@ -38,11 +38,14 @@
       book: 'Reservar', delivery: 'Pedir a domicilio', order: 'Pedir en el local', other: 'Otro (con su nombre)',
       fuera: 'Se abre fuera de Klendar', en: (a, s) => `${a} en ${s}`,
       pdf: 'Ver carta completa (PDF)', carta: 'Ver carta completa',
+      // Lo que no es una carta (Iván, 18-11): `tipo` de `KlendarCategorias.carta`.
+      pdfLista: 'Ver la lista completa (PDF)', services: 'Ver todos los servicios', products: 'Ver todos los productos', prices: 'Ver todos los precios',
     },
     en: {
       book: 'Book', delivery: 'Order delivery', order: 'Order at the venue', other: 'Other (with its own name)',
       fuera: 'Opens outside Klendar', en: (a, s) => `${a} on ${s}`,
       pdf: 'See full menu (PDF)', carta: 'See full menu',
+      pdfLista: 'See full price list (PDF)', services: 'See all services', products: 'See all products', prices: 'See all prices',
     },
   };
   const t = (lang) => klBi(T, lang);
@@ -177,9 +180,12 @@
   }
 
   /** Una fila de la carta que abre fuera: un PDF («Ver carta completa
-   * (PDF)», su nombre y tamaño) o el «Enlace a la carta». */
-  function filaCarta(url, lang, { pdf = false, nombre = '', bytes = 0 } = {}) {
-    const titulo = pdf ? t(lang).pdf : t(lang).carta;
+   * (PDF)», su nombre y tamaño) o el «Enlace a la carta». Con `tipo`
+   * ('services', 'products' o 'prices'), «Ver la lista completa (PDF)» o «Ver
+   * todos los servicios»… */
+  function filaCarta(url, lang, { pdf = false, nombre = '', bytes = 0, tipo = 'menu' } = {}) {
+    const T2 = t(lang);
+    const titulo = pdf ? (tipo === 'menu' ? T2.pdf : T2.pdfLista) : (T2[tipo] || T2.carta);
     const detalle = pdf ? [String(nombre || '').trim(), tamano(bytes, lang)].filter(Boolean).join(' · ') : host(url);
     return `<a class="carta-archivo" href="${esc(url)}" ${FUERA} data-toque aria-label="${esc(`${titulo}${detalle ? `, ${detalle}` : ''}. ${t(lang).fuera}`)}">${pdf ? iconoPdf(22) : svg(D.other, 22)}<span><b>${esc(titulo)}</b>${detalle ? `<small>${esc(detalle)}</small>` : ''}</span>${iconoFuera(18)}</a>`;
   }

@@ -150,6 +150,12 @@
     travel: ["viajes", "agencia", "vacaciones", "travel"],
     civic: ["ayuntamiento", "asociacion", "vecinos", "ong", "council"],
   };
+
+  /** Cómo se llama la carta: «Carta» (menu), «Servicios y precios»
+   * (services), «Productos y precios» (products) o «Precios y tarifas»
+   * (prices). La del grupo y, si la tiene, la de la categoría. Como la app. */
+  const CARTA_GRUPO = { food: 'menu', night: 'menu', leisure: 'prices', sports: 'prices', care: 'services', health: 'services', events: 'prices', stay: 'prices', shops: 'products', services: 'services' };
+  const CARTA_PROPIA = { grocery: 'products', market: 'products', stage: 'prices', cinema: 'prices', culture: 'prices', art: 'prices', pharmacy: 'products', optician: 'products', catering: 'menu' };
   // </generado:categorias>
 
   const TEXTOS = {
@@ -206,7 +212,14 @@
     return GRUPOS.map((g) => ({ id: g.id, cats: (cats || []).filter((c) => grupoDe(c) === g.id && encaja(c, q)) }));
   }
 
-  const KlendarCategorias = { GRUPOS, POR_SLUG, grupoDe, nombreGrupo, nombre, pliega, encaja, agrupa };
+  /** Cómo se llama la carta de un negocio cuya categoría principal es `c`
+   * (Iván, 18-11): 'menu' («Carta»), 'services' («Servicios y precios»),
+   * 'products' («Productos y precios») o 'prices' («Precios y tarifas»). La de
+   * la categoría, la de su grupo o, sin categoría, 'prices'. Como
+   * `menuNameFor` de la app. */
+  const carta = (c) => (c ? CARTA_PROPIA[c.slug] || CARTA_GRUPO[grupoDe(c)] || 'prices' : 'prices');
+
+  const KlendarCategorias = { GRUPOS, POR_SLUG, grupoDe, nombreGrupo, nombre, pliega, encaja, agrupa, carta };
 
   // ── Lo del navegador ─────────────────────────────────────────────────────
   if (typeof document !== 'undefined') {

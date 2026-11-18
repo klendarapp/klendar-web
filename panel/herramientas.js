@@ -182,8 +182,10 @@ async function herrResumen(v, { cajaFilas, cajaPendiente }) {
   if (!v.isConnected || BIZ?.id !== negocio) return;
   const linea = (id, texto) => { const s = $(`#${id} [data-linea]`, v); if (s) s.textContent = texto; };
   if (ficha?.b && typeof fichaCompleta === 'function') {
+    BIZ.category_id = ficha.b.category_id ?? null;
     const pct = fichaCompleta(ficha.b, { sitio: ficha.b.amenities, carta: ficha.carta });
-    linea('esFicha', bi(`Completa al ${pct} %`, `${pct}% complete`));
+    // Al 100 %, nada (vuelve si baja): «Ver cómo se ve», como la app.
+    linea('esFicha', pct < 100 ? bi(`Completa al ${pct} %`, `${pct}% complete`) : bi('Ver cómo se ve', 'See how it looks'));
   }
   if (o && fiel && fiel.ok !== false) {
     const n = [herrNum(o, 'stamps', 'active') > 0, fiel.coupon?.enabled === true, herrSi(o, 'birthday', 'enabled'),
@@ -327,8 +329,13 @@ function herrTarjeta({ icon, titulo, frase, estado, on, detalle, botones = [], e
 const herrT = ({ grupo, usa, ...t }) => ({ grupo, usa: !!usa, html: herrTarjeta(t) });
 
 PAGES.herramientas = async (v) => {
-  const o = await rpc('business_tools_overview', { p_business: BIZ.id });
+  const [o] = await Promise.all([
+    rpc('business_tools_overview', { p_business: BIZ.id }),
+    // «Carta», «Servicios y precios»… según su tipo (Iván, 18-11).
+    categoriaDelNegocio().catch(() => null),
+  ]);
   if (!o || o.ok === false) throw new Error(o?.error || 'not_authorized');
+  const tipo = tipoCarta();
   const edit = o.can_edit === true;
   // Sin local (organizador o entidad): fuera lo que necesita un local.
   const ent = esEntidad();
@@ -358,9 +365,10 @@ PAGES.herramientas = async (v) => {
   const tarjetas = [
     edit && herrLleva(o, 'menu', items > 0 || archivos > 0) ? herrT({
       grupo: 'menu', usa: items > 0 || archivos > 0,
-      icon: 'restaurant_menu', titulo: bi('Carta', 'Menu'),
-      frase: bi('Para enseñar lo que tienes, con precios, fotos y alérgenos. Sale en tu ficha.', 'To show what you offer, with prices, photos and allergens. It shows on your page.'),
-      estado: items ? herrPl(items, ['1 plato', 'platos'], ['1 dish', 'dishes']) : archivos ? herrPl(archivos, ['1 archivo', 'archivos'], ['1 file', 'files']) : sinPreparar,
+      icon: 'restaurant_menu', titulo: tituloCarta(tipo),
+      frase: tipo === 'menu' ? bi('Para enseñar lo que tienes, con precios, fotos y alérgenos. Sale en tu ficha.', 'To show what you offer, with prices, photos and allergens. It shows on your page.')
+        : bi('Para enseñar lo que ofreces, con precios y fotos. Sale en tu ficha.', 'To show what you offer, with prices and photos. It shows on your page.'),
+      estado: items ? ({ service: herrPl(items, ['1 servicio', 'servicios'], ['1 service', 'services']), product: herrPl(items, ['1 producto', 'productos'], ['1 product', 'products']) }[o.features?.menu_kind] || herrPl(items, ['1 plato', 'platos'], ['1 dish', 'dishes'])) : archivos ? herrPl(archivos, ['1 archivo', 'archivos'], ['1 file', 'files']) : sinPreparar,
       on: items > 0 || archivos > 0, botones: [[configurar, '#/carta']],
     }) : '',
     edit ? herrT({
@@ -488,7 +496,7 @@ PAGES.herramientas = async (v) => {
     edit && local && herrLleva(o, 'table_qr', tq.wifi || tq.has) ? herrT({
       grupo: 'local', usa: !!(tq.wifi || tq.has),
       icon: 'wifi', titulo: bi('Wifi para clientes', 'Wi-Fi for customers'),
-      frase: bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y la carta. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and the menu. Without Wi-Fi, they work as a table QR.'),
+      frase: segunCarta([bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y la carta. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and the menu. Without Wi-Fi, they work as a table QR.'), bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y tus servicios. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and your services. Without Wi-Fi, they work as a table QR.'), bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y tus productos. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and your products. Without Wi-Fi, they work as a table QR.'), bi('Carteles de mesa con un QR: tu wifi, tus ofertas de hoy y tus precios. Sin wifi, sirven de QR de mesa.', 'Table cards with a QR code: your Wi-Fi, today’s offers and your prices. Without Wi-Fi, they work as a table QR.')], tipo),
       estado: tq.has ? escaneos === 0 ? bi('Ningún escaneo este mes', 'No scans this month') : herrPl(escaneos, ['1 escaneo este mes', 'escaneos este mes'], ['1 scan this month', 'scans this month']) : sinPreparar,
       on: !!(tq.wifi || tq.has), botones: [[abrir, '#/wifi-clientes']],
     }) : '',
@@ -509,7 +517,7 @@ PAGES.herramientas = async (v) => {
   // Arriba, «Las que usas» (activadas o usadas hace poco); debajo, el resto
   // por grupos con su título. Un grupo vacío no sale. Como la app.
   const GRUPOS = [
-    ['menu', bi('Tu carta y tus enlaces', 'Your menu and links')],
+    ['menu', segunCarta([bi('Tu carta y tus enlaces', 'Your menu and links'), bi('Tus servicios y tus enlaces', 'Your services and links'), bi('Tus productos y tus enlaces', 'Your products and links'), bi('Tus precios y tus enlaces', 'Your prices and links')], tipo)],
     ['local', bi('En el local', 'At your venue')],
     ['gente', bi('Pantallas y gente', 'Screens and people')],
     ['repite', bi('Lo que se repite', 'What repeats')],

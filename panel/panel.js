@@ -784,10 +784,7 @@ function sugHorario(s, dias = s.days, at = s.at, min = s.min) {
 async function sugerenciasDelNegocio() {
   const S = window.KLENDAR_SUGERENCIAS;
   if (!S) return [];
-  if (BIZ.category_id === undefined) {
-    const { data } = await sb.from('businesses').select('category_id').eq('id', BIZ.id).maybeSingle();
-    BIZ.category_id = data?.category_id ?? null;
-  }
+  await categoriaDelNegocio();
   const slug = CATS.find((c) => c.id === BIZ.category_id)?.slug;
   return S.ideas[S.grupos[slug] || 'general'] || S.ideas.general || [];
 }
@@ -797,7 +794,13 @@ function fichaFaltan(f) {
   if (!esOrganizador() && !esEntidad()) {
     out.push({ titulo: 'Pon tu horario', href: '#/ficha/horario', hecho: !!f.opening_hours && Object.keys(f.opening_hours).length > 0 });
     out.push({ titulo: 'Añade fotos del local', href: '#/ficha/fotos', hecho: (f.gallery || []).length >= 2 });
-    out.push({ titulo: 'Sube tu carta', href: '#/carta', hecho: !!f.menu_url || (f.menu_images || []).length > 0 });
+    const hecho = !!f.menu_url || (f.menu_images || []).length > 0;
+    // La carta, con el nombre de su tipo; a un tipo sin carta (un
+    // ayuntamiento) no se le pide, salvo que ya tenga algo (Iván, 18-11).
+    if (hecho || cartaEncaja(f.category_id)) {
+      out.push({ titulo: segunCarta([bi('Sube tu carta', 'Upload your menu'), bi('Pon tus servicios y precios', 'Add your services and prices'), bi('Pon tus productos y precios', 'Add your products and prices'), bi('Pon tus precios y tarifas', 'Add your prices and rates')], tipoCarta(f.category_id)),
+      href: '#/carta', hecho });
+    }
   }
   return out;
 }
@@ -1839,8 +1842,9 @@ PAGES.resumen = async (v) => {
   const candidato = gestiona() && BIZ.verification_status !== 'rejected' && !BIZ.entity?.pending
     && (!esEntidad() || BIZ.verification_status === 'verified');
   const ficha = candidato
-    ? (await sb.from('businesses').select('logo_url, cover_image_url, gallery, opening_hours, menu_url, menu_images, created_at').eq('id', BIZ.id).maybeSingle()).data || {}
+    ? (await sb.from('businesses').select('logo_url, cover_image_url, gallery, opening_hours, menu_url, menu_images, created_at, category_id').eq('id', BIZ.id).maybeSingle()).data || {}
     : {};
+  if (candidato) BIZ.category_id = ficha.category_id ?? null;
   const faltan = candidato ? fichaFaltan(ficha) : [];
   const reciente = ficha.created_at && Date.now() - new Date(ficha.created_at).getTime() < 30 * 86400e3;
   const primeros = candidato && (sinNada || (reciente && faltan.some((f) => !f.hecho)));
@@ -1905,9 +1909,6 @@ PAGES.resumen = async (v) => {
       <p class="muted" style="margin:0 0 8px">Nada de esto frena tu alta: hazlo ahora o cuando quieras.</p>
       ${sinLocal && sinNada ? paso('', false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1') : ''}
       ${faltan.map((f) => paso('', f.hecho, f.titulo, '', f.href)).join('')}
-      ${paso('', false, 'Invita a quien valida en barra', '', '#/equipo')}
-      ${sinLocal ? '' : paso('', false, 'Descarga el cartel del local', '', '#/cartel-local')}
-      ${paso('', false, 'Cuéntalo en tus redes', '', '#', 'data-compartir')}
     </div>` : ''}
     <div id="ideasIA" style="margin-top:14px"></div>
     <!-- Ordenado como la app (Iván, 2026-10-22): «Lo esencial», «Por
@@ -2038,20 +2039,6 @@ PAGES.resumen = async (v) => {
     };
   }
   sugActiva(v, sugerencias, () => route());
-  const compartir = $('[data-compartir]', v);
-  if (compartir) {
-    compartir.onclick = async (e) => {
-      e.preventDefault();
-      const url = `${APP_URL}/b/${BIZ.id}`;
-      const text = I18N.lang === 'en' ? `${BIZ.name} is on Klendar: ${url}` : `${BIZ.name} está en Klendar: ${url}`;
-      if (navigator.share) {
-        try { await navigator.share({ title: BIZ.name, text }); } catch { /* cancelado */ }
-        return;
-      }
-      try { await navigator.clipboard.writeText(text); } catch { toast('No se ha podido copiar', true); return; }
-      toast('Enlace copiado: pégalo en tus redes');
-    };
-  }
 };
 
 /** «¿Hay sitio ahora?» en el resumen: tres botones iguales (Hay sitio ·
@@ -5975,6 +5962,34 @@ const palabraCarta = (cat) => {
   return ['restaurant', 'cafe', 'bar'].includes(slug) ? 'dish'
     : (!slug || ['shop', 'nightclub', 'music', 'books', 'market', 'bakery', 'icecream', 'gourmet', 'other'].includes(slug)) ? 'product' : 'service';
 };
+/** Cómo se llama la carta del negocio (Iván, 18-11; `MenuName` de la app):
+ * 'menu' («Carta»), 'services' («Servicios y precios»), 'products'
+ * («Productos y precios») o 'prices' («Precios y tarifas»), por su categoría
+ * principal (`BIZ.category_id`, que trae `categoriaDelNegocio`). */
+const tipoCarta = (catId = BIZ?.category_id) => KlendarCategorias.carta(CATS.find((c) => c.id === catId));
+const TIPOS_CARTA = ['menu', 'services', 'products', 'prices'];
+/** El texto de su tipo, de una lista ya traducida (con `bi` o `I18N.t`):
+ * con dos, [carta, lo demás]; con cuatro, [carta, servicios, productos,
+ * precios]. */
+function segunCarta(textos, tipo = tipoCarta()) {
+  const i = Math.max(0, TIPOS_CARTA.indexOf(tipo));
+  return textos[textos.length === 2 ? Math.min(i, 1) : i];
+}
+/** «Carta», «Servicios y precios»… (en español; para `fila` y quien traduce). */
+const CARTA_TITULO = ['Carta', 'Servicios y precios', 'Productos y precios', 'Precios y tarifas'];
+const tituloCarta = (tipo = tipoCarta()) => segunCarta([bi('Carta', 'Menu'), bi('Servicios y precios', 'Services and prices'),
+  bi('Productos y precios', 'Products and prices'), bi('Precios y tarifas', 'Prices and rates')], tipo);
+/** ¿Lleva carta su tipo? (`features.menu` de su categoría principal; un
+ * ayuntamiento o una asociación, no). Con algo ya puesto se ve igual. */
+const cartaEncaja = (catId = BIZ?.category_id) => CATS.find((c) => c.id === catId)?.features?.menu !== false;
+/** La categoría principal del negocio activo, una vez (`my_businesses` no la trae). */
+async function categoriaDelNegocio() {
+  if (BIZ.category_id === undefined) {
+    const { data } = await sb.from('businesses').select('category_id').eq('id', BIZ.id).maybeSingle();
+    BIZ.category_id = data?.category_id ?? null;
+  }
+  return BIZ.category_id;
+}
 const TEXTOS_CARTA = {
   dish: { add: 'Añadir plato', edit: 'Editar plato', col: 'Plato', ej: 'Tortilla de patata', sus: ['sus platos', 'its dishes'] },
   service: { add: 'Añadir servicio', edit: 'Editar servicio', col: 'Servicio', ej: '', sus: ['sus servicios', 'its services'] },
@@ -6113,7 +6128,12 @@ PAGES.carta = async (v) => {
     sb.from('businesses').select('menu_url, menu_images, category_id').eq('id', BIZ.id).maybeSingle(),
     rpc('business_links', { p_id: BIZ.id }).catch(() => null),
   ]);
-  const tc = TEXTOS_CARTA[palabraCarta(CATS.find((c) => c.id === ficha.data?.category_id))];
+  if (ficha.data) BIZ.category_id = ficha.data.category_id ?? null;
+  // «Carta», «Servicios y precios»… (Iván, 18-11): lo mismo por dentro.
+  const tipo = tipoCarta();
+  const carta2 = (textos) => segunCarta(textos, tipo);
+  const tc = { ...TEXTOS_CARTA[palabraCarta(CATS.find((c) => c.id === ficha.data?.category_id))], tipo };
+  const guardarTxt = carta2([bi('Guardar la carta', 'Save the menu'), bi('Guardar la lista', 'Save the price list')]);
   let carta = await rpc('business_menu', { p_business: BIZ.id }).catch(() => []);
   let enlace = ficha.data?.menu_url || '';
   // «Archivos de la carta»: fotos y PDF, en el orden en que se ven
@@ -6153,7 +6173,7 @@ PAGES.carta = async (v) => {
       const r = await rpc('save_business_menu', { p_business: BIZ.id, p_menu: JSON.parse(enviado).carta })
         .catch((e) => ({ ok: false, error: e.message }));
       ok = !!r?.ok;
-      if (ok) { sucia = estadoCarta() !== enviado; toast('Carta guardada'); }
+      if (ok) { sucia = estadoCarta() !== enviado; toast(carta2([bi('Carta guardada', 'Menu saved'), bi('Lista guardada', 'Price list saved')])); }
       else toast(r?.error ? friendly(r.error) : 'No se ha podido guardar', true);
     } catch (e) {
       toast(friendly(e.message), true);
@@ -6164,7 +6184,7 @@ PAGES.carta = async (v) => {
         else {
           // Sin repintar: lo escrito sigue ahí para volver a probar.
           const b = $('#save', v);
-          if (b) { b.disabled = !sucia; b.textContent = I18N.t('Guardar la carta'); }
+          if (b) { b.disabled = !sucia; b.textContent = guardarTxt; }
         }
       }
     }
@@ -6174,24 +6194,26 @@ PAGES.carta = async (v) => {
   const fotoCarta = canManage && window.KFotoRellena ? await KFotoRellena.estado() : null;
   const pinta = () => {
     v.innerHTML = `
-      <div class="page-head"><h1>Carta</h1><span class="spacer"></span>
+      <div class="page-head"><h1>${esc(tituloCarta(tipo))}</h1><span class="spacer"></span>
         ${canManage ? `${fotoCarta?.available ? `<button class="btn sm" id="foto-carta">${esc(I18N.t('Rellenar desde fotos'))}</button>` : ''}<button class="btn sm" id="add-sec">Añadir sección</button>
-        <button class="btn sm primary" id="save" ${sucia && !guardando ? '' : 'disabled'}>${guardando ? 'Guardando…' : 'Guardar la carta'}</button>` : ''}</div>
-      ${helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos o un PDF</b> de tu carta o poner un <b>enlace</b> a tu web. Escrita es lo que mejor se lee en el móvil.</p><p>Escrita, además, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y los archivos y el enlace se quedan debajo. Si no te apetece, con una foto o un PDF vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>',
+        <button class="btn sm primary" id="save" ${sucia && !guardando ? '' : 'disabled'}>${guardando ? 'Guardando…' : esc(guardarTxt)}</button>` : ''}</div>
+      ${tipo !== 'menu' ? helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribir la lista</b> aquí, subir <b>fotos o un PDF</b> o poner un <b>enlace</b> a tu web. Escrita es lo que mejor se lee en el móvil.</p><p>Escrita, además, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y los archivos y el enlace se quedan debajo. Si no te apetece, con una foto o un PDF vas servido.</p>',
+        '<p>Three ways, and you can use as many as you like at once: <b>type the list</b> here, upload <b>photos or a PDF</b> or add a <b>link</b> to your website. Typed is what reads best on a phone.</p><p>Typed, it can also be searched and screen readers can read it; if you type it, it is shown first and the files and the link go below. If you would rather not, a photo or a PDF is enough.</p>'))
+    : helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos o un PDF</b> de tu carta o poner un <b>enlace</b> a tu web. Escrita es lo que mejor se lee en el móvil.</p><p>Escrita, además, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y los archivos y el enlace se quedan debajo. Si no te apetece, con una foto o un PDF vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>',
         '<p>Three ways, and you can use as many as you like at once: <b>type it</b> here, upload <b>photos or a PDF</b> of your menu or add a <b>link</b> to your website. Typed is what reads best on a phone.</p><p>Typed, it can also be searched and screen readers can read it; if you type it, it is shown first and the files and the link go below. If you would rather not, a photo or a PDF is enough.</p><p>The <b>allergens</b> are the fourteen that Regulation (EU) 1169/2011 requires you to declare. Only mark the ones you are sure about: a mistake here is not just a typo.</p>'))}
 
-      <div class="card"><h2>Archivos de la carta</h2>
-        <p class="muted" style="margin:0 0 8px">Fotos de la carta de papel o un PDF. Hasta 12 archivos, 10 MB cada uno.</p>
+      <div class="card"><h2>${esc(carta2([bi('Archivos de la carta', 'Menu files'), bi('Archivos de la lista', 'Price list files')]))}</h2>
+        <p class="muted" style="margin:0 0 8px">${esc(carta2([bi('Fotos de la carta de papel o un PDF. Hasta 12 archivos, 10 MB cada uno.', 'Photos of your paper menu or a PDF. Up to 12 files, 10 MB each.'), bi('Fotos de tu lista de precios en papel o un PDF. Hasta 12 archivos, 10 MB cada uno.', 'Photos of your paper price list or a PDF. Up to 12 files, 10 MB each.')]))}</p>
         ${htmlArchivosCarta(archivos, canManage)}
         ${canManage ? (archivos.length < KlendarEnlaces.MAX_ARCHIVOS
           ? `<p style="margin:10px 0 0"><label class="btn sm">${esc(I18N.t('Añadir archivos'))}<input type="file" id="menu-file" accept="${ACEPTA_CARTA}" multiple hidden></label>
             <span class="muted small" id="menu-subiendo" role="status"></span></p>`
           : `<p class="muted" style="margin:10px 0 0">${esc(I18N.t('Como mucho 12 archivos.'))}</p>`) : ''}</div>
 
-      <div class="card"><h2>Enlace a la carta</h2>
-        <p class="muted" style="margin:0 0 8px">Si tu carta ya está en tu web, con pegar la dirección vale.</p>
+      <div class="card"><h2>${esc(carta2([bi('Enlace a la carta', 'Link to your menu'), bi('Enlace a tus servicios', 'Link to your services'), bi('Enlace a tus productos', 'Link to your products'), bi('Enlace a tus precios', 'Link to your prices')]))}</h2>
+        <p class="muted" style="margin:0 0 8px">${esc(carta2([bi('Si tu carta ya está en tu web, con pegar la dirección vale.', 'If your menu is already on your website, just paste the address.'), bi('Si tus precios ya están en tu web, con pegar la dirección vale.', 'If your prices are already on your website, just paste the address.')]))}</p>
         <label class="f"><span>Dirección</span>
-          <input id="menu-url" type="url" value="${esc(enlace)}" placeholder="https://tubar.com/carta" ${canManage ? '' : 'disabled'}></label></div>
+          <input id="menu-url" type="url" value="${esc(enlace)}" placeholder="${tipo === 'menu' ? 'https://tubar.com/carta' : 'https://tuweb.com/precios'}" ${canManage ? '' : 'disabled'}></label></div>
       <h2 style="margin:24px 0 8px">Escrita</h2>
       ${carta.length ? carta.map((sec, si) => `
         <div class="card">
@@ -6219,7 +6241,9 @@ PAGES.carta = async (v) => {
           })}
           ${canManage ? `<p style="margin:10px 0 0"><button class="btn sm" data-item-add="${si}">${esc(I18N.t(tc.add))}</button></p>` : ''}
         </div>`).join('')
-        : `<div class="card"><p class="muted" style="margin:0"><span>Todavía no has escrito la carta.</span> ${canManage ? '<span>Empieza por una sección: «Para picar», «Bocadillos», «Bebidas»…</span>' : ''}</p></div>`}
+        : `<div class="card"><p class="muted" style="margin:0"><span>${esc(carta2([bi('Todavía no has escrito la carta.', "You haven't written the menu yet."), bi('Todavía no has escrito nada.', "You haven't written anything yet.")]))}</span> ${canManage ? `<span>${esc(carta2(
+    ['Empieza por una sección: «Para picar», «Bocadillos», «Bebidas»…', 'Empieza por una sección: «Consultas», «Tratamientos», «Lo más pedido»…', 'Empieza por una sección: «Lo más vendido», «De temporada», «Para regalar»…', 'Empieza por una sección: «Entradas», «Cuotas», «Cursos»…'],
+    ['Start with a section: “Starters”, “Sandwiches”, “Drinks”…', 'Start with a section: “Consultations”, “Treatments”, “Most popular”…', 'Start with a section: “Best sellers”, “Seasonal”, “Gifts”…', 'Start with a section: “Tickets”, “Memberships”, “Courses”…']))}</span>` : ''}</p></div>`}
       ${sucia ? '<p class="muted">Hay cambios sin guardar.</p>' : ''}`;
 
     if (!canManage) return;
@@ -6232,7 +6256,7 @@ PAGES.carta = async (v) => {
           if (leida?.length) {
             carta = KFotoRellena.mezcla(carta, leida);
             sucia = true;
-            toast(I18N.t('Añadido. Guarda la carta para que se vea.'));
+            toast(carta2([bi('Añadido. Guarda la carta para que se vea.', 'Added. Save the menu so it shows.'), bi('Añadido. Guarda la lista para que se vea.', 'Added. Save the price list so it shows.')]));
           }
           pinta();
         },
@@ -6279,7 +6303,7 @@ PAGES.carta = async (v) => {
     }; });
     $$('[data-sec-del]', v).forEach((b) => { b.onclick = async () => {
       const i = +b.dataset.secDel;
-      if (!await confirmDlg('Borrar sección', bi(`Se quita «${esc(carta[i].name)}» con ${tc.sus[0]}. No se guarda hasta que le des a «Guardar la carta».`, `“${esc(carta[i].name)}” and ${tc.sus[1]} are removed. Nothing is saved until you press “Save the menu”.`), { danger: true, submit: 'Borrar' })) return;
+      if (!await confirmDlg('Borrar sección', bi(`Se quita «${esc(carta[i].name)}» con ${tc.sus[0]}. No se guarda hasta que le des a «${esc(guardarTxt)}».`, `“${esc(carta[i].name)}” and ${tc.sus[1]} are removed. Nothing is saved until you press “${esc(guardarTxt)}”.`), { danger: true, submit: 'Borrar' })) return;
       carta.splice(i, 1); sucia = true; pinta();
     }; });
     $$('[data-sec-up]', v).forEach((b) => { b.onclick = () => {
@@ -6403,8 +6427,7 @@ PAGES['cartel-local'] = async (v) => {
   v.innerHTML = `
     <p class="crumbs"><a href="#/ficha">${esc(I18N.t('Tu ficha'))}</a> · <a href="#/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a></p>
     <div class="page-head"><h1>Cartel del local</h1></div>
-    ${helpBox('¿Para qué sirve?', bi('<p>Para la barra, la puerta o las mesas. Quien lo escanea con la cámara del móvil ve tu ficha: carta, fotos, publicaciones y reseñas. Desde ahí puede añadirte a favoritos.</p><p>Si una tarjeta de sellos tiene activado <b>«También por visita con el QR del local»</b>, además se lleva un sello, como mucho uno al día. Para eso comprobamos que está en tu local con la ubicación de su móvil (no la guardamos).</p>',
-      '<p>For the counter, the door or the tables. Whoever scans it with their phone camera sees your profile: menu, photos, publications and reviews. From there they can add you to their favourites.</p><p>If a stamp card has <b>“Also per visit with the venue QR code”</b> turned on, they also get a stamp, one a day at most. To do that we check they are at your place with their phone’s location (we don’t store it).</p>'))}
+    ${helpBox('¿Para qué sirve?', segunCarta([bi('<p>Para la barra, la puerta o las mesas. Quien lo escanea con la cámara del móvil ve tu ficha: carta, fotos, publicaciones y reseñas. Desde ahí puede añadirte a favoritos.</p><p>Si una tarjeta de sellos tiene activado <b>«También por visita con el QR del local»</b>, además se lleva un sello, como mucho uno al día. Para eso comprobamos que está en tu local con la ubicación de su móvil (no la guardamos).</p>', '<p>For the counter, the door or the tables. Whoever scans it with their phone camera sees your profile: menu, photos, publications and reviews. From there they can add you to their favourites.</p><p>If a stamp card has <b>“Also per visit with the venue QR code”</b> turned on, they also get a stamp, one a day at most. To do that we check they are at your place with their phone’s location (we don’t store it).</p>'), bi('<p>Para la barra, la puerta o las mesas. Quien lo escanea con la cámara del móvil ve tu ficha: precios, fotos, publicaciones y reseñas. Desde ahí puede añadirte a favoritos.</p><p>Si una tarjeta de sellos tiene activado <b>«También por visita con el QR del local»</b>, además se lleva un sello, como mucho uno al día. Para eso comprobamos que está en tu local con la ubicación de su móvil (no la guardamos).</p>', '<p>For the counter, the door or the tables. Whoever scans it with their phone camera sees your profile: prices, photos, publications and reviews. From there they can add you to their favourites.</p><p>If a stamp card has <b>“Also per visit with the venue QR code”</b> turned on, they also get a stamp, one a day at most. To do that we check they are at your place with their phone’s location (we don’t store it).</p>')]))}
     <div class="card cartel-local">
       <div id="qr" class="cl-qr" role="img" aria-label="QR ${esc(url)}"></div>
       <div class="cl-txt">
@@ -7084,7 +7107,7 @@ function toquesEnlacesHtml(filas) {
     const tipo = f.kind === 'other' ? I18N.t('Otro') : E.nombreTipo(f.kind, I18N.lang);
     lineas.push([[tipo, quien].filter(Boolean).join(' · '), n]);
   }
-  if (carta) lineas.push([I18N.t('Carta'), carta]);
+  if (carta) lineas.push([tituloCarta(), carta]);
   lineas.sort((a, b) => b[1] - a[1]);
   return `<div class="card"><h2>Toques en tus enlaces</h2>
     ${lineas.length ? `<ul class="toques-enlaces">${lineas.map(([t, n]) => `<li><span>${esc(t)}</span> <span class="muted" aria-hidden="true">—</span> <b>${fmtNum(n)}</b></li>`).join('')}</ul>
@@ -7144,6 +7167,8 @@ PAGES.informe = async (v, param) => {
     rpc('business_report', { p_id: BIZ.id, p_days: days }).then((x) => x || {}),
     rpc('business_audience', { p_id: BIZ.id, p_days: days }).catch(() => null),
     rpc('business_link_taps_report', { p_business: BIZ.id, p_days: days }).catch(() => null),
+    // Para llamar a la carta por su nombre («Servicios y precios»…).
+    categoriaDelNegocio().catch(() => null),
   ]);
   const t = r.totals || {};
   // Los primeros canjes, con su id (el cursor de los siguientes); sin la
