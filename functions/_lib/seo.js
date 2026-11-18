@@ -56,14 +56,22 @@ function normaliza(f, completa) {
 }
 
 /** Lo publicado en cada municipio con algo. `completa`: con la función nueva. */
+// Sin la función (prod antes de su migración) no se vuelve a preguntar en un
+// rato: cada página haría una llamada de más (la que falla no se recuerda).
+let SIN_FUNCION_HASTA = 0;
+const memoActiva = () => typeof globalThis.caches?.default?.match === 'function';
+
 export async function lugaresSeo() {
-  try {
-    const l = await rpcAll('public_seo_places', {});
-    return { lugares: l.filter((f) => f && (f.slug || f.city)).map((f) => normaliza(f, true)), completa: true };
-  } catch {
-    const l = await rpcAll('public_cities', {}).catch(() => []);
-    return { lugares: l.filter((f) => f && f.city).map((f) => normaliza(f, false)), completa: false };
+  if (Date.now() >= SIN_FUNCION_HASTA) {
+    try {
+      const l = await rpcAll('public_seo_places', {});
+      return { lugares: l.filter((f) => f && (f.slug || f.city)).map((f) => normaliza(f, true)), completa: true };
+    } catch {
+      if (memoActiva()) SIN_FUNCION_HASTA = Date.now() + 10 * 60_000;
+    }
   }
+  const l = await rpcAll('public_cities', {}).catch(() => []);
+  return { lugares: l.filter((f) => f && f.city).map((f) => normaliza(f, false)), completa: false };
 }
 
 const plano = (s) => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
