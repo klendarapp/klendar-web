@@ -226,6 +226,12 @@ export function cityLinks(lang, rawCity, city, cats, actual) {
   </div></nav>`;
 }
 
+/** «Ofertas en <municipio>»: /ofertas/malaga y /en/deals/malaga. */
+export const ofertasBase = (lang) => (lang === 'en' ? '/en/deals' : '/ofertas');
+
+/** «Planes en la provincia de <provincia>»: /provincia/malaga y /en/province/malaga. */
+export const provinciaBase = (lang) => (lang === 'en' ? '/en/province' : '/provincia');
+
 /** Donde vive cada seccion en cada idioma. */
 export const exploreBase = (lang) => (lang === 'en' ? '/en/explore' : '/explorar');
 /** Descubre: el feed de la pestaña 1 de la app. */
@@ -243,6 +249,8 @@ export const altPath = (path, lang) =>
         .replace(/^\/en\/whats-on/, '/agenda')
         .replace(/^\/en\/today/, '/hoy')
         .replace(/^\/en\/kids/, '/con-ninos')
+        .replace(/^\/en\/deals/, '/ofertas')
+        .replace(/^\/en\/province/, '/provincia')
         .replace(/^\/en\/explore/, '/explorar')
         .replace(/^\/en\/discover/, '/descubre')
         .replace(/^\/en\/collection/, '/coleccion')
@@ -261,6 +269,8 @@ export const altPath = (path, lang) =>
         .replace(/^\/agenda/, '/whats-on')
         .replace(/^\/hoy/, '/today')
         .replace(/^\/con-ninos/, '/kids')
+        .replace(/^\/ofertas/, '/deals')
+        .replace(/^\/provincia/, '/province')
         .replace(/^\/explorar/, '/explore')
         .replace(/^\/descubre/, '/discover')
         .replace(/^\/coleccion/, '/collection')

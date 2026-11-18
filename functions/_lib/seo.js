@@ -8,7 +8,7 @@
 //    sale en el sitemap una dirección que la página manda no indexar
 //    (tools/seo_check.mjs lo comprueba).
 //  - `lugaresSeo()`: lo publicado en cada municipio, de una vez
-//    (`public_seo_places`, migración 20261285500000 de la app; unos minutos en
+//    (`public_seo_places`, migraciones 20261285900000 y 010 de la app; unos minutos en
 //    la memoria de cada copia, ver MEMO en page.js). Sin esa función (prod
 //    antes de su migración), lo de `public_cities` (cuántos planes hay en
 //    cada municipio), que ya se pedía.
@@ -47,6 +47,8 @@ function normaliza(f, completa) {
     flash: completa ? num(f.flash) : null,
     events: completa ? num(f.events) : null,
     kids: completa ? num(f.kids) : null,
+    // Los de los próximos 8 días (lo que enseña su agenda).
+    week: completa && f.week != null ? num(f.week) : null,
     businesses: completa ? num(f.businesses) : null,
     cats: completa && Array.isArray(f.cats) ? f.cats.filter((k) => k && k.slug).map((k) => ({ slug: k.slug, n: num(k.n) })) : null,
     completa,
@@ -77,18 +79,33 @@ export async function lugarSeo(slugOCiudad) {
 /** ¿Tiene el municipio lo suficiente para indexar sus páginas? */
 export const municipioConContenido = (l) => Boolean(l) && l.n >= UMBRALES.municipio;
 
+/** ¿Su agenda de la semana? La página mira lo que enseña (`propio`); el
+ * sitemap, los planes de los próximos 8 días (sin la función nueva, se fía
+ * del municipio). */
+export function agendaConContenido(l, propio = null) {
+  if (!municipioConContenido(l)) return false;
+  if (propio != null) return num(propio) > 0;
+  return l.week == null || l.week > 0;
+}
+
+/** ¿«Qué hacer hoy»? Con el municipio basta, salvo que la página no tenga nada
+ * (ni hoy, ni mañana, ni sitios: `vacia`). */
+export const hoyConContenido = (l, vacia = false) => municipioConContenido(l) && !vacia;
+
 /** ¿Y una de sus categorías? `propio`: lo que enseña la página (sin la función nueva). */
 export function categoriaConContenido(l, slug, propio = null) {
   if (!municipioConContenido(l)) return false;
-  const k = Array.isArray(l.cats) ? l.cats.find((c) => c.slug === slug) : null;
-  const n = k ? k.n : l.cats ? 0 : num(propio);
-  return n >= UMBRALES.categoria;
+  // Sin la función nueva no se sabe cuántos hay en cada categoría: basta con
+  // que tenga algo (lo de antes, lo mismo que pone el sitemap).
+  if (!Array.isArray(l.cats)) return propio == null || num(propio) >= 1;
+  const k = l.cats.find((c) => c.slug === slug);
+  return Boolean(k) && k.n >= UMBRALES.categoria;
 }
 
 /** ¿«Ofertas en <municipio>»? */
 export function ofertasConContenido(l, propio = null) {
-  const n = l && l.flash != null ? l.flash : num(propio);
-  return n >= UMBRALES.ofertas;
+  if (!l || l.flash == null) return propio != null && num(propio) >= UMBRALES.ofertas;
+  return l.flash >= UMBRALES.ofertas && (propio == null || num(propio) > 0);
 }
 
 /** Las provincias con algo: [{ code, name, n, lugares: [...] }], de más a menos. */

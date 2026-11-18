@@ -1,7 +1,7 @@
 // Servidor de desarrollo mínimo: sirve los ficheros estáticos del repo y
 // ejecuta las Pages Functions de /o/, /b/ (por id o por dirección), /r/, /rp/, /v/, /cola/, /listo/, /a/, /amigo/, /cartel/, /agenda/,
-// /hoy/, /con-ninos/, /partidos/, /grupos/, /sorteos/, /sorteo/ y los sitemaps de
-// agenda y negocios.
+// /hoy/, /con-ninos/, /ofertas/, /provincia/, /partidos/, /grupos/, /sorteos/, /sorteo/ y los sitemaps de
+// agenda, negocios, planes, artistas y guías.
 // No sustituye a Cloudflare; es para ver las páginas mientras se escriben.
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
@@ -118,6 +118,9 @@ createServer(async (req, res) => {
     // «Qué hacer hoy en <ciudad>»: /hoy/<ciudad>/ y /en/today/<city>/.
     else if ((m = rest.match(/^\/(hoy|today)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'today' : 'hoy'}/[city].js`); params = { city: m[2] }; }
     else if (/^\/(hoy|today)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'today' : 'hoy'}/index.js`); }
+    // «Ofertas en <municipio>»: /ofertas/<m> y /en/deals/<m>; la provincia: /provincia/<p> y /en/province/<p>.
+    else if ((m = rest.match(/^\/(ofertas|deals)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'deals' : 'ofertas'}/[city].js`); params = { city: m[2] }; }
+    else if ((m = rest.match(/^\/(provincia|province)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'province' : 'provincia'}/[slug].js`); params = { slug: m[2] }; }
     // «Planes con niños en <ciudad>»: /con-ninos/<ciudad>/ y /en/kids/<city>/.
     else if ((m = rest.match(/^\/(con-ninos|kids)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'kids' : 'con-ninos'}/[city].js`); params = { city: m[2] }; }
     else if (/^\/(con-ninos|kids)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'kids' : 'con-ninos'}/index.js`); }
@@ -162,6 +165,8 @@ createServer(async (req, res) => {
     else if (path === '/sitemap-agenda.xml') { mod = await load('functions/sitemap-agenda.xml.js'); }
     else if (path === '/sitemap-negocios.xml') { mod = await load('functions/sitemap-negocios.xml.js'); }
     else if (path === '/sitemap-artistas.xml') { mod = await load('functions/sitemap-artistas.xml.js'); }
+    else if (path === '/sitemap-planes.xml') { mod = await load('functions/sitemap-planes.xml.js'); }
+    else if (path === '/sitemap-guias.xml') { mod = await load('functions/sitemap-guias.xml.js'); }
 
     if (mod) {
       // POST (los botones de /baja/ y /avisame/), si la página lo tiene.

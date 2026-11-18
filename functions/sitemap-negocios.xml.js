@@ -1,4 +1,4 @@
-import { configure, datosDePrueba } from './_lib/page.js';
+import { configure, datosDePrueba, rpcAll } from './_lib/page.js';
 import { BASE, isSlug, negociosPublicos } from './_lib/public.js';
 import { RESPALDO, sitemapVacio, urlPar, urlset } from './_lib/sitemap.js';
 import { sorteosAbiertos } from './_lib/sorteos.js';
@@ -7,8 +7,8 @@ import { sorteosAbiertos } from './_lib/sorteos.js';
 // los sorteos abiertos (/sorteo/<id> y /en/giveaway/<id>).
 //
 // Solo los negocios que cualquiera puede ver (activos y verificados: lo que
-// deja leer la base sin cuenta) y ninguno +18 ni el de revisión de las tiendas,
-// cuyas fichas van con noindex. Tampoco las cuentas de sistema «Agenda pública
+// deja leer la base sin cuenta) y ninguno +18, ni el de revisión de las
+// tiendas, ni cerrado o parado por el cobro, cuyas fichas van con noindex. Tampoco las cuentas de sistema «Agenda pública
 // de…» (`entity_kind = 'public_agenda'`), que se quitaron el 12-11-2026
 // (migración 20261276100000 de la app): hasta que esa migración llegue a prod,
 // aquí ya no salen.
@@ -23,15 +23,24 @@ export async function onRequestGet(ctx) {
   // Con los datos de prueba de dev, nada que indexar (ver datosDePrueba).
   if (datosDePrueba()) return sitemapVacio(RESPALDO.negocios);
 
-  const negocios = [];
-  for (let desde = 0; desde < MAXIMO; desde += POR_PAGINA) {
-    const filas = await negociosPublicos('select=slug,updated_at'
-      + '&is_active=eq.true&verification_status=eq.verified&adults_only=eq.false'
-      + '&or=(entity_kind.is.null,entity_kind.neq.public_agenda)'
-      + `&order=created_at.asc,id.asc&offset=${desde}&limit=${POR_PAGINA}`);
-    negocios.push(...filas);
-    if (filas.length < POR_PAGINA) break;
-  }
+  // Las fichas que se dejan indexar, de una vez (`public_sitemap_businesses`,
+  // migración 20261285900000 de la app): sin cerradas (temporal ni
+  // definitivamente) ni paradas por el cobro, que van con noindex. Sin ella
+  // (prod antes de su migración), la lectura de `businesses` de antes, ya sin
+  // las cerradas.
+  const negocios = await rpcAll('public_sitemap_businesses', { p_limit: MAXIMO }).catch(async () => {
+    const filas = [];
+    for (let desde = 0; desde < MAXIMO; desde += POR_PAGINA) {
+      const pagina = await negociosPublicos('select=slug,updated_at'
+        + '&is_active=eq.true&verification_status=eq.verified&adults_only=eq.false'
+        + '&or=(entity_kind.is.null,entity_kind.neq.public_agenda)'
+        + '&closed_indefinitely_at=is.null&closed_permanently_at=is.null'
+        + `&order=created_at.asc,id.asc&offset=${desde}&limit=${POR_PAGINA}`);
+      filas.push(...pagina);
+      if (pagina.length < POR_PAGINA) break;
+    }
+    return filas;
+  });
 
   const urls = negocios.filter((b) => isSlug(b.slug)).map((b) => urlPar(
     `${BASE}/b/${b.slug}`,
