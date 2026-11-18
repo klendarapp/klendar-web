@@ -321,7 +321,7 @@
     }, 3000);
   })();
 
-  // ── Cuenta atrás de las ofertas flash ──────────────────────────────────
+  // ── Cuenta atrás de las ofertas ──────────────────────────────────
   var relojes = [];
   var reloj = null;
   function dur(ms) {

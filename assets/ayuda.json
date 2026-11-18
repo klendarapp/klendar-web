@@ -1,5 +1,5 @@
 {
- "version": "ace65d329ecd",
+ "version": "085bf53a8bb2",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -247,7 +247,7 @@
     "q": "No recibo notificaciones",
     "a": [
      {
-      "t": "Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. \"Cerca de ti\" solo avisa de ofertas flash dentro del radio elegido y como máximo 3 veces al día."
+      "t": "Revisa Cuenta → Ajustes → Notificaciones y los permisos de notificaciones del sistema. \"Cerca de ti\" solo avisa de ofertas dentro del radio elegido y como máximo 3 veces al día."
      }
     ]
    },
@@ -440,7 +440,7 @@
     "q": "¿Cómo publico una oferta o un evento?",
     "a": [
      {
-      "t": "Desde la app (Mi negocio → Publicaciones) o desde el panel del ordenador: una oferta flash, con cuenta atrás y aforo, o un evento con fecha. Al crear una en blanco tienes «Ideas» de tu gremio para empezar, y puedes guardar las tuyas como plantillas."
+      "t": "Desde la app (Mi negocio → Publicaciones) o desde el panel del ordenador: una oferta, con cuenta atrás y aforo, o un evento con fecha. Al crear una en blanco tienes «Ideas» de tu gremio para empezar, y puedes guardar las tuyas como plantillas."
      }
     ]
    },
@@ -449,7 +449,7 @@
     "q": "¿Puedo repetir una oferta o un evento cada semana?",
     "a": [
      {
-      "t": "Sí: «Repetir cada semana» (en «Series y repeticiones»). Las ofertas flash salen solas a su hora y los eventos, cada fecha, una semana antes. Cada repetición es una serie que la gente puede seguir; si la quitas, se termina y se avisa a quien la sigue."
+      "t": "Sí: «Repetir cada semana» (en «Series y repeticiones»). Las ofertas salen solas a su hora y los eventos, cada fecha, una semana antes. Cada repetición es una serie que la gente puede seguir; si la quitas, se termina y se avisa a quien la sigue."
      }
     ]
    },
@@ -838,7 +838,7 @@
     "q": "I don't get notifications",
     "a": [
      {
-      "t": "Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about flash offers within your chosen radius, at most 3 times a day."
+      "t": "Check Account → Settings → Notifications and the system notification permission. “Nearby” only alerts you about offers within your chosen radius, at most 3 times a day."
      }
     ]
    },
@@ -1031,7 +1031,7 @@
     "q": "How do I publish a deal or an event?",
     "a": [
      {
-      "t": "From the app (My business → Publications) or from the dashboard on a computer: a flash offer, with a countdown and a capacity, or an event with a date. When you create one from scratch you get “Ideas” from your trade to start with, and you can save your own as templates."
+      "t": "From the app (My business → Publications) or from the dashboard on a computer: an offer, with a countdown and a capacity, or an event with a date. When you create one from scratch you get “Ideas” from your trade to start with, and you can save your own as templates."
      }
     ]
    },
@@ -1040,7 +1040,7 @@
     "q": "Can I repeat a deal or an event every week?",
     "a": [
      {
-      "t": "Yes: “Repeat every week” (in “Series and repeats”). Flash offers go out on their own at their time and events, each date, a week before. Each repeat is a series people can follow; if you remove it, it ends and its followers are told."
+      "t": "Yes: “Repeat every week” (in “Series and repeats”). Offers go out on their own at their time and events, each date, a week before. Each repeat is a series people can follow; if you remove it, it ends and its followers are told."
      }
     ]
    },

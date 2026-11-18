@@ -58,7 +58,7 @@
 .tj-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--glass-border);
   background: var(--soft); font-size: 13px; font-weight: 700; min-width: 0; }
 .tj-chip .ic { flex: none; }
-/* La cuenta atrás de una oferta flash, siempre en coral (es la oferta); la
+/* La cuenta atrás de una oferta, siempre en coral (es la oferta); la
    urgencia, con la negrita (menos de 60 min, menos de 15), no con otro color. */
 .tj-cuando.ahora { color: var(--accent-text); font-weight: 600; }
 .tj-cuando.ahora.pronto { font-weight: 700; }
@@ -165,7 +165,7 @@ a.cal-dia:hover { background: var(--soft); text-decoration: none; }
 :is(.pub, .tjv) .cal-dia.sel { background: var(--ink); color: var(--surface); box-shadow: none; }
 .cal-puntos { display: flex; gap: 3px; height: 6px; }
 .cal-puntos i, .cal-leyenda i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
-/* Eventos en tinta y ofertas flash en coral (son oferta); sin más colores
+/* Eventos en tinta y ofertas en coral (son oferta); sin más colores
    (Iván, 2026-10-27). */
 .pe { background: var(--ink); }
 .pf { background: var(--accent); }

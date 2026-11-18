@@ -386,7 +386,7 @@ function resumenAlerta(a, cats) {
     : t('Todo');
   const donde = a.lat != null ? (a.place_label || t('Zona guardada')) : t('Donde esté');
   const bits = [que, `${donde} · ${distancia(a.radius_m)}`];
-  if (a.kind === 'flash_offer') bits.push(t('Ofertas flash'));
+  if (a.kind === 'flash_offer') bits.push(t('Ofertas'));
   if (a.kind === 'future_event') bits.push(t('Eventos'));
   if (a.discount_only) bits.push(t('Solo con descuento'));
   if (a.max_price_cents != null) bits.push(`${t('hasta')} ${money(a.max_price_cents)}`);
@@ -523,7 +523,7 @@ RUTAS.alerta = async ([id], params, crudo) => {
       <div class="campo-cat"><p class="etq" aria-hidden="true">${esc(t('¿De qué?'))} <small>${esc(t('Sin elegir ninguna, de todo.'))}</small></p>
         <div id="cats-aviso"></div></div>
       <fieldset class="chips"><legend>${esc(t('¿Ofertas o eventos?'))}</legend>
-        ${[['', t('Todo')], ['flash_offer', t('Ofertas flash')], ['future_event', t('Eventos')]].map(([v, l]) =>
+        ${[['', t('Todo')], ['flash_offer', t('Ofertas')], ['future_event', t('Eventos')]].map(([v, l]) =>
           `<label><input type="radio" name="kind" value="${v}"${(a.kind || '') === v ? ' checked' : ''}> ${esc(l)}</label>`).join('')}
       </fieldset>
       <label>${esc(t('¿A cuánta distancia?'))} <output id="radio-txt">${esc(distancia(a.radius_m))}</output>
@@ -1344,7 +1344,7 @@ async function ajustesNotificaciones() {
     // «Avísame cuando haya sitio» (aforo en directo): llega aunque sean
     // horas de silencio, porque lo has pedido tú esa noche.
     sw('sitio', 'Cuando haya sitio', prefs.notify_room !== false, 'Cuando pides «Avísame cuando haya sitio» en un local lleno. Llega aunque estés en horas de silencio, porque lo has pedido tú.'),
-    sw('cerca', 'Ofertas flash cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
+    sw('cerca', 'Ofertas cerca de ti', prefs.notify_nearby, 'Como mucho 3 al día'),
   ].join('')}
         <div id="cerca-mas"${prefs.notify_nearby ? '' : ' hidden'}>
           <p class="muted nota" id="cerca-nota" hidden>${esc(t('Ahora no te llegan: no sabemos dónde estás. Abre la app de Klendar de vez en cuando para que lo sepamos (guardamos solo la última posición, 7 días).'))}</p>
@@ -1432,7 +1432,7 @@ async function ajustesNotificaciones() {
     alCambiar: (v) => { elegidas = v; guarda(); },
   });
 
-  // «Ofertas flash cerca de ti»: si no sabemos dónde estás, se dice. La base
+  // «Ofertas cerca de ti»: si no sabemos dónde estás, se dice. La base
   // guarda la última posición 7 días y solo la manda la app al abrirla (la
   // web no guarda la tuya: privacidad, «Ubicación»); migración
   // 20261260100100 de la app.
@@ -1516,14 +1516,14 @@ function editorPalabras(caja, datos) {
     const z = d?.area || {};
     const km = distancia(z.radius_m || 1000);
     const zona = z.how === 'nearby'
-      ? (EN ? `We’ll let you know when something within ${km} matches (your “Flash offers near you” distance). At most 3 a day.`
-        : `Te avisamos cuando algo a ${km} encaje (la distancia de «Ofertas flash cerca de ti»). Como mucho 3 al día.`)
+      ? (EN ? `We’ll let you know when something within ${km} matches (your “Offers near you” distance). At most 3 a day.`
+        : `Te avisamos cuando algo a ${km} encaje (la distancia de «Ofertas cerca de ti»). Como mucho 3 al día.`)
       : z.how === 'city'
         ? (EN ? `We’ll let you know when something in ${z.city} matches (your city). At most 3 a day.`
           : `Te avisamos cuando algo en ${z.city} encaje (tu ciudad). Como mucho 3 al día.`)
         : z.how === 'around'
           ? t('Te avisamos cuando algo a 5 km de donde estés encaje. Como mucho 3 al día.')
-          : t('Para avisarte necesitamos saber por dónde andas: activa «Ofertas flash cerca de ti» o elige tu ciudad en Ajustes → Lo que ves → Tus gustos.');
+          : t('Para avisarte necesitamos saber por dónde andas: activa «Ofertas cerca de ti» o elige tu ciudad en Ajustes → Lo que ves → Tus gustos.');
     caja.innerHTML = `
       <p class="muted nota">${esc(zona)}</p>
       <div class="palabras">

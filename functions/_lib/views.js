@@ -533,7 +533,7 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
     <div class="d-head">
       <div class="d-top"><div class="badges"><span class="badge">${esc(flash && o.style?.badge === 'daily_menu'
         ? `${en ? 'Daily menu' : 'Menú del día'}${{ lunch: en ? ' · Lunch' : ' · Comida', dinner: en ? ' · Dinner' : ' · Cena', both: en ? ' · Lunch and dinner' : ' · Comida y cena' }[o.style?.meal] || ''}`
-        : flash ? (en ? 'Flash offer' : 'Oferta flash') : (en ? 'Event' : 'Evento'))}</span>${badges}${sellosMarca}</div>
+        : flash ? (en ? 'Offer' : 'Oferta') : (en ? 'Event' : 'Evento'))}</span>${badges}${sellosMarca}</div>
       ${masMenu([
     !flash && o.event_at && !over ? `<a href="${esc(icsHref(o, o.venue_address || where, `${BASE}${path}`))}" download="${esc((o.title || 'evento').replace(/[^\p{L}\p{N}]+/gu, '-').slice(0, 60))}.ics">${en ? 'Add to calendar' : 'Añadir al calendario'}</a>` : '',
     `<a href="#por-que">${S.why}</a>`,
@@ -782,7 +782,7 @@ function lockedOfferPage(o, lang, path, bHref, rpQ = '') {
   const S = en
     ? {
         page: `Exclusive publication · ${n}`,
-        kind: flash ? 'Flash offer' : 'Event', redeem: 'Redemption window', when: 'When',
+        kind: flash ? 'Offer' : 'Event', redeem: 'Redemption window', when: 'When',
         title: fav ? `Exclusive for people who have ${n} in their favourites` : `Exclusive for ${n}'s customers`,
         text: fav ? `Add ${n} to your favourites to see it and get it.`
           : "It's for people with stamps on one of their cards. Get your first one by redeeming one of their offers or with the venue QR code.",
@@ -793,7 +793,7 @@ function lockedOfferPage(o, lang, path, bHref, rpQ = '') {
       }
     : {
         page: `Publicación exclusiva · ${n}`,
-        kind: flash ? 'Oferta flash' : 'Evento', redeem: 'Se canjea', when: 'Cuándo',
+        kind: flash ? 'Oferta' : 'Evento', redeem: 'Se canjea', when: 'Cuándo',
         title: fav ? `Exclusiva para quien tiene ${n} en favoritos` : `Exclusiva para clientes de ${n}`,
         text: fav ? `Añade ${n} a favoritos para verla y conseguirla.`
           : 'Es para quien tiene sellos en alguna de sus tarjetas. Consigue el primero canjeando una de sus ofertas o con el QR del local.',
@@ -1034,7 +1034,7 @@ export async function businessPage(param, lang, search = '') {
         stampsMany: 'Stamp cards',
         stampsBody: (n, r) => `${n} stamps: “${r}”`,
         stampsNote: 'Each redemption that counts earns a stamp (at most one a day per card), and the app keeps count.',
-        stampsAll: 'Every publication counts', stampsFlash: 'Only flash offers count', stampsEvents: 'Only events count',
+        stampsAll: 'Every publication counts', stampsFlash: 'Only offers count', stampsEvents: 'Only events count',
         stampsSomeCats: 'Only some categories count', stampsSomeOffers: 'Only some publications count',
         stampsOnly: (l) => `Only these count: ${l}`, stampsMore: (l, n) => `${l} and ${n} more`,
         stampsByVisit: 'Also per visit with the venue QR code',
@@ -1086,7 +1086,7 @@ export async function businessPage(param, lang, search = '') {
         stampsMany: 'Tarjetas de sellos',
         stampsBody: (n, r) => `${n} sellos: «${r}»`,
         stampsNote: 'Cada canje que cuenta deja un sello, como mucho uno al día por tarjeta, y la app lleva la cuenta.',
-        stampsAll: 'Cuentan todas las publicaciones', stampsFlash: 'Solo cuentan las ofertas flash', stampsEvents: 'Solo cuentan los eventos',
+        stampsAll: 'Cuentan todas las publicaciones', stampsFlash: 'Solo cuentan las ofertas', stampsEvents: 'Solo cuentan los eventos',
         stampsSomeCats: 'Solo cuentan algunas categorías', stampsSomeOffers: 'Solo cuentan algunas publicaciones',
         stampsOnly: (l) => `Solo cuentan: ${l}`, stampsMore: (l, n) => `${l} y ${n} más`,
         stampsByVisit: 'También por visita con el QR del local',
@@ -1556,7 +1556,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
   const bits = [];
   if (b.rating && b.ratings) bits.push(`★ ${nota(b.rating, lang)} (${b.ratings})`);
   const uno = (n, es1, esN, en1, enN) => `${n} ${n === 1 ? (en ? en1 : es1) : (en ? enN : esN)}`;
-  if (nFlash) bits.push(`${uno(nFlash, 'oferta flash', 'ofertas flash', 'flash offer', 'flash offers')} ${en ? 'now' : 'ahora'}`);
+  if (nFlash) bits.push(`${uno(nFlash, 'oferta', 'ofertas', 'offer', 'offers')} ${en ? 'now' : 'ahora'}`);
   if (nEvents) bits.push(uno(nEvents, 'evento', 'eventos', 'event', 'events'));
   if (where) bits.push(where);
   else if (organizador && b.city) bits.push(b.city);
@@ -1657,8 +1657,8 @@ export async function agendaPage(rawCity, lang) {
     ? {
         h1: `Things to do in ${city} this week`,
         title: `Things to do in ${city} this week: events and deals`,
-        desc: (n) => `${n} events and deals in ${city} over the next few days: flash offers with a countdown and local events. No account needed to browse.`,
-        lead: 'Flash offers and local events for the next few days. No account needed to browse; to get a code, log in here on the website or in the app.',
+        desc: (n) => `${n} events and deals in ${city} over the next few days: offers with a countdown and local events. No account needed to browse.`,
+        lead: 'Offers and local events for the next few days. No account needed to browse; to get a code, log in here on the website or in the app.',
         none: `Nothing published in ${city} yet. If you run a business here, you can be the first.`,
         biz: 'List your business', all: 'Other cities', app: 'Create a free account', agenda: "What's on",
         days: 'Days', places: 'Places in this city', explore: 'Explore everything',
@@ -1667,8 +1667,8 @@ export async function agendaPage(rawCity, lang) {
     : {
         h1: `Qué hacer en ${city} esta semana`,
         title: `Qué hacer en ${city} esta semana: planes y ofertas`,
-        desc: (n) => `${n} planes y ofertas en ${city} para los próximos días: ofertas flash con cuenta atrás y eventos de los negocios de la ciudad. Sin cuenta para mirar.`,
-        lead: 'Ofertas flash y planes de los próximos días. Para mirar no hace falta cuenta; para conseguir el código, entra aquí en la web o en la app.',
+        desc: (n) => `${n} planes y ofertas en ${city} para los próximos días: ofertas con cuenta atrás y eventos de los negocios de la ciudad. Sin cuenta para mirar.`,
+        lead: 'Ofertas y planes de los próximos días. Para mirar no hace falta cuenta; para conseguir el código, entra aquí en la web o en la app.',
         none: `Todavía no hay nada publicado en ${city}. Si tienes un negocio aquí, puedes ser el primero.`,
         biz: 'Publicar mi negocio', all: 'Otras ciudades', app: 'Crear cuenta gratis', agenda: 'Agenda',
         days: 'Días', places: 'Negocios de esta ciudad', explore: 'Explorar todo',
@@ -1676,7 +1676,7 @@ export async function agendaPage(rawCity, lang) {
       };
 
   // Agrupado por día: una agenda se lee por días, no por relevancia. Lo que
-  // empezó antes y sigue en marcha (una oferta flash de anoche que dura
+  // empezó antes y sigue en marcha (una oferta de anoche que dura
   // hasta hoy) va en «Hoy», no bajo un día que ya pasó.
   const hoy = KZ.hoy(tzCiudad);
   const manana = KZ.hoy(tzCiudad, 1);
@@ -1793,7 +1793,7 @@ export async function todayPage(rawCity, lang) {
     ? {
         h1: `Things to do in ${city} today`,
         title: `Things to do in ${city} today: events and deals`,
-        desc: (n) => `${n} ${n === 1 ? 'plan' : 'plans'} for today in ${city}: flash offers with a countdown and local events, live right now or later today. No account needed to browse.`,
+        desc: (n) => `${n} ${n === 1 ? 'plan' : 'plans'} for today in ${city}: offers with a countdown and local events, live right now or later today. No account needed to browse.`,
         descNone: `Nothing more for today in ${city}. Here's what's coming up tomorrow and the places in the city.`,
         lead: (f) => `Today is ${f}. What's on right now and later today at local businesses. Times are local.`,
         now: 'On right now', later: 'Later today', tomorrow: 'Tomorrow',
@@ -1805,7 +1805,7 @@ export async function todayPage(rawCity, lang) {
     : {
         h1: `Qué hacer hoy en ${city}`,
         title: `Qué hacer hoy en ${city}: planes y ofertas de hoy`,
-        desc: (n) => `${n} ${n === 1 ? 'plan' : 'planes'} para hoy en ${city}: ofertas flash con cuenta atrás y eventos de los negocios de la ciudad, ahora mismo o más tarde. Sin cuenta para mirar.`,
+        desc: (n) => `${n} ${n === 1 ? 'plan' : 'planes'} para hoy en ${city}: ofertas con cuenta atrás y eventos de los negocios de la ciudad, ahora mismo o más tarde. Sin cuenta para mirar.`,
         descNone: `Hoy ya no queda nada más en ${city}. Aquí tienes lo de mañana y los negocios de la ciudad.`,
         lead: (f) => `Hoy es ${f}. Lo que hay ahora mismo y lo que empieza más tarde en los negocios de la ciudad. Horas locales.`,
         now: 'Ahora mismo', later: 'Más tarde, hoy', tomorrow: 'Mañana',
@@ -1860,13 +1860,13 @@ export async function citiesPage(lang) {
   const S = en
     ? {
         h1: "What's on near you",
-        lead: 'Flash offers and plans for the next few days, city by city. No account needed.',
+        lead: 'Offers and plans for the next few days, city by city. No account needed.',
         none: 'No city has anything published yet.', biz: 'List your business',
         today: 'Things to do today', todayIn: (c) => `Today in ${c}`,
       }
     : {
         h1: 'Agenda local',
-        lead: 'Lo que hay en cada ciudad: ofertas flash y planes de los próximos días. No hace falta cuenta.',
+        lead: 'Lo que hay en cada ciudad: ofertas y planes de los próximos días. No hace falta cuenta.',
         none: 'Todavía no hay ninguna ciudad con publicaciones.', biz: 'Publicar mi negocio',
         today: 'Qué hacer hoy', todayIn: (c) => `Hoy en ${c}`,
       };

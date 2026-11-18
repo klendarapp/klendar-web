@@ -4,7 +4,7 @@
  *
  *   <script src="https://klendar.app/widget.js" data-klendar="TU-ID"></script>
  *
- * y ahí aparece lo que tengas vivo: ofertas flash y eventos, con su enlace.
+ * y ahí aparece lo que tengas vivo: ofertas y eventos, con su enlace.
  * Se actualiza solo. Opcionales: data-lang="en" y data-limit="3".
  *
  * Por dentro es un iframe, que es lo único que dejan meter casi todos los

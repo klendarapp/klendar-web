@@ -1,4 +1,4 @@
-// La tarjeta de una publicación (oferta flash o evento): UNA para toda la web.
+// La tarjeta de una publicación (oferta o evento): UNA para toda la web.
 // La web pública (Descubre, Explorar —lista, mapa y calendario—, la agenda,
 // «Qué hacer hoy», las colecciones y la ficha del negocio) y el panel del
 // negocio («Tus publicaciones», el calendario y la vista previa del
@@ -117,7 +117,7 @@
 
   const T = {
     es: {
-      flash: 'Oferta flash', event: 'Evento', verOferta: 'Conseguir el código', aunNo: 'Aún no disponible', verEvento: 'Ver evento',
+      flash: 'Oferta', event: 'Evento', verOferta: 'Conseguir el código', aunNo: 'Aún no disponible', verEvento: 'Ver evento',
       seats: (n) => (n === 1 ? 'Queda 1 plaza' : `Quedan ${n} plazas`), soldOut: 'Agotado',
       antes: 'Antes de cerrar', bolsas: (n) => (n === 1 ? 'Queda 1 bolsa' : `Quedan ${n} bolsas`),
       primera: 'Primera visita', menu: 'Menú del día',
@@ -134,7 +134,7 @@
       oculta: 'Información oculta', aLaVista: 'Información a la vista',
     },
     en: {
-      flash: 'Flash offer', event: 'Event', verOferta: 'Get the code', aunNo: 'Not available yet', verEvento: 'View event',
+      flash: 'Offer', event: 'Event', verOferta: 'Get the code', aunNo: 'Not available yet', verEvento: 'View event',
       seats: (n) => (n === 1 ? '1 place left' : `${n} places left`), soldOut: 'Sold out',
       antes: 'Before closing', bolsas: (n) => (n === 1 ? '1 bag left' : `${n} bags left`),
       primera: 'First visit', menu: 'Daily menu',
@@ -560,7 +560,7 @@
     // «Antes de cerrar» (`style.badge`): lo que sobra del día. Su sello va
     // donde el tipo y las plazas son bolsas.
     const antesCierre = flash && o.style?.badge === 'before_closing';
-    // «Menú del día» (migración 20261230100001): su sello en vez de «Oferta flash».
+    // «Menú del día» (migración 20261230100001): su sello en vez de «Oferta».
     const menuDia = flash && o.style?.badge === 'daily_menu';
     const quedan = (n) => (antesCierre ? S.bolsas(n) : S.seats(n));
     // Solo para la primera visita (`style.first_visit`, lo pone la base).
@@ -608,7 +608,7 @@
     const logo = o.business_logo && /^https:\/\//.test(o.business_logo)
       ? `<img class="tj-logo" src="${esc(o.business_logo)}" alt="" width="24" height="24" loading="lazy" decoding="async">` : '';
     const pantalla = opts.forma === 'pantalla';
-    // El tipo («Evento», «Oferta flash», «Antes de cerrar»): sobre la foto en
+    // El tipo («Evento», «Oferta», «Antes de cerrar»): sobre la foto en
     // la rejilla; en Descubre (una por pantalla), pegado al panel, como los
     // sellos de la app: arriba, entre los filtros y los avisos, tapaba la
     // foto (Iván, 2026-10-06). Ahí van también «De la lista de…» (fijada.js).

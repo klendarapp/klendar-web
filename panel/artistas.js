@@ -155,7 +155,7 @@ function quienActuaEngancha(v, iniciales = [], alCambiar = () => {}) {
     lista: () => elegidos.map((a) => a.id || `+${a.name}`),
     nombres: () => elegidos.map((a) => a.name),
     /** Tras guardar la publicación. Un evento lleva su lista (vacía también,
-     * para quitar los que tuviera); una oferta flash, ninguno si tenía. Si
+     * para quitar los que tuviera); una oferta, ninguno si tenía. Si
      * falla, la publicación ya está guardada: se avisa y sigue. */
     async guarda(offerId, evento, teniaAlguno) {
       if (!evento && !teniaAlguno) return;

@@ -586,7 +586,7 @@ a.cal-dia { text-decoration: none; }
   .pub-prev { position: sticky; top: 20px; max-height: calc(100dvh - 40px); overflow-y: auto; padding: 0 2px 8px; }
   .solo-movil { display: none; }
 }
-/* Solo para el lector de pantalla (lo usa la tarjeta: «Oferta flash», «Vídeo»). */
+/* Solo para el lector de pantalla (lo usa la tarjeta: «Oferta», «Vídeo»). */
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 /* «Cómo es tu local» (Tu ficha): píldoras con icono que se marcan, como las
    de «El sitio» en los filtros de la web y la app. */

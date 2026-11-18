@@ -149,7 +149,7 @@ const TEXTOS = {
     saltar: 'Saltar al contenido',
     entrar: 'Entrar',
     cuenta: 'Tu cuenta',
-    lema: 'Ofertas flash con cuenta atrás y eventos de los negocios de tu barrio, '
+    lema: 'Ofertas con cuenta atrás y eventos de los negocios de tu barrio, '
       + 'ordenados por cercanía. Marca tus favoritos, recibe avisos y canjea con un QR.',
     producto: 'Producto',
     legal: 'Legal',
@@ -170,7 +170,7 @@ const TEXTOS = {
     saltar: 'Skip to content',
     entrar: 'Log in',
     cuenta: 'Your account',
-    lema: 'Flash offers with a countdown and events from the businesses around you, '
+    lema: 'Offers with a countdown and events from the businesses around you, '
       + 'sorted by distance. Add businesses to your favourites, get alerts and redeem with a QR code.',
     producto: 'Product',
     legal: 'Legal',

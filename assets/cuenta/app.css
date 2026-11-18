@@ -789,7 +789,7 @@ a.pl-dia:hover { background: var(--soft); }
 .pl-puntos { display: flex; gap: 3px; height: 6px; }
 .pl-puntos i, .pl-leyenda i { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
 /* Como el calendario de Explorar y la app (`MonthCalendar`): eventos en tinta
-   y ofertas flash en coral (son oferta), sin ámbar; en el día elegido (en
+   y ofertas en coral (son oferta), sin ámbar; en el día elegido (en
    tinta), el de eventos, del color del fondo. */
 .pl-cal .pe { background: var(--ink); }
 .pl-cal .pf { background: var(--accent); }

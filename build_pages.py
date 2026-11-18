@@ -33,12 +33,12 @@ PAGINAS['para-negocios'] = (
     'Atrae clientes nuevos, llena tus eventos y haz que vuelvan. Pruébalo gratis, sin comisiones por canje y sin permanencia.',
     'Bring in new customers, fill your events and get people coming back. Try it free, no commission per redemption, no lock-in.',
     '''
-<p class="lead">Quieres que te conozca gente nueva, llenar la cata del jueves o que quien vino una vez vuelva. Klendar es para eso: publicas una oferta flash o un evento en un minuto y lo ve quien está cerca <strong>ahora</strong>.</p>
+<p class="lead">Quieres que te conozca gente nueva, llenar la cata del jueves o que quien vino una vez vuelva. Klendar es para eso: publicas una oferta o un evento en un minuto y lo ve quien está cerca <strong>ahora</strong>.</p>
 
 <h2>Cómo funciona</h2>
 <ol>
   <li><strong>Das de alta tu negocio</strong> desde la app o desde el <a href="/panel">panel web</a> (hace falta la ubicación exacta del local). Lo revisamos y lo verificamos, normalmente en 24-48 horas.</li>
-  <li><strong>Publicas</strong> una oferta flash (con cuenta atrás y aforo) o un evento con fecha. Desde el móvil o desde el <a href="/panel">panel del ordenador</a>.</li>
+  <li><strong>Publicas</strong> una oferta (con cuenta atrás y aforo) o un evento con fecha. Desde el móvil o desde el <a href="/panel">panel del ordenador</a>.</li>
   <li><strong>La gente la canjea</strong> enseñándote un código QR de un solo uso. Lo validas con la cámara o escribiendo el código; el aforo baja solo.</li>
 </ol>
 
@@ -103,12 +103,12 @@ PAGINAS['para-negocios'] = (
 <p class="note">Kit para tu local: <a href="/assets/kit/klendar-guia-negocios.pdf">guía de 1 página (PDF)</a> · <a href="/assets/kit/klendar-cartel.pdf">cartel con QR (PDF)</a>. Lo legal, en las <a href="/negocios">condiciones para negocios</a>.</p>
 ''',
     '''
-<p class="lead">You want new people to discover you, a full house for Thursday's tasting, or the customers who came once to come back. That's what Klendar is for: you post a flash offer or an event in a minute and people nearby see it <strong>now</strong>.</p>
+<p class="lead">You want new people to discover you, a full house for Thursday's tasting, or the customers who came once to come back. That's what Klendar is for: you post an offer or an event in a minute and people nearby see it <strong>now</strong>.</p>
 
 <h2>How it works</h2>
 <ol>
   <li><strong>Register your business</strong> from the app or from the <a href="/panel">web dashboard</a> (it needs the venue's exact location). We review and verify it, usually within 24–48 hours.</li>
-  <li><strong>Publish</strong> a flash offer (with a countdown and a capacity) or an event with a date. From your phone or from the <a href="/panel">dashboard on a computer</a>.</li>
+  <li><strong>Publish</strong> an offer (with a countdown and a capacity) or an event with a date. From your phone or from the <a href="/panel">dashboard on a computer</a>.</li>
   <li><strong>People redeem it</strong> by showing you a single-use QR code. You validate it with the camera or by typing the code; the capacity updates automatically.</li>
 </ol>
 
@@ -293,14 +293,14 @@ PAGINAS['para-entidades'] = (
 def tabla_planes(lang):
     es = lang == 'es'
     ventajas_es = [
-        'Publicaciones sin límite: ofertas flash, eventos y reservas',
+        'Publicaciones sin límite: ofertas, eventos y reservas',
         'Canjes sin límite y <strong>sin comisión</strong>',
         'Estadísticas, informe exportable y lista de asistentes',
         'Ficha del negocio, galería y panel para tu equipo',
         'Sin permanencia: cancelas cuando quieras',
     ]
     ventajas_en = [
-        'Unlimited publications: flash offers, events and place reservations',
+        'Unlimited publications: offers, events and place reservations',
         'Unlimited redemptions and <strong>no commission</strong>',
         'Stats, exportable report and attendee list',
         'Business page, gallery and a dashboard for your team',

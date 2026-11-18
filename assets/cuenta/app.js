@@ -2046,7 +2046,7 @@ function planesCalendario({ saved, reds, zona, params }) {
     pon(diaLocal(new Date(r.validated_at || r.created_at)), 'fl', filaCanje(r, zona(r)));
   }
   // Un código activo cuenta el día de su oferta: el del evento, o hoy si es
-  // de una oferta flash (se pide mientras dura). Antes ese día no se marcaba.
+  // de una oferta (se pide mientras dura). Antes ese día no se marcaba.
   const ya = Date.now();
   for (const r of reds.filter((x) => x.status === 'pending' && new Date(x.expires_at).getTime() > ya)) {
     pon(diaLocal(new Date(r.event_at || r.created_at)), 'fl', filaCanje(r, zona(r)));
@@ -2088,7 +2088,7 @@ function planesCalendario({ saved, reds, zona, params }) {
         ${mes < max ? `<a class="pl-nav" href="${esc(enlace({ mes: mesMas(mes, 1) }))}" aria-label="${esc(t('Mes siguiente'))}"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L13.17 12z"/></svg></a>` : '<span class="pl-nav"></span>'}
       </div>
       <div class="pl-rejilla">${semana.map((w) => `<span class="pl-sem" aria-hidden="true">${esc(w)}</span>`).join('')}${celdas.join('')}</div>
-      <p class="pl-leyenda"><span><i class="pe"></i>${esc(t('Eventos'))}</span><span><i class="pf"></i>${esc(t('Ofertas flash'))}</span></p>
+      <p class="pl-leyenda"><span><i class="pe"></i>${esc(t('Eventos'))}</span><span><i class="pf"></i>${esc(t('Ofertas'))}</span></p>
       ${dia !== hoy ? `<p class="pl-hoy"><a class="pill" href="${esc(enlace({ mes: hoyMes, dia: hoy }))}">${esc(t('Hoy'))}</a></p>` : ''}
     </section>
     <section class="pl-lista">
@@ -3424,7 +3424,7 @@ function queSella(c) {
   return c.by_visit ? `${base} · ${t('También por visita con el QR del local')}` : base;
 }
 function queSellaBase(c) {
-  if (c.applies_to === 'flash_offer') return t('Solo cuentan las ofertas flash');
+  if (c.applies_to === 'flash_offer') return t('Solo cuentan las ofertas');
   if (c.applies_to === 'future_event') return t('Solo cuentan los eventos');
   if (c.applies_to === 'categories' || c.applies_to === 'offers') {
     const nombres = c.applies_to === 'categories'

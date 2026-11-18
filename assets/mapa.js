@@ -217,7 +217,7 @@
    * mapa»; en la app, `_buildMarker`): un círculo de 30 px con borde blanco
    * y sombra suave; dentro, el logo o un icono sobre gris claro. El estado,
    * en un anillo con los colores de la identidad: coral solo si tiene una
-   * oferta (`oferta`, una oferta flash), en tinta (en oscuro, blanco) si
+   * oferta (`oferta`, una oferta), en tinta (en oscuro, blanco) si
    * tiene planes (`planes`) y sin anillo si hoy no tiene nada (`''`). Con [n] > 1,
    * la cifra en una insignia en la esquina. Debajo, su nombre (lo enseña
    * `nombres` si cabe).
@@ -399,10 +399,10 @@
     // Precio del local y «¿Hay sitio ahora?» (una vez para todos).
     const ahora = SA && KM && locales.length ? SA.pide(locales).catch(() => ({})) : Promise.resolve({});
 
-    /** Oferta: una oferta flash o algo con descuento (no «Gratis»). */
+    /** Oferta: una oferta o algo con descuento (no «Gratis»). */
     const oferta = (p) => p.k === 'f' || Boolean(p.d);
     /** El tipo de plan de un sitio: la agenda pública (todo importado), una
-     *  oferta flash o un evento. */
+     *  oferta o un evento. */
     const tipoDe = (items) => (items.every((x) => x.im) ? 'agenda' : items.some((x) => x.k === 'f') ? 'flash' : 'evento');
 
     /** La foto de un sitio: la portada del plan más próximo que la tenga. */

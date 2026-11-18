@@ -13,7 +13,7 @@
  *   si está activa y su botón. Arriba «Las que usas» y debajo por grupos
  *   (Iván, 2026-10-22): «Tu carta y tus enlaces», «En el local»,
  *   «Pantallas y gente» y «Lo que se repite».
- * - «Crear»: elegir qué publicar (oferta flash, evento o novedad).
+ * - «Crear»: elegir qué publicar (oferta, evento o novedad).
  *
  * Va después de panel.js y usa lo suyo (`PAGES`, `rpc`, `BIZ`, `gestiona`,
  * `esOrganizador`, `esc`, `ms`, `icono`, `SVG`, `bi`, `toast`, `fmtNum`).
@@ -85,7 +85,7 @@ function herrCrear() {
     <span><b>${esc(titulo)}</b><small>${esc(frase)}</small></span>${ms('chevron_right')}</a>`;
   d.innerHTML = `<form method="dialog"><h2>${esc(bi('¿Qué quieres publicar?', 'What do you want to publish?'))}</h2>
     <div class="crear-ops">
-      ${op('#/publicaciones/nueva-flash', 'bolt', bi('Oferta flash', 'Flash offer'), bi('Canjeable con QR durante unas horas', 'Redeemable with a QR for a few hours'))}
+      ${op('#/publicaciones/nueva-flash', 'bolt', bi('Oferta', 'Offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.'))}
       ${op('#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha, aforo y reserva de plaza', 'With a date, a limit and place booking'))}
       ${herrMenuSugerido() ? op('#/menu-del-dia', 'restaurant_menu', bi('Menú del día', 'Daily menu'), bi('Foto de la pizarra y precio: hasta el cierre, en un toque.', 'Photo of the board and price: until closing, in one tap.')) : ''}
       ${herrAntesSugerido() ? op('#/antes-de-cerrar', 'bolsa', bi('Antes de cerrar', 'Before closing'), bi('Lo que te ha sobrado hoy, con lo de la última vez ya puesto. Se paga en el local.', "What's left over today, with last time's details filled in. Paid at the venue.")) : ''}

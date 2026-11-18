@@ -12,7 +12,7 @@
  * ✕ para dejarlo, y «Poner siempre…», con el buscador único de equipos,
  * deportistas y competiciones: migración 20261260100070_seguir_lo_que_sea).
  * Nada de canal. Marcado, «Oferta para el partido»: crear una nueva
- * (el formulario de oferta flash ya relleno: `#/publicaciones/nueva-flash?
+ * (el formulario de oferta ya relleno: `#/publicaciones/nueva-flash?
  * partido=<id>`, que al guardar la une al partido), usar una que ya tienes o
  * quitarla. «Añadir otro» (`#/partidos/nuevo`): lo que no está en la lista.
  * Un empleado lo ve sin poder tocar (`can_edit`).

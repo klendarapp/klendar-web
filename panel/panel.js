@@ -95,7 +95,7 @@ const LABELS = {
   active: 'activa', draft: 'borrador', expired: 'terminada', sold_out: 'agotada', cancelled: 'cancelada',
   archived: 'archivada',
   pending: 'en revisión', approved: 'aprobada', rejected: 'rechazada',
-  flash_offer: 'oferta flash', future_event: 'evento',
+  flash_offer: 'oferta', future_event: 'evento',
   owner: 'propietario', manager: 'encargado', staff: 'empleado',
   validated: 'dentro',
 };
@@ -1835,7 +1835,7 @@ PAGES.resumen = async (v) => {
          en coral y «Validar códigos» en tinta. Un empleado no publica: solo
          «Validar códigos», y en coral (es su botón principal). -->
     <div class="quick quick-2">
-      ${gestiona() ? `<button class="primary" data-go="crear">${svg('mas', 24).replace('class="ms svg"', 'class="ic ms svg"')}Crear<small>Oferta flash, evento o novedad</small></button>` : ''}
+      ${gestiona() ? `<button class="primary" data-go="crear">${svg('mas', 24).replace('class="ms svg"', 'class="ic ms svg"')}Crear<small>Oferta, evento o novedad</small></button>` : ''}
       <button class="${gestiona() ? 'tinta' : 'primary'}" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
     </div>
     ${primeros ? `<div class="card primeros" style="margin-top:14px"><h2>${sugerencias.length ? 'Primeros pasos' : 'Completa tu ficha'}</h2>
@@ -2089,11 +2089,11 @@ PAGES.publicaciones = async (v, param) => {
   OTROS_LOCALES = otros || [];
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
-      ${gestiona() ? `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta flash</a>
+      ${gestiona() ? `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>
       <a class="btn sm" href="#/publicaciones/nuevo-evento">${ms('event')}Nuevo evento</a>` : ''}
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Oferta o evento?', bi('<p><b>Oferta flash</b>: algo que se canjea hoy, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
-      '<p><b>Flash offer</b>: something redeemed today, with a countdown and a limit (“coffee + toast €2.50 until noon”). <b>Event</b>: something with a date, which people save to their agenda and where people can reserve a place.</p>'))}
+    ${helpBox('¿Oferta o evento?', bi('<p><b>Oferta</b>: de unas horas a varios días, o cada semana, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
+      '<p><b>Offer</b>: from a few hours to several days, or every week, with a countdown and a limit (“coffee + toast €2.50 until noon”). <b>Event</b>: something with a date, which people save to their agenda and where people can reserve a place.</p>'))}
     <div class="pubs-barra"><div id="filtroArch"></div><div id="vistaSw"></div></div>
     <div id="list"></div>
     <div id="rules"></div>`;
@@ -2197,7 +2197,7 @@ PAGES.publicaciones = async (v, param) => {
     $('#list').innerHTML = !nTotal && !offers.length
       ? `<div class="card sin-pubs"><h2>${esc(I18N.t('Todavía no has publicado nada.'))}</h2>
           <p class="muted">${esc(I18N.t('Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.'))}</p>
-          ${gestiona() ? `<p class="actions" style="margin:12px 0 0"><a class="btn primary" href="#/publicaciones/nueva-flash">${ms('bolt')}${esc(I18N.t('Nueva oferta flash'))}</a>
+          ${gestiona() ? `<p class="actions" style="margin:12px 0 0"><a class="btn primary" href="#/publicaciones/nueva-flash">${ms('bolt')}${esc(I18N.t('Nueva oferta'))}</a>
           <a class="btn" href="#/publicaciones/nuevo-evento">${ms('event')}${esc(I18N.t('Nuevo evento'))}</a></p>` : ''}</div>`
       : (vista === 'lista' ? tablaPublicaciones(filas) : tarjetasPublicaciones(filas)) + (hayMas ? botonVerMas('pubs') : '');
     activaVideos($('#list'));
@@ -2450,7 +2450,7 @@ function accionesPub(o) {
     return `<div class="actions">${cifras}${asistentes}${difundir ? `<details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">${difundir}</div></details>` : ''}</div>`;
   }
   // «Repetir» con una sola regla (como la app): agotada, terminada o
-  // cancelada. Una oferta flash, mañana a la misma hora; un evento, el mismo
+  // cancelada. Una oferta, mañana a la misma hora; un evento, el mismo
   // día de la semana siguiente a la misma hora.
   const repetir = estadoPub(o) === 'agotada' || estadoPub(o) === 'terminada' || estadoPub(o) === 'cancelada';
   return `<div class="actions">
@@ -2546,7 +2546,7 @@ async function ampliarDialogo(o) {
   const r = await rpc('extend_offer', { p_offer: o.id, p_minutes: 60 }).catch((e) => ({ ok: false, error: e.message }));
   if (!r?.ok) {
     toast(r?.error === 'already_over' ? 'Esa oferta ya ha terminado. Puedes repetirla mañana.'
-      : r?.error === 'too_long' ? 'Una oferta flash dura como mucho 24 h. Para más, crea un evento o repítela otro día.'
+      : r?.error === 'too_long' ? '«Ampliar 1 h» llega como mucho a 24 h en total. Para más, edita la oferta y cambia cuándo acaba.'
         : r?.error === 'not_authorized' ? ERRORS.not_authorized : 'No se ha podido guardar', true);
     return;
   }
@@ -2673,7 +2673,7 @@ const forKids = (adultos, valor) => (valor === 'no' ? false : valor === 'si' && 
 async function offerForm(v, id, kindDefault, desde = null) {
   // Un empleado valida códigos, no publica (como en la app).
   if (!gestiona()) {
-    // Con salida, como al ir a «Nueva oferta flash»: validar códigos.
+    // Con salida, como al ir a «Nueva oferta»: validar códigos.
     v.innerHTML = '<div class="card"><p style="margin:0">Publicar es cosa de quien lleva el negocio. Tú puedes <a class="link" href="#/validar">validar códigos</a>.</p></div>';
     return;
   }
@@ -2691,7 +2691,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     if (!mia) { location.replace('#/publicaciones'); return; }
     o = mia;
   } else if (!desde?.from) {
-    // Como la app: una oferta flash empieza ya y dura 3 h; un evento, mañana
+    // Como la app: una oferta empieza ya y dura 3 h; un evento, mañana
     // a las 20:00. Se cambia en un momento; un formulario en blanco frena.
     // Desde el calendario (?dia=AAAA-MM-DD), ese día: la oferta a las 18:00
     // (o ya, si es hoy) y el evento a las 20:00, en la hora del local.
@@ -2735,7 +2735,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         o.redeem_start_at = null; o.redeem_end_at = null;
       } else {
         // «Crear a partir de esta»: fechas nuevas, como la app (Iván, 16-11).
-        // Una oferta flash, desde ahora y 3 horas; un evento, mañana a las
+        // Una oferta, desde ahora y 3 horas; un evento, mañana a las
         // 20:00 en la hora del local, sin fin.
         const ya = new Date(); ya.setSeconds(0, 0);
         if (src.kind === 'flash_offer') {
@@ -2850,7 +2850,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
 
   const titulo = () => (kind === 'future_event'
     ? (id ? I18N.t('Editar evento') : desde?.rrpp ? bi('Nuevo evento para RRPP', 'New event for promoters') : I18N.t('Nuevo evento'))
-    : (id ? I18N.t('Editar oferta flash') : desde?.rrpp ? bi('Nueva oferta para RRPP', 'New offer for promoters') : I18N.t('Nueva oferta flash')));
+    : (id ? I18N.t('Editar oferta') : desde?.rrpp ? bi('Nueva oferta para RRPP', 'New offer for promoters') : I18N.t('Nueva oferta')));
   // Una elección en píldoras (radio): la marcada en tinta, como en la app.
   const elige = (name, opciones, actual, etiqueta) => `<div class="elige" role="radiogroup" aria-label="${esc(etiqueta)}">${opciones.map(([val, txt]) =>
     `<label><input type="radio" name="${name}" value="${esc(val)}" ${String(actual ?? '') === String(val) ? 'checked' : ''}><span>${esc(txt)}</span></label>`).join('')}</div>`;
@@ -2933,7 +2933,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       <label class="f" id="entradasRow"><span>Enlace de entradas <small>(opcional)</small></span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
       <p class="hint" id="entradasAyuda" hidden></p>
       ${ayuda([
-        [I18N.t('Oferta flash'), I18N.t('Canjeable con QR durante una ventana de tiempo. Ideal para huecos de última hora.')],
+        [I18N.t('Oferta'), I18N.t('De unas horas a varios días, o cada semana.')],
         [I18N.t('Evento'), I18N.t('Con fecha y hora. Puede tener precio y enlace para entradas.')],
         [I18N.t('Precio anterior'), I18N.t('Obligatorio al anunciar una rebaja: tiene que ser el precio más bajo que hayas tenido en los últimos 30 días.')],
         [I18N.t('¿Incluye bebidas alcohólicas?'), I18N.t('Hay que responder: varias comunidades prohíben el 2x1 en bebidas alcohólicas y la sanción es para el negocio. Si el 2x1 es de comida, refrescos o servicios, marca «No lleva alcohol».')],
@@ -3000,7 +3000,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         ${ayuda([
           [I18N.t('El código guarda la plaza'), I18N.t('Quien tiene código tiene sitio. Para talleres, cenas o mesas. Si alguien no va y no anula, su plaza se queda sin usar.')],
           [I18N.t('Por orden de llegada'), I18N.t('El código no guarda sitio: cuentan los que entran. Para conciertos o fiestas, donde siempre falla alguien. Cuando se llena, los que lleguen después ya no pasan.')],
-          [I18N.t('Lista de espera'), I18N.t('Cuando se acaban las plazas, la gente puede apuntarse. Si se libera una, avisamos por orden y cada persona tiene un rato para cogerla (30 minutos en una oferta flash, 2 horas en un evento).')],
+          [I18N.t('Lista de espera'), I18N.t('Cuando se acaban las plazas, la gente puede apuntarse. Si se libera una, avisamos por orden y cada persona tiene un rato para cogerla (30 minutos en una oferta, 2 horas en un evento).')],
           [I18N.t('Reserva de plaza (sin pago)'), I18N.t('La gente reserva desde la app y enseña su código en la puerta. Si el evento se paga, se cobra allí como siempre. A un evento no se va solo: con un mismo código se reservan varias plazas.')],
           ...(preguntasOn ? [[I18N.t('Preguntas al reservar'), I18N.t('Quien reserva ve tus preguntas al reservar y puede cambiar sus respuestas mientras su reserva siga en pie. Las ves en Asistentes, con un resumen, y en el CSV. Se borran 7 días después del evento. Cuando ya hay respuestas, las preguntas que hay no se cambian: puedes añadir otras al final. Las preguntas de salud solo se responden con consentimiento y esas respuestas se borran al día siguiente del evento.')]] : []),
           [I18N.t('¿Cuánto vale el código?'), I18N.t('Desde que la persona lo genera. Para una oferta de barra, pocos minutos; para una entrada que se guarda hasta el día del evento, «sin caducidad».')],
@@ -3118,8 +3118,8 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // ── El tipo: en el título, y aquí se corrige ────────────────────────────
   const pintaTipo = () => {
     $('#pubTitulo', v).textContent = titulo();
-    $('#tipoPregunta', v).textContent = isFlash() ? I18N.t('¿Era un evento?') : I18N.t('¿Era una oferta flash?');
-    $('#cambiaTipo', v).textContent = isFlash() ? I18N.t('Cambiar a evento') : I18N.t('Cambiar a oferta flash');
+    $('#tipoPregunta', v).textContent = isFlash() ? I18N.t('¿Era un evento?') : I18N.t('¿Era una oferta?');
+    $('#cambiaTipo', v).textContent = isFlash() ? I18N.t('Cambiar a evento') : I18N.t('Cambiar a oferta');
   };
   $('#cambiaTipo', v).onclick = () => {
     kind = isFlash() ? 'future_event' : 'flash_offer';
@@ -3156,7 +3156,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       : I18N.t('Se pueden pasar a otra persona.');
     $('#ttlRow', v).hidden = !conCodigo || deRrpp;
     $('#porPersonaRow', v).hidden = !flash;
-    // «Antes de cerrar»: solo en una oferta flash para todo el mundo (y de un
+    // «Antes de cerrar»: solo en una oferta para todo el mundo (y de un
     // local: «hasta el cierre» no va con un organizador sin local fijo).
     $('#cierreRow', v).hidden = !flash || deRrpp || organizador;
     // «Quién actúa»: solo en eventos.
@@ -3171,7 +3171,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   };
   campo('reservations_enabled').addEventListener('change', () => {
     // Una reserva de evento se guarda hasta el día: con los 5 minutos de las
-    // ofertas flash (lo que viene marcado), la plaza se perdía al rato de
+    // ofertas (lo que viene marcado), la plaza se perdía al rato de
     // reservarla. Lo mismo que la app.
     if (campo('reservations_enabled').checked && val('code_ttl_minutes') === '5') pon('code_ttl_minutes', '');
     syncKind();
@@ -3427,7 +3427,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   let estilo = limpiaEstilo(o.style);
   // Desde «Fidelizar» › «Crear oferta de primera visita» (?primera=1).
   if (!id && /[?&]primera=1\b/.test(location.hash)) estilo.first_visit = true;
-  /** Lo que se guarda en `offers.style`: el sello solo en una oferta flash. */
+  /** Lo que se guarda en `offers.style`: el sello solo en una oferta. */
   const estiloJson = () => ({
     template: estilo.template,
     ...(estilo.accent ? { accent: estilo.accent } : {}),
@@ -3938,7 +3938,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     const iniF = fromLocalInput(f.get('start'));
     const finF = fromLocalInput(f.get('end'));
     if (!iniF || (flash && !finF)) {
-      fallo(!iniF ? campo('start') : campo('end'), I18N.t('Falta cuándo: elige el inicio (y el final, si es una oferta flash).')); return;
+      fallo(!iniF ? campo('start') : campo('end'), I18N.t('Falta cuándo: elige el inicio (y el final, si es una oferta).')); return;
     }
     if (finF && new Date(finF) <= new Date(iniF)) {
       fallo(campo('end'), I18N.t('El fin debe ser posterior al inicio.')); return;
@@ -4314,7 +4314,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
 
 // ── Calendario ──────────────────────────────────────────────────────────────
 // El mes con lo que tiene el negocio (puntos como en Explorar: eventos en
-// coral, ofertas flash en ámbar) y, al lado (debajo en el móvil), lo del día
+// coral, ofertas en ámbar) y, al lado (debajo en el móvil), lo del día
 // elegido con la misma fila que la agenda de la web, su estado y «Crear este
 // día». Todo en la hora del local. #/calendario/AAAA-MM-DD abre ese día.
 // Cuenta todo lo que no está archivado: también borradores y programadas
@@ -4385,7 +4385,7 @@ PAGES.calendario = async (v, param) => {
     const delDia = porDia.get(dia) || [];
     const proximo = delDia.length ? null : await siguienteDe(dia);
     const crear = gestiona() ? `<div class="actions cal-crear">
-        <a class="btn sm" href="#/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta flash este día'))}</a>
+        <a class="btn sm" href="#/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta este día'))}</a>
         <a class="btn sm" href="#/publicaciones/nuevo-evento?dia=${dia}">${ms('event')}${esc(I18N.t('Evento este día'))}</a></div>` : '';
     $('#cal', v).innerHTML = `
       <section class="cal-mes" aria-labelledby="calTitulo">
@@ -4398,7 +4398,7 @@ PAGES.calendario = async (v, param) => {
           ${semana.map((w) => `<span class="cal-sem" aria-hidden="true">${esc(w)}</span>`).join('')}
           ${celdas.join('')}
         </div>
-        <p class="cal-leyenda"><span><i class="pe"></i>${esc(I18N.t('Eventos'))}</span><span><i class="pf"></i>${esc(I18N.t('Ofertas flash'))}</span></p>
+        <p class="cal-leyenda"><span><i class="pe"></i>${esc(I18N.t('Eventos'))}</span><span><i class="pf"></i>${esc(I18N.t('Ofertas'))}</span></p>
       </section>
       <section class="cal-lista" id="calDia" aria-labelledby="diaTitulo">
         <div class="cal-lista-cab">
@@ -4706,7 +4706,7 @@ function tarjetaCodigo(r, estado) {
     : r.kind === 'visit_coupon' ? bi('Cupón próxima visita', 'Next-visit coupon')
       : r.kind === 'thanks_gift' ? bi('Regalo a habituales', "Regulars' gift") : '';
   const tipo = r.kind === 'stamp_reward' ? I18N.t('Tarjeta de sellos')
-    : regalo || (r.offer_kind === 'future_event' ? I18N.t('Evento') : r.offer_kind ? I18N.t('Oferta flash') : '');
+    : regalo || (r.offer_kind === 'future_event' ? I18N.t('Evento') : r.offer_kind ? I18N.t('Oferta') : '');
   const titulo = r.kind === 'stamp_reward' && r.card_name ? bi(`Premio de «${r.card_name}»`, `Reward from “${r.card_name}”`)
     : regalo || (r.offer_title || '');
   const icono = r.kind === 'stamp_reward' ? 'loyalty' : r.kind === 'birthday_gift' ? 'cake'
@@ -4776,7 +4776,7 @@ const queValidado = (r) => (r.kind === 'stamp_reward'
     : r.kind === 'visit_coupon' ? bi('Cupón próxima visita', 'Next-visit coupon')
       : r.kind === 'thanks_gift' ? bi('Regalo a habituales', "Regulars' gift")
         : r.kind === 'spot' ? momentoDetalle(r)
-          : I18N.t(r.kind === 'future_event' ? 'Evento' : 'Oferta flash'));
+          : I18N.t(r.kind === 'future_event' ? 'Evento' : 'Oferta'));
 /** Lo dado con «Dar en el momento» (panel/momento.js): «Del momento · 2
  * sellos», «Del momento · Uso de bono» o «Del momento». */
 const momentoDetalle = (r) => I18N.t(r.detail === 'stamps'
@@ -5410,7 +5410,7 @@ PAGES.asistentes = async (v, offerId) => {
 //   #/sellos/<id>/editar
 const FILTROS_SELLO = [
   ['all', 'Todas las publicaciones'],
-  ['flash_offer', 'Solo ofertas flash'],
+  ['flash_offer', 'Solo ofertas'],
   ['future_event', 'Solo eventos'],
   ['categories', 'Ciertas categorías'],
   ['offers', 'Ciertas publicaciones'],
@@ -5442,7 +5442,7 @@ const origenSellos = (c) => bi(
   // Y los de «Dar en el momento» (panel/momento.js), si los hay.
   + (c.stamps_spot ? ` · ${bi(`${fmtNum(c.stamps_spot)} en el momento`, `${fmtNum(c.stamps_spot)} on the spot`)}` : '');
 function filtroSellosBase(c, offers = []) {
-  if (c.applies_to === 'flash_offer') return I18N.t('Solo cuentan las ofertas flash');
+  if (c.applies_to === 'flash_offer') return I18N.t('Solo cuentan las ofertas');
   if (c.applies_to === 'future_event') return I18N.t('Solo cuentan los eventos');
   if (c.applies_to === 'categories' || c.applies_to === 'offers') {
     const nombres = c.applies_to === 'categories'
@@ -5499,10 +5499,10 @@ PAGES.sellos = async (v, param) => {
     <div class="page-head"><h1>Tarjetas de sellos</h1><span class="spacer"></span>
       ${esOrganizador() || !edita ? '' : '<a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>'}
       ${edita ? `<button class="btn sm primary" type="button" id="nueva" ${lleno ? 'disabled' : ''}>Nueva tarjeta</button>` : ''}</div>
-    ${helpBox('¿Cómo funciona?', bi(`<p>Cada tarjeta tiene su meta, su premio y lo que da sello: todas las publicaciones, solo las ofertas flash, solo los eventos, ciertas categorías o ciertas publicaciones. Cuando validas un código, <b>cada tarjeta encendida que encaje da su sello</b>, como mucho uno al día por persona y tarjeta.</p>
+    ${helpBox('¿Cómo funciona?', bi(`<p>Cada tarjeta tiene su meta, su premio y lo que da sello: todas las publicaciones, solo las ofertas, solo los eventos, ciertas categorías o ciertas publicaciones. Cuando validas un código, <b>cada tarjeta encendida que encaje da su sello</b>, como mucho uno al día por persona y tarjeta.</p>
       <p>Si marcas <b>«También por visita con el QR del local»</b>, quien escanee el cartel del local en tu negocio se lleva además un sello, con el mismo tope de uno al día.</p>
       <p>El premio es otro código que validas igual, o lo entregas tú desde la lista de clientes de la tarjeta, donde también puedes añadir o quitar sellos y ponerla a 0. Si apagas una tarjeta, <b>nadie pierde los sellos que tiene</b>.</p>`,
-      `<p>Each card has its goal, its reward and what earns a stamp: all publications, flash offers only, events only, certain categories or certain publications. When you validate a code, <b>every card that is on and matches gives its stamp</b>, one a day per person and card at most.</p>
+      `<p>Each card has its goal, its reward and what earns a stamp: all publications, offers only, events only, certain categories or certain publications. When you validate a code, <b>every card that is on and matches gives its stamp</b>, one a day per person and card at most.</p>
       <p>If you tick <b>“Also per visit with the venue QR code”</b>, whoever scans the venue poster at your place also gets a stamp, with the same limit of one a day.</p>
       <p>The reward is another code you validate the same way, or you hand it over yourself from the card's customer list, where you can also add or remove stamps and reset it to 0. If you turn a card off, <b>nobody loses the stamps they have</b>.</p>`))}
     ${lleno && edita ? `<p class="muted">${esc(bi(`Ya tienes ${d.max}, el máximo. Borra o cambia alguna para crear otra.`, `You already have ${d.max}, the maximum. Delete or change one to create another.`))}</p>` : ''}
@@ -5562,7 +5562,7 @@ async function tarjetaForm(v, id) {
       </div>
       <div class="f full" id="offs" ${filtro === 'offers' ? '' : 'hidden'}>
         ${ofertas.length ? `<p class="hint">Si una se repite cada semana, cuentan también las de las semanas siguientes.</p>
-          ${ofertas.map((o) => `<label class="opcion"><input type="checkbox" data-off="${esc(o.id)}" ${offs.has(o.id) ? 'checked' : ''}><span>${esc(o.title)} <small class="muted">${esc(I18N.t(o.kind === 'future_event' ? 'Evento' : 'Oferta flash'))}${o.repeats ? ` · ${esc(I18N.t('Se repite cada semana'))}` : ''}</small></span></label>`).join('')}`
+          ${ofertas.map((o) => `<label class="opcion"><input type="checkbox" data-off="${esc(o.id)}" ${offs.has(o.id) ? 'checked' : ''}><span>${esc(o.title)} <small class="muted">${esc(I18N.t(o.kind === 'future_event' ? 'Evento' : 'Oferta'))}${o.repeats ? ` · ${esc(I18N.t('Se repite cada semana'))}` : ''}</small></span></label>`).join('')}`
         : `<p class="hint">Todavía no tienes publicaciones. Publica alguna y vuelve, o elige otra opción.</p>`}
       </div>
       <label class="f full" style="grid-template-columns:auto 1fr;align-items:center"${esOrganizador() && !c?.by_visit ? ' hidden' : ''}>
@@ -6419,8 +6419,8 @@ PAGES.tele = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Poner en la tele</h1></div>
     ${helpBox('¿Cómo funciona?', bi(
-    '<p>Abre <b>klendar.app/tv</b> en el navegador de la tele (o en un Chromecast o un Fire TV). Saldrá un código de 6 cifras: escríbelo aquí o escanea el QR con la cámara del móvil.</p><p>La tele enseña tus publicaciones activas a pantalla completa, con su diseño y la cuenta atrás de las ofertas flash, y un QR para que la gente las consiga o te añada a favoritos. Cambia sola y se actualiza sola cuando publicas algo o termina. Sin publicaciones, enseña tu logo. No enseña ofertas de RRPP, ni exclusivas, ni nada +18 si tu local no es +18.</p><p>La tele no entra con tu cuenta: solo puede enseñar lo público de tu local. Si la cambias de sitio o la vendes, desvincúlala aquí.</p>',
-    '<p>Open <b>klendar.app/tv</b> in the TV’s browser (or on a Chromecast or Fire TV). A 6-digit code will appear: type it in here or scan the QR code with your phone camera.</p><p>The TV shows your active publications full screen, with their design and the flash offer countdown, plus a QR code so people can get them or add you to their favourites. It moves on by itself and updates itself when you publish something or it ends. With nothing published, it shows your logo. It never shows promoter offers, exclusives or anything 18+ unless your place is 18+.</p><p>The TV doesn’t log in with your account: it can only show what’s public about your place. If you move it or sell it, unlink it here.</p>'))}
+    '<p>Abre <b>klendar.app/tv</b> en el navegador de la tele (o en un Chromecast o un Fire TV). Saldrá un código de 6 cifras: escríbelo aquí o escanea el QR con la cámara del móvil.</p><p>La tele enseña tus publicaciones activas a pantalla completa, con su diseño y la cuenta atrás de las ofertas, y un QR para que la gente las consiga o te añada a favoritos. Cambia sola y se actualiza sola cuando publicas algo o termina. Sin publicaciones, enseña tu logo. No enseña ofertas de RRPP, ni exclusivas, ni nada +18 si tu local no es +18.</p><p>La tele no entra con tu cuenta: solo puede enseñar lo público de tu local. Si la cambias de sitio o la vendes, desvincúlala aquí.</p>',
+    '<p>Open <b>klendar.app/tv</b> in the TV’s browser (or on a Chromecast or Fire TV). A 6-digit code will appear: type it in here or scan the QR code with your phone camera.</p><p>The TV shows your active publications full screen, with their design and the offer countdown, plus a QR code so people can get them or add you to their favourites. It moves on by itself and updates itself when you publish something or it ends. With nothing published, it shows your logo. It never shows promoter offers, exclusives or anything 18+ unless your place is 18+.</p><p>The TV doesn’t log in with your account: it can only show what’s public about your place. If you move it or sell it, unlink it here.</p>'))}
     <div class="card">
       <h2 style="margin-top:0">Enlazar una tele</h2>
       <!-- Como la app: solo el código; el nombre («Tele 1») se cambia en Ajustes. -->
@@ -7708,7 +7708,7 @@ async function descargaDatos(formato) {
     a.click();
     return;
   }
-  const tipos = { flash_offer: I18N.t('Oferta flash'), future_event: I18N.t('Evento') };
+  const tipos = { flash_offer: I18N.t('Oferta'), future_event: I18N.t('Evento') };
   downloadCsv(`klendar-${nombre}-${bi('publicaciones', 'publications')}`, datos.publications || [], [
     ['title', I18N.t('Publicación')],
     [(p) => tipos[p.kind] || p.kind, I18N.t('Tipo')],

@@ -54,17 +54,17 @@ const POR_PAGINA = 24;
 const T = (en) => en
   ? {
       exp: 'Explore', disc: 'Discover', agenda: "What's on", search: 'Search', ph: 'A bar, a market, “brunch”…',
-      all: 'All', allCities: 'Every city', allCitiesShort: 'All', offers: 'Flash offers', events: 'Events',
+      all: 'All', allCities: 'Every city', allCitiesShort: 'All', offers: 'Offers', events: 'Events',
       city: 'City', cat: 'Category', clear: 'Clear filters',
       results: (n) => `${n} ${n === 1 ? 'result' : 'results'}`,
       prev: '← Previous', next: 'Next →', page: 'Page',
       lead: 'Search for plans and places, and see them on the calendar, on the map or as a list. No account needed to browse.',
-      discLead: 'Flash offers and events from the businesses around you. No account needed to browse.',
+      discLead: 'Offers and events from the businesses around you. No account needed to browse.',
       biz: 'List your business', app: 'Create a free account',
       catTitle: (c, city) => `${c} in ${city}`,
       catHead: (c, city) => `${c} in ${city}: deals and events`,
-      catLead: (c, city) => `Flash offers and events from ${c.toLowerCase()} in ${city}, updated as businesses publish.`,
-      catDesc: (c, city, n) => `${n} ${n === 1 ? 'deal or event' : 'deals and events'} from ${c.toLowerCase()} in ${city}: flash offers with a countdown, events and the places that publish them. No account needed to browse.`,
+      catLead: (c, city) => `Offers and events from ${c.toLowerCase()} in ${city}, updated as businesses publish.`,
+      catDesc: (c, city, n) => `${n} ${n === 1 ? 'deal or event' : 'deals and events'} from ${c.toLowerCase()} in ${city}: offers with a countdown, events and the places that publish them. No account needed to browse.`,
       catPlaces: (c, city) => `${c} in ${city} on Klendar`,
       todayIn: 'Things to do today in', weekIn: 'This week in', byCat: 'By category',
       catNone: (c, city) => `No ${c.toLowerCase()} in ${city} have anything on right now.`,
@@ -84,7 +84,7 @@ const T = (en) => en
       filters: 'Filters', filtersN: (n) => `Filters, ${n} on`, showResults: 'Show results', close: 'Close',
       mapNo: "The map can't load right now. The list shows the same results.", onMap: (n) => `${n} on the map`,
       // Calendario (la agenda de la app).
-      prevMonth: 'Previous month', nextMonth: 'Next month', legendEv: 'Events', legendFl: 'Flash offers',
+      prevMonth: 'Previous month', nextMonth: 'Next month', legendEv: 'Events', legendFl: 'Offers',
       dayPlans: (n) => (n === 0 ? 'No plans' : `${n} ${n === 1 ? 'plan' : 'plans'}`), dayNone: 'Nothing this day',
       dayNoneBody: 'Try another day or change the filters.', todayPill: 'Today',
       outsideWhen: (w) => `This day is outside “${w}”`,
@@ -167,7 +167,7 @@ const T = (en) => en
       searchPopular: 'Most searched in {city}', searchPopularHint: 'What people searched for most this week. Without knowing who.',
       searchRemove: 'Remove “{q}”',
       // La hoja por orden de uso (2026-10-06).
-      what: 'What', whatHint: 'Flash offers: deals that last a few hours. Events: on a set day and time.',
+      what: 'What', whatHint: 'Offers: from a few hours to several days, or every week. Events: on a set day and time.',
       openNowHint: "The venue, going by today's opening hours",
       // La hoja en cuatro bloques (2026-10-07): Lo básico abierto; Para quién,
       // El sitio y Más plegados, con cuántos lleva cada uno.
@@ -207,17 +207,17 @@ const T = (en) => en
     }
   : {
       exp: 'Explorar', disc: 'Descubre', agenda: 'Agenda local', search: 'Buscar', ph: 'Un bar, un mercadillo, «brunch»…',
-      all: 'Todo', allCities: 'Todas las ciudades', allCitiesShort: 'Todas', offers: 'Ofertas flash', events: 'Eventos',
+      all: 'Todo', allCities: 'Todas las ciudades', allCitiesShort: 'Todas', offers: 'Ofertas', events: 'Eventos',
       city: 'Ciudad', cat: 'Categoría', clear: 'Quitar filtros',
       results: (n) => `${n} ${n === 1 ? 'resultado' : 'resultados'}`,
       prev: '← Anterior', next: 'Siguiente →', page: 'Página',
       lead: 'Busca planes y sitios, y míralos en el calendario, en el mapa o en lista. Para mirar no hace falta cuenta.',
-      discLead: 'Ofertas flash y planes de los negocios de tu alrededor. Para mirar no hace falta cuenta.',
+      discLead: 'Ofertas y planes de los negocios de tu alrededor. Para mirar no hace falta cuenta.',
       biz: 'Publicar mi negocio', app: 'Crear cuenta gratis',
       catTitle: (c, city) => `${c} en ${city}`,
       catHead: (c, city) => `${c} en ${city}: ofertas y planes`,
       catLead: (c, city) => `Ofertas y planes de ${c.toLowerCase()} en ${city}, según van publicando los negocios.`,
-      catDesc: (c, city, n) => `${n} ${n === 1 ? 'oferta o plan' : 'ofertas y planes'} de ${c.toLowerCase()} en ${city}: ofertas flash con cuenta atrás, eventos y los negocios que los publican. Sin cuenta para mirar.`,
+      catDesc: (c, city, n) => `${n} ${n === 1 ? 'oferta o plan' : 'ofertas y planes'} de ${c.toLowerCase()} en ${city}: ofertas con cuenta atrás, eventos y los negocios que los publican. Sin cuenta para mirar.`,
       catPlaces: (c, city) => `${c} de ${city} en Klendar`,
       todayIn: 'Qué hacer hoy en', weekIn: 'Esta semana en', byCat: 'Por categoría',
       catNone: (c, city) => `Ahora mismo no hay nada de ${c.toLowerCase()} en ${city}.`,
@@ -235,7 +235,7 @@ const T = (en) => en
       seeMap: 'Ver en el mapa', seeCal: 'Ver el calendario', seeList: 'Ver en lista',
       filters: 'Filtros', filtersN: (n) => (n === 1 ? 'Filtros, 1 puesto' : `Filtros, ${n} puestos`), showResults: 'Ver resultados', close: 'Cerrar',
       mapNo: 'El mapa no se puede cargar ahora mismo. En la lista está lo mismo.', onMap: (n) => `${n} en el mapa`,
-      prevMonth: 'Mes anterior', nextMonth: 'Mes siguiente', legendEv: 'Eventos', legendFl: 'Ofertas flash',
+      prevMonth: 'Mes anterior', nextMonth: 'Mes siguiente', legendEv: 'Eventos', legendFl: 'Ofertas',
       dayPlans: (n) => (n === 0 ? 'Sin planes' : `${n} ${n === 1 ? 'plan' : 'planes'}`), dayNone: 'Nada este día',
       dayNoneBody: 'Prueba otro día o cambia los filtros.', todayPill: 'Hoy',
       outsideWhen: (w) => `Este día queda fuera de «${w}»`,
@@ -313,7 +313,7 @@ const T = (en) => en
       searchPopular: 'Lo más buscado en {city}', searchPopularHint: 'Lo que más ha buscado la gente esta semana. Sin saber quién.',
       searchRemove: 'Quitar «{q}»',
       // La hoja por orden de uso (2026-10-06).
-      what: 'Qué', whatHint: 'Ofertas flash: descuentos que duran unas horas. Eventos: con día y hora.',
+      what: 'Qué', whatHint: 'Ofertas: de unas horas a varios días, o cada semana. Eventos: con día y hora.',
       openNowHint: 'El local, según su horario de hoy',
       basics: 'Lo básico', forWhom: 'Para quién', forWhomHint: 'Con niños, ir solo, descuentos para estudiantes…',
       placeHint: 'Abierto ahora, para ahora, precio del local, terraza…', moreB: 'Más', moreBHint: 'Solidario, agenda pública, solo con descuento',
@@ -831,7 +831,7 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
   const en = lang === 'en';
   const loc = en ? 'en-GB' : 'es-ES';
   // Cada publicación, en el día de su negocio; lo que empezó antes y sigue en
-  // marcha (una oferta flash de anoche), hoy.
+  // marcha (una oferta de anoche), hoy.
   const porDia = new Map();
   for (const o of items) {
     const tz = KZ.de(o);
@@ -1640,7 +1640,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     : false;
   let sugerencias = [];
   // «Quizá te interese» respeta el tipo elegido (como la app): con «Ofertas
-  // flash», solo ofertas flash; con «Eventos», solo eventos.
+  // flash», solo ofertas; con «Eventos», solo eventos.
   const delTipo = (o) => (esOfertas ? o.kind === 'flash_offer' : esEventos ? o.kind === 'future_event' : true);
   if (sinKlendar) {
     // Nada de «Quizá te interese»: sería de otra ciudad.
@@ -2783,8 +2783,8 @@ export async function kidsPage(rawCity, lang) {
     ? {
         h1: `Plans with kids in ${city}`,
         title: `Plans with kids in ${city}: family-friendly places and plans`,
-        lead: `Family-friendly places and plans in ${city}: flash offers and events from businesses that say they're child-friendly. No account needed to browse.`,
-        desc: (n) => `${n} ${n === 1 ? 'plan' : 'plans'} with kids in ${city}: family-friendly flash offers and events from local businesses. No account needed to browse.`,
+        lead: `Family-friendly places and plans in ${city}: offers and events from businesses that say they're child-friendly. No account needed to browse.`,
+        desc: (n) => `${n} ${n === 1 ? 'plan' : 'plans'} with kids in ${city}: family-friendly offers and events from local businesses. No account needed to browse.`,
         descNone: `Family-friendly places in ${city} and what's on for kids, updated as businesses publish.`,
         places: `Child-friendly places in ${city}`,
         emptyTitle: `No plans with kids in ${city} yet`,
@@ -2795,8 +2795,8 @@ export async function kidsPage(rawCity, lang) {
     : {
         h1: `Planes con niños en ${city}`,
         title: `Planes con niños en ${city}: sitios y planes para ir en familia`,
-        lead: `Sitios y planes aptos para ir en familia en ${city}: ofertas flash y eventos de negocios que dicen que son aptos para niños. Para mirar no hace falta cuenta.`,
-        desc: (n) => `${n} ${n === 1 ? 'plan' : 'planes'} con niños en ${city}: ofertas flash y eventos aptos para ir en familia, de los negocios de la ciudad. Sin cuenta para mirar.`,
+        lead: `Sitios y planes aptos para ir en familia en ${city}: ofertas y eventos de negocios que dicen que son aptos para niños. Para mirar no hace falta cuenta.`,
+        desc: (n) => `${n} ${n === 1 ? 'plan' : 'planes'} con niños en ${city}: ofertas y eventos aptos para ir en familia, de los negocios de la ciudad. Sin cuenta para mirar.`,
         descNone: `Sitios aptos para niños en ${city} y planes para ir en familia, según van publicando los negocios.`,
         places: `Sitios aptos para niños en ${city}`,
         emptyTitle: `Aún no hay planes con niños en ${city}`,

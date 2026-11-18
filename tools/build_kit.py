@@ -80,7 +80,7 @@ def guide():
 
     y = H - M - 26 * mm
     c.setFillColor(INK); c.setFont('Onest-Black', 26)
-    c.drawString(M, y, 'Tu primera oferta flash en 5 minutos')
+    c.drawString(M, y, 'Tu primera oferta en 5 minutos')
     y -= 8 * mm
     para(c, 'Klendar enseña lo que pasa <b>cerca y ahora mismo</b>: ofertas con cuenta atrás y eventos de negocios como el tuyo, '
             'ordenados por cercanía. La gente canjea con un código QR de un solo uso que tú validas con el móvil. '
@@ -91,7 +91,7 @@ def guide():
         ('1', 'Descarga Klendar y crea tu cuenta', 'Google Play o App Store. Entra con tu correo o con Google.'),
         ('2', 'Da de alta tu negocio', 'En la app, Cuenta → «¿Quieres registrar tu negocio?», o en klendar.app/panel. Nombre, categoría, ubicación en el mapa, contacto y NIF. Lo verificamos en 24–48 h.'),
         ('3', 'Completa tu ficha', 'Portada, logo, horarios, carta y redes. Es lo que ve la gente al tocar tu nombre.'),
-        ('4', 'Publica tu primera oferta flash', 'Mi negocio → «Crear» → «Nueva oferta flash» (o en el panel web). Título claro, una foto real, ventana horaria, descuento y aforo. Publica y ya está en el feed de quien esté cerca.'),
+        ('4', 'Publica tu primera oferta', 'Mi negocio → «Crear» → «Nueva oferta» (o en el panel web). Título claro, una foto real, ventana horaria, descuento y aforo. Publica y ya está en el feed de quien esté cerca.'),
         ('5', 'Valida los canjes', 'Cuando alguien te enseñe el QR: Mi negocio → «Validar códigos» y escanéalo (o escribe el código). Verás qué aplicar y el nombre del cliente.'),
     ]
     for n, title, body in steps:
@@ -152,7 +152,7 @@ def poster():
     brand(c, M, H - M - 12 * mm, size=12 * mm, text_size=28)
 
     c.setFillColor(ACCENT); c.setFont('Onest-Black', 15)
-    c.drawString(M, H - 62 * mm, 'AQUÍ HAY OFERTAS FLASH')
+    c.drawString(M, H - 62 * mm, 'AQUÍ HAY OFERTAS')
     c.setFillColor(INK); c.setFont('Onest-Black', 40)
     c.drawString(M, H - 80 * mm, 'Lo que pasa cerca,')
     c.drawString(M, H - 96 * mm, 'ahora mismo.')

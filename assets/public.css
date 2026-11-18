@@ -394,7 +394,7 @@ body.con-hoja { overflow: hidden; }
 .pub .resumen-n { margin: 0; font-family: inherit; font-size: 14px; font-weight: 700; line-height: 1.4; letter-spacing: 0; color: var(--ink-2); }
 .resumen a { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; font-size: 14px; }
 
-/* El mapa: chinchetas en tinta (eventos) y coral (ofertas flash, son oferta),
+/* El mapa: chinchetas en tinta (eventos) y coral (ofertas, son oferta),
    como el calendario. */
 .chincheta.flash { background: var(--accent); }
 .mapa-explorar.sin-mapa { height: auto; border: 0; }

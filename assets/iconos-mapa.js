@@ -1,5 +1,5 @@
 /* Los iconos de los marcadores del mapa de Explorar (GLOSARIO «Aspecto › El
- * mapa»): en Planes, el tipo de plan (evento, oferta flash, agenda pública);
+ * mapa»): en Planes, el tipo de plan (evento, oferta, agenda pública);
  * en Sitios, el de la categoría del negocio (los mismos que la app,
  * `categories.icon`). Trazados de Material Symbols Outlined v374 (opsz 24,
  * wght 400; Apache 2.0), sacados de la fuente: `viewBox="0 -960 960 960"`.

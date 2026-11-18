@@ -4,7 +4,7 @@
  * publicaciones activas del local a pantalla completa, con su diseño
  * (Clásica, Foto grande, Cartel, A todo color, Minimal: la especificación de
  * docs/DISENOS_PUBLICACION.md §8 en el repo de la app), la cuenta atrás de
- * las ofertas flash, un QR grande y, si el local lo usa, «¿Hay sitio
+ * las ofertas, un QR grande y, si el local lo usa, «¿Hay sitio
  * ahora?».
  *
  * Emparejar sin teclear nada en la tele: pide un código de 6 cifras
@@ -49,7 +49,7 @@
     pidiendo: 'Getting a code…',
     sinRed: 'No connection. We’ll try again in a few seconds.',
     lista: function (n) { return 'Done! This TV now shows ' + n + '.'; },
-    flash: 'Flash offer', evento: 'Event', antes: 'Before closing',
+    flash: 'Offer', evento: 'Event', antes: 'Before closing',
     empieza: function (h) { return 'Starts at ' + h; },
     empiezaDia: function (d, h) { return 'Starts ' + d + ' at ' + h; },
     empiezaEn: function (m) { return 'Starts in ' + m + ' min'; },
@@ -77,7 +77,7 @@
     pidiendo: 'Pidiendo un código…',
     sinRed: 'Sin conexión. Lo volvemos a intentar en unos segundos.',
     lista: function (n) { return '¡Lista! Esta tele ya enseña ' + n + '.'; },
-    flash: 'Oferta flash', evento: 'Evento', antes: 'Antes de cerrar',
+    flash: 'Oferta', evento: 'Evento', antes: 'Antes de cerrar',
     empieza: function (h) { return 'Empieza a las ' + h; },
     empiezaDia: function (d, h) { return 'Empieza el ' + d + ' a las ' + h; },
     empiezaEn: function (m) { return 'Empieza en ' + m + ' min'; },

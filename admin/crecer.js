@@ -101,7 +101,7 @@ Hola:
 
 ${quien} en Klendar que ${g.name} esté en la app${donde}. Por privacidad no compartimos quién lo pide: solo contamos cuántas personas son.
 
-Klendar es una app y una web donde los negocios de cada ciudad publican ofertas flash con cuenta atrás y eventos con reserva de plaza. La gente los descubre por cercanía y los canjea con un código QR de un solo uso que validas con tu móvil. Darte de alta lleva unos minutos y te echamos una mano.
+Klendar es una app y una web donde los negocios de cada ciudad publican ofertas con cuenta atrás y eventos con reserva de plaza. La gente los descubre por cercanía y los canjea con un código QR de un solo uso que validas con tu móvil. Darte de alta lleva unos minutos y te echamos una mano.
 
 Lo pruebas gratis, sin tarjeta, y nunca cobramos comisión por canje. Sin permanencia.
 

@@ -2,7 +2,7 @@
 //
 // La base dice qué entra (`calendar_feed`, migración 20261120100001 de la
 // app): eventos guardados o con «Voy» (también las fechas que añade una
-// serie), reservas y ofertas flash con hora. Aquí solo se pinta.
+// serie), reservas y ofertas con hora. Aquí solo se pinta.
 //
 // - Una entrada por publicación con UID estable (`plan-<id>@klendar.app`): si
 //   cambia la hora, el calendario mueve la misma; si se anula, deja de venir

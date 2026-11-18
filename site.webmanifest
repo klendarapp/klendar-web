@@ -1,7 +1,7 @@
 {
   "name": "Klendar",
   "short_name": "Klendar",
-  "description": "Ofertas flash y eventos de los negocios de tu barrio, ordenados por cercanía.",
+  "description": "Ofertas y eventos de los negocios de tu barrio, ordenados por cercanía.",
   "start_url": "/",
   "display": "browser",
   "background_color": "#0A0A0A",
