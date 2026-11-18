@@ -210,6 +210,12 @@ async function panel(nav, nombre, t, vp) {
     await crear.click();
     await p.waitForSelector('#modal[open] .crear-op');
     ok(/Menú del día/.test(await p.locator('#modal').innerText()), `${nombre}/${t} crear: ofrece «Menú del día»`);
+    // «¿Qué quieres publicar?» con todo (Iván, 18-11): los dos grupos de abajo.
+    const hoja = await p.locator('#modal').innerText();
+    ok(/Nueva oferta/.test(hoja) && /De unas horas a varios días, o cada semana/.test(hoja), `${nombre}/${t} crear: «Nueva oferta» con su línea`);
+    ok(/Para los tuyos/.test(hoja) && /Crear oferta de primera visita/.test(hoja) && /Avisar a mis clientes/.test(hoja), `${nombre}/${t} crear: «Para los tuyos»`);
+    ok(/Para vender o dar en el local/.test(hoja) && /Crear un bono/.test(hoja) && /Nueva tarjeta de sellos/.test(hoja), `${nombre}/${t} crear: «Para vender o dar en el local»`);
+    await p.screenshot({ path: `${OUT}/panel-crear-${nombre}-${t}.png` });
     await p.keyboard.press('Escape');
   } else ok(false, `${nombre}/${t} crear: no se encuentra el botón`);
 

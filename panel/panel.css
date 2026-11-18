@@ -1038,6 +1038,7 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .fiel-card .code { white-space: pre-wrap; word-break: break-all; }
 /* «Crear»: qué publicar. */
 .crear-ops { display: grid; gap: 8px; margin: 12px 0 4px; }
+.crear-grupo { margin: 18px 0 0; font-size: 13px; font-weight: 700; color: var(--ink-2); }
 .crear-op { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
   border: 1px solid var(--glass-border); color: var(--ink); }
 .crear-op:hover { text-decoration: none; border-color: var(--ink-2); }

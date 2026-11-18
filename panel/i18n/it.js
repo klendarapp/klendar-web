@@ -4118,5 +4118,9 @@ KL_DIC('it', {
   "−25 % en piercing": "−25% sui piercing",
   "−25 % en repostería": "−25% sulla pasticceria",
   "−30 % en el primer mes": "−30 % il primo mese",
-  "−30 % en la primera cuota": "−30% sulla prima quota"
+  "−30 % en la primera cuota": "−30% sulla prima quota",
+  "Una novedad del local: una foto, una carta nueva, un cambio de horario.": "Una novità del locale: una foto, un menù nuovo, un cambio d’orario.",
+  "Para los tuyos": "Per i tuoi",
+  "Para vender o dar en el local": "Da vendere o regalare nel locale",
+  "Nueva tarjeta de sellos": "Nuova tessera timbri"
 });

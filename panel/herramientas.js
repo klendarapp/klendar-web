@@ -78,19 +78,50 @@ const herrPl = (n, [es1, esN], [en1, enN]) => (n === 1
   : bi(`{n} ${esN}`, `{n} ${enN}`).replace('{n}', fmtNum(n)));
 
 // ── «Crear»: qué publicar ───────────────────────────────────────────────────
-/** Como la hoja de «Crear» de la app: tres opciones con su frase. */
-function herrCrear() {
+/** «¿Qué quieres publicar?», como la hoja de «Crear» de la app (Iván, 18-11):
+ * todo lo que el negocio puede publicar o crear, en un sitio. Lo más usado
+ * arriba (oferta, evento, menú del día, antes de cerrar, novedad, oferta para
+ * el partido); luego «Para los tuyos» (primera visita, exclusiva, oferta para
+ * RRPP, avisar a mis clientes) y «Para vender o dar en el local» (bono,
+ * tarjeta de sellos, algo para encargar, sorteo). Todo sigue también en su
+ * sitio (Fidelizar, RRPP, Partidos, Más herramientas). Solo sale lo que va con
+ * ese negocio, con las reglas de su sitio: sin local fijo, sin menú del día,
+ * antes de cerrar ni partidos; una entidad, sin los dos grupos de abajo; los
+ * encargos con `app_config.preorders` y su tipo; los sorteos con
+ * `app_config.giveaways`. */
+async function herrCrear() {
   const d = $('#modal');
+  const o = herrAhora();
+  const ent = esEntidad();
+  const local = !esOrganizador() && !ent;
+  const conSorteos = !ent && typeof sorteosEnPanel === 'function' && await sorteosEnPanel().catch(() => false);
+  const cosas = herrNum(o, 'preorders', 'items_all');
+  const conEncargos = !ent && herrSi(o, 'preorders', 'enabled') && herrLleva(o, 'preorders', cosas > 0);
   const op = (href, icon, titulo, frase) => `<a class="crear-op" href="${href}">${icono(icon)}
     <span><b>${esc(titulo)}</b><small>${esc(frase)}</small></span>${ms('chevron_right')}</a>`;
+  const grupo = (titulo, ops) => (ops.filter(Boolean).length
+    ? `<h3 class="crear-grupo">${esc(titulo)}</h3><div class="crear-ops">${ops.join('')}</div>` : '');
   d.innerHTML = `<form method="dialog"><h2>${esc(bi('¿Qué quieres publicar?', 'What do you want to publish?'))}</h2>
     <div class="crear-ops">
-      ${op('#/publicaciones/nueva-flash', 'bolt', bi('Oferta', 'Offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.'))}
-      ${op('#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha, aforo y reserva de plaza', 'With a date, a limit and place booking'))}
+      ${op('#/publicaciones/nueva-flash', 'bolt', bi('Nueva oferta', 'New offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.'))}
+      ${op('#/publicaciones/nuevo-evento', 'event', bi('Nuevo evento', 'New event'), bi('Con fecha y hora. Puede tener precio y enlace para entradas.', 'With a date and time. It can have a price and a ticket link.'))}
       ${herrMenuSugerido() ? op('#/menu-del-dia', 'restaurant_menu', bi('Menú del día', 'Daily menu'), bi('Foto de la pizarra y precio: hasta el cierre, en un toque.', 'Photo of the board and price: until closing, in one tap.')) : ''}
       ${herrAntesSugerido() ? op('#/antes-de-cerrar', 'bolsa', bi('Antes de cerrar', 'Before closing'), bi('Lo que te ha sobrado hoy, con lo de la última vez ya puesto. Se paga en el local.', "What's left over today, with last time's details filled in. Paid at the venue.")) : ''}
-      ${op('#/novedades', 'campaign', bi('Novedad', 'Update'), bi('Una nota corta en tu ficha: «hoy hay pulpo»', 'A short note on your page: “octopus today”'))}
+      ${op('#/novedades', 'campaign', bi('Nueva novedad', 'New update'), bi('Una novedad del local: una foto, una carta nueva, un cambio de horario.', 'News from your place: a photo, a new menu, a change in opening hours.'))}
+      ${local && gestiona() && herrSi(o, 'broadcasts', 'suggested') ? op('#/partidos', 'partido', bi('Oferta para el partido', 'Offer for the match'), bi('Para que te encuentre quien busca dónde ver el partido: marca lo que pones.', "So people looking for where to watch the match find you: mark what you're showing.")) : ''}
     </div>
+    ${ent ? '' : grupo(bi('Para los tuyos', 'For your people'), [
+    op('#/publicaciones/nueva-flash?primera=1', 'waving_hand', bi('Crear oferta de primera visita', 'Create a first-visit offer'), bi('Para atraer clientes nuevos: una oferta que solo puede usar quien no ha canjeado nunca nada en tu negocio.', 'To attract new customers: an offer that only people who have never redeemed anything at your business can use.')),
+    op('#/publicaciones/nueva-flash?exclusiva=1', 'candado', bi('Crear una exclusiva', 'Create an exclusive'), bi('Para premiar a los tuyos: una oferta que solo ve entera quien te tiene en favoritos o ya es cliente.', 'To reward your people: an offer only those who have you in favourites, or are already customers, see in full.')),
+    op('#/publicaciones/nueva-flash?rrpp=1', 'rrpp', bi('Nueva oferta para RRPP', 'New promoter offer'), bi('Solo con el enlace de un RRPP', "Only with a promoter's link")),
+    op('#/mensajes', 'campaign', bi('Avisar a mis clientes', 'Message my customers'), bi('Para contar algo a tus favoritos y clientes con una notificación. Uno por semana.', 'To tell your favourites and customers something with a notification. One a week.')),
+  ])}
+    ${ent ? '' : grupo(bi('Para vender o dar en el local', 'To sell or give at your venue'), [
+    op('#/bonos/nuevo', 'redeem', bi('Crear un bono', 'Create a pass'), bi('Para vender en tu local bonos de varios usos (5 cafés, 10 clases…). Cada uso se descuenta con el QR del cliente.', 'To sell multi-use passes at your venue (5 coffees, 10 classes…). Each use is taken off with the customer’s QR.')),
+    op('#/sellos/nueva', 'loyalty', bi('Nueva tarjeta de sellos', 'New stamp card'), bi('Para premiar a quien repite: cada canje (o cada visita con el QR del local) suma un sello y al llegar a la meta hay premio.', 'To reward people who come back: each redemption (or visit with the venue QR) adds a stamp and reaching the goal earns a reward.')),
+    conEncargos ? op('#/encargos-cosas', 'encargo', bi('Añadir algo para encargar', 'Add something to pre-order'), bi('Tus clientes encargan desde tu ficha (una tarta, una bandeja, un ramo) y lo recogen y pagan aquí.', 'Your customers order from your page (a cake, a platter, a bouquet) and pick it up and pay here.')) : '',
+    conSorteos ? op('#/sorteos/nuevo', 'sorteo', bi('Crear un sorteo', 'Create a giveaway'), bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.')) : '',
+  ])}
     <div class="foot"><button type="button" class="btn ghost" data-cancel>${esc(bi('Cancelar', 'Cancel'))}</button></div></form>`;
   const cerrar = () => d.close();
   $('[data-cancel]', d).onclick = cerrar;

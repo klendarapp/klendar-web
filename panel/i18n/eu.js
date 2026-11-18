@@ -4118,5 +4118,9 @@ KL_DIC('eu', {
   "−25 % en piercing": "−% 25 piercingetan",
   "−25 % en repostería": "−% 25 gozogintzan",
   "−30 % en el primer mes": "−% 30 lehen hilabetean",
-  "−30 % en la primera cuota": "−% 30 lehen kuotan"
+  "−30 % en la primera cuota": "−% 30 lehen kuotan",
+  "Una novedad del local: una foto, una carta nueva, un cambio de horario.": "Lokaleko berri bat: argazki bat, karta berria, ordutegi-aldaketa bat.",
+  "Para los tuyos": "Zureentzat",
+  "Para vender o dar en el local": "Lokalean saltzeko edo emateko",
+  "Nueva tarjeta de sellos": "Zigilu-txartel berria"
 });
