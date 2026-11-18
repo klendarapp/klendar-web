@@ -2364,8 +2364,6 @@ RUTAS.denunciar = async ([tipo, id], params) => {
   const volver = document.referrer && new URL(document.referrer).origin === location.origin
     && !new URL(document.referrer).pathname.match(/^\/cuenta(\/|$)/)
     ? document.referrer : (pre || '/');
-  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
-  window.KL_CAPTCHA?.pre?.();
   const que = conContenido ? await queSeDenuncia(tipo, id) : '';
   const ruta = conContenido ? `denunciar/${tipo}/${id}` : 'denunciar';
   const motivos = (lista) => MOTIVOS.filter(([v]) => lista.includes(v)).map(([v, l]) =>
@@ -2432,9 +2430,12 @@ RUTAS.denunciar = async ([tipo, id], params) => {
       <p class="muted pie-form">${esc(t('Usamos tu nombre y tu correo solo para tramitar la denuncia y contestarte; no se los damos a quien publicó el contenido.'))}
         <a href="${PUB_EN ? '/en/privacy' : '/privacidad'}" target="_blank">${esc(t('Política de privacidad'))}</a></p>${notaLegal()}
       <p class="err" id="err" role="alert"></p>
+      ${HUECO_CAPTCHA}
       <button class="pill accent" id="enviar">${esc(t('Enviar denuncia'))}</button>
     </form>
     <p class="muted pie-form">${esc(t('Si alguien está en peligro ahora mismo, llama al 112.'))}</p>`);
+  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
+  preCaptcha();
   const f = $('#f');
   const el = f.elements;
   // Abuso sexual infantil: nombre y correo pasan a ser opcionales (art. 16.2.c).

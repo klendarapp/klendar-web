@@ -135,13 +135,13 @@
   function conCaptcha() {
     return window.KL_CAPTCHA ? Promise.resolve()
       : (window.KLENDAR_ENV ? Promise.resolve() : carga('/config.js?v=4'))
-        .then(function () { return carga('/assets/auth-errors.js?v=8'); });
+        .then(function () { return carga('/assets/auth-errors.js?v=20261118captcha'); });
   }
   function robot() {
     return conCaptcha().then(function () { return window.KL_CAPTCHA ? window.KL_CAPTCHA() : undefined; });
   }
   function preparaRobot() {
-    conCaptcha().then(function () { if (window.KL_CAPTCHA && window.KL_CAPTCHA.pre) window.KL_CAPTCHA.pre(); },
+    conCaptcha().then(function () { if (window.KL_CAPTCHA && window.KL_CAPTCHA.pre) window.KL_CAPTCHA.pre(hueco.querySelector('.kl-captcha-sitio') || undefined); },
       function () { /* al mandar se vuelve a probar */ });
   }
   function mensajeError(e) {
@@ -172,6 +172,8 @@
       + '<label>' + esc(T.email) + '<input type="email" name="correo" autocomplete="email" inputmode="email" maxlength="254" required spellcheck="false"></label>'
       + '<p class="avisame-nota">' + esc(T.note) + ' <a href="' + esc(T.privacyUrl) + '">' + esc(T.privacy) + '</a></p>'
       + '<p class="avisame-err" role="alert" hidden></p>'
+      // El recuadro de Turnstile, si Cloudflare pide marcarlo: aquí, encima del botón.
+      + '<div class="kl-captcha-sitio" style="position:absolute"></div>'
       + '<div class="vacio-botones"><button type="submit" class="pill accent">' + esc(T.send) + '</button>'
       + '<a class="pill" href="' + esc(entrar) + '" data-entrar>' + esc(T.login) + '</a></div>'
       + '</form>';

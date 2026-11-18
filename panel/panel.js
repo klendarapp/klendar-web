@@ -7643,6 +7643,7 @@ async function confirmaIdentidad() {
       if (terminado) return;
       terminado = true;
       d.close();
+      window.KL_CAPTCHA?.quita?.();
       await id.cerrar();
       resolve(ok);
     };
@@ -7655,6 +7656,7 @@ async function confirmaIdentidad() {
         : `<p class="muted" style="margin:0">${bi(`Escribe el código de 6 cifras que te hemos mandado a <b>${correo}</b>.`, `Enter the 6-digit code we've sent to <b>${correo}</b>.`)}</p>
           <label class="f"><span>Código</span><input name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>`}
         <p class="err" role="alert" style="margin:0"></p>
+        <div class="kl-captcha-sitio" style="position:absolute"></div>
         <p style="margin:0">${!conCodigo ? '<button type="button" class="btn sm ghost" data-modo="codigo">Prefiero un código por correo</button>' : ''}
           ${conCodigo && enviado ? '<button type="button" class="btn sm ghost" data-reenvio>Enviar otro código</button>' : ''}
           ${conCodigo && tieneClave ? '<button type="button" class="btn sm ghost" data-modo="clave">Usar mi contraseña</button>' : ''}</p>
@@ -7701,10 +7703,13 @@ async function confirmaIdentidad() {
         } finally { boton.disabled = false; }
       };
       ($('input', form) || $('button[type=submit]', form))?.focus();
+      // Turnstile, por adelantado y en su hueco, mientras se escribe.
+      if (d.open) window.KL_CAPTCHA?.pre?.($('.kl-captcha-sitio', d));
     };
     d.oncancel = (e) => { e.preventDefault(); acaba(false); };
     pinta();
     d.showModal();
+    window.KL_CAPTCHA?.pre?.($('.kl-captcha-sitio', d));
   });
 }
 

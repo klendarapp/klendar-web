@@ -148,8 +148,21 @@
  * la cuenta, pedir un código o recuperar la contraseña. Supabase la exige en
  * cuanto se activa en Authentication → Attack Protection; aquí solo se pide
  * si el entorno tiene clave (`KLENDAR_ENV.turnstile`, producción). Casi
- * siempre se resuelve sola; si Cloudflare duda, aparece abajo un recuadro
- * para marcar. La app hace lo mismo con klendar.app/captcha/.
+ * siempre se resuelve sola; si Cloudflare duda, aparece un recuadro para
+ * marcar JUNTO AL FORMULARIO que lo pide. La app hace lo mismo con
+ * klendar.app/captcha/.
+ *
+ * Dónde: el formulario lleva un hueco `<div class="kl-captcha-sitio"
+ * style="position:absolute"></div>` (`KL_CAPTCHA.HUECO`, justo encima de su
+ * botón principal) o se le pasa el sitio a mano
+ * (`KL_CAPTCHA.pre(el)`, `KL_CAPTCHA(el)`). Sin sitio, el primer hueco que
+ * se vea; si no hay ninguno, dentro del diálogo abierto o, como último
+ * recurso, fijo abajo de la página (Iván, 18-11: en el admin se quedaba
+ * colgado abajo en la pantalla del código de 6 cifras). Vacío no ocupa nada
+ * (`interaction-only`). El recuadro se quita (`turnstile.remove`) en cuanto
+ * su hueco sale de la página (cambio de vista) o con `KL_CAPTCHA.quita()`
+ * (vistas que solo se esconden, como el acceso del admin al pasar al 2FA);
+ * al volver al formulario se prepara otra vez.
  *
  * Por adelantado: el formulario llama a `KL_CAPTCHA.pre()` al pintarse y el
  * widget se resuelve mientras la persona escribe, así que al pulsar el token
@@ -186,7 +199,7 @@
   function fallo(code) { return Object.assign(new Error('captcha'), { code }); }
   const clave = () => window.KLENDAR_ENV && window.KLENDAR_ENV.turnstile;
 
-  // Un solo widget por página, abajo y fijo (no lo borra el cambio de ruta).
+  // Un solo widget por página, en el hueco del formulario que lo pide.
   let caja = null;
   let id = null;
   let listo = null;          // { token, en }: resuelto y sin gastar
@@ -194,6 +207,7 @@
   let esperan = [];          // quienes han pulsado y esperan un token
   let renueva = null;        // temporizador: el token sin gastar, antes de caducar
   let reintentado = false;   // ya se ha reintentado solo tras un error
+  let vigia = null;          // MutationObserver: el hueco ya no está en la página
 
   function siguiente() {
     clearTimeout(renueva);
@@ -201,24 +215,101 @@
     estado = 'pidiendo';
     try { window.turnstile.reset(id); } catch (e) { /* ya no está */ }
   }
-  function prepara() {
+  /** Se ve (ni él ni nada de lo de fuera con `display:none` o `hidden`). */
+  const seVe = (el) => !!(el && el.isConnected && el.getClientRects().length);
+  /** El hueco: el que se pasa, o el primero que se vea. */
+  function hueco(sitio) {
+    if (typeof sitio === 'string') sitio = document.querySelector(sitio);
+    if (sitio && sitio.nodeType === 1) return sitio;
+    const todos = document.querySelectorAll('.kl-captcha-sitio');
+    for (let i = 0; i < todos.length; i++) if (seVe(todos[i])) return todos[i];
+    return null;
+  }
+  /** Último recurso: dentro del diálogo abierto (encima de todo) o fijo abajo. */
+  function ultimoRecurso() {
+    const dialogos = document.querySelectorAll('dialog[open]');
+    const d = dialogos[dialogos.length - 1];
+    return seVe(d) ? d : null;
+  }
+  /** Fuera el widget (y quien esperaba su token: su formulario ya no está). */
+  function quita() {
+    if (vigia) { vigia.disconnect(); vigia = null; }
+    clearTimeout(renueva);
+    if (id !== null) { try { window.turnstile.remove(id); } catch (e) { /* ya no está */ } }
+    if (caja && caja.parentNode) caja.parentNode.removeChild(caja);
+    caja = null; id = null; listo = null; estado = 'nada'; reintentado = false;
+    const todos = esperan;
+    esperan = [];
+    todos.forEach((q) => q.mal(fallo('captcha_failed')));
+  }
+  function pinta(dentro, enDialogo) {
+    caja = document.createElement('div');
+    caja.id = 'kl-captcha';
+    caja.className = 'kl-captcha';
+    // Vacío no ocupa nada; con el recuadro a la vista, centrado y con aire
+    // (data-mirando, más abajo). Fijo abajo solo si no hay dónde ponerlo.
+    caja.style.cssText = dentro
+      ? 'display:block;width:100%;max-width:100%;overflow:hidden'
+      : 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000;max-width:calc(100vw - 32px)';
+    (dentro || document.body).appendChild(caja);
+    if (vigia) { vigia.disconnect(); vigia = null; }
+    if (dentro && !enDialogo && typeof MutationObserver === 'function') {
+      // Cambio de vista: el hueco sale de la página y el widget con él.
+      vigia = new MutationObserver(() => { if (caja && !caja.isConnected) quita(); });
+      vigia.observe(document.body, { childList: true, subtree: true });
+    } else if (dentro && enDialogo) {
+      dentro.addEventListener('close', () => { if (caja && caja.parentNode === dentro) quita(); }, { once: true });
+    }
+  }
+  const mirando = (si) => {
+    if (!caja) return;
+    if (si) caja.setAttribute('data-mirando', '');
+    else caja.removeAttribute('data-mirando');
+    if (caja.style.position === 'fixed') return;
+    // El hueco va con `position:absolute` (HUECO de abajo): así, vacío, no es
+    // una fila más del formulario (ni su `gap`). Con el recuadro a la vista,
+    // en su sitio y con algo de aire.
+    const h = caja.parentNode;
+    if (h && h.classList && h.classList.contains('kl-captcha-sitio')) {
+      h.style.position = si ? 'static' : 'absolute';
+      caja.style.margin = si ? '4px 0' : '';
+    } else caja.style.margin = si ? '12px 0 0' : '';
+  };
+  const tema = () => {
+    const t = document.documentElement.getAttribute('data-theme');
+    return t === 'dark' || t === 'light' ? t : 'auto';
+  };
+  /** `previo`: por adelantado (`pre`); sin hueco a la vista no se pinta nada
+   * (al pulsar ya se verá dónde). */
+  function prepara(sitio, previo) {
     if (!clave()) return Promise.resolve();
-    if (id !== null && caja && caja.isConnected) return Promise.resolve();
+    // El que hay vale si está en ese hueco o, sin hueco, si se ve.
+    const vale = (h) => id !== null && caja && caja.isConnected
+      && (h ? caja.parentNode === h : (seVe(caja) || caja.style.position === 'fixed'));
+    const donde = () => { const h = hueco(sitio); return h && h.isConnected ? h : null; };
+    if (vale(donde())) return Promise.resolve();
+    if (previo && !donde()) return Promise.resolve();
     return carga().then(() => {
-      if (id !== null && caja && caja.isConnected) return;
+      const aqui = donde();
+      if (vale(aqui)) return;
+      if (previo && !aqui) return;
       if (id !== null) { try { window.turnstile.remove(id); } catch (e) { /* ya no está */ } }
-      caja = document.createElement('div');
-      caja.id = 'kl-captcha';
-      caja.style.cssText = 'position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:1000';
-      document.body.appendChild(caja);
+      if (caja && caja.parentNode) caja.parentNode.removeChild(caja);
+      clearTimeout(renueva);
+      const dialogo = aqui ? null : ultimoRecurso();
+      pinta(aqui || dialogo, !!dialogo && !aqui);
+      const dentroDe = !!aqui;
       estado = 'pidiendo';
       listo = null;
       id = window.turnstile.render(caja, {
         sitekey: clave(),
         appearance: 'interaction-only',
+        // Del ancho del formulario, como sus campos y su botón (mínimo 300 px).
+        size: dentroDe ? 'flexible' : 'normal',
         'refresh-expired': 'auto',
         // Turnstile habla francés, alemán e italiano; catalán, gallego y euskera, no: español.
         language: /^(en|fr|de|it)$/.test(document.documentElement.lang) ? document.documentElement.lang : 'es',
+        theme: tema(),
         callback: (token) => {
           reintentado = false;
           const quien = esperan.shift();
@@ -243,15 +334,17 @@
           return true;
         },
         'expired-callback': () => { listo = null; estado = 'pidiendo'; },
-        'before-interactive-callback': () => { estado = 'mirando'; },
-        'after-interactive-callback': () => { if (estado === 'mirando') estado = 'pidiendo'; },
+        'before-interactive-callback': () => { estado = 'mirando'; mirando(true); },
+        'after-interactive-callback': () => { if (estado === 'mirando') estado = 'pidiendo'; mirando(false); },
       });
     });
   }
 
-  window.KL_CAPTCHA = async function () {
+  window.KL_CAPTCHA = async function (sitio) {
     if (!clave()) return undefined;
-    await prepara();
+    // Uno fresco y sin gastar vale esté donde esté (p. ej. el de un diálogo
+    // que se acaba de cerrar al pulsar «Seguir»).
+    if (!(listo && id !== null && Date.now() - listo.en < VALE_MS)) await prepara(sitio);
     if (listo && Date.now() - listo.en < VALE_MS) {
       const token = listo.token;
       siguiente();
@@ -276,6 +369,11 @@
       setTimeout(vigila, ESPERA_MS);
     });
   };
-  /** Al pintar un formulario que la va a pedir: se resuelve mientras se escribe. */
-  window.KL_CAPTCHA.pre = function () { prepara().catch(() => { /* al pulsar se vuelve a probar */ }); };
+  /** Al pintar un formulario que la va a pedir: se resuelve mientras se
+   * escribe. `sitio`: su hueco (si no, el primer `.kl-captcha-sitio` que se vea). */
+  window.KL_CAPTCHA.pre = function (sitio) { prepara(sitio, true).catch(() => { /* al pulsar se vuelve a probar */ }); };
+  /** Al dejar un formulario que solo se esconde (no sale de la página). */
+  window.KL_CAPTCHA.quita = quita;
+  /** El hueco para poner encima del botón principal de un formulario. */
+  window.KL_CAPTCHA.HUECO = '<div class="kl-captcha-sitio" style="position:absolute"></div>';
 })();

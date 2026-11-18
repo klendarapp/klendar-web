@@ -21,14 +21,16 @@ python tools/rutas_check.py || { echo "pre-push: hay un enlace a una pantalla qu
 # Pruebas rápidas con datos de mentira (tools/_web_con_datos.mjs; unos 8 s): distancias sin ubicación de verdad, municipios, las barras de distancia y precio,
 # «Seguir» sin esperar a la base y los mensajes de error de entrar. La de «Seguir» abre Chromium: Playwright, el de PW= o
 # el de la caché de npx; sin ninguno, se avisa y se salta.
-for c in tools/distancias_check.mjs tools/espana_check.mjs tools/auth_errores_check.cjs tools/precio_local_check.mjs tools/barras_check.mjs tools/compartir_check.mjs tools/codigos_check.mjs tools/publicar_check.mjs tools/publicar2_check.mjs tools/reservas2_check.mjs tools/contacto_check.mjs tools/guias_check.mjs tools/encargos_check.mjs tools/aperturas_check.mjs tools/preguntas_reservar_check.mjs tools/amano_check.mjs; do
+for c in tools/distancias_check.mjs tools/espana_check.mjs tools/auth_errores_check.cjs tools/precio_local_check.mjs tools/barras_check.mjs tools/compartir_check.mjs tools/codigos_check.mjs tools/publicar_check.mjs tools/publicar2_check.mjs tools/reservas2_check.mjs tools/contacto_check.mjs tools/guias_check.mjs tools/encargos_check.mjs tools/aperturas_check.mjs tools/preguntas_reservar_check.mjs tools/amano_check.mjs tools/captcha_check.mjs; do
   node "$c" >/dev/null 2>&1 || { echo "pre-push: falla $c (node $c para ver qué); no se sube."; exit 1; }
 done
 [ -n "${PW:-}" ] || PW=$(ls -d "$HOME"/AppData/Local/npm-cache/_npx/*/node_modules/playwright 2>/dev/null | head -1)
 if [ -n "$PW" ]; then
   PW="$PW" node tools/seguir_optimista_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/seguir_optimista_check.mjs; no se sube."; exit 1; }
+  # Turnstile junto a su formulario y quitado al dejarlo; el admin, tras entrar, al Resumen (Iván, 18-11).
+  PW="$PW" node tools/captcha_sitio_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/captcha_sitio_check.mjs; no se sube."; exit 1; }
 else
-  echo "pre-push: sin Playwright, me salto tools/seguir_optimista_check.mjs."
+  echo "pre-push: sin Playwright, me salto tools/seguir_optimista_check.mjs y tools/captcha_sitio_check.mjs."
 fi
 # Dev ↔ prod solo a propósito (KLENDAR_CAMBIO_ENTORNO=1), config.js y page.js al mismo Supabase y Turnstile con sus textos.
 printf '%s\n' "$refs" | python tools/entorno_check.py || { echo "pre-push: el cambio de entorno no cuadra (ver arriba); no se sube."; exit 1; }

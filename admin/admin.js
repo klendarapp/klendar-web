@@ -192,7 +192,7 @@ function toast(msg, bad = false) {
 // largo va por secciones: `{ grupo: 'Título', campos: [...] }` (con
 // `plegado: true|false` se puede plegar; `cols: 2`, en dos columnas; `nota`,
 // una línea de ayuda). Un campo con `ancho: true` ocupa la fila entera.
-function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = false, confirmWord = null }) {
+function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = false, confirmWord = null, captcha = false }) {
   return new Promise((resolve) => {
     const d = $('#modal');
     const field = (f) => {
@@ -219,6 +219,7 @@ function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = f
       ${warn ? `<div class="warn">${warn}</div>` : ''}
       ${fields.map((f) => (f.campos ? grupo(f) : field(f))).join('')}
       ${confirmWord ? `<label class="f"><span>${I18N.lang === 'en' ? `Type <b>${esc(confirmWord)}</b> to confirm` : `Escribe <b>${esc(confirmWord)}</b> para confirmar`}</span><input name="__confirm" autocomplete="off" required></label>` : ''}
+      ${captcha ? '<div class="kl-captcha-sitio" style="position:absolute"></div>' : ''}
       <div class="foot"><button type="button" class="btn ghost" data-cancel>Cancelar</button><button type="submit" class="btn ${danger ? 'bad' : 'primary'}">${esc(submit)}</button></div>
     </form>`;
     const form = $('form', d);
@@ -234,6 +235,8 @@ function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = f
       close(out);
     };
     d.showModal();
+    // Turnstile (`captcha`): se resuelve mientras se escribe, en su hueco.
+    if (captcha) window.KL_CAPTCHA?.pre?.($('.kl-captcha-sitio', d));
     const first = $('input:not([type=checkbox]),select,textarea', d); if (first) first.focus();
   });
 }
@@ -253,7 +256,7 @@ async function confirmaIdentidad() {
   try {
     for (;;) {
       const r = await modal({ title: 'Confirma que eres tú', intro: esc('Por seguridad, escribe tu contraseña actual.'),
-        fields: [{ name: 'clave', label: 'Contraseña actual', type: 'password', required: true }], submit: 'Seguir' });
+        fields: [{ name: 'clave', label: 'Contraseña actual', type: 'password', required: true }], submit: 'Seguir', captcha: true });
       if (!r) return false;
       try {
         await id.conClave(r.clave);
@@ -263,6 +266,7 @@ async function confirmaIdentidad() {
       }
     }
   } finally {
+    window.KL_CAPTCHA?.quita?.();
     await id.cerrar();
   }
 }
@@ -462,6 +466,11 @@ if (insecure) {
   throw new Error('insecure');
 }
 let ME = null;
+// Tras entrar con correo y contraseña (y el código, si toca), siempre al
+// Resumen, traiga la dirección la sección que traiga (Iván, 18-11). Con la
+// sesión ya abierta (recargar, un enlace), la sección de la dirección. En
+// sessionStorage: aguanta recargar con la pantalla del código delante.
+const LOGIN_NUEVO = 'kl_admin_login_nuevo';
 async function boot() {
   const { data: { session } } = await sb.auth.getSession();
   if (!session) return showLogin();
@@ -474,7 +483,10 @@ async function boot() {
 function showLogin() {
   paraVigilancia();
   $('#login').hidden = false; $('#app').hidden = true; $('#mfa').hidden = true; ME = null;
-  window.KL_CAPTCHA?.pre?.();  // Turnstile, por adelantado: listo al pulsar «Entrar»
+  // Un login a medias (2FA sin terminar y «Cerrar sesión»): la próxima vez, otro.
+  try { sessionStorage.removeItem(LOGIN_NUEVO); } catch { /* sin almacenamiento */ }
+  // Turnstile, por adelantado y en su hueco, encima de «Entrar»: listo al pulsar.
+  window.KL_CAPTCHA?.pre?.($('#login .kl-captcha-sitio'));
   // Si se acaba de cerrar por inactividad o caducidad (aquí o en otra pestaña
   // del admin), se dice por qué.
   const motivo = motivoCierre();
@@ -498,6 +510,8 @@ $('#doLogin').onclick = () => {
     if (error) { $('#loginErr').textContent = errAuth(error); return; }
     marcaActividad(true);
     try { localStorage.removeItem(CIERRE); } catch { /* sin almacenamiento */ }
+    // Entrada nueva: al panel por el Resumen (alPanel), con o sin 2FA en medio.
+    try { sessionStorage.setItem(LOGIN_NUEVO, '1'); } catch { /* sin almacenamiento */ }
     boot();
   });
 };
@@ -599,6 +613,9 @@ function mfaError(e) {
 }
 
 function pantallaMfa(html) {
+  // Fuera del acceso: su Turnstile no pinta nada aquí (Iván, 18-11: se
+  // quedaba abajo de la página en la del código de 6 cifras).
+  window.KL_CAPTCHA?.quita?.();
   const box = $('#mfa');
   box.innerHTML = `<a class="brand" href="/"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar <small class="muted">· admin</small></a>
     ${html}
@@ -621,7 +638,11 @@ function campoCodigo(enviar) {
 const INPUT_CODIGO = '<label class="f"><span>Código de 6 cifras</span><input id="mfaCode" class="mfa-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456"></label><div id="mfaErr" class="err" role="alert"></div>';
 
 function alPanel() {
+  window.KL_CAPTCHA?.quita?.();
   $('#mfa').hidden = true; $('#login').hidden = true; $('#app').hidden = false;
+  let nuevo = false;
+  try { nuevo = sessionStorage.getItem(LOGIN_NUEVO) === '1'; sessionStorage.removeItem(LOGIN_NUEVO); } catch { /* sin almacenamiento */ }
+  if (nuevo && currentRoute()[0] !== 'resumen') history.replaceState(null, '', `${location.pathname}${location.search}#/resumen`);
   route();
   vigila();
 }

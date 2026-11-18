@@ -40,8 +40,8 @@
     const { data } = await sb.auth.getSession();
     const email = data.session?.user?.email;
     if (!email) return null;
-    // Turnstile, por adelantado: mientras se escribe la contraseña.
-    window.KL_CAPTCHA?.pre?.();
+    // Turnstile, por adelantado: lo prepara cada diálogo al pintarse, en su
+    // hueco (`KL_CAPTCHA.HUECO`), mientras se escribe la contraseña.
     const aparte = supabase.createClient(window.KLENDAR_ENV.url, window.KLENDAR_ENV.key, {
       // Sin guardar nada ni refrescar sola: vive lo que dura el diálogo. Un
       // nombre y un cerrojo propios de cada vez: con el cerrojo del navegador

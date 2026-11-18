@@ -278,6 +278,14 @@ const errAuth = (error) => window.KL_AUTH_ERROR(error, LANG);
 async function sinRobots() {
   try { return { token: await window.KL_CAPTCHA?.() }; } catch (e) { return { error: e }; }
 }
+/** El hueco del recuadro de Turnstile, justo encima del botón principal: si
+ * Cloudflare pide marcarlo, sale ahí y no fijo abajo de la página (Iván,
+ * 18-11). Vacío no ocupa nada (`position:absolute`, ni el `gap` del
+ * formulario); al cambiar de vista se quita solo. Igual que `KL_CAPTCHA.HUECO`. */
+const HUECO_CAPTCHA = '<div class="kl-captcha-sitio" style="position:absolute"></div>';
+/** Turnstile, por adelantado (después de pintar el formulario con su hueco):
+ * al pulsar, el token suele estar ya listo. */
+const preCaptcha = (raiz) => window.KL_CAPTCHA?.pre?.(raiz?.querySelector('.kl-captcha-sitio') || undefined);
 
 // Sin red, lento, sesión caducada o servidor caído: lo mismo que la app
 // (`classifyError`), nunca el texto técnico.
@@ -1427,6 +1435,7 @@ async function confirmaIdentidad() {
           : `<p class="muted">${EN ? `Enter the 6-digit code we've sent to <b>${correo}</b>.` : `Escribe el código de 6 cifras que te hemos mandado a <b>${correo}</b>.`}</p>
             <label>${esc(t('Código'))}<input name="codigo" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>`}
           <p class="err" role="alert"></p>
+          ${HUECO_CAPTCHA}
           <div class="acciones">
             ${!conCodigo ? `<button type="button" class="pill" data-modo="codigo">${esc(t('Prefiero un código por correo'))}</button>` : ''}
             ${conCodigo && enviado ? `<button type="button" class="pill" data-reenvio>${esc(t('Enviar otro código'))}</button>` : ''}
@@ -1480,6 +1489,7 @@ async function confirmaIdentidad() {
         }
       };
       (form.querySelector('input') || form.querySelector('button[type=submit]'))?.focus();
+      if (d.open) preCaptcha(d);
     };
     document.body.appendChild(d);
     d.addEventListener('close', async () => {
@@ -1489,6 +1499,7 @@ async function confirmaIdentidad() {
     });
     pinta1();
     d.showModal();
+    preCaptcha(d);
     (d.querySelector('input') || d.querySelector('button[type=submit]'))?.focus();
   });
 }
@@ -1543,8 +1554,6 @@ RUTAS.entrar = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
   if (YO) return trasEntrar(siguiente);
   const panel = vieneDelPanel();
-  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
-  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t(panel ? 'Entra en tu panel' : 'Entra en Klendar'))}</h1>
     <p class="muted">${esc(t(panel
@@ -1555,6 +1564,7 @@ RUTAS.entrar = async (_p, params) => {
       <label>${esc(t('Contraseña'))}${campoClave('password', t('Contraseña'), 'current-password')}</label>
       <p class="derecha"><a href="/cuenta/recuperar">${esc(t('¿Has olvidado la contraseña?'))}</a></p>
       <p id="err" class="err" role="alert"></p>
+      ${HUECO_CAPTCHA}
       <button class="pill accent" type="submit">${esc(t('Entrar'))}</button>
     </form>
     <div class="alternativas">
@@ -1564,6 +1574,7 @@ RUTAS.entrar = async (_p, params) => {
     <p class="muted">${esc(t('¿No tienes cuenta?'))} <a href="${panel ? '/cuenta/registro?para=negocio' : conSiguiente('registro', siguiente)}">${esc(t('Crear cuenta'))}</a></p>
     ${panel ? '' : `<p class="muted pie-form">${esc(t('¿Llevas un negocio? Es la misma cuenta: entra y ve a tu panel desde «Mi negocio».'))}</p>`}`);
   botonGoogle(siguiente, destinoTrasEntrar() || '/cuenta');
+  preCaptcha();
 
   $('#f').onsubmit = (e) => {
     e.preventDefault();
@@ -1584,14 +1595,13 @@ RUTAS.entrar = async (_p, params) => {
 // ── Entrar con un código por correo ───────────────────────────────────────
 RUTAS['codigo-correo'] = async (_p, params) => {
   const siguiente = params.get('siguiente') || '';
-  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
-  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t('Entrar sin contraseña'))}</h1>
     <p class="muted" id="sub">${esc(t('Te mandamos un código al correo. Sin contraseñas que recordar.'))}</p>
     <form id="f1" class="formu" novalidate>
       <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="username" required></label>
       <p id="err" class="err" role="alert"></p>
+      ${HUECO_CAPTCHA}
       <button class="pill accent" type="submit">${esc(EN ? 'Email me the code' : 'Enviarme el código')}</button>
       ${legalCodigo()}
     </form>
@@ -1600,6 +1610,7 @@ RUTAS['codigo-correo'] = async (_p, params) => {
       <p class="muted">${esc(t('En ese correo también hay un botón: si lo abres en este dispositivo, entras directamente.'))}</p>
       <p class="muted">${esc(t('¿No te llega? Mira en spam o en «Promociones».'))}</p>
       <p id="err2" class="err" role="alert"></p>
+      ${HUECO_CAPTCHA}
       <button class="pill accent" type="submit">${esc(t('Entrar'))}</button>
       <div class="acciones">
         <button type="button" class="pill" id="otro">${esc(t('Enviar otro código'))}</button>
@@ -1618,6 +1629,7 @@ RUTAS['codigo-correo'] = async (_p, params) => {
     return true;
   };
   const cuentaAtras = reenvio($('#otro'), manda);
+  preCaptcha($('#f1'));
   $('#f1').onsubmit = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -1628,6 +1640,7 @@ RUTAS['codigo-correo'] = async (_p, params) => {
       if (!(await manda())) return;
       $('#f1').hidden = true;
       $('#f2').hidden = false;
+      preCaptcha($('#f2'));  // para «Enviar otro código»
       $('#sub').textContent = EN ? `We wrote to ${correo}` : `Te hemos escrito a ${correo}`;
       $('#f2').token.focus();
       cuentaAtras();
@@ -1635,6 +1648,7 @@ RUTAS['codigo-correo'] = async (_p, params) => {
   };
   $('#cambia').onclick = () => {
     $('#f2').hidden = true; $('#f1').hidden = false;
+    preCaptcha($('#f1'));
     $('#sub').textContent = t('Te mandamos un código al correo. Sin contraseñas que recordar.');
   };
   $('#f2').onsubmit = (e) => {
@@ -1664,8 +1678,6 @@ RUTAS.movil = async (_p, params) => {
   // formulario que siempre falla: mejor la pantalla de entrar.
   if (!(await proveedores()).phone) return RUTAS.entrar(_p, params);
   const PREFIJOS = ['+34', '+351', '+33', '+44', '+39', '+49'];
-  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
-  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t('Entrar con el teléfono'))}</h1>
     <p class="muted" id="sub">${esc(t('Te mandamos un código por SMS. Sin contraseñas.'))}</p>
@@ -1675,12 +1687,14 @@ RUTAS.movil = async (_p, params) => {
         <label>${esc(t('Número de teléfono'))}<input name="numero" type="tel" inputmode="tel" autocomplete="tel-national" required></label>
       </div>
       <p id="err" class="err" role="alert"></p>
+      ${HUECO_CAPTCHA}
       <button class="pill accent" type="submit">${esc(t('Enviarme el código'))}</button>
       ${legalCodigo()}
     </form>
     <form id="f2" class="formu" novalidate hidden>
       <label>${esc(t('Código'))}<input name="token" inputmode="numeric" autocomplete="one-time-code" maxlength="6" required></label>
       <p id="err2" class="err" role="alert"></p>
+      ${HUECO_CAPTCHA}
       <button class="pill accent" type="submit">${esc(t('Entrar'))}</button>
       <div class="acciones">
         <button type="button" class="pill" id="otro">${esc(t('Enviar otro código'))}</button>
@@ -1696,6 +1710,7 @@ RUTAS.movil = async (_p, params) => {
     return true;
   };
   const cuentaAtras = reenvio($('#otro'), manda);
+  preCaptcha($('#f1'));
   $('#f1').onsubmit = (e) => {
     e.preventDefault();
     const form = e.target;
@@ -1706,6 +1721,7 @@ RUTAS.movil = async (_p, params) => {
     ocupado(form.querySelector('button[type=submit]'), async () => {
       if (!(await manda())) return;
       $('#f1').hidden = true; $('#f2').hidden = false;
+      preCaptcha($('#f2'));  // para «Enviar otro código»
       $('#sub').textContent = EN ? `We sent a text to ${telefono}` : `Te hemos enviado un SMS a ${telefono}`;
       $('#f2').token.focus();
       cuentaAtras();
@@ -1713,6 +1729,7 @@ RUTAS.movil = async (_p, params) => {
   };
   $('#cambia').onclick = () => {
     $('#f2').hidden = true; $('#f1').hidden = false;
+    preCaptcha($('#f1'));
     $('#sub').textContent = t('Te mandamos un código por SMS. Sin contraseñas.');
   };
   $('#f2').onsubmit = (e) => {
@@ -1741,8 +1758,6 @@ RUTAS.registro = async (_p, params) => {
   // klendar.app/alta con la sesión ya abierta: al panel, sin pedir otra cuenta.
   if (YO && negocio) return trasEntrar(siguiente);
   const destino = negocio ? `${location.origin}/panel?alta=1` : `${location.origin}/cuenta`;
-  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
-  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t(negocio ? 'Crea tu cuenta de negocio' : 'Crea tu cuenta'))}</h1>
     <p class="muted">${esc(t(negocio
@@ -1757,12 +1772,14 @@ RUTAS.registro = async (_p, params) => {
         <small>${esc(t('Para comprobar tu edad (mínimo 14) y enseñarte lo adecuado a ella. Si un favorito tiene regalo de cumpleaños, te llega ese día.'))}</small></label>
       ${casillaTerminos({ estadisticas: true })}
       <p id="err" class="err" role="alert"></p>
+      ${HUECO_CAPTCHA}
       <button class="pill accent" type="submit">${esc(t('Crear cuenta'))}</button>
     </form>
     <div id="google" class="google-hueco"></div>
     <p class="muted">${esc(t('¿Ya tienes cuenta?'))} <a href="${conSiguiente('entrar', siguiente)}">${esc(t('Entra'))}</a></p>`);
   botonGoogle(negocio ? '' : siguiente, negocio ? '/panel?alta=1' : '/cuenta');
   activaNacimiento($('#f').elements.birth);
+  preCaptcha();
 
   $('#f').onsubmit = (e) => {
     e.preventDefault();
@@ -1826,11 +1843,13 @@ RUTAS.registro = async (_p, params) => {
             <label>${esc(t('Código de 6 cifras'))}
               <input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}"></label>
             <p id="errc" class="err" role="alert"></p>
+            ${HUECO_CAPTCHA}
             <button class="pill accent" type="submit">${esc(t('Confirmar'))}</button>
             <div class="acciones"><button type="button" class="pill" id="otro">${esc(t('Enviar otro código'))}</button></div>
           </form>
           <p class="muted">${esc(t('¿No te llega? Mira en spam o en «Promociones».'))} <a href="/cuenta/entrar">${esc(t('Ir a entrar'))}</a></p>`);
         I18N.translate(view);
+        preCaptcha();  // para «Enviar otro código»
         // «Enviar otro código» (el mismo correo, con enlace y código), con su
         // cuenta atrás de 60 s, que empieza ya: el primero acaba de salir.
         reenvio($('#otro'), async () => {
@@ -1866,16 +1885,16 @@ RUTAS.registro = async (_p, params) => {
 
 // ── Recuperar la contraseña ───────────────────────────────────────────────
 RUTAS.recuperar = async () => {
-  // Turnstile, por adelantado: al pulsar, el token suele estar ya listo.
-  window.KL_CAPTCHA?.pre?.();
   pinta(`
     <h1>${esc(t('Recuperar contraseña'))}</h1>
     <p class="muted">${esc(t('Te enviamos un enlace para crear una nueva.'))}</p>
     <form id="f" class="formu" novalidate>
       <label>${esc(t('Correo electrónico'))}<input name="email" type="email" autocomplete="username" required></label>
       <p id="err" class="err" role="alert"></p>
+      ${HUECO_CAPTCHA}
       <button class="pill accent" type="submit">${esc(t('Enviar enlace'))}</button>
     </form>`);
+  preCaptcha();
   $('#f').onsubmit = (e) => {
     e.preventDefault();
     const form = e.target;
