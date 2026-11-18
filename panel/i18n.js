@@ -1579,6 +1579,7 @@ const I18N = makeI18N({
     "Ese plan aún no se puede pagar con tarjeta. Escríbenos a info@klendar.app.": "That plan can't be paid by card yet. Write to us at info@klendar.app.",
     "Este local ya tiene el plan pagado con tarjeta.": "This venue's plan is already paid by card.",
     "Este local ya está en tu suscripción.": "This venue is already in your subscription.",
+    "Cada local tiene su propia suscripción: págalo desde «Tu plan» de ese local.": "Each venue has its own subscription: pay for it from that venue's “Your plan”.",
     "Tu plan es gratis: no tienes que pagar nada.": "Your plan is free: you don't have to pay anything.",
     "Solo el propietario del negocio puede pagar el plan.": "Only the business owner can pay for the plan.",
     "No hay ninguna suscripción con tarjeta.": "There's no card subscription.",

@@ -176,7 +176,7 @@ const RPC_ERRORS = {
   title_body_required: 'Título y texto son obligatorios.', unknown_key: 'Clave de configuración desconocida.', invalid_amount: 'Importe no válido.', invalid_period: 'El fin del periodo es anterior al inicio.',
   free_end_too_soon: 'El «Gratis de lanzamiento» se avisa con un mes: pon un fin dentro de 30 días como pronto (alargar uno ya avisado sí se puede).',
   block_from_too_soon: 'El bloqueo tiene que empezar con margen para los avisos de 7 días y 1 día: elige un día más tarde.',
-  stripe_managed: 'Este negocio paga con tarjeta (Stripe): cancela antes su suscripción en Stripe o desde su panel.', invalid_config: 'Algún ajuste del cobro no es válido (días o ids de Stripe).', invalid_tiers: 'La escalera no es válida: tramos de menor a mayor, el último sin tope.', invalid_price_id: 'Ese id de precio de Stripe no es válido (price_…).',
+  stripe_managed: 'Este negocio paga con tarjeta (Stripe): cancela antes su suscripción en Stripe o desde su panel.', invalid_config: 'Algún ajuste del cobro no es válido (días o ids de Stripe).', invalid_tiers: 'El precio no es válido.', one_price_per_location: 'Un solo precio por local: sin escalera (los descuentos, con un código en Stripe).', invalid_price_id: 'Ese id de precio de Stripe no es válido (price_…).',
   not_found: 'No encontrado.', invalid_type: 'Tipo de cuenta no válido.', invalid_birth_date: 'Esa fecha de nacimiento no es válida.', account_suspended: 'Tu cuenta está suspendida. Si crees que es un error, escríbenos a info@klendar.app.',
 };
 
@@ -3651,7 +3651,7 @@ PAGES.planes = async (v) => {
   aUrl();
   v.innerHTML = `
     <div class="page-head"><h1>Planes y pagos</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: there is a single plan with everything included, no limits and no commission per redemption: <b>Klendar</b> (<code>standard</code>, €19.90 + VAT a month or €199 + VAT a year per venue, after the 30-day free trial; prices here are before VAT) and <b>Launch, free</b> (<code>free</code>, while its province is starting up: Where to grow → “Free launch by province”). <b>Founder</b> (<code>founder</code>, €9.90) was withdrawn: it stays hidden and is not offered to anyone new. Chains pay per venue on a sliding scale: the first venue €19.90; the 2nd to the 5th, €15 each; from the 6th, €12 each (+ VAT). Apply it when you record the subscription (3 venues: €49.90 + VAT a month). Changing a plan affects the businesses that have it.</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: hay un solo plan, con todo incluido, sin límites y sin comisión por canje: <b>Klendar</b> (<code>standard</code>, 19,90 € + IVA al mes o 199 € + IVA al año por local, después de la prueba gratis de 30 días; aquí los precios van sin IVA) y <b>Gratis de lanzamiento</b> (<code>free</code>, mientras su provincia está arrancando: Dónde crecer → «Gratis de lanzamiento por provincia»). <b>Fundador</b> (<code>founder</code>, 9,90 €) se retiró: queda oculto y no se ofrece a nadie nuevo. Las cadenas pagan por local con escalera: el primer local, 19,90 €; del 2.º al 5.º, 15 € cada uno; desde el 6.º, 12 € cada uno (+ IVA). Aplícala al registrar la suscripción (3 locales: 49,90 € + IVA al mes). Cambiar un plan afecta a los negocios que lo tengan.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Subscriptions</b>: which plan each business has and when it expires. Until card payments are available, payments are made by bank transfer and recorded by hand on the business page (“Record payment”). <b>Payments</b>: history of payments with monthly totals (for the accounts). <b>Plans</b>: there is a single plan with everything included, no limits and no commission per redemption: <b>Klendar</b> (<code>standard</code>, €19.90 + VAT a month or €199 + VAT a year per venue, after the 30-day free trial; prices here are before VAT) and <b>Launch, free</b> (<code>free</code>, while its province is starting up: Where to grow → “Free launch by province”). <b>Founder</b> (<code>founder</code>, €9.90) was withdrawn: it stays hidden and is not offered to anyone new. Each venue pays its own subscription at the full price, with no sliding scale (since 18-11-2026); for chains, a discount code created by hand in Stripe. Changing a plan affects the businesses that have it.</p>` : '<p><b>Suscripciones</b>: qué plan tiene cada negocio y cuándo vence. Mientras no haya pago con tarjeta, los cobros se hacen por transferencia y se anotan a mano en la ficha del negocio («Registrar pago»). <b>Pagos</b>: histórico de cobros con totales por mes (para la contabilidad). <b>Planes</b>: hay un solo plan, con todo incluido, sin límites y sin comisión por canje: <b>Klendar</b> (<code>standard</code>, 19,90 € + IVA al mes o 199 € + IVA al año por local, después de la prueba gratis de 30 días; aquí los precios van sin IVA) y <b>Gratis de lanzamiento</b> (<code>free</code>, mientras su provincia está arrancando: Dónde crecer → «Gratis de lanzamiento por provincia»). <b>Fundador</b> (<code>founder</code>, 9,90 €) se retiró: queda oculto y no se ofrece a nadie nuevo. Cada local paga su suscripción a precio entero, sin escalera (desde el 18-11-2026); a las cadenas, un código de descuento creado a mano en Stripe. Cambiar un plan afecta a los negocios que lo tengan.</p>')}
     <div class="tabs">${[['subs', 'Suscripciones'], ['payments', 'Pagos'], ['plans', 'Planes'], ['stripe', 'Cobro con tarjeta']].map((t) => `<button type="button" data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}" aria-pressed="${tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
   let csvFn = null; let ultimos = null;
@@ -3730,14 +3730,17 @@ PAGES.planes = async (v) => {
     }
     if (tab === 'stripe') {
       // Cobro con Stripe (migración 20261216100000): ajustes, precios sin IVA
-      // con su escalera por locales y los avisos que llegan de Stripe.
+      // (un importe por local: cada local, su suscripción, desde 20261285700000)
+      // y los avisos que llegan de Stripe.
       const bd = await rpc('admin_billing');
       const cfg = bd.config || {};
       const tax = cfg.tax || {};
       const EN = I18N.lang === 'en';
       rows = bd.events; csvName = 'stripe-avisos';
       csvCols = [['received_at', 'recibido'], ['type', 'tipo'], ['result', 'resultado'], ['id', 'id']];
-      const escalera = (t) => (t || []).map((x) => `${x.up_to ? (EN ? `up to ${x.up_to}` : `hasta ${x.up_to}`) : (EN ? 'more' : 'más')}: ${fmtMoney(x.unit_cents)}`).join(' · ');
+      // Un importe por local; un precio viejo con tramos se enseña con ellos.
+      const escalera = (t) => ((t || []).length === 1 ? fmtMoney(t[0].unit_cents)
+        : (t || []).map((x) => `${x.up_to ? (EN ? `up to ${x.up_to}` : `hasta ${x.up_to}`) : (EN ? 'more' : 'más')}: ${fmtMoney(x.unit_cents)}`).join(' · '));
       const listos = bd.prices.filter((x) => x.stripe_price_id).length;
       // Por qué se bloquea (o se ha bloqueado) un negocio (`billing_block_status.kind`).
       const MOTIVO = {
@@ -3814,13 +3817,13 @@ PAGES.planes = async (v) => {
             <label class="f"><span>Id del impuesto (txr_…)</span><input name="rate" value="${esc(tax.rate_id || '')}" autocomplete="off"></label>
             <label class="f"><span>Id del impuesto no sujeto: Canarias, Ceuta y Melilla (txr_…)</span><input name="ratec" value="${esc(tax.rate_id_exempt || tax.rate_id_canarias || '')}" autocomplete="off"><small class="muted">Un tipo del 0 % que pone en la factura «Operación no sujeta al IVA». Vacío = sin impuesto.</small></label>
             <label class="f"><span>Configuración del portal (bpc_…)</span><input name="portal" value="${esc(cfg.portal_configuration || '')}" autocomplete="off"></label>
-            <label class="f" style="grid-template-columns:auto 1fr;align-items:center"><input type="checkbox" name="promo" ${cfg.allow_promotion_codes ? 'checked' : ''}><span>Admitir códigos promocionales de Stripe en el pago</span></label>
+            <p class="muted small" style="margin:0">Códigos promocionales: el pago los admite siempre. Los creas en Stripe cuando alguien lo pide (una cadena, por ejemplo): RUNBOOK de la app, §4zzd.</p>
             <div><button class="btn sm">Guardar</button></div>
           </form></div>
         <div class="card"><h2>Precios (sin IVA)</h2>${table({ cols: [
           { h: 'Plan', r: (x) => `${esc(x.plan_names?.es || x.plan)} ${x.is_offered ? '' : tag(EN ? 'not offered' : 'no se ofrece', 'dim')}` },
           { h: 'Periodo', r: (x) => esc(x.interval === 'year' ? (EN ? 'year' : 'año') : (EN ? 'month' : 'mes')) },
-          { h: 'Escalera por locales', r: (x) => esc(escalera(x.tiers)) },
+          { h: 'Precio por local', r: (x) => esc(escalera(x.tiers)) },
           { h: 'Stripe', r: (x) => (x.stripe_price_id ? `<code class="small">${esc(x.stripe_price_id)}</code>` : tag(EN ? 'no id' : 'sin id', 'warn')) },
           { h: '', r: (x) => `<button class="btn sm" data-price="${x.id}">Editar…</button>` },
         ], rows: bd.prices })}</div>
@@ -3848,7 +3851,7 @@ PAGES.planes = async (v) => {
               grace_days: Number(c.grace.value), warn_days: Number(c.warn.value),
               pause_max_days: Number(c.pmax.value), pause_min_days: Number(c.pmin.value),
               payment_methods: c.pm_sepa.checked ? ['card', 'sepa_debit'] : ['card'],
-              allow_promotion_codes: c.promo.checked, portal_configuration: c.portal.value.trim(),
+              allow_promotion_codes: true, portal_configuration: c.portal.value.trim(),
               tax: { mode: c.tax.value, rate_id: c.rate.value.trim(), rate_id_exempt: c.ratec.value.trim() },
             } });
             toast('Guardado'); load();
@@ -3858,17 +3861,14 @@ PAGES.planes = async (v) => {
       $$('[data-price]').forEach((b) => { b.onclick = () => esperando(b, async () => {
         const pr = bd.prices.find((x) => x.id === b.dataset.price);
         const r = await modal({ title: `${pr.plan_names?.es || pr.plan} · ${pr.interval === 'year' ? 'año' : 'mes'}`, intro: esc(EN
-          ? 'Prices without VAT, per venue. Format: “1:19,90; 5:15; :12” (up to 1 venue €19.90 each; up to 5, €15; more, €12). Stripe prices can’t be edited: to change an amount, clear the id, save and run tool/stripe_setup.py again.'
-          : 'Precios sin IVA, por local. Formato: «1:19,90; 5:15; :12» (hasta 1 local, 19,90 € cada uno; hasta 5, 15 €; más, 12 €). Los precios de Stripe no se editan: para cambiar un importe, vacía el id, guarda y vuelve a lanzar tool/stripe_setup.py.'), fields: [
-          { name: 'tiers', label: 'Escalera', value: (pr.tiers || []).map((t) => `${t.up_to ?? ''}:${String(t.unit_cents / 100).replace('.', ',')}`).join('; '), required: true },
+          ? 'Price without VAT, per venue (each venue pays its own subscription; no sliding scale). Stripe prices can’t be edited: to change the amount, clear the id, save and run tool/stripe_setup.py again.'
+          : 'Precio sin IVA, por local (cada local paga su suscripción; sin escalera). Los precios de Stripe no se editan: para cambiar el importe, vacía el id, guarda y vuelve a lanzar tool/stripe_setup.py.'), fields: [
+          { name: 'euros', label: 'Precio por local (€, sin IVA)', value: String((pr.tiers?.[0]?.unit_cents ?? 0) / 100).replace('.', ','), required: true },
           { name: 'pid', label: 'Id del precio en Stripe (price_…)', value: pr.stripe_price_id || '' },
           { name: 'active', label: 'Activo', type: 'checkbox', value: pr.active },
         ] });
         if (!r) return;
-        const tiers = r.tiers.split(';').map((x) => x.trim()).filter(Boolean).map((x) => {
-          const [up, euros] = x.split(':');
-          return { up_to: up.trim() === '' ? null : Number(up), unit_cents: Math.round(parseFloat(String(euros).replace(',', '.')) * 100) };
-        });
+        const tiers = [{ up_to: null, unit_cents: Math.round(parseFloat(String(r.euros).replace(',', '.')) * 100) }];
         try { await rpc('admin_upsert_billing_price', { p: { id: pr.id, tiers, stripe_price_id: r.pid.trim(), active: r.active } }); toast('Guardado'); load(); } catch (err) { toast(err.message, true); }
       }); });
       // «Desbloquear hasta…» (bloqueado) y «Aplazar hasta…» (se bloquea pronto):

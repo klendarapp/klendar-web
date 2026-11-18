@@ -100,7 +100,7 @@ const sub = (x = {}, b = {}) => ({
   ...x, billing: billing(b),
 });
 const PLANES = [{ slug: 'standard', names: NOMBRES, prices: {
-  month: { tiers: [{ up_to: 1, unit_cents: 1990 }, { up_to: 5, unit_cents: 1500 }, { up_to: null, unit_cents: 1200 }], mode: 'graduated', currency: 'eur' },
+  month: { tiers: [{ up_to: null, unit_cents: 1990 }], mode: 'graduated', currency: 'eur' },
   year: { tiers: [{ up_to: null, unit_cents: 19900 }], mode: 'graduated', currency: 'eur' },
 } }];
 const overview = (s, x = {}) => ({
