@@ -51,13 +51,13 @@ const PAGINAS = [
     /3 terdecies\. Encargos\s+Si activas Encargos, tus clientes pueden encargarte productos desde Klendar para recogerlos y pagarlos en tu local\. El encargo es un acuerdo directo entre tu negocio y el cliente\. Klendar solo transmite el encargo y sus avisos: no cobra ni recibe pagos, no es parte del contrato y no responde de la preparación, calidad, precio, entrega ni anulación\. El precio en Klendar es orientativo y el final lo fijas tú\.[^\n]+14 alérgenos[^\n]+Usarás los datos de contacto del cliente solo para gestionar ese encargo\.\s+(?:3 quaterdecies\.|4\. Prueba)/,
     /«Encargos» \(apartado 3 terdecies\)[^.]+ se aplica desde el 1 de diciembre de 2026\./,
     new RegExp(`${V}\\s+16-11-2026\\s+1-12-2026`),
-    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,2}?${ENCARGOS.es}: Apartado 3 terdecies nuevo, «Encargos»[^\\n]+Se aplica desde el 1 de diciembre de 2026`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,3}?${ENCARGOS.es}: Apartado 3 terdecies nuevo, «Encargos»[^\\n]+Se aplica desde el 1 de diciembre de 2026`),
   ], []],
   ['/en/business-terms', fechaLegal('/en/business-terms', `Last updated: ${ENCARGOS.en} · Version ${VERSION_NEGOCIOS}`), [
     /3l\. Pre-orders\s+If you turn on Pre-orders[^\n]+isn't a party to the contract[^\n]+14 allergens[^\n]+only to handle that pre-order\.\s+(?:3m\.|4\. Free trial)/,
     /“Pre-orders” \(section 3l\)[^.]+ applies from 1 December 2026\./,
     new RegExp(`${V}\\s+16 Nov 2026\\s+1 Dec 2026`),
-    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,2}?${ENCARGOS.en}: New section 3l, “Pre-orders”`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,3}?${ENCARGOS.en}: New section 3l, “Pre-orders”`),
   ], []],
 ];
 

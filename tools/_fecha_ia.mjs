@@ -81,7 +81,21 @@ export const OFERTA = fo[1] === 'None' ? null : (() => {
     en: `${Number(fo[4])} ${MESES_EN[Number(fo[3]) - 1]} ${fo[2]}`,
   };
 })();
-const NEGOCIOS = OFERTA ? { ...OFERTA } : PREGUNTAS ? { ...PREGUNTAS } : ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
+// Entidad que ya pagaba (legal_entidad.py, ENTIDAD_DESDE: solo las condiciones para negocios, apartado 3 bis, con su
+// versión; «-b» si es el mismo día que «oferta flash» → «oferta», 18-11-2026).
+const fen = fs.readFileSync(new URL('../legal_entidad.py', import.meta.url), 'utf8').match(/^ENTIDAD_DESDE = (None|'(\d{4})-(\d{2})-(\d{2})')/m);
+if (!fen) throw new Error('_fecha_ia.mjs: no encuentro ENTIDAD_DESDE en legal_entidad.py');
+export const ENTIDAD = fen[1] === 'None' ? null : (() => {
+  const iso = `${fen[2]}-${fen[3]}-${fen[4]}`;
+  const sig = (v) => (v === iso ? `${iso}-b` : `${iso}-${String.fromCharCode(v.charCodeAt(v.length - 1) + 1)}`);
+  return {
+    iso,
+    version: OFERTA && OFERTA.iso === iso ? sig(OFERTA.version) : iso,
+    es: `${Number(fen[4])} de ${MESES_ES[Number(fen[3]) - 1]} de ${fen[2]}`,
+    en: `${Number(fen[4])} ${MESES_EN[Number(fen[3]) - 1]} ${fen[2]}`,
+  };
+})();
+const NEGOCIOS = ENTIDAD ? { ...ENTIDAD } : OFERTA ? { ...OFERTA } : PREGUNTAS ? { ...PREGUNTAS } : ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
 const PRIV = OFERTA || PREGUNTAS || ENCARGOS;
 const TERM = OFERTA || ENCARGOS;
 export const POSTERIOR = {
@@ -94,7 +108,7 @@ export const POSTERIOR = {
 };
 
 // La versión de las condiciones para negocios que dice la cabecera de /negocios (la más nueva).
-export const VERSION_NEGOCIOS = OFERTA?.version || PREGUNTAS?.version || ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
+export const VERSION_NEGOCIOS = ENTIDAD?.version || OFERTA?.version || PREGUNTAS?.version || ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
 
 export function fechaLegal(ruta, cabecera) {
   const p = POSTERIOR[ruta];
