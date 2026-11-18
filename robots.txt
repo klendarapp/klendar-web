@@ -13,6 +13,24 @@ Disallow: /explorar?
 Disallow: /descubre?
 Disallow: /en/explore?
 Disallow: /en/discover?
+# Lo mismo en las guías con su zona o filtros (noindex) y lo abierto con el
+# enlace de un RRPP o desde el QR del local (privado). Las páginas buenas
+# (fichas, agenda, municipios, guías por municipio) siguen abiertas.
+Disallow: /guia/*?
+Disallow: /en/guide/*?
+Disallow: /*?rp=
+Disallow: /*&rp=
+Disallow: /*?visita=
+Disallow: /*&visita=
+# Carteles, historias, widget y QR de mesa: noindex, para imprimir o
+# compartir. Las vistas previas de WhatsApp y compañía no miran esto.
+Disallow: /cartel/
+Disallow: /en/poster/
+Disallow: /historia/
+Disallow: /en/story/
+Disallow: /widget/
+Disallow: /m/
+Disallow: /en/m/
 
 Sitemap: https://klendar.app/sitemap.xml
 Sitemap: https://klendar.app/sitemap-agenda.xml

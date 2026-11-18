@@ -75,6 +75,46 @@ el dominio y el correo siguen en IONOS. GitHub Pages quedó desactivado (su
 certificado nunca se emitió). `_redirects` manda www → apex; `_headers` añade
 cabeceras de seguridad y `noindex` en `/admin`.
 
+## Caché del borde (desde el 2026-11-18)
+
+Las páginas públicas que pintan las Functions llaman a la base en cada visita
+(Explorar y Descubre, de 8 a 15 llamadas; una ficha, de 5 a 20). Para que los
+robots no saturen prod, `functions/_middleware.js` las sirve desde la caché de
+Cloudflare (Cache API, `functions/_lib/cache.js`):
+
+- **Qué**: `/o/`, `/b/`, `/a/`, agenda, hoy, colecciones, con niños, guías,
+  Explorar, Descubre, partidos, grupos, sorteos, cartel, historia, widget,
+  `/m/` y los sitemaps (`EN_CACHE`), en los dos idiomas. Solo lo que la página
+  declara `public` con `s-maxage`.
+- **Cuánto**: fresco durante su `s-maxage` (de serie 5 min; Explorar y
+  Descubre 10; agenda y colecciones 15; las fichas de oferta, como mucho 5) y luego, mientras se
+  pinta la nueva por detrás, aún se sirve la vieja: 10 min las ofertas y los
+  sorteos, 30 Explorar, Descubre y partidos, 1 h lo demás, 1 día los sitemaps.
+  Los 404 (ids o direcciones que no existen) 2 min; los 301 públicos, 1 h. El
+  navegador recibe su `Cache-Control` de siempre.
+- **Nunca**: lo privado o `no-store`, con `Set-Cookie`, errores (5xx), 302,
+  POST; ni lo pedido con sesión (`Authorization`, `x-klendar-sesion`) o con la
+  cookie de la edad (`klendar_18`); ni Descubre, Explorar o una guía pintados
+  con la zona aproximada de la conexión de una persona en España (los robots
+  y quien no tiene zona ven «Todas las ciudades», que sí se guarda). `/cuenta`,
+  `/panel` y `/admin` ni pasan por aquí.
+- **Comprobarlo**: la cabecera `x-klendar-cache` (HIT, STALE, MISS o BYPASS):
+  `curl -sI https://klendar.app/agenda/madrid | grep -i x-klendar-cache` dos
+  veces (MISS y luego HIT; la caché es de cada centro de datos) y con
+  `-H 'Cookie: klendar_18=1'`, siempre BYPASS. Las pruebas:
+  `node tools/cache_borde_check.mjs` (va en el pre-push).
+- **Purgar**: Cloudflare → `klendar.app` → **Caching** → **Configuration** →
+  *Purge Everything* (o *Custom Purge* por dirección: la clave lleva detrás
+  `?__borde=v2`, o `&__borde=v2` si ya tenía consulta), o cambiar `VERSION` en
+  `functions/_lib/cache.js` y subir (lo guardado antes deja de valer).
+
+Además, las listas que piden casi todas las páginas (ciudades, categorías,
+colecciones, las «Populares» de «Busca tu municipio», el municipio de un
+slug) se recuerdan unos minutos en la memoria de cada copia de la Function
+(`MEMO` en `functions/_lib/page.js`; 10 min, 30 las Populares, 1 h los
+municipios). Lo que el navegador pide directamente a Supabase (la búsqueda de
+municipios mientras se escribe, «Tus amigos»…) no pasa por aquí.
+
 ## Panel de administración (`/admin`)
 
 SPA estática (`admin.html` + `admin/admin.css` + `admin/admin.js`, sin build) con

@@ -10,12 +10,13 @@
 // 3. HEAD responde como GET (sin cuerpo): las funciones solo tienen GET y los
 //    comprobadores de enlaces y algunos buscadores preguntan con HEAD.
 // 4. Las páginas públicas que se pintan al vuelo se guardan un rato en la
-//    caché de Cloudflare (ver EN_CACHE).
+//    caché de Cloudflare (ver `_lib/cache.js`).
 //
 // Lo estático que no necesita nada de esto (assets, legales, landing…) ni
 // pasa por aquí: lo saca `_routes.json` (cada paso por una Function cuenta
 // en el límite de CPU del plan gratis, 10 ms; ver RUNBOOK §3f).
 import { direccionBuena } from './_lib/direccion.js';
+import { EN_CACHE, desdeLaCache } from './_lib/cache.js';
 
 const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/i;
 
@@ -32,45 +33,8 @@ const SEGURIDAD = {
 // Páginas públicas, iguales para todo el mundo (dependen solo de la
 // dirección, nunca del idioma del navegador ni de una sesión): se guardan en
 // la caché del centro de datos de Cloudflare para que mil visitas, un bot o
-// la vista previa de WhatsApp no las vuelvan a pintar. Solo si la página se
-// declara `public` con `s-maxage`, y como mucho su `max-age` (lo que ya puede
-// tardar el navegador en ver un cambio): una publicación agotada o editada
-// no se ve más vieja que antes. Lo privado (`private, no-store`: lo abierto
-// con un enlace de RRPP, etc.) nunca entra.
-const EN_CACHE = /^\/(en\/)?(o|b|a|agenda|whats-on|hoy|today|con-ninos|kids|coleccion|collection|explorar|explore|descubre|discover|partidos|matches|grupos|groups|sorteos|giveaways|sorteo|giveaway|cartel|poster|historia|story|widget|m)(\/|$)|^\/sitemap-[a-z]+\.xml$/;
-
-/** Segundos que se puede guardar en el borde (0: no se guarda). */
-function segundosEnCache(res) {
-  if (res.status !== 200 || res.headers.has('set-cookie') || res.headers.has('vary')) return 0;
-  const cc = (res.headers.get('cache-control') || '').toLowerCase();
-  if (!/\bpublic\b/.test(cc) || /\b(private|no-store|no-cache)\b/.test(cc)) return 0;
-  const s = Number((/\bs-maxage=(\d+)/.exec(cc) || [])[1] || 0);
-  const m = Number((/(?:^|[\s,])max-age=(\d+)/.exec(cc) || [])[1] || 0);
-  return Math.min(s, m);
-}
-
-async function deLaCache(ctx, url, head) {
-  const cache = globalThis.caches?.default;
-  const clave = new Request(url.toString(), { method: 'GET' });
-  if (cache) {
-    try {
-      const guardada = await cache.match(clave);
-      if (guardada) return guardada;
-    } catch { /* sin caché: se pinta */ }
-  }
-  const res = head
-    ? await ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
-    : await ctx.next();
-  const ttl = cache ? segundosEnCache(res) : 0;
-  if (ttl > 0) {
-    const copia = new Response(res.clone().body, res);
-    copia.headers.set('cache-control', `public, max-age=${ttl}`);
-    // Lo que se guarda caduca a los `ttl` s; lo que recibe el navegador no cambia.
-    const guardar = cache.put(clave, copia).catch(() => {});
-    if (typeof ctx.waitUntil === 'function') ctx.waitUntil(guardar);
-  }
-  return res;
-}
+// la vista previa de WhatsApp no las vuelvan a pintar ni llamen a la base.
+// Qué se guarda, cuánto y qué nunca: `_lib/cache.js` (EN_CACHE).
 
 // «Tu cuenta» dejó esta dirección el 5-11 y no se redirige: la 404 normal de la
 // web. Hace falta decirlo aquí porque Pages sigue sirviendo una semana lo que se
@@ -115,7 +79,9 @@ export async function onRequest(ctx) {
   const res = DIRECCION_VIEJA.test(rutaReal(pathname))
     ? await ctx.env.ASSETS.fetch(new URL('/esta-direccion-no-existe/', ctx.request.url))
     : (head || ctx.request.method === 'GET') && EN_CACHE.test(pathname)
-      ? await deLaCache(ctx, new URL(ctx.request.url), head)
+      ? await desdeLaCache(ctx, new URL(ctx.request.url), head, () => (head
+        ? ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
+        : ctx.next()))
       : head
         ? await ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
         : await ctx.next();

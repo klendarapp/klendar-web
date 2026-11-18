@@ -195,7 +195,9 @@ export const notFound = (lang, path, kind, extra = '') => {
   </section>${extra}`;
   return html(publicPage({
     lang, path, body, title: pestana || titulo, description: texto, head: '<meta name="robots" content="noindex">',
-  }), 404, 'no-store');
+  // Sin caché en el navegador, pero 2 min en la del borde (`_lib/cache.js`):
+  // los robots que prueban ids y direcciones que no existen no llegan a la base.
+  }), 404, 'public, max-age=0, s-maxage=120');
 };
 
 /** Un negocio que administración ha marcado como cerrado de verdad

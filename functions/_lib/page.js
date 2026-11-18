@@ -55,53 +55,121 @@ export const isUuid = (s) => UUID.test(s || '');
 /** El servidor no ha contestado (caído, sin red, 500). No es que no exista. */
 export class BackendDown extends Error {}
 
+// ── Listas comunes, un rato en memoria (rendimiento, Iván, 18-11) ─────────
+// Las ciudades, las categorías, las colecciones, las «Populares» de «Busca tu
+// municipio» y el municipio de un slug las piden casi todas las páginas (y
+// alguna, dos veces): cambian poco y prod iba saturada (`search_municipalities`
+// con `p_q: ''` en cada Explorar, 209 ms de media). Se guardan en la memoria
+// de cada copia de la Function (`MEMO`, minutos), solo lo que va sin
+// cabeceras de quien mira (ni +18 ni sesión) y solo las respuestas buenas; dos
+// peticiones a la vez comparten la misma llamada. Se guarda el texto y se lee
+// cada vez: nadie puede cambiar lo guardado para la siguiente visita. Solo en
+// Cloudflare (o con `KLENDAR_MEMO=1`): las pruebas de tools/ cambian sus
+// datos de mentira entre una página y otra.
+const MIN = 60_000;
+const MEMO = {
+  public_cities: 10 * MIN,
+  public_categories: 10 * MIN,
+  public_collections: 10 * MIN,
+  resolve_municipality: 60 * MIN,
+  rated_sort_available: 10 * MIN,
+  // Solo las «Populares» (sin texto): lo que se escribe va desde el navegador.
+  search_municipalities: (args) => (args && args.p_q === '' && Object.keys(args).length === 1 ? 30 * MIN : 0),
+  'tabla:cities': 10 * MIN,
+  'tabla:categories': 10 * MIN,
+};
+const MEMO_MAX = 400;
+const memo = new Map(); // clave → { hasta, texto } o { promesa }
+const memoEncendida = () => (typeof navigator !== 'undefined' && navigator.userAgent === 'Cloudflare-Workers')
+  || typeof globalThis.caches?.default?.match === 'function'
+  || (typeof process !== 'undefined' && process?.env?.KLENDAR_MEMO === '1');
+
+/** Cuánto se puede recordar esta llamada (ms; 0: nada). */
+function msDeMemo(nombre, args, extra) {
+  if (extra && Object.keys(extra).length) return 0;
+  const m = MEMO[nombre];
+  const ms = typeof m === 'function' ? m(args) : m || 0;
+  return ms > 0 && memoEncendida() ? ms : 0;
+}
+
+/** El texto de la respuesta: de la memoria o de `pide()` (que da el texto o lanza). */
+async function conMemo(nombre, clave, ms, pide) {
+  if (!ms) return pide();
+  const k = `${CFG.url}|${nombre}|${clave}`;
+  const ahora = Date.now();
+  const g = memo.get(k);
+  if (g?.texto != null && g.hasta > ahora) return g.texto;
+  if (g?.promesa) return g.promesa;
+  const promesa = (async () => {
+    try {
+      const texto = await pide();
+      JSON.parse(texto); // lo que no se puede leer no se recuerda (lanza aquí)
+      memo.delete(k);
+      if (memo.size >= MEMO_MAX) memo.delete(memo.keys().next().value);
+      memo.set(k, { hasta: Date.now() + ms, texto });
+      return texto;
+    } catch (e) {
+      // Un fallo no se recuerda; si había algo de antes, vuelve a valer un rato.
+      if (g?.texto != null) { memo.set(k, { hasta: Date.now() + MIN, texto: g.texto }); return g.texto; }
+      memo.delete(k);
+      throw e;
+    }
+  })();
+  memo.set(k, { ...(g?.texto != null ? { texto: g.texto, hasta: 0 } : {}), promesa });
+  return promesa;
+}
+
+/** Solo para las pruebas: vacía la memoria. */
+export const olvidaMemo = () => memo.clear();
+
+async function postRpc(fn, args, extra) {
+  const ms = msDeMemo(fn, args, extra);
+  const texto = await conMemo(fn, JSON.stringify(args ?? {}), ms, async () => {
+    let r;
+    try {
+      r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
+        method: 'POST',
+        // `extra`: p. ej. «18 o más» (`x-klendar-18`, ver `cabeceraEdad`).
+        headers: { apikey: CFG.key, 'Content-Type': 'application/json', ...(extra || {}) },
+        body: JSON.stringify(args),
+      });
+    } catch (e) {
+      throw new BackendDown(`${fn}: ${e.message}`);
+    }
+    if (!r.ok) throw new BackendDown(`${fn}: ${r.status}`);
+    return r.text();
+  });
+  return JSON.parse(texto);
+}
+
 export async function rpc(fn, args, extra = null) {
-  let r;
-  try {
-    r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
-      method: 'POST',
-      // `extra`: p. ej. «18 o más» (`x-klendar-18`, ver `cabeceraEdad`).
-      headers: { apikey: CFG.key, 'Content-Type': 'application/json', ...(extra || {}) },
-      body: JSON.stringify(args),
-    });
-  } catch (e) {
-    throw new BackendDown(`${fn}: ${e.message}`);
-  }
-  if (!r.ok) throw new BackendDown(`${fn}: ${r.status}`);
-  const data = await r.json();
+  const data = await postRpc(fn, args, extra);
   return Array.isArray(data) ? data[0] || null : data;
 }
 
 /** Igual que `rpc`, pero para funciones que devuelven una lista. */
 export async function rpcAll(fn, args, extra = null) {
-  let r;
-  try {
-    r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
-      method: 'POST',
-      headers: { apikey: CFG.key, 'Content-Type': 'application/json', ...(extra || {}) },
-      body: JSON.stringify(args),
-    });
-  } catch (e) {
-    throw new BackendDown(`${fn}: ${e.message}`);
-  }
-  if (!r.ok) throw new BackendDown(`${fn}: ${r.status}`);
-  const data = await r.json();
+  const data = await postRpc(fn, args, extra);
   return Array.isArray(data) ? data : [];
 }
 
 /** Lee filas de una tabla pública (con su RLS de lectura) por REST.
  * `query` va tal cual detrás del `?`: `select=...&business_id=eq.X`. */
 export async function rows(table, query) {
-  let r;
-  try {
-    r = await fetch(`${CFG.url}/rest/v1/${table}?${query}`, {
-      headers: { apikey: CFG.key },
-    });
-  } catch (e) {
-    throw new BackendDown(`${table}: ${e.message}`);
-  }
-  if (!r.ok) throw new BackendDown(`${table}: ${r.status}`);
-  const data = await r.json();
+  const ms = msDeMemo(`tabla:${table}`, null, null);
+  const texto = await conMemo(`tabla:${table}`, query, ms, async () => {
+    let r;
+    try {
+      r = await fetch(`${CFG.url}/rest/v1/${table}?${query}`, {
+        headers: { apikey: CFG.key },
+      });
+    } catch (e) {
+      throw new BackendDown(`${table}: ${e.message}`);
+    }
+    if (!r.ok) throw new BackendDown(`${table}: ${r.status}`);
+    return r.text();
+  });
+  const data = JSON.parse(texto);
   return Array.isArray(data) ? data : [];
 }
 

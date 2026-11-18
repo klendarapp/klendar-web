@@ -18,6 +18,7 @@
 import { enlaceCuenta } from './cuenta.js';
 import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido } from './page.js';
 import KZ from '../../assets/zona.js';
+import { zonaDeConexion } from './conexion.js';
 import {
   agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, firstPhoto, historiaBoton, isVideo, kidsBase, ldScript,
   listingLd, negociosPublicos, publicPage, todayBase,
@@ -1299,25 +1300,16 @@ function conCookie(res) {
   return res;
 }
 
-/** Ubicación aproximada por la conexión (Iván, 2026-10-28; privacidad,
- * «Ubicación aproximada por la conexión», UA1): sin posición ni ciudad en la
- * dirección, la ciudad y el punto que Cloudflare deduce de la IP
- * (`request.cf`), redondeado a 0,1° (unos 10 km). Sin pedir permiso, sin
- * guardarlo (ni en la dirección, ni en el navegador, ni en la base) y la
- * página que sale con él va en caché privada. Solo en España (donde está
- * Klendar) y nunca para los robots (Google debe ver la página de siempre).
- * Sin dato, `null`: «Todas las ciudades». */
-export function zonaDeConexion(request) {
-  const cf = request?.cf;
-  if (!cf) return null;
-  const ua = request.headers?.get?.('user-agent') || '';
-  if (/bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram/i.test(ua)) return null;
-  if (String(cf.country || '').toUpperCase() !== 'ES') return null;
-  const lat = Number.parseFloat(cf.latitude);
-  const lng = Number.parseFloat(cf.longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  const r = (x) => Math.round(x * 10) / 10;
-  return { lat: r(lat), lng: r(lng) };
+/** Ubicación aproximada por la conexión: ver `_lib/conexion.js`. */
+export { zonaDeConexion };
+
+/** ¿Esta dirección de Descubre o Explorar se pinta con la zona de la
+ * conexión? (sin posición, ciudad ni «Todas las ciudades»). Lo mira también
+ * la caché del borde (`_lib/cache.js`): con zona, la página es de quien la
+ * pide y no se sirve de la caché. */
+export function dependeDeLaConexion(searchParams) {
+  const e = leeEstado(searchParams);
+  return !e.cerca && !e.city && !e.todas;
 }
 
 // La fila mide si le caben las tres preguntas enteras (como la app,
@@ -1365,8 +1357,11 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const deLaConexion = !e.cerca && !e.city && !e.todas;
   const aprox = deLaConexion ? zonaDeConexion(request) : null;
   if (aprox) { e.lat = aprox.lat; e.lng = aprox.lng; e.cerca = true; e.aprox = true; }
-  const cachePublica = (publica) => (deLaConexion || edad ? 'private, max-age=0' : publica);
-  const variaCon = (res) => { if (deLaConexion) res.headers.set('vary', 'Cookie, CF-Connecting-IP'); return res; };
+  // Sin zona de la conexión (robots, fuera de España, sin dato) sale «Todas
+  // las ciudades», igual para todos: esa sí va a la caché del borde, que no se
+  // la sirve a quien sí tiene zona (`_lib/cache.js`). Con zona, privada.
+  const cachePublica = (publica) => (aprox || edad ? 'private, max-age=0' : publica);
+  const variaCon = (res) => { if (aprox) res.headers.set('vary', 'Cookie, CF-Connecting-IP'); return res; };
   const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos, antesCierre, menuDia, comerAhora } = e;
   // Las categorías elegidas (varias, como la app). En Sitios, varias van por
   // sus ids (`public_places` y `map_places`).
@@ -1491,7 +1486,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
         : await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, ...(when ? { when } : {}) }, p_limit: 1, p_offset: 0 }, H)
           .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null);
     return new Response(JSON.stringify({ total: n }), {
-      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': cachePublica('public, max-age=60, s-maxage=120'), vary: deLaConexion ? 'Cookie, CF-Connecting-IP' : 'Cookie', 'x-robots-tag': 'noindex' },
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': cachePublica('public, max-age=60, s-maxage=120'), vary: aprox ? 'Cookie, CF-Connecting-IP' : 'Cookie', 'x-robots-tag': 'noindex' },
     });
   }
 

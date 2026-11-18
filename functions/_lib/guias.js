@@ -20,6 +20,7 @@
 // filtros, el mismo orden (lo que empieza antes, primero).
 
 import { esc, html, rpc, rpcAll } from './page.js';
+import { zonaDeConexion } from './conexion.js';
 import { BASE, breadcrumbLd, discoverBase, ldScript, publicPage } from './public.js';
 import { rejilla } from './tarjeta.js';
 import { notFound } from './views.js';
@@ -86,21 +87,6 @@ export function fechasGuia(g, lang) {
 
 const diaLargo = (d, lang) => new Intl.DateTimeFormat(lang === 'en' ? 'en-GB' : 'es-ES', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' })
   .format(new Date(`${String(d).slice(0, 10)}T12:00:00Z`));
-
-/** La zona aproximada de la conexión (Cloudflare), como Descubre
- *  (`zonaDeConexion` de explore.js; aquí aparte para no importarse en
- *  círculo). Nunca para robots ni fuera de España. */
-function zonaConexion(request) {
-  const cf = request?.cf;
-  if (!cf) return null;
-  const ua = request.headers?.get?.('user-agent') || '';
-  if (/bot|crawl|spider|slurp|preview|facebookexternalhit|whatsapp|telegram/i.test(ua)) return null;
-  if (String(cf.country || '').toUpperCase() !== 'ES') return null;
-  const lat = Number.parseFloat(cf.latitude);
-  const lng = Number.parseFloat(cf.longitude);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
-  return { lat: Math.round(lat * 10) / 10, lng: Math.round(lng * 10) / 10 };
-}
 
 const GUIA_CSS = `<style>
 .guia-cab{display:grid;gap:10px;margin:6px 0 14px}
@@ -171,7 +157,7 @@ export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
   const lng = Number.parseFloat(q.get('lng') || '');
   const km = Math.min(100, Math.max(1, Number.parseInt(q.get('km') || '', 10) || RADIO_ZONA_M / 1000));
   const puntoUrl = !muniSlug && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-  const conexion = !muniSlug && !puntoUrl ? zonaConexion(request) : null;
+  const conexion = !muniSlug && !puntoUrl ? zonaDeConexion(request) : null;
   const punto = puntoUrl ? { lat: Math.round(lat * 100) / 100, lng: Math.round(lng * 100) / 100 } : conexion;
   const radio = puntoUrl ? km * 1000 : RADIO_ZONA_M;
   let sitio = elegido?.name || null;
