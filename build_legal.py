@@ -15,6 +15,7 @@ import legal_ia
 import legal_contacto
 import legal_encargos
 import legal_preguntas
+import legal_oferta
 
 # ════════════════════════════════════════════════════════════════════════════
 # DATOS DEL TITULAR — el único sitio que se toca cuando cambia quién está
@@ -1379,6 +1380,17 @@ for _slug, _cuando, _es, _en in legal_preguntas.cambios():
     _apunta(_slug, _cuando, _es, _en, primero=True)
 VERSIONES_NEGOCIOS[:0] = [v for v in legal_preguntas.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
 
+# ════════════════════════════════════════════════════════════════════════════
+# «OFERTA FLASH» → «OFERTA» (Iván, 18-11): las frases exactas están en
+# legal_oferta.py, con la fecha del día que se publiquen (OFERTA_DESDE): su
+# línea en el historial del aviso legal, la privacidad, los términos y las
+# condiciones, «Última actualización» y una versión nueva de las condiciones
+# que se aplica 15 días después (P2B art. 3.2). Solo cambia el nombre.
+# ════════════════════════════════════════════════════════════════════════════
+for _slug, _cuando, _es, _en in legal_oferta.cambios():
+    _apunta(_slug, _cuando, _es, _en, primero=True)
+VERSIONES_NEGOCIOS[:0] = [v for v in legal_oferta.versiones_negocios() if v[0] not in {x[0] for x in VERSIONES_NEGOCIOS}]
+
 # Datos de EJEMPLO para la vista previa (--vista-previa). Claramente falsos:
 # el script se niega a publicar nada que los contenga.
 EJEMPLO_SL = dict(TITULAR_DATOS,
@@ -2718,6 +2730,8 @@ def textos(D, resaltar=False):
     legal_encargos.aplicar(ES, EN, E)
     # Preguntas al reservar (legal_preguntas.py), si tiene fecha: después de Encargos.
     legal_preguntas.aplicar(ES, EN, E)
+    # «Oferta flash» → «oferta» (legal_oferta.py), si tiene fecha: al final de todo.
+    legal_oferta.aplicar(ES, EN, E)
     return ES, EN
 
 

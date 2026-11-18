@@ -75,14 +75,14 @@ const PAGINAS = [
   ], []],
   ['/privacidad', fechaLegal('/privacidad', 'Última actualización: 12 de noviembre de 2026 · Versión 2026-09-29'), [
     /un equipo, un deportista o una competición\. Para el «Gratis de lanzamiento», la provincia del local/,
-    /Historial de cambios\s+(?:.+\n\s*){0,7}?12 de noviembre de 2026: La fila «Cuenta de negocio» ya no habla de las agendas que conectaban las entidades: «Conecta tu agenda» se ha quitado y no guardamos nada de ella\./,
+    /Historial de cambios\s+(?:.+\n\s*){0,8}?12 de noviembre de 2026: La fila «Cuenta de negocio» ya no habla de las agendas que conectaban las entidades: «Conecta tu agenda» se ha quitado y no guardamos nada de ella\./,
   ], [
     /si es una entidad y conecta su agenda/,
     /la dirección de cada calendario/,
   ], []],
   ['/en/privacy', fechaLegal('/en/privacy', 'Last updated: 12 November 2026 · Version 2026-09-29'), [
     /an athlete or a competition\. For the launch free period, the province of the venue/,
-    /Change history\s+(?:.+\n\s*){0,7}?12 November 2026: The “Business account” row no longer mentions the calendars organisations connected: “Connect your calendar” has been removed and we keep nothing from it\./,
+    /Change history\s+(?:.+\n\s*){0,8}?12 November 2026: The “Business account” row no longer mentions the calendars organisations connected: “Connect your calendar” has been removed and we keep nothing from it\./,
   ], [
     /if it is an organisation and connects its calendar/,
     /the address of each calendar/,

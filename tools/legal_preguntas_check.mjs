@@ -7,7 +7,7 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8871 PW=<ruta a playwright> node tools/legal_preguntas_check.mjs
 import { playwright, servidorSeguro } from './_supabase_simulado.mjs';
-import { PREGUNTAS } from './_fecha_ia.mjs';
+import { PREGUNTAS, fechaLegal } from './_fecha_ia.mjs';
 
 if (!PREGUNTAS) {
   console.log('PREGUNTAS_DESDE = None en legal_preguntas.py: no hay textos de preguntas al reservar que mirar.');
@@ -32,28 +32,28 @@ const cortoEn = (x) => `${x.getUTCDate()} ${MES_EN[x.getUTCMonth()].slice(0, 3)}
 const pub = new Date(Date.UTC(a, m - 1, d));
 
 const PAGINAS = [
-  ['/privacidad', `Última actualización: ${PREGUNTAS.es} · Versión 2026-09-29`, [
+  ['/privacidad', fechaLegal('/privacidad', `Última actualización: ${PREGUNTAS.es} · Versión 2026-09-29`), [
     /Preguntas al reservar\s+Si un negocio hace preguntas al reservar un evento \(por ejemplo, «¿Menú infantil\?» o «¿Talla de camiseta\?»\), guardamos tus respuestas con tu reserva\. Puedes verlas y cambiarlas mientras tu reserva siga en pie\. Si una pregunta es sobre salud \(por ejemplo, alergias o intolerancias\), solo la respondes si marcas su casilla de consentimiento; puedes retirarlo cuando quieras desde tu código y borramos esa respuesta\s+Se las enseñamos al negocio y a su equipo solo para organizar ese evento\s+Ejecución del servicio que pides \(art\. 6\.1\.b RGPD\) y, para las respuestas de salud, tu consentimiento expreso \(art\. 9\.2\.a RGPD\)\s+Las respuestas de salud las borramos al día siguiente del evento; las demás, 7 días después, o esa misma noche si anulas la reserva/,
     // Va detrás de «Encargos».
     /Encargos\s+Si haces un encargo[\s\S]+?Preguntas al reservar\s+Si un negocio hace preguntas/,
-    new RegExp(`Historial de cambios\\s+${PREGUNTAS.es}: Preguntas al reservar: fila nueva[^\\n]+consentimiento expreso \\(art\\. 9\\.2\\.a RGPD\\)`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,1}?${PREGUNTAS.es}: Preguntas al reservar: fila nueva[^\\n]+consentimiento expreso \\(art\\. 9\\.2\\.a RGPD\\)`),
   ]],
-  ['/en/privacy', `Last updated: ${PREGUNTAS.en} · Version 2026-09-29`, [
+  ['/en/privacy', fechaLegal('/en/privacy', `Last updated: ${PREGUNTAS.en} · Version 2026-09-29`), [
     /Booking questions\s+If a business asks questions when you book an event \(e\.g\. “Kids’ menu\?” or “T-shirt size\?”\), we store your answers with your booking\. You can see and change them while your booking stands\. If a question is about health \(e\.g\. allergies or intolerances\), you only answer it if you tick its consent box; you can withdraw consent at any time from your code and we delete that answer\s+We show them to the business and its team only to organise that event\s+Performance of the service you request \(Art\. 6\(1\)\(b\) GDPR\) and, for health answers, your explicit consent \(Art\. 9\(2\)\(a\) GDPR\)\s+We delete health answers the day after the event; the others 7 days after it, or the same night if you cancel/,
-    new RegExp(`Change history\\s+${PREGUNTAS.en}: Booking questions: new row[^\\n]+explicit consent \\(Art\\. 9\\(2\\)\\(a\\) GDPR\\)`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,1}?${PREGUNTAS.en}: Booking questions: new row[^\\n]+explicit consent \\(Art\\. 9\\(2\\)\\(a\\) GDPR\\)`),
   ]],
-  ['/negocios', `Última actualización: ${PREGUNTAS.es} · Versión ${PREGUNTAS.version}`, [
+  ['/negocios', fechaLegal('/negocios', `Última actualización: ${PREGUNTAS.es} · Versión ${PREGUNTAS.version}`), [
     /3 quaterdecies\. Preguntas al reservar\s+Puedes hacer las preguntas que quieras a quien reserva un evento\. Pregunta solo lo que necesites para ese evento\. Puedes preguntar por salud \(alergias, intolerancias…\) solo si lo necesitas para preparar el evento y marcando la pregunta como de salud \(Klendar la marca sola si detecta palabras de salud\): esas preguntas no pueden ser obligatorias y quien reserva solo las responde si da su consentimiento\. No pidas otras categorías especiales de datos \(religión, ideología, orientación sexual…\)\. Usa las respuestas solo para organizar ese evento: no las guardes fuera de Klendar más de lo necesario ni las uses para publicidad; las de salud, bórralas de tus copias \(también del CSV\) en cuanto pase el evento\. Eres responsable de lo que preguntas y de cómo usas las respuestas, también de las que exportas en el CSV\. Klendar puede retirar preguntas que incumplan estas normas\.\s+4\. Prueba/,
     /3 terdecies\. Encargos[\s\S]+?3 quaterdecies\. Preguntas al reservar/,
     new RegExp(`(?:«Preguntas al reservar» \\(apartado 3 quaterdecies\\)[^.]+ se aplica desde el|apartado 3 quaterdecies, «Preguntas al reservar»\\) se aplican desde el) ${esc(AP_ES)}`),
     new RegExp(`${V}\\s+${corto(pub)}\\s+${corto(aplica)}`),
-    new RegExp(`Historial de cambios\\s+${PREGUNTAS.es}: Apartado 3 quaterdecies nuevo, «Preguntas al reservar»[^\\n]+Se aplica desde el ${esc(AP_ES)}`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,1}?${PREGUNTAS.es}: Apartado 3 quaterdecies nuevo, «Preguntas al reservar»[^\\n]+Se aplica desde el ${esc(AP_ES)}`),
   ]],
-  ['/en/business-terms', `Last updated: ${PREGUNTAS.en} · Version ${PREGUNTAS.version}`, [
+  ['/en/business-terms', fechaLegal('/en/business-terms', `Last updated: ${PREGUNTAS.en} · Version ${PREGUNTAS.version}`), [
     /3m\. Booking questions\s+You may ask the questions you want to people booking an event\. Only ask what you need for that event\.[^\n]+those questions can’t be required and people booking only answer them if they give their consent\.[^\n]+Klendar may remove questions that breach these rules\.\s+4\. Free trial/,
     new RegExp(`(?:“Booking questions” \\(section 3m\\)[^.]+ applies from|section 3m, “Booking questions”\\) apply from) ${esc(AP_EN)}`),
     new RegExp(`${V}\\s+${cortoEn(pub)}\\s+${cortoEn(aplica)}`),
-    new RegExp(`Change history\\s+${PREGUNTAS.en}: New section 3m, “Booking questions”[^\\n]+It applies from ${esc(AP_EN)}`),
+    new RegExp(`Change history\\s+(?:.+\\n\\s*){0,1}?${PREGUNTAS.en}: New section 3m, “Booking questions”[^\\n]+It applies from ${esc(AP_EN)}`),
   ]],
 ];
 

@@ -68,18 +68,33 @@ export const PREGUNTAS = fq[1] === 'None' ? null : (() => {
     en: `${Number(fq[4])} ${MESES_EN[Number(fq[3]) - 1]} ${fq[2]}`,
   };
 })();
-const NEGOCIOS = PREGUNTAS ? { ...PREGUNTAS } : ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
-const PRIV = PREGUNTAS || ENCARGOS;
+// «Oferta flash» → «oferta» (legal_oferta.py, OFERTA_DESDE: el aviso legal, la privacidad, los términos y las
+// condiciones para negocios, con su versión; «-b» si es el mismo día que «Preguntas al reservar», 18-11-2026).
+const fo = fs.readFileSync(new URL('../legal_oferta.py', import.meta.url), 'utf8').match(/^OFERTA_DESDE = (None|'(\d{4})-(\d{2})-(\d{2})')/m);
+if (!fo) throw new Error('_fecha_ia.mjs: no encuentro OFERTA_DESDE en legal_oferta.py');
+export const OFERTA = fo[1] === 'None' ? null : (() => {
+  const iso = `${fo[2]}-${fo[3]}-${fo[4]}`;
+  return {
+    iso,
+    version: PREGUNTAS && PREGUNTAS.iso === iso ? `${iso}-b` : iso,
+    es: `${Number(fo[4])} de ${MESES_ES[Number(fo[3]) - 1]} de ${fo[2]}`,
+    en: `${Number(fo[4])} ${MESES_EN[Number(fo[3]) - 1]} ${fo[2]}`,
+  };
+})();
+const NEGOCIOS = OFERTA ? { ...OFERTA } : PREGUNTAS ? { ...PREGUNTAS } : ENCARGOS ? { ...ENCARGOS } : CONTACTO ? { ...CONTACTO, version: CONTACTO.iso } : null;
+const PRIV = OFERTA || PREGUNTAS || ENCARGOS;
+const TERM = OFERTA || ENCARGOS;
 export const POSTERIOR = {
   // Sin `version`: la cabecera de la privacidad dice la de los términos (VERSION), que no cambia.
   '/privacidad': PRIV ? { es: PRIV.es, en: PRIV.en } : CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
   '/en/privacy': PRIV ? { es: PRIV.es, en: PRIV.en } : CONTACTO || { es: '13 de noviembre de 2026', en: '13 November 2026' },
   ...(NEGOCIOS ? { '/negocios': NEGOCIOS, '/en/business-terms': NEGOCIOS } : {}),
-  ...(ENCARGOS ? { '/terminos': { es: ENCARGOS.es, en: ENCARGOS.en }, '/en/terms': { es: ENCARGOS.es, en: ENCARGOS.en } } : {}),
+  ...(TERM ? { '/terminos': { es: TERM.es, en: TERM.en }, '/en/terms': { es: TERM.es, en: TERM.en } } : {}),
+  ...(OFERTA ? { '/aviso-legal': { es: OFERTA.es, en: OFERTA.en }, '/en/legal-notice': { es: OFERTA.es, en: OFERTA.en } } : {}),
 };
 
 // La versión de las condiciones para negocios que dice la cabecera de /negocios (la más nueva).
-export const VERSION_NEGOCIOS = PREGUNTAS?.version || ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
+export const VERSION_NEGOCIOS = OFERTA?.version || PREGUNTAS?.version || ENCARGOS?.version || CONTACTO?.iso || IA?.iso || '2026-11-05';
 
 export function fechaLegal(ruta, cabecera) {
   const p = POSTERIOR[ruta];

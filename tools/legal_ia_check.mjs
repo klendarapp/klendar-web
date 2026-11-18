@@ -104,15 +104,15 @@ const PAGINAS = [
     /6 bis\. Herramientas con inteligencia artificial/, /Rellenar desde una foto, un enlace o un texto\. Lo que lee la IA es una propuesta que el Negocio revisa/,
     /Ayudas de IA\./, /Asistente de ayuda\. Lo que diga el asistente no cambia estas condiciones/,
     new RegExp(`Los cambios del ${ES} \\(apartados 1, 3 bis, 6 y 6 bis\\) se aplican desde el ${APLICA_ES}, también 15 días después\\.`),
-    new RegExp(`Versión\\s+Publicada\\s+Se aplica desde\\s+(?:.+\\n\\s*){0,3}?${esc(IA.iso)}`),
-    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,3}?${ES}: Verificar lo hace siempre una persona[\\s\\S]*?Se aplica desde el ${APLICA_ES}, 15 días después de publicarlo y avisarte\\.`),
+    new RegExp(`Versión\\s+Publicada\\s+Se aplica desde\\s+(?:.+\\n\\s*){0,4}?${esc(IA.iso)}`),
+    new RegExp(`Historial de cambios\\s+(?:.+\\n\\s*){0,4}?${ES}: Verificar lo hace siempre una persona[\\s\\S]*?Se aplica desde el ${APLICA_ES}, 15 días después de publicarlo y avisarte\\.`),
   ], 0],
   ['/en/business-terms', fechaLegal('/en/business-terms', `Last updated: ${IA.en} · Version ${IA.iso}`), [
     /verification is always done by a person at Klendar/,
     /There is one exception, the only thing decided without a person/,
     /6a\. Artificial intelligence tools/,
     new RegExp(`The changes of ${EN} \\(sections 1, 3a, 6 and 6a\\) apply from ${APLICA_EN}, also 15 days later\\.`),
-    new RegExp(`Version\\s+Published\\s+Applies from\\s+(?:.+\\n\\s*){0,3}?${esc(IA.iso)}`),
+    new RegExp(`Version\\s+Published\\s+Applies from\\s+(?:.+\\n\\s*){0,4}?${esc(IA.iso)}`),
   ], 0],
   ['/normas', `Última actualización: ${IA.es}`, [
     /Un moderador con IA y personas\. Si nos das permiso/,

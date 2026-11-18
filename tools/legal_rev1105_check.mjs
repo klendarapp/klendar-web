@@ -68,11 +68,11 @@ const PAGINAS = [
   ['/en/for-organisations', '', [
     /Today they don't see anything that's paid for businesses and, if paid features are ever added, they will be optional\./,
   ], [/Nor do they see anything/], []],
-  ['/aviso-legal', 'Última actualización: 4 de noviembre de 2026 · Versión 2026-09-29', [
+  ['/aviso-legal', fechaLegal('/aviso-legal', 'Última actualización: 4 de noviembre de 2026 · Versión 2026-09-29'), [
     /NIF: 79288717N/,
     /4 de noviembre de 2026: Se completan el NIF, el domicilio y el teléfono del titular\./,
   ], [/NIF\/CIF/], []],
-  ['/en/legal-notice', 'Last updated: 4 November 2026 · Version 2026-09-29', [
+  ['/en/legal-notice', fechaLegal('/en/legal-notice', 'Last updated: 4 November 2026 · Version 2026-09-29'), [
     /Tax ID: 79288717N/,
     /4 November 2026: The owner's tax ID, address and phone number are filled in\./,
   ], [], []],
