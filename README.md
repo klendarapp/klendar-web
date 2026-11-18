@@ -82,7 +82,7 @@ Las páginas públicas que pintan las Functions llaman a la base en cada visita
 robots no saturen prod, `functions/_middleware.js` las sirve desde la caché de
 Cloudflare (Cache API, `functions/_lib/cache.js`):
 
-- **Qué**: `/o/`, `/b/`, `/a/`, agenda, hoy, colecciones, con niños, guías,
+- **Qué**: `/o/`, `/b/`, `/a/`, agenda, hoy, colecciones, con niños, ofertas, provincias, guías,
   Explorar, Descubre, partidos, grupos, sorteos, cartel, historia, widget,
   `/m/` y los sitemaps (`EN_CACHE`), en los dos idiomas. Solo lo que la página
   declara `public` con `s-maxage`.
@@ -114,6 +114,42 @@ slug) se recuerdan unos minutos en la memoria de cada copia de la Function
 (`MEMO` en `functions/_lib/page.js`; 10 min, 30 las Populares, 1 h los
 municipios). Lo que el navegador pide directamente a Supabase (la búsqueda de
 municipios mientras se escribe, «Tus amigos»…) no pasa por aquí.
+
+## Buscadores: qué se indexa (desde el 2026-11-18)
+
+Para que las fichas y los planes de Málaga salgan en Google y Bing, todo lo
+de los buscadores está en `functions/_lib/seo.js` (umbrales, lo publicado por
+municipio, tipos de schema.org) y lo comprueba `node tools/seo_check.mjs` (va
+en el pre-push).
+
+- **Se indexa** (canonical, hreflang es/en/x-default y JSON-LD): las fichas de
+  negocio (`/b/<slug>`: su subtipo de `LocalBusiness` según la categoría
+  —Restaurant, BarOrPub, BeautySalon…—, dirección postal, punto, horario,
+  «€€» y la valoración si la hay), cada oferta y evento vivos (`/o/<id>`:
+  `Event` u `Offer`, con migas), y las páginas de un municipio **con
+  contenido**: hoy, la semana, con niños, cada categoría, «Ofertas en
+  <municipio>» (`/ofertas/<m>`, `/en/deals/<m>`) y la provincia
+  (`/provincia/<p>`, `/en/province/<p>`).
+- **Umbrales** (`UMBRALES` en `_lib/seo.js`): un municipio necesita 3 planes
+  vivos (sin +18 ni exclusivas) para que se indexen sus páginas; una categoría,
+  2 en ese municipio; «Ofertas», 2 ofertas; la provincia, 5 planes y algún
+  municipio indexable. Por debajo: la página se abre igual, con
+  `noindex, follow`, y no sale en el sitemap. Cambiar un umbral es cambiar ese
+  número y subir: páginas y sitemaps lo leen del mismo sitio.
+- **No se indexa nunca**: lo terminado o en pausa, lo +18, lo de un RRPP, las
+  fichas cerradas, paradas por el cobro o de revisión (`review_only`), los
+  filtros y las páginas 2 en adelante, carteles, historias, widget y QR
+  (`robots.txt`).
+- **Sitemaps** (todos en `robots.txt`): `sitemap.xml` (estático),
+  `sitemap-agenda.xml` (municipios, categorías, ofertas, provincias y
+  colecciones), `sitemap-negocios.xml`, `sitemap-planes.xml` (nuevo: cada
+  oferta y evento vivos), `sitemap-artistas.xml` y `sitemap-guias.xml`. Solo
+  llevan lo indexable y van a la caché del borde (6 h, o 1 h el de planes).
+- **La base**: `public_seo_places`, `public_sitemap_offers` y
+  `public_sitemap_businesses` (migraciones 20261285900000 y 010 de la app).
+  Sin ellas (prod antes del `db_push`), lo de antes con los mismos umbrales
+  y sin páginas de provincia.
+- **Darlo de alta en Google y Bing**: RUNBOOK de la app, §3a-quater-bis.
 
 ## Panel de administración (`/admin`)
 
