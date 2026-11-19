@@ -530,6 +530,9 @@ body.con-hoja { overflow: hidden; }
   background: var(--glass); font-weight: 700; font-size: 15px; }
 .pub .rule { font-size: 12px; color: var(--ink-2); margin: 0 0 8px; }
 .pub .info-linea { display: flex; gap: 10px; align-items: flex-start; }
+/* Zona de toque de 24 px o más sin cambiar nada de lo que se ve: en un enlace
+   en línea el relleno de arriba y abajo no mueve las líneas (a11y_check). */
+a.toque-alto { padding-block: 3px; }
 .info-linea .ic { flex: none; margin-top: 3px; color: var(--ink-2); }
 
 .neg-id { display: flex; align-items: flex-end; gap: 16px; margin: 0 0 6px; }

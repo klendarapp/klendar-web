@@ -650,7 +650,7 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
       <p class="acciones"><a class="pill escucha" href="${esc(marcas.listen_url)}" rel="nofollow noopener" target="_blank" aria-label="${esc(`${M.listenOn(escucha.nombre)} (${M.opensOutside})`)}">${KM.icono(escucha, 18)} <span>${esc(M.listenOn(escucha.nombre))}</span></a></p>` : ''}
       ${o.terms ? `<h2>${S.terms}</h2><p class="muted" data-tr="offer:${esc(o.id)}:terms">${esc(o.terms).replace(/\n/g, '<br>')}</p>` : ''}
       ${where ? `<h2>${S.where}</h2>
-      <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>
+      <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a class="toque-alto" href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>
       ${toquesContacto({ phone: o.business_phone, email: o.business_email, website: o.business_website, social: o.business_social }, lang, { lat: o.lat, lng: o.lng })}` : ''}
       ${fuenteHtml(fuente, lang)}
       <h2>${entidad ? S.org : S.biz}</h2>
@@ -1316,7 +1316,8 @@ export async function businessPage(param, lang, search = '') {
   const enlacesHtml = parado ? '' : KE.botones(enlacesNeg?.links, lang);
   const cuentaToques = !!(enlacesHtml || pdfsCarta.length || enlaceCarta);
   const galeria = (b.gallery || []).filter((u) => typeof u === 'string' && u);
-  const estrellas = (n) => `<span class="stars" aria-label="${n}/5">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
+  // role="img": sin él, el lector ignora la etiqueta y lee «estrella negra» una a una.
+  const estrellas = (n) => `<span class="stars" role="img" aria-label="${en ? `${n} out of 5 stars` : `${n} de 5 estrellas`}">${'★'.repeat(n)}<span>${'★'.repeat(5 - n)}</span></span>`;
   const since = KZ.fmt(b.member_since, tz, en ? 'en-GB' : 'es-ES', { month: 'long', year: 'numeric' });
   const maps = b.lat && !organizador ? `https://www.google.com/maps/search/?api=1&query=${b.lat},${b.lng}` : null;
   // La página de su municipio (/hoy/marbella/, /agenda/torrent-valencia/),
@@ -1586,7 +1587,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       <h2 class="side-h contacto-h">${S.contact}</h2>
       ${maps && !parado ? toquesContacto({}, lang, { lat: b.lat, lng: b.lng }) : ''}
       <div class="info">
-        ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
+        ${where ? `<div><span>${icono('lugar')}</span><span>${maps ? `<a class="toque-alto" href="${esc(maps)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></div>` : ''}
         ${b.phone ? `<div><span>${icono('telefono')}</span><span><a href="tel:${esc(b.phone)}">${esc(b.phone)}</a></span></div>` : ''}
         ${seguro(b.website) ? `<div><span>${icono('web')}</span><span><a href="${esc(seguro(b.website))}" rel="nofollow noopener" target="_blank">${esc(String(b.website).replace(/^https?:\/\//, ''))}</a></span></div>` : ''}
         ${enlaceCarta ? `<div><span>${icono('carta')}</span><span><a href="#carta">${S.menu}</a></span></div>` : ''}

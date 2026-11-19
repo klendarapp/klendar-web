@@ -31,6 +31,12 @@ if [ -n "$PW" ]; then
   PW="$PW" node tools/seguir_optimista_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/seguir_optimista_check.mjs; no se sube."; exit 1; }
   # Turnstile junto a su formulario y quitado al dejarlo; el admin, tras entrar, al Resumen (Iván, 18-11).
   PW="$PW" node tools/captcha_sitio_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/captcha_sitio_check.mjs; no se sube."; exit 1; }
+  # Accesibilidad (axe-core, foco con el teclado, reflujo a 320 px; unos 95 s): con axe-core instalado (npm install -g axe-core).
+  if [ -n "${AXE:-}" ] || [ -f "${APPDATA:-}/npm/node_modules/axe-core/axe.min.js" ]; then
+    PW="$PW" node tools/a11y_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/a11y_check.mjs (accesibilidad; node tools/a11y_check.mjs para ver qué); no se sube."; exit 1; }
+  else
+    echo "pre-push: sin axe-core (npm install -g axe-core), me salto tools/a11y_check.mjs."
+  fi
 else
   echo "pre-push: sin Playwright, me salto tools/seguir_optimista_check.mjs y tools/captcha_sitio_check.mjs."
 fi
