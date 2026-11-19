@@ -3,6 +3,8 @@
 // en claro y en oscuro, con datos de mentira (tools/_web_con_datos.mjs: no
 // sale nada a Supabase). En cada página:
 //
+// Y el admin (parte 2), con una sesión de administradora de mentira.
+//
 //   · axe-core con las reglas de WCAG 2.1 A y AA (contraste 4,5:1 y 3:1,
 //     nombres de botones, enlaces e imágenes, campos con etiqueta, `lang`,
 //     título, ARIA bien puesto, orden de encabezados…);
@@ -22,6 +24,7 @@
 //   A11Y_SOLO=/precios,/cuenta/planes     solo esas rutas
 //   A11Y_INFORME=1                        no falla: solo cuenta (diagnóstico)
 //   A11Y_VER=1                            dice qué ha visto en cada página (y una captura)
+//   A11Y_ANCHO=1280                       en el ordenador (de serie, un móvil de 390)
 //
 // Lo que sale y no se arregla sin cambiar el aspecto (colores, tamaños) va
 // en PERMITIDOS con su porqué: lo decide Iván (PROPUESTA de accesibilidad).
@@ -35,6 +38,8 @@ const { chromium } = playwright();
 const OUT = process.env.OUT || 'tools/out/a11y';
 mkdirSync(OUT, { recursive: true });
 const INFORME = process.env.A11Y_INFORME === '1';
+// A11Y_ANCHO=1280: en el ordenador (de serie, un móvil de 390).
+const VENTANA = { width: Number(process.env.A11Y_ANCHO || 390), height: 844 };
 
 function axeFuente() {
   let ruta = process.env.AXE || '';
@@ -64,6 +69,14 @@ const CON_SESION = [
   '/cuenta/notificaciones', '/cuenta/tus-datos', '/cuenta/amigos',
   '/panel#/resumen', '/panel#/publicaciones', '/panel#/ficha', '/panel#/validar', '/panel#/herramientas', '/panel#/ayuda',
 ];
+// El admin (parte 2, 19-11-2026), con una sesión de administradora de mentira:
+// cada pantalla del menú, con las listas vacías (lo que no se contesta, `[]`).
+const ADMIN = [
+  'resumen', 'semanas', 'cifras', 'negocios', 'publicaciones', 'canjes', 'usuarios', 'resenas', 'denuncias', 'duplicados',
+  'reclamaciones', 'entidades', 'inactivas', 'mensajes', 'sugerencias', 'planes', 'avisos', 'categorias', 'ciudades',
+  'colecciones', 'configuracion', 'errores', 'administradores', 'actividad', 'ayuda', 'artistas', 'condiciones', 'pedidos',
+  'crecer', 'emisiones', 'festivos', 'guias', 'medios', 'sorteos', 'traduccion', 'automatico',
+].map((r) => `/admin#/${r}`);
 const solo = (process.env.A11Y_SOLO || '').split(',').filter(Boolean);
 
 /**
@@ -260,6 +273,31 @@ async function conSesion(ctx) {
   });
 }
 
+/** La sesión de administradora (el admin guarda la suya aparte: `…-admin-auth-token`). */
+const RPC_ADMIN = {
+  is_admin: true,
+  admin_mfa_status: { required: false, enrolled: true },
+  admin_kpis: {},
+  // Las listas con páginas: vacías, con su forma (si no, «Algo ha fallado»).
+  ...Object.fromEntries(['admin_businesses_page', 'admin_offers_page', 'admin_redemptions', 'admin_users', 'admin_text_reviews',
+    'admin_reviews', 'admin_posts', 'admin_report_groups', 'admin_feedback', 'admin_subscriptions', 'admin_audit']
+    .map((fn) => [fn, { total: 0, rows: [], counts: {}, pending: 0 }])),
+};
+async function conAdmin(ctx) {
+  await ctx.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); localStorage.setItem('klendar_lang', 'es'); } catch { /* */ } }, [`sb-${REF}-admin-auth-token`, SESION]);
+  await ctx.route(`${SUPA}/**`, async (route) => {
+    const p = new URL(route.request().url()).pathname;
+    const json = (b) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(b) });
+    if (p.startsWith('/auth/v1/user')) return json(USER);
+    if (p.startsWith('/auth/v1/token')) return json(JSON.parse(SESION));
+    if (p.startsWith('/rest/v1/rpc/')) {
+      const fn = p.slice('/rest/v1/rpc/'.length);
+      if (fn in RPC_ADMIN) return json(RPC_ADMIN[fn]);
+    }
+    return route.fallback();
+  });
+}
+
 // ── La pasada ─────────────────────────────────────────────────────────────
 const web = await webConDatos({ puerto: Number(process.env.PORT || 8981) });
 const nav = await chromium.launch();
@@ -272,11 +310,12 @@ const apunta = (donde, lineas) => {
   for (const l of lineas) console.log(`  ${l}`);
 };
 try {
-  for (const [grupo, rutas, sesion] of [['sin sesión', PUBLICAS, false], ['con sesión', CON_SESION, true]]) {
+  for (const [grupo, rutas, sesion] of [['sin sesión', PUBLICAS, false], ['con sesión', CON_SESION, true], ['admin', ADMIN, 'admin']]) {
     for (const tema of ['light', 'dark']) {
-      const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, colorScheme: tema, locale: 'es-ES', timezoneId: 'Europe/Madrid', bypassCSP: true });
+      const ctx = await nav.newContext({ viewport: VENTANA, colorScheme: tema, locale: 'es-ES', timezoneId: 'Europe/Madrid', bypassCSP: true });
       await web.conDatos(ctx);
-      if (sesion) await conSesion(ctx);
+      if (sesion === 'admin') await conAdmin(ctx);
+      else if (sesion) await conSesion(ctx);
       const p = await ctx.newPage();
       const errores = [];
       p.on('pageerror', (e) => errores.push(e.message));
@@ -304,7 +343,7 @@ try {
           if (process.env.A11Y_VER === '1') {
             const t = await p.evaluate(() => ({ n: document.body.innerText.length, h: document.querySelector('h1')?.innerText.slice(0, 40) || '', url: location.pathname + location.hash }));
             console.log(`· ${ruta} → ${t.url}: ${f.paradas} paradas de Tab, ${t.n} letras, h1 «${t.h}»`);
-            await p.screenshot({ path: `${OUT}/ver-${ruta.replace(/[^a-z0-9]+/gi, '_') || 'portada'}-${sesion ? 'sesion' : 'publica'}.png` }).catch(() => {});
+            await p.screenshot({ path: `${OUT}/ver-${ruta.replace(/[^a-z0-9]+/gi, '_') || 'portada'}-${sesion === 'admin' ? 'admin' : sesion ? 'sesion' : 'publica'}.png` }).catch(() => {});
           }
           for (const s of f.sinFoco.filter((s) => !permitido(ruta, 'foco', s))) {
             cuenta.set('foco', (cuenta.get('foco') || 0) + 1);
@@ -320,9 +359,9 @@ try {
             cuenta.set('reflujo', (cuenta.get('reflujo') || 0) + 1);
             lineas.push(`reflujo: ${s}`);
           }
-          await p.setViewportSize({ width: 390, height: 844 });
+          await p.setViewportSize(VENTANA);
         }
-        if (lineas.length) await p.screenshot({ path: `${OUT}/${ruta.replace(/[^a-z0-9]+/gi, '_') || 'portada'}-${sesion ? 'sesion' : 'publica'}-${tema}.png`, fullPage: true }).catch(() => {});
+        if (lineas.length) await p.screenshot({ path: `${OUT}/${ruta.replace(/[^a-z0-9]+/gi, '_') || 'portada'}-${sesion === 'admin' ? 'admin' : sesion ? 'sesion' : 'publica'}-${tema}.png`, fullPage: true }).catch(() => {});
         apunta(donde, lineas);
       }
       if (errores.length) apunta(`errores JS · ${grupo} · ${tema}`, [...new Set(errores)]);

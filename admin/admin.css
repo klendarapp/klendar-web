@@ -580,3 +580,7 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 /* «Atascados ahora» (Cifras): cada número lleva a la lista de Negocios filtrada. */
 a.kpi { display: block; color: inherit; text-decoration: none; }
 a.kpi:hover, a.kpi:focus-visible { border-color: var(--accent-text); }
+
+/* Una tabla que se desplaza de lado se enfoca con el teclado (admin.js,
+   tablasConScroll): su foco, a la vista. */
+.tbl-wrap[tabindex="0"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }

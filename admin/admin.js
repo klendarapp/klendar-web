@@ -1066,6 +1066,29 @@ window.addEventListener('hashchange', route);
 // Los desplegables de los filtros no llevan etiqueta a la vista (la primera
 // opción dice lo que son): para los lectores de pantalla, un nombre.
 const NOMBRES_FILTRO = { status: 'Estado', plan: 'Plan', active: 'Activos o desactivados', sort: 'Orden', moderation: 'Moderación', kind: 'Tipo', type: 'Tipo', banned: 'Suspensión', rating: 'Puntuación', area: 'Área', action: 'Acción' };
+// Una tabla que se sale de ancho (en el móvil, con el zoom) se desplaza de
+// lado: con el teclado también (WCAG 2.1.1; axe «scrollable-region-focusable»).
+// Se puede enfocar, dice qué es (el título de su sección) y su foco se ve
+// (admin.css). Parte 2 de accesibilidad, 19-11-2026.
+function tablasConScroll(root = document) {
+  for (const w of root.querySelectorAll('.tbl-wrap')) {
+    const sobra = w.scrollWidth > w.clientWidth + 1 && !w.querySelector('a[href], button, input, select, textarea, [tabindex]');
+    if (sobra && !w.hasAttribute('tabindex')) {
+      w.setAttribute('tabindex', '0');
+      w.setAttribute('role', 'region');
+      const t = w.closest('section, .card')?.querySelector('h2, h3');
+      w.setAttribute('aria-label', (t?.textContent || (I18N.lang === 'en' ? 'Table' : 'Tabla')).trim());
+    } else if (!sobra && w.getAttribute('tabindex') === '0' && w.getAttribute('role') === 'region') {
+      w.removeAttribute('tabindex'); w.removeAttribute('role'); w.removeAttribute('aria-label');
+    }
+  }
+}
+{
+  let espera = 0;
+  const mira = () => { cancelAnimationFrame(espera); espera = requestAnimationFrame(() => tablasConScroll()); };
+  new MutationObserver(mira).observe(document.documentElement, { childList: true, subtree: true });
+  window.addEventListener('resize', mira);
+}
 function nombraControles(root) {
   for (const el of root.querySelectorAll('.toolbar select[id]')) {
     if (!el.hasAttribute('aria-label') && !el.closest('label') && NOMBRES_FILTRO[el.id]) el.setAttribute('aria-label', NOMBRES_FILTRO[el.id]);
