@@ -91,6 +91,9 @@ const APP_EN = {
   "La cola de hoy ha terminado": "Today's queue has finished",
   "Ahora no se apunta nadie más.": "Nobody else can join right now.",
   "Menos": "Fewer",
+  "Más": "More",
+  // A la derecha de «Tu código» en Planes cuando faltan más de 6 h (revisión 19-11).
+  "Ver": "View",
   "Espera aproximada: 1 min": "Approximate wait: 1 min",
   // «Tus datos» y «Quitar de tu lista» (2026-11-13)
   "Tus datos": "Your data",
