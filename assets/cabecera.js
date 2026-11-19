@@ -223,16 +223,30 @@
     const g = leeIdioma();
     return g && lado(g) === l ? g : l;
   }
+  // «Idioma» en el idioma en que se lee la página (en «Tu cuenta» y el
+  // panel, el elegido; en las públicas, español o inglés) y, detrás, el
+  // idioma elegido con su nombre en su idioma: «Hizkuntza: Euskara»,
+  // «Language: Français» (página inglesa), «Langue : Français» (el panel en
+  // francés). No depende del diccionario ni de en qué orden se traduzca.
+  const PALABRA_IDIOMA = {
+    es: 'Idioma', en: 'Language', ca: 'Idioma', gl: 'Idioma',
+    eu: 'Hizkuntza', fr: 'Langue ', de: 'Sprache', it: 'Lingua',
+  };
   function pintaIdioma() {
     const ahora = idiomaDePagina();
+    const dePagina = deHerramienta ? ahora : (document.documentElement.lang || 'es').slice(0, 2);
+    const palabra = PALABRA_IDIOMA[dePagina] || PALABRA_IDIOMA.es;
     document.querySelectorAll('[data-idioma] a[data-lang]').forEach((a) => {
       if (a.dataset.lang === ahora) a.setAttribute('aria-current', 'true'); else a.removeAttribute('aria-current');
     });
     document.querySelectorAll('[data-idioma-cod]').forEach((c) => { c.textContent = ahora.toUpperCase(); });
     document.querySelectorAll('summary.idioma-b').forEach((b) => {
       const nombre = document.querySelector(`[data-idioma] a[data-lang="${ahora}"]`)?.textContent || ahora;
-      b.setAttribute('aria-label', `${b.getAttribute('title') || (b.getAttribute('aria-label') || '').split(':')[0]}: ${nombre}`);
+      b.setAttribute('title', palabra.trim());
+      b.setAttribute('aria-label', `${palabra}: ${nombre}`);
     });
+    document.querySelectorAll('.idioma-menu[role="group"], .idioma-lista[role="group"]').forEach((g) => g.setAttribute('aria-label', palabra.trim()));
+    document.querySelectorAll('.idioma-lista .idioma-t').forEach((t) => { t.textContent = palabra.trim(); });
   }
   pintaIdioma();
   // La versión de esta página en el otro idioma, si existe (`hreflang`).

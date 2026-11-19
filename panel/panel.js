@@ -2639,7 +2639,7 @@ async function cifrasDialogo(o) {
     ${comparativa ? `<p style="margin:0">${esc(comparativa)}</p>` : ''}
     ${hora != null ? `<p class="muted" style="margin:0">${I18N.lang === 'en'
       ? `Your busiest time for redemptions is ${pad(hora)}:00–${pad((hora + 1) % 24)}:00.`
-      : `Donde más te canjean es entre las ${pad(hora)}:00 y las ${pad((hora + 1) % 24)}:00.`}</p>` : ''}
+      : `Cuando más te canjean es entre las ${pad(hora)}:00 y las ${pad((hora + 1) % 24)}:00.`}</p>` : ''}
     ${asis ? `<h3 style="margin:6px 0 0">Asistencia</h3>
       <div class="kpis">
         ${/* En personas, como la app: una reserva para tres son tres (antes

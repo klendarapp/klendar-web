@@ -1017,7 +1017,7 @@ KL_DIC('gl', {
   "Ideal para ir solo": "Ideal para ir só",
   "Idioma": "Idioma",
   "Idioma, notificaciones, privacidad y cuenta": "Idioma, notificacións, privacidade e conta",
-  "Idioma: Español": "Idioma: Español",
+  "Idioma: Español": "Idioma: Galego",
   "Imprimir o guardar en PDF": "Imprimir ou gardar en PDF",
   "Incluye": "Inclúe",
   "Invitaciones": "Invitacións",

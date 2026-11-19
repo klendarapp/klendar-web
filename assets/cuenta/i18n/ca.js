@@ -1017,7 +1017,7 @@ KL_DIC('ca', {
   "Ideal para ir solo": "Ideal per anar-hi sol",
   "Idioma": "Idioma",
   "Idioma, notificaciones, privacidad y cuenta": "Idioma, notificacions, privadesa i compte",
-  "Idioma: Español": "Idioma: Español",
+  "Idioma: Español": "Idioma: Català",
   "Imprimir o guardar en PDF": "Imprimeix o desa en PDF",
   "Incluye": "Inclou",
   "Invitaciones": "Invitacions",
