@@ -34,11 +34,18 @@ export const RESPALDO = {
   negocios: ['/explorar', '/en/explore'],
 };
 
+/** Lo que cabe en un sitemap: 50 000 <url> (sitemaps.org; con más, Google y
+ * Bing lo rechazan entero). Cada elemento de `urls` es un par de urlPar (la
+ * española y la inglesa), así que caben 25 000. Hoy ninguno se acerca (el
+ * mayor, planes y negocios, se queda en 20 000 pares); si alguno llega,
+ * partirlo con un índice de sitemaps en vez de subir esto. */
+export const TOPE_PARES = 25000;
+
 /** El sitemap entero; sin nada, el respaldo ([es, en]) para que no esté vacío. */
 export const urlset = (urls, cache, respaldo = RESPALDO.agenda) => new Response([
   '<?xml version="1.0" encoding="UTF-8"?>',
   '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">',
-  ...(urls.length ? urls : [urlPar(`${BASE}${respaldo[0]}`, `${BASE}${respaldo[1]}`, { freq: 'daily', prio: '0.5' })]),
+  ...(urls.length ? urls.slice(0, TOPE_PARES) : [urlPar(`${BASE}${respaldo[0]}`, `${BASE}${respaldo[1]}`, { freq: 'daily', prio: '0.5' })]),
   '</urlset>',
   '',
 ].join(NL), { headers: { ...CABECERA, 'cache-control': cache } });

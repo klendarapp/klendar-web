@@ -3,9 +3,12 @@
 // (tools/_web_con_datos.mjs; sin red ni Supabase):
 //
 //  1. Cada dirección de cada sitemap (agenda, negocios, planes, guías,
-//     artistas y el estático) se abre con 200 y SE PUEDE INDEXAR: sin noindex
-//     ni en la página ni en la cabecera, con su canonical (la misma
-//     dirección) y hreflang es/en/x-default de ida y vuelta.
+//     artistas y el estático) tiene su pareja en el otro idioma como <url>
+//     propia (lo que pide Bing y recomienda Google), con el mismo trío de
+//     hreflang es/en/x-default y la misma fecha; las dos se abren con 200 y SE
+//     PUEDEN INDEXAR: sin noindex ni en la página ni en la cabecera, con
+//     canonical a sí mismas y el mismo hreflang que el sitemap. Y ninguno pasa
+//     de 50 000 URL ni de 50 MB.
 //  2. Sus datos estructurados (JSON-LD) se leen y cuadran con schema.org: tipos
 //     conocidos (los de LocalBusiness por categoría de _lib/seo.js), lo que
 //     Google pide de cada uno (Event: nombre, fecha, sitio con dirección;
@@ -138,25 +141,56 @@ async function pagina(web, ruta) {
 }
 const noindex = (p) => /noindex/.test(p.robots) || /noindex/.test(p.cabecera);
 
-async function locsDe(web, ruta) {
+// Lo que cabe en un sitemap (sitemaps.org): 50 000 direcciones y 50 MB sin comprimir.
+const TOPE_URLS = 50000;
+const TOPE_BYTES = 50 * 1024 * 1024;
+
+/** Las entradas de un sitemap: cada <url> con su <loc> y su trío de hreflang. */
+async function entradasDe(web, ruta) {
   const r = await fetch(web.BASE + ruta);
   const t = await r.text();
   ok(r.status === 200 && t.startsWith('<?xml') && t.includes('<urlset'), `${ruta}: XML con su urlset`);
   ok((r.headers.get('cache-control') || '').includes(ruta === '/sitemap.xml' ? '' : 's-maxage'), `${ruta}: con s-maxage (caché del borde)`);
-  return [...t.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1].replace(/&amp;/g, '&'));
+  const des = (x) => (x || '').replace(/&amp;/g, '&');
+  const alt = (b, lang) => des((new RegExp(`<xhtml:link rel="alternate" hreflang="${lang}" href="([^"]+)"`).exec(b) || [])[1]);
+  const entradas = [...t.matchAll(/<url>([\s\S]*?)<\/url>/g)].map(([, b]) => ({
+    loc: des((/<loc>([^<]+)<\/loc>/.exec(b) || [])[1]),
+    lastmod: (/<lastmod>([^<]+)<\/lastmod>/.exec(b) || [])[1] || null,
+    es: alt(b, 'es'), en: alt(b, 'en'), xd: alt(b, 'x-default'),
+  }));
+  ok(entradas.length <= TOPE_URLS && Buffer.byteLength(t) <= TOPE_BYTES, `${ruta}: dentro de 50 000 URL y 50 MB (${entradas.length})`);
+  return entradas;
 }
 
-const SITEMAPS = ['/sitemap-agenda.xml', '/sitemap-negocios.xml', '/sitemap-planes.xml', '/sitemap-guias.xml', '/sitemap-artistas.xml'];
+const SITEMAPS = ['/sitemap.xml', '/sitemap-agenda.xml', '/sitemap-negocios.xml', '/sitemap-planes.xml', '/sitemap-guias.xml', '/sitemap-artistas.xml'];
 
-/** Cada dirección de los sitemaps se puede indexar y sus datos estructurados cuadran. */
+/** Cada dirección de los sitemaps tiene su pareja en el otro idioma (su propio
+ * <url>, con el mismo trío es/en/x-default y la misma fecha), las dos se
+ * abren con 200, se pueden indexar, llevan canonical a sí mismas y el mismo
+ * hreflang que el sitemap; y sus datos estructurados cuadran. */
 async function revisaSitemaps(web, etiqueta) {
   const todas = [];
-  for (const s of SITEMAPS) todas.push(...(await locsDe(web, s)).map((u) => [s, u]));
-  // El estático: solo que no lleve direcciones que se pintan al vuelo con noindex.
-  const estaticas = await locsDe(web, '/sitemap.xml');
-  for (const u of estaticas.filter((x) => /\/(explorar|descubre|agenda|hoy|partidos|grupos|sorteos)(\/|$)/.test(new URL(x).pathname))) todas.push(['/sitemap.xml', u]);
+  for (const s of SITEMAPS) {
+    const entradas = await entradasDe(web, s);
+    const porLoc = new Map(entradas.map((e) => [e.loc, e]));
+    ok(porLoc.size === entradas.length, `${etiqueta} ${s}: sin direcciones repetidas`);
+    let es = 0; let en = 0;
+    for (const e of entradas) {
+      const ruta = new URL(e.loc).pathname;
+      const espanola = e.loc === e.es;
+      if (espanola) es += 1; else en += 1;
+      ok(e.es && e.en && e.xd === e.es && (espanola || e.loc === e.en), `${etiqueta} ${s}: ${ruta} con hreflang es/en/x-default y él entre ellos`);
+      ok(espanola ? !/^\/en(\/|$)/.test(ruta) : /^\/en(\/|$)/.test(ruta), `${etiqueta} ${s}: ${ruta} en su idioma`);
+      const pareja = porLoc.get(espanola ? e.en : e.es);
+      ok(pareja && pareja.es === e.es && pareja.en === e.en && pareja.xd === e.xd && pareja.lastmod === e.lastmod,
+        `${etiqueta} ${s}: ${ruta} tiene su pareja en el otro idioma con el mismo trío (${espanola ? e.en : e.es})`);
+      todas.push([s, e]);
+    }
+    ok(es === en, `${etiqueta} ${s}: tantas en español como en inglés (${es}/${en})`);
+  }
   ok(todas.length > 10, `${etiqueta}: los sitemaps traen direcciones (${todas.length})`);
-  for (const [s, u] of todas) {
+  for (const [s, e] of todas) {
+    const u = e.loc;
     const ruta = new URL(u).pathname;
     const p = await pagina(web, ruta);
     ok(p.status === 200, `${etiqueta} ${s}: ${ruta} da ${p.status}`);
@@ -167,17 +201,13 @@ async function revisaSitemaps(web, etiqueta) {
     const es = enlace(p.t, null, 'es');
     const en = enlace(p.t, null, 'en');
     const xd = enlace(p.t, null, 'x-default');
-    ok(es && en && xd === es && (u === es || u === en), `${etiqueta} ${ruta}: hreflang es/en/x-default (${es} · ${en})`);
-    if (/\/sitemap-/.test(s) && u === es && en) {
-      const otra = await pagina(web, new URL(en).pathname);
-      ok(enlace(otra.t, null, 'es') === es && enlace(otra.t, 'canonical') === en && !noindex(otra), `${etiqueta} ${ruta}: la inglesa vuelve a la española y se indexa`);
-    }
+    ok(es === e.es && en === e.en && xd === e.xd, `${etiqueta} ${ruta}: el hreflang de la página es el del sitemap (${es} · ${en} · ${xd})`);
     const ld = ldDe(p.t);
     if (/^\/(en\/)?(o|b)\//.test(ruta)) ok(ld.length > 0, `${etiqueta} ${ruta}: con datos estructurados`);
     const mal = revisaLd(ld);
     ok(!mal.length, `${etiqueta} ${ruta}: JSON-LD ${mal.join('; ')}`);
   }
-  return todas.map(([, u]) => new URL(u).pathname);
+  return todas.map(([, e]) => new URL(e.loc).pathname);
 }
 
 // ── 1–3. Con las funciones nuevas ───────────────────────────────────────────
@@ -243,7 +273,7 @@ try {
 }
 
 // ── 5. Caché del borde y robots.txt ─────────────────────────────────────────
-for (const r of ['/ofertas/malaga', '/en/deals/malaga', '/provincia/malaga', '/en/province/malaga', ...SITEMAPS]) {
+for (const r of ['/ofertas/malaga', '/en/deals/malaga', '/provincia/malaga', '/en/province/malaga', ...SITEMAPS.filter((s) => s !== '/sitemap.xml')]) {
   ok(EN_CACHE.test(r), `${r}: en la caché del borde`);
 }
 const robots = readFileSync(new URL('../robots.txt', import.meta.url), 'utf8');
