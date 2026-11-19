@@ -1,7 +1,8 @@
 // El filtro de fotos y vídeos en la web, con Supabase contestado aquí (no toca dev
 // ni prod): la cola del admin (aprobar en un toque, rechazar en dos, con el motivo),
 // «Límites gratis» y «Pendiente de ti» en el Resumen, «Lo estamos revisando» en el
-// panel y en «Tu cuenta» (en francés también) y los fotogramas antes que el vídeo.
+// panel y en «Tu cuenta» (en francés también) y los fotogramas antes que el vídeo
+// (sueltos y desde el editor de publicaciones del panel).
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8896 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8896 PW=<ruta a playwright> OUT=<carpeta> node tools/filtro_medios_check.mjs
@@ -258,6 +259,47 @@ for (const [lang, titulo, cuerpo, fuera] of [
   ok(r.apagado === 0 && !r.hechos.some((h) => h[0] === 'no'), 'filtro apagado: no se sacan fotogramas');
   ok(r.n >= 1 && r.hechos.every((h, i) => h[0] === `neg/abc-frame${i + 1}.jpg` && h[1] === 'image/jpeg'), 'filtro encendido: JPEG con el nombre que espera la base', JSON.stringify(r));
   void estado;
+  await ctx.close();
+}
+
+{
+  // El panel de verdad (publicación nueva → «Añadir foto o vídeo»): los fotogramas de
+  // KFotogramas suben ANTES que el vídeo, con su misma base (FILTRO_MEDIOS §4).
+  const { ctx, page, estado, errores } = await abre(nav, {});
+  await page.goto(`${BASE}/panel#/publicaciones/nueva-flash`);
+  await page.waitForSelector('#photos input[type=file]', { state: 'attached', timeout: 15000 }).catch(() => {});
+  const listo = await page.evaluate(async () => {
+    const input = document.querySelector('#photos input[type=file]');
+    if (!input) return 'sin el botón de añadir';
+    const lienzo = document.createElement('canvas');
+    lienzo.width = 64; lienzo.height = 48;
+    const g = lienzo.getContext('2d');
+    g.fillRect(0, 0, 64, 48);
+    const grab = new MediaRecorder(lienzo.captureStream(10), { mimeType: 'video/webm' });
+    const trozos = [];
+    grab.ondataavailable = (e) => trozos.push(e.data);
+    const fin = new Promise((ok) => { grab.onstop = ok; });
+    grab.start();
+    const pinta = setInterval(() => { g.fillStyle = `hsl(${Math.random() * 360} 80% 50%)`; g.fillRect(0, 0, 64, 48); }, 50);
+    await new Promise((ok) => setTimeout(ok, 1500));
+    grab.stop(); clearInterval(pinta); await fin;
+    const dt = new DataTransfer();
+    dt.items.add(new File(trozos, 'clip.webm', { type: 'video/webm' }));
+    input.files = dt.files;
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    return 'ok';
+  });
+  await page.waitForFunction(() => document.querySelectorAll('#photos video, #photos [data-i]').length > 0, null, { timeout: 30000 }).catch(() => {});
+  await page.waitForTimeout(500);
+  const subidas = estado.subidas.filter((x) => !x.includes('-thumb.'));
+  const video = subidas.find((x) => /\.mp4$/.test(x));
+  const base = video ? video.replace(/\.mp4$/, '') : '';
+  const fotos = subidas.filter((x) => /-frame\d+\.jpg$/.test(x));
+  ok(listo === 'ok' && !!video, 'panel: el vídeo de la publicación se sube', `${listo} ${JSON.stringify(estado.subidas)}`);
+  ok(fotos.length >= 1 && fotos.every((x, i) => x === `${base}-frame${i + 1}.jpg`), 'panel: sus fotogramas, con su misma base (<id>-frameN.jpg)', JSON.stringify(subidas));
+  ok(video && subidas.indexOf(video) > Math.max(...fotos.map((x) => subidas.indexOf(x))), 'panel: los fotogramas, antes que el vídeo', JSON.stringify(subidas));
+  ok(estado.rpc.some((r) => r.fn === 'media_filter_on'), 'panel: pregunta si el filtro está encendido');
+  ok(!errores.length, 'panel (vídeo): sin errores de JavaScript', errores.join(' | '));
   await ctx.close();
 }
 
