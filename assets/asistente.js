@@ -142,7 +142,7 @@
  "gl": {
   "close": "Pechar",
   "title": "Asistente de axuda",
-  "entry": "Pregúntalle ao asistente",
+  "entry": "Preguntarlle ao asistente",
   "entryHint": "Unha IA que responde co publicado na Axuda e nas Normas",
   "introTitle": "Antes de comezar: isto é unha IA",
   "introBody": "Este asistente é unha intelixencia artificial, non unha persoa. É Claude, de Anthropic, unha empresa dos Estados Unidos. Responde só co publicado na Axuda e nas Normas de Klendar, e pode equivocarse. O que di non obriga a Klendar: o que vale é o publicado e o que che contestemos por correo.",
