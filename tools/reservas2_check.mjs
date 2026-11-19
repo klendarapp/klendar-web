@@ -94,7 +94,7 @@ const dos = [{ id: 'e1', title: 'Concierto', event_at: '2026-11-20T20:00:00Z', r
 // 3, 4 y 5: Asistentes.
 const asis = panel.slice(panel.indexOf('PAGES.asistentes = async'), panel.indexOf('// ── Tarjetas de sellos'));
 ok('3. «No vino» con el evento pasado', asis.includes("const terminado = resumen?.ended === true;")
-  && asis.includes("${terminado ? 'No vino' : 'Caducada'}") && asis.includes("expired: terminado ? 'no vino' : 'caducada'"));
+  && asis.includes("${terminado ? 'No vino' : 'Caducada'}") && asis.includes("expired: terminado ? 'No vino' : 'Caducada'"));
 ok('4. «Dar entrada» en tinta', asis.includes('<button class="btn sm tinta" data-code=') && !asis.includes('<button class="btn sm" data-code='));
 ok('5. la lista de espera: cuántos y, si llegan, los nombres', asis.includes('const enEspera = Number(resumen?.waiting || 0) || 0;')
   && asis.includes('Array.isArray(resumen?.waitlist) ? resumen.waitlist : null') && asis.includes('${esperaHtml}'));
