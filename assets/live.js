@@ -76,7 +76,7 @@
   });
   let tarjetaJs = null;
   const conArte = () => tarjetaJs || (tarjetaJs = Promise.all([
-    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=20261028rp' }),
+    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=20261119a11y2' }),
     globalThis.KlendarTarjeta ? null : cargar('script', { src: '/assets/tarjeta.js?v=20261028rp' }),
   ]).then(() => globalThis.KlendarTarjeta || null));
 
@@ -149,7 +149,7 @@
       if (ciudades.length > 1) {
         // Como una píldora (el selector del sistema medía 20 px de alto y
         // salía en claro también en oscuro); 44 px para el dedo.
-        donde.innerHTML = `<select id="liveSelect" aria-label="${en ? 'City' : 'Ciudad'}" style="font:700 15px/1.2 var(--display);color:var(--ink);background-color:var(--elevated);border:1px solid var(--glass-border);border-radius:999px;padding:0 12px;min-height:44px;margin-left:6px;vertical-align:middle;cursor:pointer;color-scheme:light dark;letter-spacing:0">`
+        donde.innerHTML = `<select id="liveSelect" aria-label="${en ? 'City' : 'Ciudad'}" style="font:700 15px/1.2 var(--display);color:var(--ink);background-color:var(--elevated);border:1px solid var(--field-border);border-radius:999px;padding:0 12px;min-height:44px;margin-left:6px;vertical-align:middle;cursor:pointer;color-scheme:light dark;letter-spacing:0">`
           + ciudades.map((c) => `<option value="${esc(c.slug || c.city)}">${esc(c.city)}</option>`).join('')
           + '</select>';
         document.getElementById('liveSelect').onchange = (e) => pintar(e.target.value);

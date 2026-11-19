@@ -237,8 +237,8 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261112movil">
-<link rel="stylesheet" href="/assets/public.css?v=20261119a11y">
+<link rel="stylesheet" href="/assets/site.css?v=20261119a11y2">
+<link rel="stylesheet" href="/assets/public.css?v=20261119a11y2">
 {extra}
 </head>
 <body>
@@ -260,7 +260,7 @@ ERRORES = '<script src="/assets/errores.js?v=20261112cadena" async></script>'
 LIVE_SCRIPTS = (
     '<script src="/config.js?v=4"></script>'
     '<script src="/assets/zona.js?v=2" defer></script>'
-    '<script src="/assets/live.js?v=20261111sinbarra" defer></script>'
+    '<script src="/assets/live.js?v=20261119a11y2" defer></script>'
 )
 
 

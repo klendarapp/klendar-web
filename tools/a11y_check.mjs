@@ -10,6 +10,8 @@
 //     verse (contorno, sombra, subrayado o un cambio de fondo o de borde);
 //   · lo que se toca con el ratón y no con el teclado (cursor de mano en algo
 //     que no es enlace, botón ni campo y no tiene tabindex);
+//   · los bordes de los campos, 3:1 con el fondo (WCAG 1.4.11; axe no los
+//     mide; parte 2, 19-11-2026);
 //   · reflujo: a 320 px de ancho (lo mismo que 1280 con el zoom al 400 %) no
 //     hay scroll horizontal. El 200 % (640 px) y la letra grande ya los mira
 //     tools/barrido_check.mjs.
@@ -68,15 +70,64 @@ const solo = (process.env.A11Y_SOLO || '').split(',').filter(Boolean);
  * Lo medido que no se arregla sin cambiar el aspecto: [ruta (prefijo o '*'),
  * regla de axe o 'foco'/'teclado'/'reflujo', selector (RegExp), porqué].
  */
-const PERMITIDOS = [
-  ['/explorar', 'color-contrast', /\.pasado\.cal-dia/,
-    'Los días que ya han pasado en el calendario de Explorar: no se pueden elegir (aria-hidden) y WCAG 1.4.3 no pide contraste a lo inactivo. '
-    + 'Más oscuros se confundirían con los que sí se eligen; en PROPUESTA.md por si Iván los quiere algo más marcados.'],
-];
+// Los días pasados del calendario de Explorar ya pasan (parte 2, 19-11: gris
+// secundario entero, 5,9:1 y 7,1:1); antes estaban aquí.
+const PERMITIDOS = [];
 const permitido = (ruta, regla, objetivo) =>
   PERMITIDOS.some(([r, g, re]) => (r === '*' || ruta.startsWith(r)) && g === regla && re.test(objetivo));
 
 // ── Lo que se mira dentro de la página ────────────────────────────────────
+/**
+ * Bordes de los campos (parte 2, 19-11-2026): axe no los mide. WCAG 1.4.11
+ * pide 3:1 entre el borde de un campo y el fondo de alrededor (con
+ * --glass-border, 1,2:1 en claro y 1,4:1 en oscuro; ahora --field-border). Se
+ * mezcla el color del borde (con su transparencia) sobre el primer fondo
+ * opaco de los de fuera.
+ */
+function bordes() {
+  const rgba = (c) => {
+    const m = c.match(/rgba?\(([^)]+)\)/);
+    if (!m) return null;
+    const [r, g, b, a = 1] = m[1].split(/[ ,/]+/).filter(Boolean).map(Number);
+    return [r, g, b, a];
+  };
+  const mezcla = (f, b) => [0, 1, 2].map((i) => f[i] * f[3] + b[i] * (1 - f[3])).concat(1);
+  const lum = (c) => {
+    const l = c.slice(0, 3).map((v) => { const s = v / 255; return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4; });
+    return 0.2126 * l[0] + 0.7152 * l[1] + 0.0722 * l[2];
+  };
+  const contraste = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+  const fondoDe = (el) => {
+    const capas = [];
+    for (let x = el.parentElement; x; x = x.parentElement) {
+      const c = rgba(getComputedStyle(x).backgroundColor);
+      if (c && c[3] > 0) { capas.push(c); if (c[3] >= 1) break; }
+    }
+    let fondo = rgba(getComputedStyle(document.body).backgroundColor) || [255, 255, 255, 1];
+    for (const c of capas.reverse()) fondo = mezcla(c, fondo);
+    return fondo;
+  };
+  const sel = 'input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=hidden])'
+    + ':not([type=color]):not([type=submit]):not([type=button]), select, textarea, .buscador-campo, .calc-campo';
+  const malos = [];
+  for (const el of document.querySelectorAll(sel)) {
+    const r = el.getBoundingClientRect();
+    if (r.width < 8 || r.height < 8) continue;
+    const cs = getComputedStyle(el);
+    if (cs.visibility === 'hidden' || cs.display === 'none' || el.closest('[hidden],[aria-hidden=true]')) continue;
+    if (cs.borderTopStyle === 'none' || parseFloat(cs.borderTopWidth) < 0.5) continue;
+    const borde = rgba(cs.borderTopColor);
+    if (!borde || borde[3] === 0) continue;
+    const fondo = fondoDe(el);
+    const c = contraste(mezcla(borde, fondo), fondo);
+    if (c < 2.95) {
+      const id = el.id ? `#${el.id}` : (el.className && typeof el.className === 'string' ? `.${el.className.trim().split(/\s+/).join('.')}` : '');
+      malos.push(`${el.tagName.toLowerCase()}${id} ${c.toFixed(2)}:1`);
+    }
+  }
+  return [...new Set(malos)];
+}
+
 async function axe(p) {
   await p.addScriptTag({ content: AXE });
   return p.evaluate(async () => {
@@ -242,6 +293,10 @@ try {
           lineas.push(`axe ${v.regla} (${v.impacto}): ${v.ayuda}`);
           for (const n of nodos.slice(0, 8)) lineas.push(`    ${n.sel}  ${n.por}  ${n.html}`);
           if (nodos.length > 8) lineas.push(`    … y ${nodos.length - 8} más`);
+        }
+        for (const s of (await p.evaluate(bordes)).filter((s) => !permitido(ruta, 'bordes', s))) {
+          cuenta.set('bordes', (cuenta.get('bordes') || 0) + 1);
+          lineas.push(`borde de campo por debajo de 3:1: ${s}`);
         }
         // El teclado y el foco, solo en claro (no dependen del tema).
         if (tema === 'light') {

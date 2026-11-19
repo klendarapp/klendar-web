@@ -82,7 +82,7 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 pre { white-space: pre-wrap; font-size: .75rem; background: var(--glass); border-radius: 12px; padding: 10px 12px; margin: 0; max-height: 240px; overflow: auto; }
 
 /* Controles */
-input, select, textarea { font: inherit; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); min-width: 0; }
+input, select, textarea { font: inherit; padding: 9px 12px; border-radius: 12px; border: 1px solid var(--field-border); background: var(--elevated); color: var(--ink); min-width: 0; }
 input:focus, select:focus, textarea:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 textarea { min-height: 90px; resize: vertical; }
 label.f { display: grid; align-content: start; gap: 5px; font-size: .8125rem; font-weight: 600; color: var(--ink-2); }

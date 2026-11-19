@@ -82,7 +82,7 @@ main.pub { padding: 34px 20px 72px; }
 /* ── Explorar: buscador, filtros y paginación ─────────────────────────── */
 .finder { display: flex; gap: 8px; margin: 18px 0 6px; flex-wrap: wrap; }
 .finder input[type=search] { flex: 1 1 160px; min-width: 0; padding: 12px 16px; border-radius: 999px;
-  border: 1px solid var(--glass-border); background: var(--glass); color: inherit; font: inherit; }
+  border: 1px solid var(--field-border); background: var(--glass); color: inherit; font: inherit; }
 .finder input[type=search]:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .filters { margin: 10px 0 4px; }
 .frow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 8px; }
@@ -316,7 +316,7 @@ main.pub:has(.tjs, .calendario, .que-fila) { max-width: 1240px; }
 }
 .buscador { display: flex; gap: 8px; margin: 0 0 12px; }
 .buscador-campo { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 0 16px; min-height: 48px; border-radius: 999px;
-  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink-2); cursor: text; }
+  border: 1px solid var(--field-border); background: var(--elevated); color: var(--ink-2); cursor: text; }
 .buscador-campo:focus-within { outline: 2px solid var(--ink); outline-offset: 1px; }
 .buscador input { flex: 1; min-width: 0; height: 46px; border: 0; background: transparent; color: var(--ink); font: inherit; font-size: 16px; outline: none; }
 .buscador input::placeholder { color: var(--ink-2); opacity: 1; }

@@ -291,7 +291,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .formu input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),
 .formu select, .formu textarea {
   width: 100%; box-sizing: border-box; padding: 14px 16px; border-radius: 16px; font-size: 16px;
-  border: 1px solid var(--glass-border); background: var(--glass); color: inherit; font-family: inherit; }
+  border: 1px solid var(--field-border); background: var(--glass); color: inherit; font-family: inherit; }
 .formu input:focus, .formu select:focus, .formu textarea:focus { outline: none; border-color: var(--ink);
   box-shadow: 0 0 0 1px var(--ink); }
 .formu label { font-size: 14px; }
@@ -303,7 +303,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 /* Lo que se ve y no se cambia (la fecha de nacimiento ya puesta): el campo de
    siempre, no el gris de desactivado, con un candado a la derecha (como la app). */
 .formu input[readonly]:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) { cursor: default; }
-.formu input[readonly]:focus { border-color: var(--glass-border); box-shadow: none; }
+.formu input[readonly]:focus { border-color: var(--field-border); box-shadow: none; }
 .candado { position: relative; display: block; }
 .formu .candado > input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) { padding-right: 48px; }
 .candado .ms { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; color: var(--ink-2); pointer-events: none; }
@@ -590,7 +590,7 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 .hoja-equipos { position: relative; width: min(480px, calc(100vw - 32px)); max-width: min(480px, calc(100vw - 32px)); }
 .hoja-equipos h2 { padding-right: 36px; }
 .hoja-equipos .formu { margin: 12px 0 8px; }
-.hoja-equipos .formu input[type=search] { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--glass-border);
+.hoja-equipos .formu input[type=search] { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 16px; border: 1px solid var(--field-border);
   background: var(--elevated); color: var(--ink); font: inherit; font-size: 16px; }
 .hoja-equipos .formu input[type=search]:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .eq-res { display: grid; gap: 0; max-height: 52vh; overflow-y: auto; }
@@ -758,7 +758,7 @@ body.cola-llamado .cola-botones .pill:not(.accent) { background: transparent; co
 .palabra-x:hover { background: var(--glass); }
 .palabras-nueva { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .palabras-nueva input { flex: 1; min-width: 160px; box-sizing: border-box; padding: 12px 16px; border-radius: 16px; font-size: 16px;
-  border: 1px solid var(--glass-border); background: var(--glass); color: inherit; font-family: inherit; }
+  border: 1px solid var(--field-border); background: var(--glass); color: inherit; font-family: inherit; }
 .palabras-nueva input:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
 /* Listas por partes: «Ver más» al pie (docs/RUNBOOK.md §3g). */
 .ver-mas { display: flex; justify-content: center; margin: 14px 0 0; }

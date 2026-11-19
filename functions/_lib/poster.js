@@ -178,7 +178,7 @@ export async function venuePosterPage(token, lang, mesa) {
   const info = valido ? await rpc('visit_qr_info', { p_token: token }) : null;
   if (info?.error === 'token_changed') {
     return html(`${CABEZA(S, S.changed)}
-<link rel="stylesheet" href="/assets/site.css?v=20261112movil">
+<link rel="stylesheet" href="/assets/site.css?v=20261119a11y2">
 </head>
 <body><main class="open"><div class="card" style="max-width:460px;margin:60px auto;padding:24px;text-align:center">
 <h1>${esc(S.changed)}</h1><p class="muted">${esc(info.business_name || '')}</p><p>${esc(S.changedBody)}</p>
@@ -320,7 +320,7 @@ export async function tablePosterPage(token, lang, mesas) {
   const info = valido ? await rpc('table_qr_info', { p_token: token }) : null;
   if (info?.error === 'token_changed') {
     return html(`${CABEZA(S, S.changed)}
-<link rel="stylesheet" href="/assets/site.css?v=20261112movil">
+<link rel="stylesheet" href="/assets/site.css?v=20261119a11y2">
 </head>
 <body><main class="open"><div class="card" style="max-width:460px;margin:60px auto;padding:24px;text-align:center">
 <h1>${esc(S.changed)}</h1><p class="muted">${esc(info.business_name || '')}</p><p>${esc(S.changedBody)}</p>
@@ -377,7 +377,7 @@ export async function queuePosterPage(code, lang) {
   const b = info?.ok === true ? info.business : null;
   if (!b?.name) {
     return html(`${CABEZA(S, S.changed)}
-<link rel="stylesheet" href="/assets/site.css?v=20261112movil">
+<link rel="stylesheet" href="/assets/site.css?v=20261119a11y2">
 </head>
 <body><main class="open"><section class="vacio" style="max-width:460px;margin:60px auto;padding:24px">
 <h1>${esc(S.changed)}</h1><p>${esc(S.changedBody)}</p>
@@ -424,7 +424,7 @@ export async function ordersPosterPage(code, lang) {
   const b = info?.ok === true ? info.business : null;
   if (!b?.name) {
     return html(`${CABEZA(S, S.changed)}
-<link rel="stylesheet" href="/assets/site.css?v=20261112movil">
+<link rel="stylesheet" href="/assets/site.css?v=20261119a11y2">
 </head>
 <body><main class="open"><section class="vacio" style="max-width:460px;margin:60px auto;padding:24px">
 <h1>${esc(S.changed)}</h1><p>${esc(S.changedBody)}</p>

@@ -14,7 +14,7 @@
 /* En el móvil, el local también arriba (como «Nails & Co ▾» en la app):
    el logo, el selector y el idioma. En el ordenador va en la barra lateral. */
 .topbar .biztop { flex: 1 1 auto; min-width: 0; max-width: 100%; font-weight: 700; font-size: 1rem;
-  padding: 8px 10px; border-radius: 12px; background: var(--elevated); color: var(--ink); border: 1px solid var(--glass-border); }
+  padding: 8px 10px; border-radius: 12px; background: var(--elevated); color: var(--ink); border: 1px solid var(--field-border); }
 .topbar:has(.biztop:not([hidden])) .brand-txt,
 .topbar:has(.biztop:not([hidden])) .spacer { display: none; }
 
@@ -95,13 +95,12 @@
 .scan-box input { font-size: 1.125rem !important; letter-spacing: 2px; text-align: center; font-family: ui-monospace, Menlo, Consolas, monospace; }
 .scan-result { border-radius: 18px; padding: 16px 18px; font-weight: 700; }
 .validados-sesion { margin: 0; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
-.scan-result.ok { background: rgba(46, 204, 113, .18); color: #146c3a; }
-.scan-result.bad { background: rgba(255, 92, 92, .18); color: #b3261e; }
-@media (prefers-color-scheme: dark) {
-  .scan-result.ok { color: #8AE8B0; }
-  .scan-result.bad { color: #FF9B9B; }
-}
+/* «Válido» y «No válido» como en la app: el mismo verde y el mismo rojo, con
+   la letra en tinta (9,4:1 y 5,1:1), en claro y en oscuro (19-11). */
+.scan-result.ok { background: #2ECC71; color: #0A0A0A; }
+.scan-result.bad { background: #E5484D; color: #0A0A0A; }
 .scan-result small { display: block; font-weight: 500; margin-top: 4px; opacity: .85; }
+.scan-result:is(.ok, .bad) small { opacity: 1; }
 /* Movimiento (como la app): el resultado de validar entra creciendo; el
    icono de «Validado» crece con un pequeño rebote y uno que no vale tiembla
    un instante. */
@@ -243,7 +242,7 @@ label.f > span small, label.f small { color: var(--ink-2); font-weight: 500; }
 .form input:not([type=checkbox]):not([type=radio]):not([type=file]), .form select, .form textarea,
 .scan-box input, .toolbar input, .toolbar select, dialog.modal input:not([type=checkbox]):not([type=file]), dialog.modal select, dialog.modal textarea {
   width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 16px; font-size: .9375rem;
-  border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); }
+  border: 1px solid var(--field-border); background: var(--glass); color: var(--ink); }
 .form input:focus, .form select:focus, .form textarea:focus, .scan-box input:focus,
 dialog.modal input:focus, dialog.modal select:focus, dialog.modal textarea:focus {
   outline: none; border-color: var(--ink); box-shadow: 0 0 0 1px var(--ink); }
@@ -612,7 +611,7 @@ a.cal-dia { text-decoration: none; }
 .rrpp-cab-card { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
 .rrpp-cab-card h2 { margin: 0; }
 .rrpp-cab-card .spacer { flex: 1; }
-.rrpp-cab-card select { width: auto; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); font: inherit; font-size: .875rem; }
+.rrpp-cab-card select { width: auto; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--field-border); background: var(--glass); color: var(--ink); font: inherit; font-size: .875rem; }
 .rrpp-ficha-cab { display: flex; gap: 14px; align-items: center; }
 .rrpp-ficha-cab > .thumb, .rrpp-ficha-cab > .ph { width: 56px; height: 56px; flex: none; display: grid; place-items: center; background: var(--soft); object-fit: cover; font-size: 1.375rem; }
 .rrpp-ficha-t { min-width: 0; flex: 1; }
@@ -631,7 +630,7 @@ a.cal-dia { text-decoration: none; }
 .rrpp-preg { margin: 8px 0 0; font-weight: 600; font-size: .875rem; }
 .rrpp-algunos { display: grid; gap: 6px; margin-left: 28px; }
 .rrpp-fila { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.rrpp-fila input[type=number], .rrpp-fila input[type=time] { width: 120px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--glass-border); background: var(--glass); color: var(--ink); font: inherit; }
+.rrpp-fila input[type=number], .rrpp-fila input[type=time] { width: 120px; padding: 8px 12px; border-radius: 14px; border: 1px solid var(--field-border); background: var(--glass); color: var(--ink); font: inherit; }
 .rrpp-fila input:disabled { opacity: .5; }
 @media (max-width: 520px) { .rrpp-opc { margin-left: 0; } }
 /* «Lista de Marta» en el resultado del escáner: bien a la vista. */

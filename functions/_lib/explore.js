@@ -2224,7 +2224,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <script src="/assets/categorias.js?v=7" defer></script>
   <script src="/assets/gustos.js?v=20261113lupa" defer data-lang="${en ? 'en' : 'es'}"></script>
   <script src="/assets/municipios.js?v=20261111sinbarra" defer></script>
-  <link rel="stylesheet" href="/assets/barra-filtro.css?v=20261112">
+  <link rel="stylesheet" href="/assets/barra-filtro.css?v=20261119a11y2">
   <script src="/assets/barra-filtro.js?v=20261112" defer></script>`;
 
   // Los atajos de la lupa (Iván, 2026-10-29: como la app): cada uno pone sus

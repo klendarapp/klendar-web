@@ -154,7 +154,9 @@ a.cal-nav:hover { background: var(--soft); }
 :is(.pub, .tjv) .cal-dia { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; min-height: 50px; border-radius: 15px;
   font-weight: 700; font-size: 16px; color: var(--ink); position: relative; }
 a.cal-dia:hover { background: var(--soft); text-decoration: none; }
-.cal-dia.pasado { color: var(--ink-2); opacity: .5; }
+/* Los días que ya han pasado, en gris secundario entero (5,9:1 y 7,1:1; al 50 %,
+   2,1:1): se leen, y los que quedan van en tinta y en negrita (19-11). */
+.cal-dia.pasado { color: var(--ink-2); font-weight: 500; }
 /* Fuera de «¿Cuándo?»: se puede tocar (dice por qué está vacío), pero apagado. */
 .cal-dia.fuera { color: var(--ink-2); opacity: .45; }
 .cal-titulo { display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap; }

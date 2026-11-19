@@ -3,7 +3,7 @@
    su título, y sin buscador. Sobrio: neutros, la pestaña elegida en tinta. */
 .ayuda-buscar { display: block; margin: 18px 0 12px; }
 .ayuda-buscar input { width: 100%; box-sizing: border-box; padding: 12px 16px; border-radius: 999px;
-  border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); font: inherit; font-size: 16px; }
+  border: 1px solid var(--field-border); background: var(--elevated); color: var(--ink); font: inherit; font-size: 16px; }
 .ayuda-buscar input:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
 .ayuda-pestanas { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; margin: 0 0 6px;
   border-radius: 999px; background: var(--glass); border: 1px solid var(--glass-border); }
