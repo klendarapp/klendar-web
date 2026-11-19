@@ -26,6 +26,14 @@ export async function categoriaDe(id, categoryId) {
 /** 'menu', 'services', 'products' o 'prices' de una categoría (de `categoriaDe`). */
 export const cartaDeCategoria = (c) => (c ? KC.carta(c) : 'menu');
 
+/** Si su carta lleva los 14 alérgenos (comida y bebida, Iván, 18-11), de
+ * una categoría de `categoriaDe`. Sin poder saberlo, sí: la nota, como antes.
+ * Los platos que ya los tengan los enseñan siempre. */
+export const alergenosDeCategoria = (c) => (c ? KC.alergenos(c) : true);
+
+/** ¿Algún plato de la carta (`business_menu`) tiene alérgenos puestos? */
+export const hayAlergenos = (carta) => (carta || []).some((s) => (s.items || []).some((i) => (i.allergens || []).length));
+
 /** 'menu', 'services', 'products' o 'prices' del negocio `id` (o de su
  * categoría `categoryId`, si ya se sabe). Si no se puede saber (sin
  * categoría o sin respuesta), 'menu': como antes. */

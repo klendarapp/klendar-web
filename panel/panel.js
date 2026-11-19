@@ -6135,6 +6135,10 @@ PAGES.carta = async (v) => {
   const tc = { ...TEXTOS_CARTA[palabraCarta(CATS.find((c) => c.id === ficha.data?.category_id))], tipo };
   const guardarTxt = carta2([bi('Guardar la carta', 'Save the menu'), bi('Guardar la lista', 'Save the price list')]);
   let carta = await rpc('business_menu', { p_business: BIZ.id }).catch(() => []);
+  // Los 14 alérgenos, solo en comida y bebida (Iván, 18-11). En otro tipo,
+  // los que un plato ya tenga se siguen viendo y se pueden quitar.
+  const conAlergenos = KlendarCategorias.alergenos(CATS.find((c) => c.id === BIZ.category_id));
+  const verAlergenos = () => conAlergenos || carta.some((s) => (s.items || []).some((i) => (i.allergens || []).length));
   let enlace = ficha.data?.menu_url || '';
   // «Archivos de la carta»: fotos y PDF, en el orden en que se ven
   // (`business_menu_files`; el equipo ve también los que esperan la
@@ -6226,9 +6230,9 @@ PAGES.carta = async (v) => {
           ${table({
             cols: [
               { h: tc.col, r: (it) => `${it.image_url ? `<img class="thumb" src="${esc(it.image_url)}" alt="" loading="lazy">` : ''}<b class="title">${esc(it.name)}</b>${it.description ? `<span class="sub">${esc(it.description)}</span>` : ''}` },
-              { h: 'Alérgenos', r: (it) => (it.allergens || []).length
+              ...(verAlergenos() ? [{ h: 'Alérgenos', r: (it) => (it.allergens || []).length
                 ? (it.allergens || []).map((a) => `<span class="tag">${esc(nombreAlergeno(a))}</span>`).join(' ')
-                : '<span class="muted">—</span>' },
+                : '<span class="muted">—</span>' }] : []),
               { h: 'Precio', num: true, r: (it) => it.price_cents == null ? '—' : fmtMoney(it.price_cents) },
               { h: '', r: (it, ii) => canManage ? `<div class="actions">
                   <button class="btn sm ghost" data-item-photo="${si}:${ii}">${it.image_url ? 'Cambiar foto' : 'Poner foto'}</button>
@@ -6251,7 +6255,7 @@ PAGES.carta = async (v) => {
     const fotoBtn = $('#foto-carta', v);
     if (fotoBtn) {
       fotoBtn.onclick = () => KFotoRellena.carta(v, {
-        st: fotoCarta, tc,
+        st: fotoCarta, tc, alergenos: conAlergenos,
         alTerminar: (leida) => {
           if (leida?.length) {
             carta = KFotoRellena.mezcla(carta, leida);
@@ -6325,7 +6329,7 @@ PAGES.carta = async (v) => {
           { name: 'name', label: 'Nombre', value: it.name, required: true, placeholder: tc.ej, maxlength: 80 },
           { name: 'description', label: 'Descripción (opcional)', value: it.description || '', maxlength: 200 },
           { name: 'price', label: 'Precio (€)', value: it.price_cents == null ? '' : (it.price_cents / 100).toFixed(2).replace('.', ',') },
-          ...ALERGENOS.map((a) => ({
+          ...ALERGENOS.filter((a) => conAlergenos || (it.allergens || []).includes(a[0])).map((a) => ({
             name: `a_${a[0]}`, type: 'checkbox', label: a[1],
             value: (it.allergens || []).includes(a[0]),
           })),

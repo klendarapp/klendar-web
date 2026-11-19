@@ -17,7 +17,7 @@
 //   cambio de contraseña se ve en menos de un minuto, también contando la
 //   caché del navegador.
 
-import { textoCarta, tipoCartaDe } from './carta.js';
+import { alergenosDeCategoria, cartaDeCategoria, categoriaDe, hayAlergenos, textoCarta } from './carta.js';
 import { enlaceCuenta } from './cuenta.js';
 import { esc, html, isUuid, rpc, rpcAll, supabasePublic } from './page.js';
 import KZ from '../../assets/zona.js';
@@ -107,12 +107,14 @@ export async function tableQrPage(token, lang) {
   }
 
   const tz = zonaDe(b);
-  const [offers, carta, tipoCarta] = await Promise.all([
+  const [offers, carta, cat] = await Promise.all([
     rpcAll('business_offers', { p_id: b.id }).catch(() => []),
     rpcAll('business_menu', { p_business: b.id }).catch(() => []),
-    // «Carta», «Servicios y precios»… según su tipo (Iván, 18-11).
-    tipoCartaDe(b.id),
+    // «Carta», «Servicios y precios»… según su tipo (Iván, 18-11), y si
+    // lleva los alérgenos (solo comida y bebida).
+    categoriaDe(b.id),
   ]);
+  const tipoCarta = cartaDeCategoria(cat);
   S = { ...S, menu: textoCarta('titulo', tipoCarta, lang), noWifi: textoCarta('sinWifi', tipoCarta, lang) };
   // Lo de hoy: lo que se puede canjear ya o empieza hoy, y los eventos de hoy.
   const hoy = KZ.hoy(tz);
@@ -138,7 +140,7 @@ export async function tableQrPage(token, lang) {
     <div class="menu">${carta.map((sec) => `<section><h3>${esc(sec.name)}</h3><ul>${(sec.items || []).map((it) => `<li>
       <span class="plato"><b>${esc(it.name)}</b>${it.description ? `<small>${esc(it.description)}</small>` : ''}${(it.allergens || []).length ? `<small class="alg">${esc(S.allergens)}: ${it.allergens.map((a) => esc(alergeno(a, en))).join(', ')}</small>` : ''}</span>
       <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span></li>`).join('')}</ul></section>`).join('')}</div>
-    <p class="note">${esc(S.menuNote)}</p>` : '';
+    ${alergenosDeCategoria(cat) || hayAlergenos(carta) ? `<p class="note">${esc(S.menuNote)}</p>` : ''}` : '';
 
   const sp = supabasePublic();
   const body = `

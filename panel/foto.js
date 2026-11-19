@@ -290,7 +290,9 @@ window.KFotoRellena = (() => {
    * «Carta desde fotos»: se queda con la pantalla (`v`) hasta acabar. `alTerminar(secciones | null)`: lo revisado, para
    * añadirlo a la carta sin guardar, o null si sale sin añadir.
    */
-  const carta = async (v, { st, tc, alTerminar }) => {
+  // `alergenos`: si la carta los lleva (comida y bebida, `KlendarCategorias.alergenos`);
+  // si no, los que se lean de la foto no pasan.
+  const carta = async (v, { st, tc, alTerminar, alergenos = true }) => {
     if (!await permiso(st)) return;
     // «Carta» o «la lista» (de precios), según su tipo (Iván, 18-11).
     const esCarta = !tc?.tipo || tc.tipo === 'menu';
@@ -358,7 +360,7 @@ window.KFotoRellena = (() => {
         for (const i of s.items || []) {
           if (nombres.has(clave(i.name))) continue;
           nombres.add(clave(i.name));
-          hay.items.push({ name: i.name, description: i.description || '', price: i.price_cents == null ? '' : dinero(i.price_cents), allergens: [...(i.allergens || [])], doubt: !!i.doubt });
+          hay.items.push({ name: i.name, description: i.description || '', price: i.price_cents == null ? '' : dinero(i.price_cents), allergens: alergenos ? [...(i.allergens || [])] : [], doubt: !!i.doubt });
         }
       }
     };

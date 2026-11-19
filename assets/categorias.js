@@ -156,6 +156,11 @@
    * (prices). La del grupo y, si la tiene, la de la categoría. Como la app. */
   const CARTA_GRUPO = { food: 'menu', night: 'menu', leisure: 'prices', sports: 'prices', care: 'services', health: 'services', events: 'prices', stay: 'prices', shops: 'products', services: 'services' };
   const CARTA_PROPIA = { grocery: 'products', market: 'products', stage: 'prices', cinema: 'prices', culture: 'prices', art: 'prices', pharmacy: 'products', optician: 'products', catering: 'menu' };
+
+  /** Si la carta lleva los 14 alérgenos (solo comida y bebida): el del
+   * grupo y, si lo tiene, el de la categoría. Como la app. */
+  const ALERGENOS_GRUPO = { food: true, night: true, leisure: false, sports: false, care: false, health: false, events: false, stay: false, shops: false, services: false };
+  const ALERGENOS_PROPIOS = { stage: false, cinema: false, culture: false, art: false, catering: true };
   // </generado:categorias>
 
   const TEXTOS = {
@@ -219,7 +224,17 @@
    * `menuNameFor` de la app. */
   const carta = (c) => (c ? CARTA_PROPIA[c.slug] || CARTA_GRUPO[grupoDe(c)] || 'prices' : 'prices');
 
-  const KlendarCategorias = { GRUPOS, POR_SLUG, grupoDe, nombreGrupo, nombre, pliega, encaja, agrupa, carta };
+  /** Si la carta de un negocio cuya categoría principal es `c` lleva los 14
+   * alérgenos (Iván, 18-11): solo comida y bebida. El de la categoría, el de
+   * su grupo o, sin categoría, no. Un plato que ya los tenga los sigue
+   * enseñando. Como `allergensFor` de la app. */
+  const alergenos = (c) => {
+    if (!c) return false;
+    if (Object.prototype.hasOwnProperty.call(ALERGENOS_PROPIOS, c.slug)) return ALERGENOS_PROPIOS[c.slug];
+    return ALERGENOS_GRUPO[grupoDe(c)] === true;
+  };
+
+  const KlendarCategorias = { GRUPOS, POR_SLUG, grupoDe, nombreGrupo, nombre, pliega, encaja, agrupa, carta, alergenos };
 
   // ── Lo del navegador ─────────────────────────────────────────────────────
   if (typeof document !== 'undefined') {

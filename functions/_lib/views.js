@@ -25,7 +25,7 @@ import KM from '../../assets/marcas.js';
 import KMO from '../../assets/momentos.js';
 import KE from '../../assets/enlaces.js';
 import { fuenteHtml, selloEntidad } from './entidades.js';
-import { cartaDeCategoria, categoriaDe, textoCarta } from './carta.js';
+import { alergenosDeCategoria, cartaDeCategoria, categoriaDe, hayAlergenos, textoCarta } from './carta.js';
 import {
   agendaConContenido, direccionLd, enlaceProvincia, esDeComer, horarioLd, hoyConContenido, lugarSeo, lugaresSeo,
   provinciaConContenido, provincias, slugProvincia, tipoSchema, valoracionLd,
@@ -1376,6 +1376,8 @@ export async function businessPage(param, lang, search = '') {
   // los PDF y el enlace a su web. En la ficha, 5 platos y «Ver toda la
   // carta» (`?ver=carta`, la carta entera), como la app.
   const nPlatos = carta.reduce((n, sec) => n + (sec.items || []).length, 0);
+  // La nota de los alérgenos: en comida y bebida o si algún plato los tiene.
+  const notaAlergenos = alergenosDeCategoria(catNeg) || hayAlergenos(carta);
   const platosHtml = (max = Infinity) => {
     let quedan = max;
     const secciones = [];
@@ -1395,7 +1397,7 @@ export async function businessPage(param, lang, search = '') {
             <span class="price">${it.price_cents == null ? '' : esc(money(it.price_cents, 'EUR', lang))}</span>
           </li>`).join('')}</ul>
         </section>`).join('')}</div>
-        <p class="note">${esc(S.menuNote)}</p>` : '';
+        ${notaAlergenos ? `<p class="note">${esc(S.menuNote)}</p>` : ''}` : '';
   };
   const archivosCartaHtml = `${fotosCarta.length ? `<div class="carta-fotos">${fotosCarta.map((u, i) => miniatura(u, { grupo: 'carta', i, n: fotosCarta.length, clase: 'carta-foto', etiqueta: S.menuPhotos, lang, ancho: 300, alto: 400 })).join('')}</div>` : ''}
         ${pdfsCarta.length || enlaceCarta ? `<div class="carta-archivos">${pdfsCarta.map((f) => KE.filaCarta(f.url, lang, { pdf: true, nombre: f.name, bytes: f.bytes, tipo: tipoCarta })).join('')}${enlaceCarta ? KE.filaCarta(enlaceCarta, lang, { tipo: tipoCarta }) : ''}</div>` : ''}`;
