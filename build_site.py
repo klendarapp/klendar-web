@@ -517,7 +517,17 @@ if not PRECIOS:
     SITEMAP_EN = [p for p in SITEMAP_EN if p != '/en/pricing']
 
 
+# Los sitemaps que nombra robots.txt, en este orden: el estático y uno por
+# cada functions/sitemap-<nombre>.xml.js (tools/robots_check.py falla si
+# aparece uno nuevo y no está aquí).
+SITEMAPS = ['sitemap.xml', 'sitemap-agenda.xml', 'sitemap-negocios.xml', 'sitemap-planes.xml',
+            'sitemap-artistas.xml', 'sitemap-guias.xml']
+
+
 def robots():
+    """robots.txt entero: la única fuente es esta función (el fichero se
+    genera con ella y tools/robots_check.py, en el pre-push, falla si no
+    cuadran). Para cambiar robots.txt, cambiar esto y ejecutar build_site.py."""
     nl = chr(10)
     return nl.join([
         'User-agent: *',
@@ -537,12 +547,26 @@ def robots():
         'Disallow: /descubre?',
         'Disallow: /en/explore?',
         'Disallow: /en/discover?',
+        '# Lo mismo en las guías con su zona o filtros (noindex) y lo abierto con el',
+        '# enlace de un RRPP o desde el QR del local (privado). Las páginas buenas',
+        '# (fichas, agenda, municipios, guías por municipio) siguen abiertas.',
+        'Disallow: /guia/*?',
+        'Disallow: /en/guide/*?',
+        'Disallow: /*?rp=',
+        'Disallow: /*&rp=',
+        'Disallow: /*?visita=',
+        'Disallow: /*&visita=',
+        '# Carteles, historias, widget y QR de mesa: noindex, para imprimir o',
+        '# compartir. Las vistas previas de WhatsApp y compañía no miran esto.',
+        'Disallow: /cartel/',
+        'Disallow: /en/poster/',
+        'Disallow: /historia/',
+        'Disallow: /en/story/',
+        'Disallow: /widget/',
+        'Disallow: /m/',
+        'Disallow: /en/m/',
         '',
-        f'Sitemap: {BASE}/sitemap.xml',
-        f'Sitemap: {BASE}/sitemap-agenda.xml',
-        f'Sitemap: {BASE}/sitemap-negocios.xml',
-        f'Sitemap: {BASE}/sitemap-artistas.xml',
-        f'Sitemap: {BASE}/sitemap-guias.xml',
+        *[f'Sitemap: {BASE}/{s}' for s in SITEMAPS],
         '',
     ])
 
