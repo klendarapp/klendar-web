@@ -242,7 +242,7 @@ const I18N = makeI18N({
     'Mover antes': 'Move earlier',
     'Mover después': 'Move later',
     'Esa foto pesa más de 5 MB.': 'That photo is over 5 MB.',
-    'Ese vídeo pesa más de 60 MB.': 'That video is over 60 MB.',
+    'Ese vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.': 'That video is over 25 MB. Trim it or upload it from the app, which compresses it for you.',
     'Publicar ahora (desactívalo para dejarlo en borrador)':
       "Publish now (turn off to save as a draft)",
     'Una oferta necesita principio y fin.':

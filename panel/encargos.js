@@ -145,6 +145,7 @@ async function encSubeFoto(file) {
   if (f.size > 5 * 1024 * 1024) { toast(bi('Esa foto pesa más de 5 MB.', 'That photo is over 5 MB.'), true); return null; }
   const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
   const path = `${BIZ.id}/encargos/${crypto.randomUUID()}.${ext}`;
+  await KFotos.subeMiniatura(path, f, (r, b) => sb.storage.from(BUCKET).upload(r, b, { contentType: 'image/jpeg' }));
   const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
   if (error) { toast(friendly(error.message), true); return null; }
   return sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;

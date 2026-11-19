@@ -103,6 +103,7 @@ async function pedQuePedir(v, carta) {
           if (foto.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); return; }
           const ext = (foto.name.split('.').pop() || 'jpg').toLowerCase();
           const path = `${BIZ.id}/highlights/${crypto.randomUUID()}.${ext}`;
+          await KFotos.subeMiniatura(path, foto, (r, b) => sb.storage.from(BUCKET).upload(r, b, { contentType: 'image/jpeg' }));
           const { error } = await sb.storage.from(BUCKET).upload(path, foto, { contentType: foto.type });
           if (error) { toast(friendly(error.message), true); return; }
           items[+b.dataset.foto].image_url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;

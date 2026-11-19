@@ -600,7 +600,7 @@ KL_DIC('it', {
   "El precio máximo tiene que ser un número.": "Il prezzo massimo deve essere un numero.",
   "El texto de la reseña, sin nombre, va a Claude (Anthropic, EE. UU.) y no se guarda en Klendar.": "Il testo della recensione, senza nome, va a Claude (Anthropic, USA) e non resta in Klendar.",
   "El vídeo dura más de 30 segundos.": "Il video dura più di 30 secondi.",
-  "El vídeo pesa más de 60 MB.": "Il video supera i 60 MB.",
+  "El vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.": "Il video supera i 25 MB. Taglialo o caricalo dall'app, che lo comprime durante il caricamento.",
   "Elegido": "Scelto",
   "Elegir": "Scegli",
   "Elige a quien ya está en Klendar o escribe un nombre nuevo. Lo que escribas solo pone el nombre: la foto y la descripción las revisa Klendar.": "Scegli chi è già su Klendar o scrivi un nome nuovo. Quello che scrivi imposta solo il nome: la foto e la descrizione le controlla Klendar.",

@@ -469,6 +469,7 @@ function activaFotos(caja, est, alCambiar, alta = false) {
           if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); continue; }
           const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
           const path = alta ? `avatars/${ME.id}/${que}/${crypto.randomUUID()}.${ext}` : `${BIZ.id}/${que}-${crypto.randomUUID()}.${ext}`;
+          await KFotos.subeMiniatura(path, f, (r, b) => sb.storage.from(BUCKET).upload(r, b, { contentType: 'image/jpeg' }));
           const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
           if (error) { toast(friendly(error.message), true); continue; }
           nuevas.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);

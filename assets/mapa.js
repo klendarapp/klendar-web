@@ -115,13 +115,20 @@
     return grupos;
   }
 
-  /** La miniatura de una foto de Storage (~96 px, recortada al cuadrado);
-   *  lo que no es de Storage, tal cual (como `mapThumbUrl` en la app). */
-  function miniatura(url, t = 96) {
-    const de = '/storage/v1/object/public/';
+  /** La miniatura de una foto de Storage: la de 400 px hecha al subirla
+   *  (`<id>-thumb.jpg`, `assets/fotos.js`), sin pedírsela a la transformación
+   *  de imágenes de Supabase, que se paga por foto. Si no la tiene (fotos de
+   *  antes), el marcador carga la original (`data-original`). Lo que no es de
+   *  Storage, los vídeos y las propias miniaturas, tal cual (como
+   *  `mapThumbCandidates` en la app). */
+  function miniatura(url) {
+    const de = '/storage/v1/object/public/business-images/';
     if (typeof url !== 'string' || !url.includes(de)) return url;
-    const base = url.replace(de, '/storage/v1/render/image/public/');
-    return `${base}${base.includes('?') ? '&' : '?'}width=${t}&height=${t}&resize=cover`;
+    const limpia = url.replace(/[?#].*$/, '');
+    if (/(-thumb|-poster|-frame\d+)\.[a-z0-9]+$|\.(mp4|mov|m4v|webm|pdf|gif|svg)$/i.test(limpia)) return url;
+    const barra = limpia.lastIndexOf('/');
+    const punto = limpia.lastIndexOf('.');
+    return `${punto > barra ? limpia.slice(0, punto) : limpia}-thumb.jpg`;
   }
 
   /** El zoom al que [g] se separa en dos o más, desde [z] (como mucho 17,

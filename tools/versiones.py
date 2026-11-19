@@ -32,7 +32,7 @@ ENTERAS = {'admin.html', 'admin/carta.html'}
 CARPETAS = ('/admin/', '/panel/', '/assets/cuenta/')
 # Ficheros de /assets/ con caché de un año que solo enlazan páginas `.html`
 # (ni las Functions ni otro JS los piden con `?v=`). Uno nuevo: aquí y en `_headers`.
-SUELTOS = {'/assets/acceso.js', '/assets/identidad.js', '/assets/cajon.js', '/assets/fotogramas.js', '/assets/retenido.js'}
+SUELTOS = {'/assets/acceso.js', '/assets/identidad.js', '/assets/cajon.js', '/assets/fotogramas.js', '/assets/retenido.js', '/assets/fotos.js'}
 REF = re.compile(r'(\b(?:src|href)=")(/[A-Za-z0-9_./-]+)\?v=([A-Za-z0-9_.-]*)(")')
 SIN_V = re.compile(r'\b(?:src|href)="(/[A-Za-z0-9_./-]+\.(?:js|css))"')
 DIC = re.compile(r'(\bdata-dic=")(/[A-Za-z0-9_./-]+/)(" data-dic-v=")([A-Za-z0-9_.-]*)(")')

@@ -1497,7 +1497,7 @@ KL_DIC('ca', {
   "Ese texto no se puede usar. Cámbialo, por favor.": "Aquest text no es pot fer servir. Canvia'l, si us plau.",
   "Ese texto no se puede usar. Cámbialo.": "Aquest text no es pot fer servir. Canvia’l.",
   "Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.": "Aquest vídeo dura més de 45 segons. Retalla'l i torna'l a pujar.",
-  "Ese vídeo pesa más de 60 MB.": "Aquest vídeo pesa més de 60 MB.",
+  "Ese vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.": "Aquest vídeo pesa més de 25 MB. Retalla'l o puja'l des de l'app, que el comprimeix en pujar-lo.",
   "Eso ya no existe.": "Això ja no existeix.",
   "Espera a que acabe de subirse la foto o el vídeo.": "Espera que s'acabi de pujar la foto o el vídeo.",
   "espera media {avg_wait_minutes} min": "espera mitjana {avg_wait_minutes} min",

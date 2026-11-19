@@ -18,6 +18,11 @@
  * original (menos las fotos de cámara, JPEG/HEIC, por el EXIF).
  *
  *   const f = await KFotos.reduce(archivo, KFotos.TAM.logo);  // File
+ *
+ * Y la miniatura de cada foto (400 px, `<id>-thumb.jpg`), antes de subirla:
+ *
+ *   await KFotos.subeMiniatura(ruta, f, (r, b) => sb.storage.from(BUCKET)
+ *     .upload(r, b, { contentType: 'image/jpeg' }));
  */
 'use strict';
 
@@ -85,5 +90,43 @@
     return new File([blob], nombre, { type: 'image/jpeg', lastModified: Date.now() });
   }
 
-  window.KFotos = Object.freeze({ TAM, reduce });
+  // ── Miniaturas ────────────────────────────────────────────────────────
+  // Junto a `<carpeta>/<id>.<ext>` va `<carpeta>/<id>-thumb.jpg` (400 px,
+  // calidad 75), hecha aquí al subir la foto, como en la app
+  // (klendar/lib/core/media/thumbnails.dart). El mapa la usa en vez de pedir
+  // la miniatura a la transformación de imágenes de Supabase, que se paga
+  // por foto (klendar/docs/SERVICIOS_Y_COSTES.md §12.6).
+  const MINI = Object.freeze({ lado: 400, calidad: 0.75 });
+
+  /** `b/offers/x.jpg` → `b/offers/x-thumb.jpg` (también con la URL entera). */
+  function rutaMiniatura(ruta) {
+    const limpia = String(ruta || '').replace(/[?#].*$/, '');
+    const barra = limpia.lastIndexOf('/');
+    const punto = limpia.lastIndexOf('.');
+    return `${punto > barra ? limpia.slice(0, punto) : limpia}-thumb.jpg`;
+  }
+
+  /** La miniatura de una foto (Blob JPEG) o null si no es una foto que se
+   *  pueda abrir aquí (vídeos, PDF, GIF, SVG…). */
+  async function miniatura(archivo) {
+    if (!archivo || !REDUCIBLE.test(archivo.type || '')) return null;
+    const hecha = await reduce(archivo, MINI);
+    return hecha && hecha !== archivo && hecha.type === 'image/jpeg' ? hecha : null;
+  }
+
+  /** Sube la miniatura de `archivo` junto a `ruta` (ANTES que la foto: el
+   *  filtro de fotos la mira con ella) con `subir(ruta, blob)`. Nunca lanza:
+   *  sin miniatura, quien enseña la foto usa la original. */
+  async function subeMiniatura(ruta, archivo, subir) {
+    try {
+      const mini = await miniatura(archivo);
+      if (!mini) return;
+      const r = await subir(rutaMiniatura(ruta), mini);
+      if (r && r.error) console.warn('miniatura:', r.error.message || r.error);
+    } catch (e) {
+      console.warn('miniatura:', e);
+    }
+  }
+
+  window.KFotos = Object.freeze({ TAM, reduce, MINI, rutaMiniatura, miniatura, subeMiniatura });
 }());

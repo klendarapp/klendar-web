@@ -600,7 +600,7 @@ KL_DIC('eu', {
   "El precio máximo tiene que ser un número.": "Gehieneko prezioak zenbaki bat izan behar du.",
   "El texto de la reseña, sin nombre, va a Claude (Anthropic, EE. UU.) y no se guarda en Klendar.": "Iritziaren testua, izenik gabe, Claude-ra doa (Anthropic, AEB) eta ez da Klendarren gordetzen.",
   "El vídeo dura más de 30 segundos.": "Bideoak 30 segundo baino gehiago irauten du.",
-  "El vídeo pesa más de 60 MB.": "Bideoak 60 MB baino gehiago ditu.",
+  "El vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.": "Bideoak 25 MB baino gehiago ditu. Moztu edo igo aplikaziotik: igotzean konprimatzen du.",
   "Elegido": "Aukeratuta",
   "Elegir": "Aukeratu",
   "Elige a quien ya está en Klendar o escribe un nombre nuevo. Lo que escribas solo pone el nombre: la foto y la descripción las revisa Klendar.": "Aukeratu Klendarren dagoeneko dagoen bat, edo idatzi izen berri bat. Idazten duzunak izena bakarrik jartzen du: argazkia eta deskribapena Klendarrek berrikusten ditu.",

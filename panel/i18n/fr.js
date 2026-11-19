@@ -1497,7 +1497,7 @@ KL_DIC('fr', {
   "Ese texto no se puede usar. Cámbialo, por favor.": "Ce texte ne peut pas être utilisé. Modifie-le, s’il te plaît.",
   "Ese texto no se puede usar. Cámbialo.": "Ce texte ne peut pas être utilisé. Modifie-le.",
   "Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.": "Cette vidéo dure plus de 45 secondes. Coupe-la et importe-la à nouveau.",
-  "Ese vídeo pesa más de 60 MB.": "Cette vidéo fait plus de 60 Mo.",
+  "Ese vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.": "Cette vidéo fait plus de 25 Mo. Coupe-la ou importe-la depuis l’appli, qui la compresse à l’envoi.",
   "Eso ya no existe.": "Ça n’existe plus.",
   "Espera a que acabe de subirse la foto o el vídeo.": "Attends la fin de l’envoi de la photo ou de la vidéo.",
   "espera media {avg_wait_minutes} min": "attente moyenne {avg_wait_minutes} min",

@@ -57,6 +57,7 @@ async function subeFoto(carpeta, archivo, tam = KFotos.TAM.foto) {
   }
   const ext = blob.type === 'image/jpeg' ? 'jpg' : blob.type.split('/')[1];
   const ruta = `${carpeta}/${YO.id}/${crypto.randomUUID()}.${ext}`;
+  await KFotos.subeMiniatura(ruta, blob, (r, b) => sb.storage.from('business-images').upload(r, b, { contentType: 'image/jpeg' }));
   const { error } = await sb.storage.from('business-images').upload(ruta, blob, { contentType: blob.type });
   if (error) throw Object.assign(new Error(amable(error.message)), { clave: error.message });
   return sb.storage.from('business-images').getPublicUrl(ruta).data.publicUrl;
@@ -1765,6 +1766,8 @@ Object.assign(ERRORES, {
 
 /** Los límites (los da la base; estos, si no contesta). */
 const LIM_MEDIOS = { max: 6, videoSeg: 30, videoBytes: 60 * 1024 * 1024, fotoBytes: 10 * 1024 * 1024 };
+/** Desde la web, vídeos de 25 MB como mucho: aquí no se comprimen (en la app sí). */
+const VIDEO_WEB_BYTES = 25 * 1024 * 1024;
 async function limitesMedios() {
   try {
     const l = await llamar('review_media_limits');
@@ -1793,7 +1796,8 @@ async function preparaMedio(archivo) {
   if (esVideo) {
     const tipo = /quicktime/.test(archivo.type) || /\.mov$/i.test(archivo.name || '') ? 'video/quicktime' : 'video/mp4';
     if (archivo.type && !/^video\/(mp4|quicktime)$/.test(archivo.type)) throw new Error(t(ERRORES.media_type_mismatch));
-    if (archivo.size > LIM_MEDIOS.videoBytes) throw new Error(t('El vídeo pesa más de 60 MB.'));
+    // 25 MB desde la web, que no comprime los vídeos (la app sí, al subirlos).
+    if (archivo.size > Math.min(LIM_MEDIOS.videoBytes, VIDEO_WEB_BYTES)) throw new Error(t('El vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.'));
     const d = await KMedios.datos(archivo);
     if (!d || !d.duracion) throw new Error(t('Ese vídeo no se puede abrir. Prueba con un MP4.'));
     if (d.duracion > LIM_MEDIOS.videoSeg + 0.5) throw new Error(t(ERRORES.video_too_long));
@@ -1812,6 +1816,8 @@ async function preparaMedio(archivo) {
   if (!/^image\/(jpeg|png|webp)$/.test(blob.type)) throw new Error(t('Esa imagen no se puede abrir. Prueba con una foto JPG o PNG.'));
   if (blob.size > LIM_MEDIOS.fotoBytes) throw new Error(t('La foto pesa demasiado. Prueba con otra más pequeña.'));
   const ext = blob.type === 'image/jpeg' ? 'jpg' : blob.type.split('/')[1];
+  // Su miniatura antes (como en la app): el filtro la mira con la foto.
+  await KFotos.subeMiniatura(`${id}.${ext}`, blob, (r, b) => subeAResenas(r, b, 'image/jpeg'));
   return { url: await subeAResenas(`${id}.${ext}`, blob, blob.type), kind: 'photo' };
 }
 

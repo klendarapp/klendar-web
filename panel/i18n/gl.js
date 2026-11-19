@@ -1497,7 +1497,7 @@ KL_DIC('gl', {
   "Ese texto no se puede usar. Cámbialo, por favor.": "Ese texto non se pode usar. Cámbiao, por favor.",
   "Ese texto no se puede usar. Cámbialo.": "Ese texto non se pode usar. Cámbiao.",
   "Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.": "Ese vídeo dura máis de 45 segundos. Recórtao e volve subilo.",
-  "Ese vídeo pesa más de 60 MB.": "Ese vídeo pesa máis de 60 MB.",
+  "Ese vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.": "Ese vídeo pesa máis de 25 MB. Recórtao ou súbeo desde a app, que o comprime ao subilo.",
   "Eso ya no existe.": "Iso xa non existe.",
   "Espera a que acabe de subirse la foto o el vídeo.": "Agarda a que remate de subirse a foto ou o vídeo.",
   "espera media {avg_wait_minutes} min": "espera media {avg_wait_minutes} min",

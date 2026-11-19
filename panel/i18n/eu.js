@@ -1497,7 +1497,7 @@ KL_DIC('eu', {
   "Ese texto no se puede usar. Cámbialo, por favor.": "Testu hori ezin da erabili. Aldatu, mesedez.",
   "Ese texto no se puede usar. Cámbialo.": "Testu hori ezin da erabili. Aldatu ezazu.",
   "Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.": "Bideo horrek 45 segundo baino gehiago irauten du. Moztu eta igo berriro.",
-  "Ese vídeo pesa más de 60 MB.": "Bideo horrek 60 MB baino gehiago ditu.",
+  "Ese vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.": "Bideo horrek 25 MB baino gehiago ditu. Moztu edo igo aplikaziotik: igotzean konprimatzen du.",
   "Eso ya no existe.": "Hori ez dago jada.",
   "Espera a que acabe de subirse la foto o el vídeo.": "Itxaron argazkia edo bideoa igotzen amaitu arte.",
   "espera media {avg_wait_minutes} min": "batez besteko itxaronaldia {avg_wait_minutes} min",

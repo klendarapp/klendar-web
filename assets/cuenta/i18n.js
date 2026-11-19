@@ -1039,7 +1039,7 @@ const APP_EN = {
   "No se ha terminado de subir: vuelve a intentarlo.": "It didn't finish uploading: please try again.",
   "No hemos podido medir el vídeo. Prueba con otro.": "We couldn't measure the video. Try another one.",
   "Algo no ha ido bien con las fotos y vídeos. Vuelve a probar.": "Something went wrong with the photos and videos. Please try again.",
-  "El vídeo pesa más de 60 MB.": "The video is bigger than 60 MB.",
+  "El vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.": "The video is bigger than 25 MB. Trim it or upload it from the app, which compresses it for you.",
   "Ese vídeo no se puede abrir. Prueba con un MP4.": "That video can't be opened. Try an MP4.",
   "Fotos y vídeos": "Photos and videos",
   "Añadir fotos o vídeos": "Add photos or videos",

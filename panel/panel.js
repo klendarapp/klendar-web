@@ -3350,8 +3350,11 @@ async function offerForm(v, id, kindDefault, desde = null) {
         const video = /^video\//.test(elegido.type);
         // Las fotos, reducidas como en la app; los vídeos, tal cual.
         const file = video ? elegido : await KFotos.reduce(elegido, KFotos.TAM.foto);
-        const max = video ? 60 * 1024 * 1024 : 5 * 1024 * 1024;
-        if (file.size > max) { toast(video ? 'Ese vídeo pesa más de 60 MB.' : 'Esa foto pesa más de 5 MB.', true); continue; }
+        // Vídeos: 25 MB desde la web, que no los comprime (la app sí: H.264 a
+        // 1080 px, unos 8 MB por 30 s). Lo que más gasta en Supabase es servir
+        // vídeos pesados (klendar/docs/SERVICIOS_Y_COSTES.md §12.6).
+        const max = video ? 25 * 1024 * 1024 : 5 * 1024 * 1024;
+        if (file.size > max) { toast(video ? 'Ese vídeo pesa más de 25 MB. Recórtalo o súbelo desde la app, que lo comprime al subirlo.' : 'Esa foto pesa más de 5 MB.', true); continue; }
         // Como en la app: vídeos de menos de 45 segundos.
         if (video && (await duracion(file)) > 45.5) { toast('Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.', true); continue; }
         const ext = video ? 'mp4' : (file.name.split('.').pop() || 'jpg').toLowerCase();
@@ -3361,6 +3364,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           await KFotogramas.sube(sb, base, file, (ruta, blob) => sb.storage.from(BUCKET).upload(ruta, blob, { contentType: 'image/jpeg' }));
         }
         const path = `${base}.${ext}`;
+        if (!video) await KFotos.subeMiniatura(path, file, (r, b) => sb.storage.from(BUCKET).upload(r, b, { contentType: 'image/jpeg' }));
         const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
         if (error) { toast(friendly(error.message), true); continue; }
         images.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
@@ -3824,6 +3828,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       hayHueco: () => images.length < TOPE.publicacion,
       usarImagen: async (file) => {
         const path = `${BIZ.id}/${crypto.randomUUID()}.jpg`;
+        await KFotos.subeMiniatura(path, file, (r, b) => sb.storage.from(BUCKET).upload(r, b, { contentType: 'image/jpeg' }));
         const { error } = await sb.storage.from(BUCKET).upload(path, file, { contentType: file.type });
         if (error) { toast(friendly(error.message), true); return false; }
         images.push(sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl);
@@ -6367,6 +6372,7 @@ PAGES.carta = async (v) => {
         if (f.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); return; }
         const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${BIZ.id}/plato-${crypto.randomUUID()}.${ext}`;
+        await KFotos.subeMiniatura(path, f, (r, b) => sb.storage.from(BUCKET).upload(r, b, { contentType: 'image/jpeg' }));
         const { error } = await sb.storage.from(BUCKET).upload(path, f, { contentType: f.type });
         if (error) { toast(friendly(error.message), true); return; }
         carta[si].items[ii].image_url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
@@ -6607,6 +6613,7 @@ PAGES.novedades = async (v) => {
         if (archivo.size > 5 * 1024 * 1024) { toast('Esa foto pesa más de 5 MB.', true); return; }
         const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${BIZ.id}/posts/${crypto.randomUUID()}.${ext}`;
+        await KFotos.subeMiniatura(path, archivo, (r, b) => sb.storage.from(BUCKET).upload(r, b, { contentType: 'image/jpeg' }));
         const { error: up } = await sb.storage.from(BUCKET).upload(path, archivo, { contentType: archivo.type });
         if (up) throw new Error(up.message);
         image = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
