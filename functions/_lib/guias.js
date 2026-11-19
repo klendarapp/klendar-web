@@ -57,8 +57,6 @@ const T = (en) => (en
       noZone: 'Elige tu sitio para ver lo que hay allí.',
       nothingHereBody: 'Mira otros sitios o vuelve en unos días.',
     });
-export const textosGuia = (lang) => T(lang === 'en');
-
 // ¿Cuándo? y el tipo, en la dirección de cada idioma → lo que pide la base.
 const CUANDO = {
   es: { hoy: 'today', manana: 'tomorrow', finde: 'weekend', '10dias': 'next10' },

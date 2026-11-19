@@ -89,15 +89,6 @@ export const icSitio = (id, size = 18) => (POR_ID[id]
   ? `<svg class="ic" viewBox="${POR_ID[id].vb === 24 ? '0 0 24 24' : '0 -960 960 960'}" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${POR_ID[id].d}"/></svg>`
   : '');
 
-/** Iconos del tiempo (umbrella y sunny, de la misma fuente). */
-const TIEMPO = {
-  rain: 'M442 -107 240 -717 380 -683 440 -729V-824Q440 -864 469 -892Q498 -920 540 -920Q582 -920 611 -892Q640 -864 640 -824V-800H560V-824Q560 -832 554 -837.5Q548 -843 540 -843Q532 -843 526 -837.5Q520 -832 520 -824V-729L580 -683L720 -717L518 -108Q513 -94 502.5 -87Q492 -80 480 -80Q468 -80 457.5 -86.5Q447 -93 442 -107ZM520 -368 598 -606 562 -597 520 -628ZM440 -368V-628L398 -596L361 -606Z',
-  sun: 'M440 -760V-920H520V-760ZM706 -650 651 -705 763 -820 819 -763ZM760 -440V-520H920V-440ZM440 -40V-200H520V-40ZM254 -652 140 -763 197 -819 310 -706ZM762 -140 651 -255 705 -309 819 -199ZM40 -440V-520H200V-440ZM197 -140 141 -197 253 -309 282 -282 311 -254ZM480 -240Q380 -240 310 -310Q240 -380 240 -480Q240 -580 310 -650Q380 -720 480 -720Q580 -720 650 -650Q720 -580 720 -480Q720 -380 650 -310Q580 -240 480 -240ZM480 -320Q546 -320 593 -367Q640 -414 640 -480Q640 -546 593 -593Q546 -640 480 -640Q414 -640 367 -593Q320 -546 320 -480Q320 -414 367 -367Q414 -320 480 -320ZM480 -480Q480 -480 480 -480Q480 -480 480 -480Q480 -480 480 -480Q480 -480 480 -480Q480 -480 480 -480Q480 -480 480 -480Q480 -480 480 -480Q480 -480 480 -480Z',
-};
-export const icTiempo = (c, size = 18) => (TIEMPO[c]
-  ? `<svg class="ic" viewBox="0 -960 960 960" width="${size}" height="${size}" aria-hidden="true"><path fill="currentColor" d="${TIEMPO[c]}"/></svg>`
-  : '');
-
 /** Solo los identificadores buenos, sin repetir y en el orden de siempre. */
 export const ordenaSitio = (ids) => {
   const set = new Set((Array.isArray(ids) ? ids : []).map(String));

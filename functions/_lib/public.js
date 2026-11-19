@@ -81,8 +81,6 @@ export async function datosDeNegocios(ids) {
   return { zonas, slugs, entidades };
 }
 
-export const zonasDeNegocios = async (ids) => (await datosDeNegocios(ids)).zonas;
-
 /** Una lista pública leída directamente de `businesses`: sin el negocio de
  *  revisión de las tiendas (`review_only`, migración 20261263900000). Si la
  *  base aún no tiene esa columna contesta 400: la lista sale sin el filtro en

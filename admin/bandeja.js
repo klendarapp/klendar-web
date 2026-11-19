@@ -442,7 +442,6 @@ function tarjetasBandeja(d, k, ctx) {
   sis('emisiones', (tk.leagues || []).length, 1, 'importación de emisiones que no va bien', 'importaciones de emisiones que no van bien', 'broadcast import not working', 'broadcast imports not working', '#/emisiones');
   sis('web', ctx.webErr?.new_24h || 0, 2, 'error nuevo en la web (24 h)', 'errores nuevos en la web (24 h)', 'new website error (24 h)', 'new website errors (24 h)', '#/errores');
   sis('http', tk.http_24h, 2, 'llamada a una Edge Function con error (24 h)', 'llamadas a Edge Functions con error (24 h)', 'failed Edge Function call (24 h)', 'failed Edge Function calls (24 h)', '#/errores');
-  sis('agendas', tk.calendars_failing, 2, 'agenda conectada de una entidad que no se puede leer', 'agendas conectadas de entidades que no se pueden leer', 'connected organisation calendar that can’t be read', 'connected organisation calendars that can’t be read', '#/agenda');
   sis('push', k?.push_failed_7d, 3, 'notificación push fallida (7 d)', 'notificaciones push fallidas (7 d)', 'failed push notification (7 d)', 'failed push notifications (7 d)', '#/avisos?tab=push');
   sis('vencen', k?.subs_expiring_7d, 3, 'suscripción vence en 7 días', 'suscripciones vencen en 7 días', 'subscription expiring in 7 days', 'subscriptions expiring in 7 days', '#/planes');
   sis('locales', ap.venue_groups_open, 3, 'local pedido por la gente sin enlazar', 'locales pedidos por la gente sin enlazar', 'place requested by people, not linked yet', 'places requested by people, not linked yet', '#/pedidos');

@@ -179,40 +179,8 @@ PAGINAS['para-negocios'] = (
 # Las cuentas de entidad (migraciones 20261130100000 y 20261219100000 de la
 # app). Gratis para siempre: decisión de Iván del 3–4-11-2026.
 #
-# «Conecta tu agenda» (20261260100400) se quitó el 12-11-2026 (Iván: todo
-# evento lo publica la entidad, a mano o con «Rellenar desde una foto»;
-# migración 20261276100000): la sección no sale. Se queda aquí, dormida, por
-# si vuelve: AGENDA_CONECTADA = True, encender `app_config.entity_calendar`,
-# devolver la tarjeta del panel (panel/herramientas.js) y la de la app, y
-# `python build_pages.py`.
-AGENDA_CONECTADA = False
-
-_AGENDA_HTML = {
-    'es': """<h2>Conecta tu agenda</h2>
-<p>Si tu entidad ya tiene un calendario en su web (Google Calendar, Outlook, la agenda de WordPress…), no hace falta escribir cada evento dos veces: pegas la dirección iCal o ICS del calendario y sus eventos entran solos en Klendar una vez al día.</p>
-<ul>
-  <li><strong>Lo que cambias allí, cambia aquí.</strong> Si un evento se mueve o se borra en tu calendario, se mueve o se borra en Klendar.</li>
-  <li><strong>Lo que tocas en Klendar, se respeta.</strong> Si editas un evento en Klendar, deja de actualizarse desde el calendario; si lo borras, no vuelve.</li>
-  <li><strong>Solo lo que viene.</strong> Los eventos de los próximos 90 días (hasta 300 por agenda). Lo que se repite entra una vez, con su próxima fecha. Los privados y los cancelados no entran.</li>
-  <li><strong>Sin lugar, en tu dirección.</strong> Un evento sin lugar sale en la dirección de la entidad. Uno con un lugar que no sabemos situar en el mapa entra como borrador para que lo sitúes tú.</li>
-  <li><strong>Con las mismas normas.</strong> Lo que entra sigue las mismas normas que lo que publicas a mano.</li>
-</ul>
-<p>En «Mi negocio › Más herramientas › Conecta tu agenda», en la app o en el <a href="/panel">panel web</a>.</p>
-
-""",
-    'en': """<h2>Connect your calendar</h2>
-<p>If your organisation already has a calendar on its website (Google Calendar, Outlook, a WordPress events calendar…), there's no need to type every event twice: you paste the calendar's iCal or ICS address and its events come into Klendar on their own once a day.</p>
-<ul>
-  <li><strong>What you change there changes here.</strong> If an event moves or is deleted in your calendar, it moves or is deleted on Klendar.</li>
-  <li><strong>What you touch on Klendar is respected.</strong> If you edit an event on Klendar, it stops updating from the calendar; if you delete it, it doesn't come back.</li>
-  <li><strong>Only what's coming up.</strong> Events in the next 90 days (up to 300 per calendar). Repeating events come in once, with their next date. Private and cancelled ones don't come in.</li>
-  <li><strong>No place, your address.</strong> An event without a place shows at the organisation's address. One with a place we can't put on the map comes in as a draft for you to place.</li>
-  <li><strong>Same rules.</strong> What comes in follows the same rules as what you publish by hand.</li>
-</ul>
-<p>In “My business › More tools › Connect your calendar”, in the app or on the <a href="/panel">web dashboard</a>.</p>
-
-""",
-}
+# «Conecta tu agenda» (iCal) se quitó el 12-11-2026 y su código el 19-11
+# (migración 20261276100000 de la app): todo evento lo publica la entidad.
 
 PAGINAS['para-entidades'] = (
     'for-organisations',
@@ -246,7 +214,7 @@ PAGINAS['para-entidades'] = (
 <h2>Qué puedes publicar</h2>
 <p>Lo mismo que un negocio: <strong>eventos</strong> con fecha (con reserva de plaza si la quieres) y <strong>novedades</strong> en tu ficha. Solo actividades abiertas al público o de interés para el barrio o la ciudad: fiestas, mercadillos, campañas de comercio local, actividades culturales, deportivas o solidarias. No vale la propaganda electoral ni de partido, ni la publicidad institucional que destaque logros de gestión en periodo electoral. Todo pasa por las mismas <a href="/normas">normas de la comunidad</a> que cualquier publicación.</p>
 
-{_AGENDA_HTML['es'] if AGENDA_CONECTADA else ''}<h2>Empezar</h2>
+<h2>Empezar</h2>
 <p class="acciones" style="margin-top:18px">
   <a class="pill accent" href="/panel#/alta/entidad/1">Dar de alta una entidad</a>
   <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20para%20mi%20entidad">Escríbenos</a>
@@ -280,7 +248,7 @@ PAGINAS['para-entidades'] = (
 <h2>What you can publish</h2>
 <p>The same as a business: <strong>events</strong> with a date (with place booking if you want it) and <strong>updates</strong> on your page. Only activities open to the public or of interest to the neighbourhood or city: festivities, street markets, local shopping campaigns, cultural, sports or charity activities. No electoral or party propaganda, and no institutional advertising highlighting achievements in office during election periods. Everything follows the same <a href="/en/community-guidelines">community guidelines</a> as any publication.</p>
 
-{_AGENDA_HTML['en'] if AGENDA_CONECTADA else ''}<h2>Getting started</h2>
+<h2>Getting started</h2>
 <p class="acciones" style="margin-top:18px">
   <a class="pill accent" href="/panel?lang=en#/alta/entidad/1">Register an organisation</a>
   <a class="pill ghost" href="mailto:info@klendar.app?subject=Klendar%20for%20my%20organisation">Email us</a>
@@ -414,8 +382,8 @@ PAGINAS['precios'] = (
 # «Para ti» / «Para negocios» y buscador (`assets/ayuda.js`, `assets/ayuda.css`).
 import ayuda  # noqa: E402
 
-AYUDA_V = 1  # ?v= de assets/ayuda.js y ayuda.css
-ASISTENTE_V = 3  # ?v= de assets/asistente.js y asistente.css (apagado no sale nada; RUNBOOK §4zi de la app)
+AYUDA_V = 2  # ?v= de assets/ayuda.js y ayuda.css
+ASISTENTE_V = 4  # ?v= de assets/asistente.js y asistente.css (apagado no sale nada; RUNBOOK §4zi de la app)
 
 AYUDA_T = {
     'es': dict(lead='Lo que más nos preguntan, para quien busca planes y para los negocios.',

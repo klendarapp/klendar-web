@@ -944,7 +944,7 @@ function totalPendiente(k) {
     + (BADGES.reclamaciones || 0) + (BADGES.entidades || 0) + (BADGES.duplicados || 0)
     + (k?.reports_open || 0) + (k?.offers_pending || 0) + (BADGES.resenas || 0) + (BADGES.mensajes || 0) + (ap.media_held || 0) + (ap.content_held || 0)
     + (BADGES.sugerencias || 0) + (ap.subs_past_due || 0) + ((tk.billing || {})['charge.dispute.created'] || 0)
-    + (tk.crons || []).length + (tk.agenda || []).length + (tk.leagues || []).length;
+    + (tk.crons || []).length + (tk.leagues || []).length;
 }
 function renderNav(current) {
   // (al final se traduce; la lista se arma igual en los dos idiomas)
@@ -1505,7 +1505,6 @@ function urgenteTexto(x) {
   switch (x.kind) {
     case 'cron': return [en ? `Scheduled task “${x.title}” is failing` : `La tarea programada «${x.title}» falla`, '#/errores', 'schedule'];
     case 'http': return [en ? `An Edge Function answers ${x.title} to the database` : `Una Edge Function contesta ${x.title} a la base`, '#/errores', 'sync_problem'];
-    case 'agenda': return [en ? `Public listings “${x.title}”: the import isn’t working` : `Agenda pública «${x.title}»: la importación no va bien`, '#/agenda', 'cloud_off'];
     case 'league': return [en ? `Broadcasts: “${x.title}” isn’t importing` : `Emisiones: «${x.title}» no se importa`, '#/emisiones', 'cloud_off'];
     case 'broadcasts': return [en ? `Broadcasts: the import (${x.title}) failed` : `Emisiones: la importación (${x.title}) ha fallado`, '#/emisiones', 'cloud_off'];
     case 'report': {
@@ -2132,13 +2131,6 @@ function tablaBajas(items, conNegocio = true) {
 const cajaTarjeta = (id, titulo, cuerpo, plegada = false, n = 0) => (plegada
   ? `<details class="card plegable" id="${id}"><summary><h2>${titulo}${n ? ` <span class="tag">${fmtNum(n)}</span>` : ''}</h2>${ms('expand_more')}</summary>${cuerpo}</details>`
   : `<div class="card" id="${id}"><h2>${titulo}</h2>${cuerpo}</div>`);
-function tarjetaBajas(items, plegada = false) {
-  if (!items.length) return '';
-  const en = I18N.lang === 'en';
-  return cajaTarjeta('bajas', en ? 'Subscription cancellations' : 'Cancelaciones de suscripción', `
-    <p class="muted" style="margin:0 0 8px">${en ? 'Until there is automatic billing: stop renewing it on its date, tell the owner if needed and mark it as handled.' : 'Hasta que haya cobro automático: no renovarla en su fecha, avisar al dueño si hace falta y marcarla como gestionada.'}</p>
-    ${tablaBajas(items)}`, plegada, items.filter((c) => !c.handled_at && !c.undone_at).length);
-}
 /** «Marcar gestionada…» una cancelación. true si se hizo. */
 async function gestionarBaja(id) {
   const r = await modal({ title: I18N.lang === 'en' ? 'Mark as handled' : 'Marcar como gestionada', fields: [{ name: 'note', label: I18N.lang === 'en' ? 'Note (optional, stays in the log)' : 'Nota (opcional, queda en el registro)', type: 'textarea' }], submit: I18N.lang === 'en' ? 'Mark' : 'Marcar' });
@@ -4101,118 +4093,6 @@ PAGES.categorias = async (v) => {
   $('#new').onclick = () => edit(null);
   $$('[data-edit]').forEach((b) => { b.onclick = () => esperando(b, () => edit(byId[b.dataset.edit])); });
   $$('[data-del]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (!await confirmDlg('Borrar categoría', 'Solo se puede si no la usa ningún negocio ni publicación.', { danger: true, submit: 'Borrar' })) return; try { await rpc('admin_delete_category', { p_id: b.dataset.del }); toast('Borrada'); route(); } catch (e) { toast(e.message, true); } }); });
-};
-
-// ── Agenda pública (migración 20261130100001) ───────────────────────────────
-// QUITADA el 12-11-2026 con «Conecta tu agenda» (migración 20261276100000 de
-// la app: sin fuentes, sin lo importado y sin agendas conectadas). Fuera del
-// menú y sin pantalla (`AGENDA_PUBLICA`); el código se queda, dormido.
-const AGENDA_PUBLICA = false;
-// Lo importado de datos abiertos: cada fuente con su licencia y su última
-// vuelta, «Importar ahora», ocultar una fuente entera y, abajo, los eventos
-// para ocultar uno.
-// Agendas iCal que conectan las entidades («Conecta tu agenda»): solo para
-// mirar. La dirección entera no se enseña (una agenda privada de Google
-// lleva la clave dentro): el dominio. Tres días sin poder leerla, a la
-// entidad le llega su aviso; a los 14 se deja de intentar.
-function tarjetaAgendasConectadas(cal) {
-  const en = I18N.lang === 'en';
-  const c = cal.counts || {};
-  const estado = (x) => (x.last_status === 'ok' ? `<span class="tag st-active">${en ? 'OK' : 'Bien'}</span>`
-    : x.last_status === 'error' ? `<span class="tag bad">${en ? 'Can’t be read' : 'No se puede leer'}</span>`
-    : `<span class="tag dim">${en ? 'Not read yet' : 'Sin leer aún'}</span>`);
-  const intro = en
-    ? `Organisations paste the iCal address of their calendar and its events come into Klendar once a day. ${cal.enabled ? '<b>On.</b>' : '<b>Off</b> (<code>app_config.entity_calendar.enabled</code>) until the legal texts are approved: nothing can be connected and the job does nothing.'} ${fmtNum(c.all || 0)} connected · ${fmtNum(c.error || 0)} can’t be read.`
-    : `Las entidades pegan la dirección iCal de su calendario y sus eventos entran solos en Klendar una vez al día. ${cal.enabled ? '<b>Encendido.</b>' : '<b>Apagado</b> (<code>app_config.entity_calendar.enabled</code>) hasta que se aprueben los textos legales: no se puede conectar nada y la tarea no hace nada.'} ${fmtNum(c.all || 0)} ${c.all === 1 ? 'conectada' : 'conectadas'} · ${fmtNum(c.error || 0)} sin poder leerse.`;
-  return `<div class="card"><h2>${en ? 'Connected calendars (organisations)' : 'Agendas conectadas (entidades)'}</h2>
-    <p class="muted small" style="margin:0 0 10px">${intro}</p>
-    ${table({ cols: [
-      { h: en ? 'Organisation' : 'Entidad', r: (x) => `<a class="link" data-sin-fila href="#/negocios/${esc(x.business_id)}"><b>${esc(x.business_name || '')}</b></a><span class="sub">${esc(x.name || x.url_host)}${x.name ? ` · ${esc(x.url_host)}` : ''}</span>` },
-      { h: en ? 'Events' : 'Eventos', num: true, r: (x) => fmtNum(x.events_count || 0) },
-      { h: en ? 'Last run' : 'Última vuelta', r: (x) => `${estado(x)} ${x.last_run_at ? fmtDate(x.last_run_at) : ''}${x.last_status === 'error' ? `<span class="sub">${esc(x.last_error_detail || x.last_error || '')}${x.fail_count ? ` · ${en ? `${fmtNum(x.fail_count)} in a row` : `${fmtNum(x.fail_count)} seguidas`}` : ''}</span>` : ''}` },
-      { h: en ? 'Mode' : 'Modo', r: (x) => (x.publish_mode === 'draft' ? (en ? 'as drafts' : 'como borradores') : (en ? 'published' : 'publicadas')) },
-    ], rows: cal.rows || [], empty: en ? 'No organisation has connected a calendar.' : 'Ninguna entidad ha conectado una agenda.' })}</div>`;
-}
-const AGENDA = { source: '', q: '', status: 'all', page: 0 };
-if (AGENDA_PUBLICA) PAGES.agenda = async (v) => {
-  const en = I18N.lang === 'en';
-  const fuentes = (await rpc('admin_agenda_sources')) || [];
-  const lista = await rpc('admin_agenda_items', { p_source: AGENDA.source || null, p_query: AGENDA.q || null, p_status: AGENDA.status, p_limit: 50, p_offset: AGENDA.page * 50 });
-  // «Conecta tu agenda» de las entidades (20261260100400): hasta ahora no se
-  // veía en el admin (migración 20261262700000). Sin la función, sin tarjeta.
-  let cal = null;
-  try { cal = await rpc('admin_entity_calendars', { p_status: 'all', p_limit: 100, p_offset: 0 }); } catch (e) { if (e?.obsoleta) throw e; }
-  const cuenta = (c) => {
-    if (!c) return '—';
-    const x = c.last_error_counts ? c.last_error_counts : c;
-    return [
-      x.read != null ? `${fmtNum(x.read)} ${en ? 'read' : 'leídos'}` : '',
-      x.inserted ? `${fmtNum(x.inserted)} ${en ? 'new' : 'nuevos'}` : '',
-      x.updated ? `${fmtNum(x.updated)} ${en ? 'changed' : 'cambiados'}` : '',
-      x.removed ? `${fmtNum(x.removed)} ${en ? 'removed' : 'quitados'}` : '',
-      x.skipped_flagged ? `${fmtNum(x.skipped_flagged)} ${en ? 'not imported (automatic moderation)' : 'sin importar (moderación automática)'}` : '',
-      x.removal_skipped ? (en ? 'nothing removed: the source came back with less than half' : 'no se ha quitado nada: la fuente trajo menos de la mitad') : '',
-    ].filter(Boolean).join(' · ');
-  };
-  const estado = (i) => (i.hidden_at ? `<span class="tag bad">${en ? 'hidden' : 'oculto'}</span>`
-    : i.status === 'active' ? tag('active') : tag(i.status))
-    + (i.human_edited_at ? ` <span class="tag warn">${en ? 'edited by hand' : 'editado a mano'}</span>` : '')
-    + (i.gone_at ? ` <span class="tag dim">${en ? 'no longer in the source' : 'ya no está en la fuente'}</span>` : '');
-  const ayuda = en
-    ? '<p>Every day (4:10–6:10 UTC) the cultural and leisure listings that councils publish as open data are imported into Klendar, on the council’s organisation account if it exists or on “Public listings of &lt;city&gt;”. Nothing imported sends notifications, at most one in five publications in Discover is imported, and what someone edits by hand is not overwritten. “Hide” takes an event (or a whole source) off Klendar until you show it again. Licences and attribution: klendar.app/en/sources/.</p>'
-    : '<p>Cada día (4:10–6:10 UTC) se importa la agenda cultural y de ocio que los ayuntamientos publican como datos abiertos, en la cuenta de entidad del ayuntamiento si existe o en «Agenda pública de &lt;ciudad&gt;». Lo importado no manda avisos, en Descubre es como mucho una de cada cinco publicaciones y lo que alguien edita a mano no se vuelve a pisar. «Ocultar» quita un evento (o una fuente entera) de Klendar hasta que lo vuelvas a mostrar. Licencias y atribución: klendar.app/fuentes/.</p>';
-  v.innerHTML = `
-    <div class="page-head"><h1>${en ? 'Public listings' : 'Agenda pública'}</h1><span class="spacer"></span>
-      <button class="btn primary sm" data-run="">${en ? 'Import all now' : 'Importar todo ahora'}</button></div>
-    ${helpBox(en ? 'What is this?' : '¿Qué es esto?', ayuda)}
-    <div class="card"><h2>${en ? 'Sources' : 'Fuentes'}</h2>${table({ cols: [
-      { h: en ? 'City' : 'Ciudad', r: (f) => `<b>${esc(f.city)}</b><span class="sub">${esc(f.publisher)} · <a class="link" data-sin-fila href="${esc(f.dataset_url)}" target="_blank" rel="noopener">${esc(f.site)} ↗</a></span>` },
-      { h: en ? 'Licence' : 'Licencia', r: (f) => `<a class="link" data-sin-fila href="${esc(f.license_url)}" target="_blank" rel="noopener">${esc(f.license)}</a>` },
-      { h: en ? 'Account' : 'Cuenta', r: (f) => (f.business_id ? `<a class="link" data-sin-fila href="#/negocios/${esc(f.business_id)}">${esc(f.business_name || '')}</a>` : '—') },
-      { h: en ? 'Events' : 'Eventos', num: true, r: (f) => `${fmtNum(f.visible)} <span class="muted small">/ ${fmtNum(f.total)}</span>` },
-      { h: en ? 'Last run' : 'Última vuelta', r: (f) => `${f.running ? `<span class="tag warn">${en ? 'running' : 'en marcha'}</span> ` : ''}${f.last_status === 'ok' ? `<span class="tag st-active">${en ? 'OK' : 'Bien'}</span>` : f.last_status ? `<span class="tag bad">${en ? 'Incomplete' : 'Incompleta'}</span>` : ''} ${fmtDate(f.last_run_at)}<span class="sub">${esc(cuenta(f.last_counts))}${f.last_error ? ` · ${esc(f.last_error)}` : ''}</span>` },
-      { h: '', r: (f) => `<span class="actions"><button class="btn sm" data-run="${esc(f.id)}">${en ? 'Import now' : 'Importar ahora'}</button>${menuAcciones([
-        itemMenu(`data-enabled="${esc(f.id)}" data-v="${f.enabled ? '0' : '1'}"`, f.enabled ? (en ? 'Stop the daily import' : 'Parar la importación diaria') : (en ? 'Import every day' : 'Importar cada día')),
-        itemMenu(`data-hide-src="${esc(f.id)}" data-v="${f.hidden ? '0' : '1'}"`, f.hidden ? (en ? 'Show the whole source' : 'Mostrar la fuente entera') : (en ? 'Hide the whole source…' : 'Ocultar la fuente entera…'), { peligro: !f.hidden }),
-      ], { icono: true, sm: true })}</span>` },
-    ], rows: fuentes, empty: en ? 'No sources.' : 'Sin fuentes.' })}</div>
-    <div class="card"><h2>${en ? 'Imported events' : 'Eventos importados'} <span class="muted small">(${fmtNum(lista.total)})</span></h2>
-      <form class="filters" id="agf">
-        <select name="source" aria-label="${en ? 'Source' : 'Fuente'}"><option value="">${en ? 'All sources' : 'Todas las fuentes'}</option>${fuentes.map((f) => `<option value="${esc(f.id)}" ${AGENDA.source === f.id ? 'selected' : ''}>${esc(f.city)}</option>`).join('')}</select>
-        <select name="status" aria-label="${en ? 'Status' : 'Estado'}">${[['all', en ? 'All' : 'Todos'], ['visible', en ? 'Visible' : 'A la vista'], ['hidden', en ? 'Hidden' : 'Ocultos'], ['edited', en ? 'Edited by hand' : 'Editados a mano'], ['gone', en ? 'No longer in the source' : 'Ya no están en la fuente']].map(([k, t]) => `<option value="${k}" ${AGENDA.status === k ? 'selected' : ''}>${esc(t)}</option>`).join('')}</select>
-        <input name="q" type="search" aria-label="${en ? 'Search' : 'Buscar'}" placeholder="${en ? 'Search title or venue' : 'Buscar título o lugar'}" value="${esc(AGENDA.q)}">
-        <button class="btn sm" type="submit">${en ? 'Search' : 'Buscar'}</button>
-      </form>
-      ${table({ cols: [
-        { h: en ? 'Event' : 'Evento', r: (i) => `<a class="link" data-sin-fila href="#/publicaciones/${esc(i.offer_id)}"><b>${esc(i.title)}</b></a><span class="sub">${esc(i.venue_name || '')} · ${esc(i.category || '')}${i.source_url ? ` · <a class="link" data-sin-fila href="${esc(i.source_url)}" target="_blank" rel="noopener">${en ? 'source' : 'fuente'} ↗</a>` : ''}</span>` },
-        { h: en ? 'When' : 'Cuándo', r: (i) => `${fmtDate(i.event_at)}${i.event_end_at ? `<span class="sub">${en ? 'until' : 'hasta'} ${fmtDay(i.event_end_at)}</span>` : ''}` },
-        { h: en ? 'Status' : 'Estado', r: estado },
-        { h: '', r: (i) => `<button class="btn sm${i.hidden_at ? '' : ' bad ghost'}" data-hide="${esc(i.offer_id)}" data-v="${i.hidden_at ? '0' : '1'}">${i.hidden_at ? (en ? 'Show' : 'Mostrar') : (en ? 'Hide' : 'Ocultar')}</button>` },
-      ], rows: lista.items || [], empty: en ? 'Nothing imported with these filters.' : 'Nada importado con estos filtros.' })}
-      <p class="actions">${AGENDA.page > 0 ? `<button class="btn sm" data-pag="-1">← ${en ? 'Previous' : 'Anteriores'}</button>` : ''}${(AGENDA.page + 1) * 50 < lista.total ? `<button class="btn sm" data-pag="1">${en ? 'Next' : 'Siguientes'} →</button>` : ''}</p>
-    </div>
-    ${cal ? tarjetaAgendasConectadas(cal) : ''}`;
-  $('#agf', v).onsubmit = (e) => {
-    e.preventDefault();
-    const x = Object.fromEntries(new FormData(e.target));
-    Object.assign(AGENDA, { source: x.source || '', status: x.status || 'all', q: String(x.q || '').trim(), page: 0 });
-    route();
-  };
-  $$('[data-pag]', v).forEach((b) => { b.onclick = () => { AGENDA.page = Math.max(0, AGENDA.page + Number(b.dataset.pag)); route(); }; });
-  $$('[data-run]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
-    try { await rpc('admin_agenda_run', { p_source: b.dataset.run || null }); toast(en ? 'Import started: reload in a minute to see how it went' : 'Importación en marcha: vuelve a cargar en un minuto para ver cómo ha ido'); } catch (e) { toast(e.message, true); }
-  }); });
-  $$('[data-enabled]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
-    try { await rpc('admin_agenda_set_source', { p_source: b.dataset.enabled, p_enabled: b.dataset.v === '1', p_hidden: null }); route(); } catch (e) { toast(e.message, true); }
-  }); });
-  $$('[data-hide-src]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
-    const ocultar = b.dataset.v === '1';
-    if (ocultar && !await confirmDlg(en ? 'Hide the whole source' : 'Ocultar la fuente entera', en ? 'All its events stop showing on Klendar (those edited by hand stay as they are) and new ones come in hidden until you show it again.' : 'Todos sus eventos dejan de verse en Klendar (los editados a mano se quedan como están) y los nuevos entran ocultos hasta que la vuelvas a mostrar.', { danger: true, submit: en ? 'Hide' : 'Ocultar' })) return;
-    try { await rpc('admin_agenda_set_source', { p_source: b.dataset.hideSrc, p_enabled: null, p_hidden: ocultar }); route(); } catch (e) { toast(e.message, true); }
-  }); });
-  $$('[data-hide]', v).forEach((b) => { b.onclick = () => esperando(b, async () => {
-    try { await rpc('admin_agenda_hide_item', { p_offer: b.dataset.hide, p_hidden: b.dataset.v === '1' }); route(); } catch (e) { toast(e.message, true); }
-  }); });
 };
 
 // ── Ciudades ────────────────────────────────────────────────────────────────

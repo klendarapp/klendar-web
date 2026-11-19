@@ -180,15 +180,6 @@ export const fmtWhen = (iso, lang, tz) => KZ.fmt(iso, tz, lang === 'en' ? 'en-GB
   weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
 });
 
-export function discountLabel(d) {
-  if (!d) return '';
-  if (d.type === 'percent') return `−${d.value} %`;
-  if (d.type === 'amount') return `−${(d.value / 100).toFixed(2)} €`;
-  if (d.type === 'fixed_price') return `${(d.value / 100).toFixed(2)} €`;
-  if (d.type === 'two_for_one') return '2×1';
-  return d.label || '';
-}
-
 export function render({ lang, path, kind, title, description, image, ogTitle, ogDescription, jsonLd, notFound = false }) {
   const en = lang === 'en';
   const S = en
@@ -237,7 +228,7 @@ ${head}
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261104sal">
+<link rel="stylesheet" href="/assets/site.css?v=20261119a11y2">
 <style>.open .card{max-width:460px}.open .hero-img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:18px;margin-bottom:14px}.open .meta{color:var(--ink-2);font-size:14px;margin:0 0 12px}</style>
 </head>
 <body>
