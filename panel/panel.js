@@ -615,6 +615,32 @@ const botonVerMas = (id) => `<p class="ver-mas"><button type="button" class="btn
 const misPublicaciones = (status = 'todas', limite = POR_PARTE, ultima = null) => rpc('my_business_offers_page', {
   p_business: BIZ.id, p_status: status, p_limit: limite, ...cursorDe(ultima),
 }).then((x) => x || []);
+/** «Publicaciones»: con los chips pulsados (`estados`, varios a la vez;
+ * ninguno = todas menos las archivadas) y lo vivo primero (activas,
+ * programadas, borradores, en revisión…) y después las terminadas y
+ * canceladas, como la app (Iván, 19-11; migración 20261287300000 de la app).
+ * El cursor lleva también el grupo de la última. */
+const grupoPub = (o) => (['terminada', 'cancelada'].includes(o && o.panel_state) ? 1 : 0);
+// Una base sin esa migración (PostgREST no encuentra la firma): la lista de
+// antes (de la más nueva a la más vieja; con varios chips, la de un chip o
+// todas), hasta volver a cargar la página.
+let pubsSinOrdenNuevo = false;
+async function pubsElegidas(estados, ultima = null) {
+  if (!pubsSinOrdenNuevo) {
+    try {
+      return (await rpc('my_business_offers_page', {
+        p_business: BIZ.id, p_status: 'todas', p_limit: POR_PARTE, p_live_first: true,
+        ...(estados.length ? { p_statuses: estados } : {}),
+        ...cursorDe(ultima), ...(ultima ? { p_before_group: grupoPub(ultima) } : {}),
+      })) || [];
+    } catch (e) {
+      if (!/could not find the function/i.test(e.clave || '')) throw e;
+      pubsSinOrdenNuevo = true;
+    }
+  }
+  const uno = estados.length === 1 ? estados[0] : estados.includes('archivada') ? 'cualquiera' : 'todas';
+  return misPublicaciones(uno, POR_PARTE, ultima);
+}
 /** Una publicación del negocio (`my_business_offer`), o null. */
 const miPublicacion = async (id) => (id ? ((await rpc('my_business_offer', { p_id: id })) || [])[0] || null : null);
 
@@ -2120,10 +2146,12 @@ PAGES.publicaciones = async (v, param) => {
   // Por partes: los recuentos de cada estado los da la base y la lista llega
   // de 24 en 24, ya filtrada («Ver más» al final).
   const qf = new URLSearchParams(location.hash.split('?')[1] || '').get('estado');
-  let filtro = FILTROS_PUB.some(([k]) => k === qf) ? qf : 'todas';
+  // Los chips pulsados (varios a la vez); `?estado=` entra con uno.
+  const elegidos = new Set(FILTROS_PUB.some(([k]) => k === qf) ? [qf] : []);
+  const pulsados = () => FILTROS_PUB.map(([k]) => k).filter((k) => elegidos.has(k));
   const [cuentasRaw, primera, otros] = await Promise.all([
     rpc('my_business_offer_counts', { p_business: BIZ.id }),
-    misPublicaciones(filtro),
+    pubsElegidas(pulsados()),
     rpc('my_publishable_businesses', { p_except: BIZ.id }).catch(() => []),
     portadaNegocio(),
   ]);
@@ -2142,8 +2170,8 @@ PAGES.publicaciones = async (v, param) => {
     <div class="pubs-barra"><div id="filtroArch"></div><div id="vistaSw"></div></div>
     <div id="list"></div>
     <div id="rules"></div>`;
-  // Las archivadas (se borraron con canjes validados) no salen en «Todas»:
-  // solo con el filtro «Archivadas», para ver sus cifras o crear otra a
+  // Las archivadas (se borraron con canjes validados) no salen sin pulsar
+  // nada: solo con el chip «Archivadas», para ver sus cifras o crear otra a
   // partir de ellas. No se editan ni se vuelven a publicar.
   // Filtro por estado (como en la app: activa, programada, borrador, en
   // revisión, agotada, terminada, archivada) y la vista: las tarjetas que verá
@@ -2203,10 +2231,9 @@ PAGES.publicaciones = async (v, param) => {
     } catch (e) { toast(friendly(e.message), true); }
   }
 
-  // Otro filtro: la primera parte de ese estado.
-  const cambiaFiltro = async (k) => {
-    filtro = k;
-    const parte = await misPublicaciones(filtro);
+  // Otros chips: la primera parte de esos estados.
+  const cambiaFiltro = async () => {
+    const parte = await pubsElegidas(pulsados());
     offers.length = 0;
     offers.push(...parte);
     hayMas = parte.length >= POR_PARTE;
@@ -2216,16 +2243,34 @@ PAGES.publicaciones = async (v, param) => {
     // Un botón por estado que tenga alguna (las archivadas, solo aquí).
     const cuenta = (k) => Number(cuentas[k]) || 0;
     const nTotal = Number(cuentas.total) || 0;
-    const chips = FILTROS_PUB.filter(([k]) => k === 'todas' || cuenta(k) > 0);
-    if (!chips.some(([k]) => k === filtro)) { cambiaFiltro('todas').catch((e) => toast(friendly(e.message), true)); return; }
-    $('#filtroArch').innerHTML = chips.length > 1 ? `<div class="pills" role="group" aria-label="${esc(I18N.t('Filtrar por estado'))}">
-      ${chips.map(([k, nombre]) => `<button type="button" data-filtro="${k}" class="${filtro === k ? 'on' : ''}" aria-pressed="${filtro === k}" translate="no">${esc(nombre)} <span class="n">${fmtNum(cuenta(k))}</span></button>`).join('')}
-    </div>${filtro === 'archivada' ? `<p class="hint" style="margin:10px 0 0">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en Cifras.'))}</p>` : ''}` : '';
+    // Sin «Todas» y de varios a la vez (Iván, 19-11): ninguno pulsado, todo
+    // menos las archivadas; unos cuantos, solo esos estados. Las archivadas
+    // salen solo con su chip (también con todos pulsados).
+    const chips = FILTROS_PUB.filter(([k]) => cuenta(k) > 0);
+    const sobran = [...elegidos].filter((k) => !chips.some(([c]) => c === k));
+    if (sobran.length) {
+      sobran.forEach((k) => elegidos.delete(k));
+      cambiaFiltro().catch((e) => toast(friendly(e.message), true));
+      return;
+    }
+    // Con un solo chip que no sea «Archivadas», pulsarlo no cambia nada.
+    const conChips = chips.length > 1 || chips.some(([k]) => k === 'archivada');
+    $('#filtroArch').innerHTML = conChips ? `<div class="pills" role="group" aria-label="${esc(I18N.t('Filtrar por estado'))}">
+      ${chips.map(([k, nombre]) => `<button type="button" data-filtro="${k}" class="${elegidos.has(k) ? 'on' : ''}" aria-pressed="${elegidos.has(k)}" translate="no">${esc(nombre)} <span class="n">${fmtNum(cuenta(k))}</span></button>`).join('')}
+    </div>${elegidos.has('archivada') ? `<p class="hint" style="margin:10px 0 0">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en Cifras.'))}</p>` : ''}` : '';
     $$('[data-filtro]', $('#filtroArch')).forEach((b) => {
       b.onclick = async () => {
+        const k = b.dataset.filtro;
         b.disabled = true;
-        try { await cambiaFiltro(b.dataset.filtro); } catch (e) { toast(friendly(e.message), true); b.disabled = false; return; }
-        $(`[data-filtro="${filtro}"]`, $('#filtroArch'))?.focus();
+        const cambia = () => { if (elegidos.has(k)) elegidos.delete(k); else elegidos.add(k); };
+        cambia();
+        try { await cambiaFiltro(); } catch (e) {
+          toast(friendly(e.message), true);
+          cambia();
+          b.disabled = false;
+          return;
+        }
+        $(`[data-filtro="${k}"]`, $('#filtroArch'))?.focus();
       };
     });
     $('#vistaSw').innerHTML = nTotal ? `<div class="pills vista-sw" role="group" aria-label="${esc(I18N.t('Cómo verlas'))}">
@@ -2252,7 +2297,7 @@ PAGES.publicaciones = async (v, param) => {
         mas.disabled = true;
         try {
           const antes = offers.length;
-          const parte = await misPublicaciones(filtro, POR_PARTE, offers[offers.length - 1]);
+          const parte = await pubsElegidas(pulsados(), offers[offers.length - 1]);
           offers.push(...parte);
           hayMas = parte.length >= POR_PARTE;
           render();
@@ -2440,7 +2485,6 @@ const ESTADOS_PUB = {
 // esta noche sigue en curso), «Revisión» las que están en revisión y las
 // rechazadas, y «Terminadas» también las canceladas.
 const FILTROS_PUB = [
-  ['todas', bi('Todas', 'All')],
   ['activas', bi('Activas', 'Active')],
   ['programada', bi('Programadas', 'Scheduled')],
   ['borrador', bi('Borradores', 'Drafts')],

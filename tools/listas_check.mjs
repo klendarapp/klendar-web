@@ -3,8 +3,10 @@
 //
 //  1. Panel › Resumen: las 8 últimas y «Ver todas (N) · M activas» con los
 //     recuentos de la base.
-//  2. Panel › Publicaciones: 24 y «Ver más» (cursor `created_at`, `id`), los
-//     chips con los recuentos de la base y el CSV entero, parte a parte.
+//  2. Panel › Publicaciones: 24 y «Ver más» (cursor `created_at`, `id` y el
+//     grupo de la última, con lo vivo primero), los chips con los recuentos
+//     de la base, sin «Todas» y de varios a la vez (`p_statuses`,
+//     `aria-pressed`), y el CSV entero, parte a parte.
 //  3. Panel › Calendario: el mes que se ve (`my_business_offers_range`).
 //  4. Panel › Reseñas: media y «sin responder» de la base; «Ver más».
 //  5. Panel › Cifras: canjes validados por partes y el total de la base.
@@ -68,17 +70,35 @@ const sesion = () => JSON.stringify({ access_token: jwt(), refresh_token: 'r', t
 const uuid = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
 const hace = (min) => new Date(Date.now() - min * 6e4).toISOString();
 
-// Publicaciones inventadas: 40 (la 1, la más nueva), una por minuto.
+// Publicaciones inventadas: 40 (la 1, la más nueva), una por minuto; las
+// 3 más nuevas, terminadas (con lo vivo primero, van al final).
 const PUBS = Array.from({ length: 40 }, (_, i) => ({
   id: uuid(i + 1), kind: i % 3 ? 'flash_offer' : 'future_event', title: `Publicación ${i + 1}`,
-  status: 'active', moderation_status: 'approved', panel_state: 'activa', created_at: hace(i + 1),
+  status: i < 3 ? 'expired' : 'active', moderation_status: 'approved', panel_state: i < 3 ? 'terminada' : 'activa', created_at: hace(i + 1),
   redeem_start_at: hace(-60), redeem_end_at: hace(-180), event_at: hace(-600), images: [], views: i, redemptions_count: 0,
   audience: 'all',
 }));
+const PUBS_VIVAS_PRIMERO = [...PUBS.slice(3), ...PUBS.slice(0, 3)];
 const pagina = (lista, args, campo = 'created_at') => {
   let desde = 0;
   if (args.p_before) desde = lista.findIndex((x) => x.id === args.p_before_id) + 1;
   return lista.slice(desde, desde + (args.p_limit || 24));
+};
+// Como la base con `p_live_first` (migración 20261287300000 de la app):
+// lo vivo antes que lo terminado, y `p_statuses` (claves de los chips) filtra.
+const CHIP = { activas: ['activa', 'agotada'], revisiones: ['revision', 'rechazada'], terminada: ['terminada', 'cancelada'] };
+const paginaPanel = (lista, args) => {
+  if (!args.p_live_first) return pagina(lista, args);
+  const estados = (args.p_statuses || []).flatMap((k) => CHIP[k] || [k]);
+  const grupo = (o) => (['terminada', 'cancelada'].includes(o.panel_state) ? 1 : 0);
+  const orden = lista
+    .filter((o) => (estados.length ? estados.includes(o.panel_state) : o.panel_state !== 'archivada'))
+    .map((o, i) => [o, i]).sort((a, b) => grupo(a[0]) - grupo(b[0]) || a[1] - b[1]).map(([o]) => o);
+  if (args.p_before) {
+    const i = orden.findIndex((x) => x.id === args.p_before_id);
+    ok(i >= 0 && grupo(orden[i]) === args.p_before_group, `cursor con el grupo de la última (${args.p_before_group})`);
+  }
+  return pagina(orden, args);
 };
 
 function supabaseFalso(estado) {
@@ -96,7 +116,10 @@ function supabaseFalso(estado) {
       const fn = p.slice('/rest/v1/rpc/'.length);
       estado.llamadas.push([fn, body]);
       const r = estado.rpc[fn];
-      if (r !== undefined) return json(typeof r === 'function' ? r(body) : r);
+      const res = typeof r === 'function' ? r(body) : r;
+      // Un error de PostgREST (p. ej. la firma que aún no está en la base).
+      if (res && res.__error) return json({ code: res.__error.code, message: res.__error.message }, res.__error.status || 400);
+      if (r !== undefined) return json(res);
       return json(null);
     }
     if (p.startsWith('/rest/v1/notifications')) {
@@ -132,7 +155,7 @@ const PANEL = (x = {}) => ({
   business_is_organizer: false,
   my_entity_application: { entity_kind: null, can_apply: true, why: null, application: null },
   business_tools_overview: { ok: true, can_edit: true, team: { members: 1 }, series: { rules_active: 0 } },
-  my_business_offers_page: (a) => pagina(PUBS, a),
+  my_business_offers_page: (a) => paginaPanel(PUBS, a),
   // Como la base (migración 20261240400000 de la app): el chip «Activas»
   // cuenta `activas` (activa + agotada); el resumen, `activa`.
   my_business_offer_counts: { total: 41, todas: 40, activa: 37, activas: 37, terminada: 3, archivada: 1 },
@@ -159,18 +182,61 @@ async function panelPublicaciones(nav, n, t, vp) {
   await p.goto(`${BASE}/panel#/publicaciones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas="pubs"]');
   ok(await p.locator('.pub-item').count() === 24, `${n}/${t} publicaciones: las 24 primeras`);
-  ok(/Activas\s*37/.test(await p.locator('#filtroArch').innerText()), `${n}/${t} publicaciones: los chips con los recuentos de la base`);
+  const chips = await p.locator('#filtroArch').innerText();
+  ok(/Activas\s*37/.test(chips), `${n}/${t} publicaciones: los chips con los recuentos de la base`);
+  ok(!/Todas/.test(chips), `${n}/${t} publicaciones: sin el chip «Todas»`);
+  ok(await p.locator('[data-filtro][aria-pressed="true"]').count() === 0, `${n}/${t} publicaciones: de entrada, ningún chip pulsado`);
+  const pri = llamadas(estado, 'my_business_offers_page').find((a) => a.p_limit === 24 && !a.p_before);
+  ok(pri && pri.p_live_first === true && !pri.p_statuses, `${n}/${t} publicaciones: lo vivo primero y sin estados (todas menos archivadas)`);
+  ok(!/Publicación 1\b/.test(await p.locator('.pub-item').first().innerText()), `${n}/${t} publicaciones: la terminada más nueva ya no va arriba`);
   await p.screenshot({ path: `${OUT}/web-panel-publicaciones-${n}-${t}.png`, fullPage: false });
   await p.click('[data-ver-mas="pubs"]');
   await p.waitForFunction(() => document.querySelectorAll('.pub-item').length === 40);
   const seg = llamadas(estado, 'my_business_offers_page').pop();
-  ok(seg.p_before === PUBS[23].created_at && seg.p_before_id === PUBS[23].id, `${n}/${t} publicaciones: «Ver más» con el cursor de la última`);
+  const ult = PUBS_VIVAS_PRIMERO[23];
+  ok(seg.p_before === ult.created_at && seg.p_before_id === ult.id && seg.p_before_group === 0, `${n}/${t} publicaciones: «Ver más» con el cursor de la última (y su grupo)`);
   ok(await p.locator('[data-ver-mas="pubs"]').count() === 0, `${n}/${t} publicaciones: sin «Ver más» al acabar`);
+  const ids = await p.locator('.pub-item').evaluateAll((xs) => xs.map((x) => x.textContent));
+  ok(/Publicación 3\b/.test(ids[ids.length - 1] || '') && new Set(ids).size === 40, `${n}/${t} publicaciones: las terminadas al final, sin repetir`);
+  // Varios chips a la vez.
+  await p.click('[data-filtro="terminada"]');
+  await p.waitForFunction(() => document.querySelectorAll('.pub-item').length === 3);
+  ok(await p.locator('[data-filtro="terminada"]').getAttribute('aria-pressed') === 'true', `${n}/${t} publicaciones: «Terminadas» pulsado (aria-pressed)`);
+  await p.click('[data-filtro="archivada"]');
+  await p.waitForFunction(() => document.querySelectorAll('[data-filtro][aria-pressed="true"]').length === 2);
+  const dos = llamadas(estado, 'my_business_offers_page').pop();
+  ok(JSON.stringify(dos.p_statuses) === JSON.stringify(['terminada', 'archivada']) && dos.p_live_first === true, `${n}/${t} publicaciones: dos chips a la vez (${JSON.stringify(dos.p_statuses)})`);
+  await p.click('[data-filtro="terminada"]');
+  await p.click('[data-filtro="archivada"]');
+  await p.waitForFunction(() => document.querySelectorAll('[data-filtro][aria-pressed="true"]').length === 0 && document.querySelectorAll('.pub-item').length === 24);
+  ok(!llamadas(estado, 'my_business_offers_page').pop().p_statuses, `${n}/${t} publicaciones: sin ninguno pulsado, otra vez todas`);
   const descarga = p.waitForEvent('download');
   await p.click('#csv');
   await descarga;
   ok(llamadas(estado, 'my_business_offers_page').some((a) => a.p_status === 'cualquiera' && a.p_limit === 100), `${n}/${t} publicaciones: el CSV las pide todas, parte a parte`);
   ok(errores.length === 0, `${n}/${t} publicaciones sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+}
+
+// Una base sin la migración 20261287300000 (prod hasta que Iván la lance):
+// la lista de antes, sin romperse.
+async function panelPublicacionesBaseVieja(nav, n, t, vp) {
+  const { ctx, p, estado, errores } = await contexto(nav, vp, PANEL({
+    my_business_offers_page: (a) => (a.p_live_first || a.p_statuses
+      ? { __error: { status: 404, code: 'PGRST202', message: 'Could not find the function public.my_business_offers_page(p_business, p_limit, p_live_first, p_status) in the schema cache' } }
+      : pagina(PUBS, a)),
+  }));
+  await p.goto(`${BASE}/panel#/publicaciones`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('[data-ver-mas="pubs"]');
+  ok(await p.locator('.pub-item').count() === 24, `${n}/${t} base vieja: las 24 primeras, como antes`);
+  await p.click('[data-ver-mas="pubs"]');
+  await p.waitForFunction(() => document.querySelectorAll('.pub-item').length === 40);
+  const seg = llamadas(estado, 'my_business_offers_page').pop();
+  ok(!seg.p_live_first && seg.p_before_id === PUBS[23].id, `${n}/${t} base vieja: «Ver más» con el cursor de antes`);
+  await p.click('[data-filtro="terminada"]');
+  await p.waitForFunction(() => document.querySelector('[data-filtro="terminada"]')?.getAttribute('aria-pressed') === 'true');
+  ok(llamadas(estado, 'my_business_offers_page').pop().p_status === 'terminada', `${n}/${t} base vieja: un chip, su estado de antes`);
+  ok(errores.length === 0, `${n}/${t} base vieja sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
 
@@ -344,7 +410,7 @@ if (!SOLO || SOLO.includes('ficha')) {
   servidorFicha = await serveDev(FICHA_PORT, { SUPABASE_URL: `http://localhost:${FALSO_PORT}`, SUPABASE_KEY: 'falsa' });
 }
 
-const PRUEBAS = { panelResumen, panelPublicaciones, panelCalendario, panelResenas, panelCifras, panelAsistentes, cuentaAvisos, cuentaCodigos, ficha };
+const PRUEBAS = { panelResumen, panelPublicaciones, panelPublicacionesBaseVieja, panelCalendario, panelResenas, panelCifras, panelAsistentes, cuentaAvisos, cuentaCodigos, ficha };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {
