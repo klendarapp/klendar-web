@@ -27,6 +27,13 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const ms = (name) => `<span class="ms" aria-hidden="true">${name}</span>`;
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const LOC = () => I18N.locale;
+// Desplazar «suave» solo si la persona no ha pedido «Reducir movimiento».
+// `localStorage` puede lanzar (ventana privada, datos del sitio bloqueados):
+// sin él, el panel funciona igual, solo no recuerda el último local.
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin permisos */ } };
+const lsDel = (k) => { try { localStorage.removeItem(k); } catch { /* sin permisos */ } };
+const scrollSuave = () => (matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth');
 // Publicar, el plan y la ficha son de propietarios y encargados; el personal
 // valida códigos. La base lo hace cumplir igual: esto solo evita botones que
 // no van a funcionar.
@@ -1080,6 +1087,8 @@ async function boot() {
   } catch { /* sin red: no se bloquea */ }
   $('#who').textContent = ME.email || ME.phone || '';
   $('#app').hidden = false;
+  // Mientras llegan tus negocios: la aguja, no la zona en blanco.
+  if (!$('#view').childElementCount) $('#view').innerHTML = '<div class="loading">Cargando…</div>';
 
   const negocios = await negociosP;
   if (negocios.e) {
@@ -1098,11 +1107,11 @@ async function boot() {
     history.replaceState(null, '', `${location.pathname}${aAlta || (BIZZES.length ? '' : '#/alta')}`);
   }
   if (!BIZZES.length) return noBusiness();
-  const saved = localStorage.getItem('klendar.biz');
+  const saved = lsGet('klendar.biz');
   // ?biz= (desde un aviso de otro de tus locales) manda sobre el último usado.
   const pedido = new URLSearchParams(location.hash.split('?')[1] || '').get('biz');
   BIZ = BIZZES.find((b) => b.id === pedido) || BIZZES.find((b) => b.id === saved) || BIZZES[0];
-  if (pedido && BIZ.id === pedido) localStorage.setItem('klendar.biz', BIZ.id);
+  if (pedido && BIZ.id === pedido) lsSet('klendar.biz', BIZ.id);
   await preparaNegocio();
   renderBizPicker();
   CATS = await categoriasP;
@@ -1155,7 +1164,7 @@ function renderBizPicker() {
       }
       if (!await puedeSalir()) { sel.value = BIZ.id; return; }
       BIZ = BIZZES.find((b) => b.id === elegido);
-      localStorage.setItem('klendar.biz', BIZ.id);
+      lsSet('klendar.biz', BIZ.id);
       for (const otro of $$('#bizSelect, #bizTop')) otro.value = BIZ.id;
       await preparaNegocio();
       const [pag, param] = currentRoute();
@@ -2379,10 +2388,11 @@ PAGES.publicaciones = async (v, param) => {
     try { todas = await todasLasPartes((ultima, tam) => misPublicaciones('cualquiera', tam, ultima)); } catch (e) { toast(friendly(e.message), true); b.disabled = false; return; }
     b.disabled = false;
     downloadCsv(`klendar-${BIZ.name}`, todas, [
-    ['title', 'publicación'], [(o) => I18N.t(LABELS[o.kind]), 'tipo'], [(o) => I18N.t(LABELS[estadoVisible(o)]), 'estado'],
-    ['views', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'aforo'], [(o) => plazasOcupadas(o), 'plazas ocupadas'],
-    [(o) => csvFecha(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at), 'cuándo'],
-  ]);
+    ['title', 'Publicación'], [(o) => I18N.t(LABELS[o.kind]), 'Tipo'], [(o) => I18N.t(LABELS[estadoVisible(o)]), 'Estado'],
+    ['views', 'Vistas'], ['redemptions_count', 'Canjes'], ['max_redemptions', 'Aforo'], [(o) => plazasOcupadas(o), 'Plazas ocupadas'],
+    [(o) => csvFecha(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at), 'Cuándo'],
+    // Las cabeceras en el idioma del panel, como los CSV de Cifras.
+  ].map(([c, h]) => [c, I18N.t(h)]));
   };
   render();
   if (gestiona()) renderRules().catch((e) => toast(friendly(e.message), true));
@@ -2693,7 +2703,7 @@ async function cifrasDialogo(o) {
           ? `<div class="kpi"><b>${plazasTxt(o, plazasOcupadas(o))}</b><span>Plazas</span></div>`
           : `<div class="kpi"><b>${fmtNum((asis.reserved_seats ?? asis.reserved) + (asis.attended_seats ?? asis.attended))}</b><span>Reservas</span></div>`}
         <div class="kpi"><b>${fmtNum(asis.attended_seats ?? asis.attended)}</b><span>Han entrado</span></div>
-        ${asis.expected_cents ? `<div class="kpi"><b>${fmtMoney(asis.expected_cents)}</b><span>Si viene todo el mundo</span></div>` : ''}
+        ${asis.expected_cents && gestiona() ? `<div class="kpi"><b>${fmtMoney(asis.expected_cents)}</b><span>Si viene todo el mundo</span></div>` : ''}
       </div>
       <p class="muted" style="margin:0">${asis.waitlist ? `${fmtNum(asis.waitlist)} ${I18N.lang === 'en' ? 'on the waiting list' : 'en lista de espera'} · ` : ''}${esc(I18N.t('El cobro es tuyo, en la puerta: aquí solo contamos plazas a precio de tarifa.'))}</p>` : ''}
     ${vistas ? '<p style="margin:0"><button type="button" class="btn sm" data-csvdia>Exportar CSV</button></p>' : ''}`;
@@ -2702,8 +2712,8 @@ async function cifrasDialogo(o) {
   const csv = $('#modal [data-csvdia]');
   if (csv) {
     csv.onclick = () => downloadCsv(`klendar-${o.title}-diario`, d, [
-      [(x) => String(x.day).slice(0, 10), 'día'], ['views', 'vistas'], ['redemptions', 'canjes'],
-    ]);
+      [(x) => String(x.day).slice(0, 10), 'Día'], ['views', 'Vistas'], ['redemptions', 'Canjes'],
+    ].map(([c, h]) => [c, I18N.t(h)]));
   }
   await abierto;
 }
@@ -2874,7 +2884,15 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // «Abrir reservas el…» (`app_config.reservation_opening`, migración
   // 20261284200000), aparte como en la app: al crear otra a partir de esta
   // no se copia. Si falla, como apagado (ni sale ni se manda).
-  const apertura = (await rpc('reservation_opening_info', { p_offer: id || null }).catch(() => null)) || {};
+  // Lo de abajo no depende de nada de lo anterior: se pide a la vez (antes,
+  // uno detrás de otro, el formulario tardaba en abrir un viaje por cada uno).
+  const [aperturaR, preguntasR, datosRrpp, artistasIni] = await Promise.all([
+    rpc('reservation_opening_info', { p_offer: id || null }).catch(() => null),
+    rpc('booking_questions_for', { p_offer: origenLugar || null }).catch(() => null),
+    rrppFormularioCarga(origenLugar, o),
+    artistasDe(origenLugar),
+  ]);
+  const apertura = aperturaR || {};
   const aperturaOn = apertura.enabled === true;
   const aperturaAbierta = !!id && !!apertura.opens_at && apertura.open === true;
   const aperturaFmt = (iso) => KZ.fmt(iso, TZ, LOC(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
@@ -2882,16 +2900,15 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // 20261284300000), aparte como en la app: al crear otra a partir de esta
   // se copian (sin respuestas); al editar, con respuestas ya dadas, las que
   // hay no se cambian. Si falla, como apagado (ni sale ni se manda).
-  const preguntasInfo = (await rpc('booking_questions_for', { p_offer: origenLugar || null }).catch(() => null)) || {};
+  const preguntasInfo = preguntasR || {};
   const preguntasOn = preguntasInfo.enabled === true && typeof editorPreguntas === 'function';
   const preguntasFijas = id && preguntasInfo.locked ? (preguntasInfo.questions || []).length : 0;
   // Las palabras de salud (la lista de la base, 20261284350000): marcan la
   // pregunta como de salud al escribir. Sin ella, la base la marca al guardar.
   const saludTerminos = preguntasOn ? ((await rpc('booking_health_terms', {}).catch(() => null)) || []) : [];
-  // «Solo con el enlace de un RRPP»: los RRPP del negocio y los elegidos.
-  const datosRrpp = await rrppFormularioCarga(origenLugar, o);
-  // «Quién actúa» (panel/artistas.js): los que ya tiene (o la que se copia).
-  const artistasIni = await artistasDe(origenLugar);
+  // «Solo con el enlace de un RRPP» (los RRPP del negocio y los elegidos) y
+  // «Quién actúa» (panel/artistas.js, los que ya tiene o la que se copia):
+  // pedidos arriba, con lo demás.
   const teniaArtistas = !!id && artistasIni.length > 0;
   // Organizador sin local fijo: todo lo suyo es «en otro sitio» (con el sitio
   // obligatorio), y «Dónde» va en lo esencial, sin poder quitarlo.
@@ -4529,7 +4546,7 @@ PAGES.calendario = async (v, param) => {
     if (enfocar === 'dia') {
       const h = $('#diaTitulo', v);
       h.focus({ preventScroll: true });
-      if (window.matchMedia('(max-width: 900px)').matches) h.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      if (window.matchMedia('(max-width: 900px)').matches) h.scrollIntoView({ block: 'start', behavior: scrollSuave() });
     } else if (enfocar?.startsWith('mes')) {
       $(`[data-mes="${enfocar.slice(3)}"]`, v)?.focus();
     }
@@ -5053,9 +5070,26 @@ PAGES.validar = async (v) => {
   let recientes = [];
   let recientesMas = false;
   const loadRecent = async (mas = false) => {
-    const nuevos = await rpc('business_recent_validations', {
-      p_business: BIZ.id, p_limit: 15, ...(mas && recientes.length ? { p_before: recientes[recientes.length - 1].at } : {}),
-    }).catch(() => []);
+    let nuevos;
+    try {
+      nuevos = await rpc('business_recent_validations', {
+        p_business: BIZ.id, p_limit: 15, ...(mas && recientes.length ? { p_before: recientes[recientes.length - 1].at } : {}),
+      });
+    } catch (e) {
+      // Un fallo no es «Todavía no has validado ningún código»: lo dice y
+      // deja reintentar (con «Ver más», el botón vuelve a estar a mano).
+      const caja = $('#recent');
+      if (!caja) return;
+      if (mas) {
+        toast(friendly(e.message), true);
+        const b = $('[data-ver-mas="recientes"]', caja);
+        if (b) b.disabled = false;
+        return;
+      }
+      caja.innerHTML = `<p class="muted">${esc(friendly(e.message))}</p><p><button class="btn sm" type="button" data-recientes-otra>${esc(I18N.t('Reintentar'))}</button></p>`;
+      $('[data-recientes-otra]', caja).onclick = () => loadRecent();
+      return;
+    }
     recientes = mas ? [...recientes, ...(nuevos || [])] : (nuevos || []);
     recientesMas = (nuevos || []).length >= 15;
     const rows = recientes;
@@ -5257,7 +5291,7 @@ PAGES.validar = async (v) => {
   rrppPuerta(cajaListas, (res) => {
     pintaResultado(res, res.ok ? 'ok' : 'bad');
     if (res.ok) { if (navigator.vibrate) navigator.vibrate(120); sumaValidado(); loadRecent(); }
-    $('#result')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    $('#result')?.scrollIntoView({ block: 'nearest', behavior: scrollSuave() });
   }).then(() => {
     if (!conListas || !cajaListas?.isConnected) return;
     if (!cajaListas.innerHTML.trim() && typeof RRPP_LISTAS_VACIA === 'function') cajaListas.innerHTML = `<div style="margin-top:18px">${RRPP_LISTAS_VACIA()}</div>`;
@@ -5377,7 +5411,7 @@ PAGES.asistentes = async (v, offerId) => {
     : a.status === 'expired' ? `<span class="tag dim">${terminado ? 'No vino' : 'Caducada'}</span>`
       : a.status === 'cancelled' ? '<span class="tag dim">Anulada</span>'
         : '<span class="tag st-pending">Reservada</span>');
-  const ESTADO_CSV = { validated: 'dentro', expired: terminado ? 'no vino' : 'caducada', cancelled: 'anulada', pending: 'reservada' };
+  const ESTADO_CSV = { validated: 'Dentro', expired: terminado ? 'No vino' : 'Caducada', cancelled: 'Anulada', pending: 'Reservada' };
   // La lista de espera: cuántos y, si la privacidad lo dice
   // (`app_config.waitlist_names`), quiénes: el nombre visible y, a quien ya
   // avisamos, hasta cuándo le guardamos la plaza. El correo y el teléfono,
@@ -5480,8 +5514,9 @@ PAGES.asistentes = async (v, offerId) => {
     } catch (e) { toast(friendly(e.message), true); b.disabled = false; return; }
     b.disabled = false;
     downloadCsv(`asistentes-${offer?.title || ''}`, todos, [
-    ['user_name', 'nombre'], ['code', 'código'], [(a) => plazas(a), 'plazas'], [(a) => ESTADO_CSV[a.status] || a.status, 'estado'],
-    [(a) => csvFecha(a.created_at), 'reservó'], [(a) => csvFecha(a.validated_at), 'entró'],
+    ['user_name', I18N.t('Nombre')], ['code', I18N.t('Código')], [(a) => plazas(a), I18N.t('Plazas')],
+    [(a) => (ESTADO_CSV[a.status] ? I18N.t(ESTADO_CSV[a.status]) : a.status), I18N.t('Estado')],
+    [(a) => csvFecha(a.created_at), I18N.t('Reservó')], [(a) => csvFecha(a.validated_at), I18N.t('Entró')],
     ['promoter_name', bi('lista de RRPP', 'promoter list')],
     [(a) => (a.promoter_off_offer ? bi('sí', 'yes') : ''), bi('fuera de su oferta', 'outside their offer')],
     // Preguntas al reservar: una columna por pregunta (las de salud,
@@ -5938,7 +5973,7 @@ async function tarjetaClientes(v, id) {
         { danger: true, submit: 'Poner a 0' })) return;
       accion('reset_stamps', { p_card: c.id, p_user: p.user_id }, 'Tarjeta a 0');
     };
-    caja.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    caja.scrollIntoView({ behavior: scrollSuave(), block: 'start' });
   }
 
   // Añadir a alguien: quien ya ha canjeado algo aquí y aún no está.
@@ -6143,6 +6178,8 @@ async function subeArchivosCarta(elegidos, hay, estado = () => {}) {
   for (const [i, x] of entran.entries()) {
     estado(bi(`Subiendo ${i + 1} de ${entran.length}…`, `Uploading ${i + 1} of ${entran.length}…`));
     const path = `${BIZ.id}/carta/${crypto.randomUUID()}.${x.ext}`;
+    // Su miniatura de 400 px antes, como las demás fotos (un PDF no lleva).
+    if (x.kind !== 'pdf') await KFotos.subeMiniatura(path, x.file, (r, b) => sb.storage.from(BUCKET).upload(r, b, { contentType: 'image/jpeg' }));
     const { error } = await sb.storage.from(BUCKET).upload(path, x.file, { contentType: x.type });
     if (error) { toast(friendly(error.message), true); continue; }
     subidos.push({ kind: x.kind, url: sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl, ...(x.name ? { name: x.name } : {}), bytes: x.file.size });
@@ -6174,9 +6211,13 @@ function htmlArchivosCarta(archivos, canManage) {
 
 PAGES.carta = async (v) => {
   const canManage = ['owner', 'manager'].includes(BIZ.role);
-  const [ficha, enlacesNeg] = await Promise.all([
+  // La carta, a la vez y SIN «.catch»: si no llega, «Algo ha fallado» con
+  // «Reintentar». Con una carta vacía en su lugar, guardar después de añadir
+  // un plato mandaba solo ese plato y borraba la que había.
+  const [ficha, enlacesNeg, cartaGuardada] = await Promise.all([
     sb.from('businesses').select('menu_url, menu_images, category_id').eq('id', BIZ.id).maybeSingle(),
     rpc('business_links', { p_id: BIZ.id }).catch(() => null),
+    rpc('business_menu', { p_business: BIZ.id }),
   ]);
   if (ficha.data) BIZ.category_id = ficha.data.category_id ?? null;
   // «Carta», «Servicios y precios»… (Iván, 18-11): lo mismo por dentro.
@@ -6184,7 +6225,7 @@ PAGES.carta = async (v) => {
   const carta2 = (textos) => segunCarta(textos, tipo);
   const tc = { ...TEXTOS_CARTA[palabraCarta(CATS.find((c) => c.id === ficha.data?.category_id))], tipo };
   const guardarTxt = carta2([bi('Guardar la carta', 'Save the menu'), bi('Guardar la lista', 'Save the price list')]);
-  let carta = await rpc('business_menu', { p_business: BIZ.id }).catch(() => []);
+  let carta = Array.isArray(cartaGuardada) ? cartaGuardada : [];
   // Los 14 alérgenos, solo en comida y bebida (Iván, 18-11). En otro tipo,
   // los que un plato ya tenga se siguen viendo y se pueden quitar.
   const conAlergenos = KlendarCategorias.alergenos(CATS.find((c) => c.id === BIZ.category_id));
@@ -7219,6 +7260,13 @@ const canjesParte = (desde, ultima, tam = CANJES_POR_PARTE) => rpc('business_red
 
 PAGES.informe = async (v, param) => {
   const days = Number(param) || 30;
+  // RRPP y series no dependen del informe: se piden ya, a la vez que él
+  // (antes iban uno detrás de otro, después).
+  const rrppHoyR = gestiona() && typeof rrppNocheHoy === 'function' ? rrppNocheHoy() : null;
+  const rrppRepP = rrppHoyR
+    ? rpc('promoter_report', { p_business: BIZ.id, p_from: rrppMenos(rrppHoyR, days), p_to: rrppHoyR }).catch(() => null)
+    : Promise.resolve(null);
+  const seriesHtmlP = informeSeriesHtml().catch(() => '');
   const [r, aud, toques] = await Promise.all([
     rpc('business_report', { p_id: BIZ.id, p_days: days }).then((x) => x || {}),
     rpc('business_audience', { p_id: BIZ.id, p_days: days }).catch(() => null),
@@ -7285,8 +7333,7 @@ PAGES.informe = async (v, param) => {
   // RRPP (propietario y encargado): apuntados y quién ha entrado.
   let rrppHtml = '';
   if (gestiona() && typeof rrppNocheHoy === 'function') {
-    const hoyR = rrppNocheHoy();
-    const rep = await rpc('promoter_report', { p_business: BIZ.id, p_from: rrppMenos(hoyR, days), p_to: hoyR }).catch(() => null);
+    const rep = await rrppRepP;
     const filasR = rep?.promoters || [];
     if (filasR.length) {
       const fir = filasR.reduce((a, x) => a + (x.signed || 0), 0);
@@ -7368,7 +7415,7 @@ PAGES.informe = async (v, param) => {
 
     ${rrppHtml}
 
-    ${conRes(await informeSeriesHtml(), '')}
+    ${conRes(await seriesHtmlP, '')}
 
 
     ${!gestiona() ? `<div class="card" data-res="${esc(bi('Solo cifras', 'Figures only'))}"><h2>Canjes validados</h2><p class="muted" style="margin:0">${esc(bi(
@@ -8061,7 +8108,7 @@ async function eliminarNegocio(v) {
       return;
     }
     const nombre = BIZ.name;
-    localStorage.removeItem('klendar.biz');
+    lsDel('klendar.biz');
     BIZZES = await rpc('my_businesses').catch(() => []);
     BIZ = BIZZES[0] || null;
     toast(bi(`${nombre} se ha eliminado`, `${nombre} has been deleted`));
@@ -8080,7 +8127,7 @@ async function salirDelEquipo() {
     { submit: I18N.t('Salir del equipo'), danger: true })) return;
   await rpcOk('leave_business', { p_business: BIZ.id });
   const nombre = BIZ.name;
-  localStorage.removeItem('klendar.biz');
+  lsDel('klendar.biz');
   BIZZES = await rpc('my_businesses').catch(() => []);
   BIZ = BIZZES[0] || null;
   toast(bi(`Has salido del equipo de ${nombre}`, `You've left the ${nombre} team`));

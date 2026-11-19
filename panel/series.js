@@ -44,9 +44,11 @@ async function rpcSerie(fn, args) {
 
 PAGES.series = async (v) => {
   const puede = gestiona();
+  // Sin «.catch»: un fallo no es «Aún no tienes series»; la pantalla dice
+  // «Algo ha fallado» con «Reintentar».
   const [lista, reglas] = await Promise.all([
-    seriesDeNegocio(),
-    puede ? rpc('my_offer_rules', { p_business: BIZ.id }).catch(() => []) : Promise.resolve([]),
+    rpc('my_business_series', { p_business: BIZ.id }).then((r) => r || []),
+    puede ? rpc('my_offer_rules', { p_business: BIZ.id }).then((r) => r || []) : Promise.resolve([]),
   ]);
   const DIAS = I18N.lang === 'en'
     ? ['Sundays', 'Mondays', 'Tuesdays', 'Wednesdays', 'Thursdays', 'Fridays', 'Saturdays']

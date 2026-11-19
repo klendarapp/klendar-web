@@ -44,7 +44,7 @@ ROOT = Path(__file__).resolve().parent.parent
 
 AREAS = {
     # ideas.js ya trae cada idea en los dos idiomas.
-    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/momento.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/artistas.js', 'panel/fidelizar.js', 'panel/herramientas.js', 'panel/entidades.js', 'panel/plan.js', 'panel/cerrado.js', 'panel/aforo.js', 'panel/pedir.js', 'panel/listo.js', 'panel/preguntas.js', 'panel/foto.js', 'panel/enlace.js', 'panel/ayudas.js', 'panel.html'], 'panel/i18n.js'),
+    'panel': (['panel/panel.js', 'panel/rrpp.js', 'panel/ficha.js', 'panel/partidos.js', 'panel/bonos.js', 'panel/momento.js', 'panel/grupos.js', 'panel/sorteos.js', 'panel/cola.js', 'panel/artistas.js', 'panel/fidelizar.js', 'panel/herramientas.js', 'panel/entidades.js', 'panel/plan.js', 'panel/cerrado.js', 'panel/aforo.js', 'panel/pedir.js', 'panel/listo.js', 'panel/preguntas.js', 'panel/foto.js', 'panel/enlace.js', 'panel/ayudas.js', 'panel/encargos.js', 'panel/series.js', 'panel/mesa.js', 'panel/guias.js', 'panel/preguntas_reservar.js', 'panel/retenido.js', 'panel.html'], 'panel/i18n.js'),
     'admin': (['admin/admin.js', 'admin/emisiones.js', 'admin/artistas.js', 'admin/condiciones.js', 'admin/crecer.js', 'admin/cerrado.js', 'admin/festivos.js', 'admin/traduccion.js', 'admin/foto.js', 'admin.html'], 'admin/i18n.js'),
     'cuenta': (['assets/cuenta/app.js', 'assets/cuenta/cuenta.js', 'assets/cuenta/amigos.js', 'assets/cuenta/correo.js', 'assets/cuenta/rrpp.js', 'assets/cuenta/partidos.js', 'assets/cuenta/artistas.js', 'assets/cuenta/bonos.js', 'assets/cuenta/momento.js', 'assets/cuenta/grupos.js', 'assets/cuenta/sorteos.js', 'assets/cuenta/cola.js', 'assets/cuenta/contacto.js', 'assets/cuenta/listo.js', 'assets/cuenta/ahorro.js', 'assets/cuenta/crecer.js', 'assets/cuenta/preguntas.js', 'assets/cuenta/reservar_preguntas.js'], 'assets/cuenta/i18n.js'),
 }
@@ -53,7 +53,10 @@ AREAS = {
 ES = re.compile(r"[áéíóúñ¿¡]|\b(el|la|los|las|de|del|que|con|para|por|una?|sin|más|esta?|este|hay|tu|tus|se|ya|en|al|y|o|lo|es|son)\b", re.I)
 # …y en inglés (los textos ya en inglés no se cuentan).
 EN = re.compile(r"\b(the|and|to|of|your|you|is|are|with|for|in|on|this|it|at|an?|or|be|no|not|can|will|from|by)\b", re.I)
-BILINGUE = re.compile(r"\b(en|EN)\s*\?|I18N\.lang === 'en'|lang === 'en'|\bbi(Trozos)?\(|^\s*[?:] [`'\"\[(]")
+BILINGUE = re.compile(r"\b(en|EN)\s*\?|I18N\.lang === 'en'|lang === 'en'|\bbi(Trozos)?\(|^\s*[?:] [`'\"\[(]"
+                      # Tablas [clave, español, inglés] o {clave: [español, inglés]} y botones
+                      # btn('acción', 'español', 'inglés') (encargos, series).
+                      r"|\[(\d+|'\w+'), '[^']+', '[^']+'\]|\w+: \['[^']+', '[^']+'\]|\bbtn\('\w+', '[^']+', '[^']+'")
 # Nombres propios y palabras que son iguales en inglés.
 MARCAS = {'Klendar', 'Supabase', 'Google', 'Apple', 'Stripe', 'Mapbox', 'Resend', 'Cloudflare', 'Madrid', 'Barcelona',
           'Pro', 'Error', 'Email', 'Web', 'Premium', 'Instagram', 'Facebook', 'Twitter', 'Android', 'Total', 'Normal',

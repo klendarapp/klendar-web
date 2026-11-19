@@ -331,7 +331,7 @@ async function entAlta(v, param) {
       GUARDA = null;
       BIZZES = await rpc('my_businesses');
       BIZ = BIZZES.find((b) => b.id === id) || BIZZES[0];
-      localStorage.setItem('klendar.biz', BIZ.id);
+      lsSet('klendar.biz', BIZ.id);
       if (BIZ.id === id) BIZ.time_zone = KZ.porCoordenadas(punto.lat, punto.lng);
       await preparaNegocio();
       $('.bizpick').hidden = false;

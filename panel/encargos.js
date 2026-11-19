@@ -219,7 +219,7 @@ function encFormulario(caja, d, i, hecho) {
   f.elements.al_none.onchange = () => { if (f.elements.al_none.checked) f.querySelectorAll('[name="al"]').forEach((c) => { c.checked = false; }); };
   $('#encFoto', caja).onchange = async (e) => { const fl = e.target.files?.[0]; if (fl) { foto = (await encSubeFoto(fl)) || foto; toast(bi('Foto lista', 'Photo ready')); } };
   const lee = (txt) => String(txt || '').split(',').map((x) => x.trim()).filter(Boolean).map((x) => x.split('-').map((y) => y.trim()));
-  caja.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  caja.scrollIntoView({ behavior: scrollSuave(), block: 'start' });
   f.onsubmit = async (e) => {
     e.preventDefault();
     const fe = f.elements;

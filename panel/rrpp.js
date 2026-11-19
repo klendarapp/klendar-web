@@ -752,7 +752,9 @@ async function rrppPuerta(caja, alValidar) {
 async function rrppFormularioCarga(origen, o) {
   const [lista, elegidos] = await Promise.all([
     rpc('business_promoters_list', { p_business: BIZ.id }).catch(() => []),
-    origen && o?.promoter_scope === 'some' ? rpc('offer_promoter_ids', { p_offer: origen }).catch(() => []) : Promise.resolve([]),
+    // Sin «.catch»: con «Solo algunos», una lista vacía por un fallo se
+    // guardaría como «ninguno elegido». Mejor «Algo ha fallado» y reintentar.
+    origen && o?.promoter_scope === 'some' ? rpc('offer_promoter_ids', { p_offer: origen }) : Promise.resolve([]),
   ]);
   return {
     promotores: (lista || []).filter((p) => p.status === 'active' || p.status === 'paused'),

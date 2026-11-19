@@ -91,7 +91,7 @@ PAGES.fidelizar = async (v) => {
   const bonos = num('passes', 'on_sale');
   const sorteos = num('giveaways', 'active');
   const prox = o?.messages?.next_at
-    ? new Date(o.messages.next_at).toLocaleDateString(I18N.lang === 'en' ? 'en-GB' : 'es-ES', { day: 'numeric', month: 'long', timeZone: TZ })
+    ? new Date(o.messages.next_at).toLocaleDateString(LOC(), { day: 'numeric', month: 'long', timeZone: TZ })
     : null;
   const configurar = edit ? bi('Configurar', 'Set up') : bi('Ver', 'View');
   // Por orden de lo que más usa un negocio pequeño (como la app).

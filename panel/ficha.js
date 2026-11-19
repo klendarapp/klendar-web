@@ -552,7 +552,7 @@ async function aseguraPunto(caja, f, est) {
     : I18N.t('Marca en el mapa dónde está el local (o pulsa «Buscar en el mapa»).');
   txt.classList.add('err');
   $('[data-buscar]', caja).focus();
-  txt.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  txt.scrollIntoView({ block: 'center', behavior: scrollSuave() });
   return false;
 }
 
@@ -1113,7 +1113,7 @@ PAGES.alta = async (v, param) => {
       GUARDA = null;
       BIZZES = await rpc('my_businesses');
       BIZ = BIZZES.find((b) => b.id === id) || BIZZES[0];
-      localStorage.setItem('klendar.biz', BIZ.id);
+      lsSet('klendar.biz', BIZ.id);
       // Recién dado de alta: su zona sale del punto marcado en el mapa.
       if (BIZ.id === id) BIZ.time_zone = KZ.porCoordenadas(punto.lat, punto.lng);
       await preparaNegocio();
