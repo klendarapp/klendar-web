@@ -160,7 +160,7 @@ window.KLENDAR_SUGERENCIAS = {
      "en": "Free tapa with your order",
      "ca": "Tapa gratis amb la teva consumició",
      "gl": "Tapa de balde coa túa consumición",
-     "eu": "Tapa doan zure kontsumizioarekin",
+     "eu": "Doako tapa zure kontsumizioarekin",
      "fr": "Tapa offerte avec ta consommation",
      "de": "Gratis-Tapa zu deiner Bestellung",
      "it": "Tapa gratis con la tua consumazione"
@@ -279,7 +279,7 @@ window.KLENDAR_SUGERENCIAS = {
      "en": "Free dessert with your dinner",
      "ca": "Postres gratis amb el teu sopar",
      "gl": "Sobremesa de balde coa túa cea",
-     "eu": "Postrea doan zure afariarekin",
+     "eu": "Doako postrea zure afariarekin",
      "fr": "Dessert offert avec ton dîner",
      "de": "Gratis-Dessert zu deinem Abendessen",
      "it": "Dolce gratis con la tua cena"
@@ -303,7 +303,7 @@ window.KLENDAR_SUGERENCIAS = {
      "en": "Free extra scoop in your tub",
      "ca": "Bola extra gratis a la teva terrina",
      "gl": "Bola extra de balde na túa terrina",
-     "eu": "Bola gehigarria doan zure ontzian",
+     "eu": "Doako bola gehigarria zure ontzian",
      "fr": "Boule supplémentaire offerte dans ton pot",
      "de": "Gratis-Extrakugel in deinem Becher",
      "it": "Pallina extra gratis nella tua coppetta"
@@ -376,7 +376,7 @@ window.KLENDAR_SUGERENCIAS = {
      "en": "Weekday morning haircut for {precio}",
      "ca": "Tall entre setmana al matí per {precio}",
      "gl": "Corte entre semana pola mañá por {precio}",
-     "eu": "Asteguneko goizeko ilea moztea {precio}",
+     "eu": "Ile-mozketa astegun goizetan {precio}",
      "fr": "Coupe en semaine le matin pour {precio}",
      "de": "Haarschnitt unter der Woche vormittags für {precio}",
      "it": "Taglio infrasettimanale al mattino a {precio}"
@@ -537,7 +537,7 @@ window.KLENDAR_SUGERENCIAS = {
      "en": "Bring someone along: their class is free",
      "ca": "Vine amb qui vulguis: la seva classe, gratis",
      "gl": "Ven con quen queiras: a súa clase, de balde",
-     "eu": "Etorri nahi duzunarekin: bere klasea doan",
+     "eu": "Etorri nahi duzunarekin: haren klasea doan",
      "fr": "Viens accompagné : son cours est offert",
      "de": "Bring jemanden mit: seine Stunde ist gratis",
      "it": "Vieni con chi vuoi: la sua lezione è gratis"
@@ -607,7 +607,7 @@ window.KLENDAR_SUGERENCIAS = {
      "en": "Bring someone along: their class is free",
      "ca": "Vine amb qui vulguis: la seva classe, gratis",
      "gl": "Ven con quen queiras: a súa clase, de balde",
-     "eu": "Etorri nahi duzunarekin: bere klasea doan",
+     "eu": "Etorri nahi duzunarekin: haren klasea doan",
      "fr": "Viens accompagné : son cours est offert",
      "de": "Bring jemanden mit: seine Stunde ist gratis",
      "it": "Vieni con chi vuoi: la sua lezione è gratis"
@@ -647,7 +647,7 @@ window.KLENDAR_SUGERENCIAS = {
      "en": "Book club",
      "ca": "Club de lectura",
      "gl": "Club de lectura",
-     "eu": "Irakurketa kluba",
+     "eu": "Irakurketa-kluba",
      "fr": "Club de lecture",
      "de": "Lesekreis",
      "it": "Club del libro"
@@ -666,7 +666,7 @@ window.KLENDAR_SUGERENCIAS = {
      "en": "Storytime for little ones",
      "ca": "Contacontes per als petits",
      "gl": "Contacontos para os máis pequenos",
-     "eu": "Ipuin kontaketa txikientzat",
+     "eu": "Ipuin-kontaketa txikientzat",
      "fr": "Heure du conte pour les petits",
      "de": "Vorlesestunde für Kinder",
      "it": "Letture per i più piccoli"
