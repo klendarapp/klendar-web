@@ -625,11 +625,11 @@ const grupoPub = (o) => (['terminada', 'cancelada'].includes(o && o.panel_state)
 // antes (de la más nueva a la más vieja; con varios chips, la de un chip o
 // todas), hasta volver a cargar la página.
 let pubsSinOrdenNuevo = false;
-async function pubsElegidas(estados, ultima = null) {
+async function pubsElegidas(estados, ultima = null, limite = POR_PARTE) {
   if (!pubsSinOrdenNuevo) {
     try {
       return (await rpc('my_business_offers_page', {
-        p_business: BIZ.id, p_status: 'todas', p_limit: POR_PARTE, p_live_first: true,
+        p_business: BIZ.id, p_status: 'todas', p_limit: limite, p_live_first: true,
         ...(estados.length ? { p_statuses: estados } : {}),
         ...cursorDe(ultima), ...(ultima ? { p_before_group: grupoPub(ultima) } : {}),
       })) || [];
@@ -639,7 +639,7 @@ async function pubsElegidas(estados, ultima = null) {
     }
   }
   const uno = estados.length === 1 ? estados[0] : estados.includes('archivada') ? 'cualquiera' : 'todas';
-  return misPublicaciones(uno, POR_PARTE, ultima);
+  return misPublicaciones(uno, limite, ultima);
 }
 /** Una publicación del negocio (`my_business_offer`), o null. */
 const miPublicacion = async (id) => (id ? ((await rpc('my_business_offer', { p_id: id })) || [])[0] || null : null);
@@ -1839,7 +1839,8 @@ PAGES.resumen = async (v) => {
   let fallo = null;
   const [stats, offers, sub, cerradoDeVerdad, condiciones, cuentas] = await Promise.all([
     rpc('business_stats', { p_id: BIZ.id }).catch((e) => { fallo = e; return null; }),
-    misPublicaciones('todas', 8).catch((e) => { fallo = e; return []; }),
+    // Las 8 de arriba, lo vivo primero (Iván, 19-11), como en «Publicaciones».
+    pubsElegidas([], null, 8).catch((e) => { fallo = e; return []; }),
     rpc('my_subscription', { p_business: BIZ.id }).catch(() => null),
     rpc('business_closure_state', { p_ref: BIZ.id }).catch(() => null),
     // Un cambio en las condiciones (solo al propietario; la base lo apunta
