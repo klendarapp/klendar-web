@@ -853,7 +853,7 @@ window.KLENDAR_SUGERENCIAS = {
     "title": {
      "es": "Detalle de bienvenida en tu primera visita",
      "en": "Welcome gift on your first visit",
-     "ca": "Detall de benvinguda en la primera visita",
+     "ca": "Detall de benvinguda a la teva primera visita",
      "gl": "Detalle de benvida na túa primeira visita",
      "eu": "Ongietorri-oparia zure lehen bisitan",
      "fr": "Petit cadeau de bienvenue à ta première visite",
