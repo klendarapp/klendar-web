@@ -14,7 +14,7 @@ import KZ from '../../assets/zona.js';
 import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, discoverBase, exploreBase,
   arteFicha, carrusel, esGenerica, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, sameDay, isSlug, isVideo, ldScript, listingLd, miniatura, miniaturas, money, openInApp,
-  historiaBoton, priorPrice, publicPage, slugDe, todayBase, zonaDe,
+  priorPrice, publicPage, slugDe, todayBase, zonaDe,
 } from './public.js';
 import { cuandoCorto, plataformaEntradas, rejilla } from './tarjeta.js';
 import { paginaDeMunicipio } from './municipios.js';
@@ -139,12 +139,32 @@ export function toquesContacto(c, lang, { lat = null, lng = null } = {}) {
   return partes.length ? `<div class="acciones toques">${partes.join('')}</div>` : '';
 }
 
-/** «Compartir»: el menú de compartir del móvil o, sin él, copiar el enlace
- * (como la hoja de la app: enlace y copiar; las historias van al lado). */
-export const compartirBoton = (lang, url, titulo) => `<button type="button" class="pill" data-compartir="${esc(url)}" data-titulo="${esc(titulo || '')}" data-copiado="${lang === 'en' ? 'Link copied' : 'Enlace copiado'}">${icono('compartir', 16)} <span>${lang === 'en' ? 'Share' : 'Compartir'}</span></button>`;
-export const COMPARTIR_JS = `<script>(function(){document.querySelectorAll('[data-compartir]').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-compartir'),t=b.getAttribute('data-titulo')||document.title;
-if(navigator.share){navigator.share({title:t,url:u}).catch(function(){});return;}
-var ok=function(){var s=b.querySelector('span'),antes=s.textContent;s.textContent=b.getAttribute('data-copiado');setTimeout(function(){s.textContent=antes;},2500);};
+/** «Compartir en historias» de [kind] (`o`, `b`…): su dirección. */
+const historiaHref = (lang, kind, ref, consulta = '') => `${lang === 'en' ? '/en/story' : '/historia'}/${kind}/${encodeURIComponent(ref)}${consulta}`;
+const HISTORIA_PATH = 'M7 19h10V4H7v15zm-5-2h4V6H2v11zm16-11v11h4V6h-4z';
+
+/** Un solo «Compartir» (Iván, 20-11; antes, tres botones), como la hoja de
+ * la app: abre «Invitar a un amigo» (si se puede), «Compartir enlace» (el
+ * menú de compartir del móvil o, sin él, copiar el enlace) y «Compartir en
+ * historias». Un `<details>` como el menú ⋮: funciona sin JavaScript, el
+ * lector de pantalla dice si está abierto y con `MENU_JS` se cierra al tocar
+ * fuera o con Escape. Dentro de un `<div class="acciones">`, nunca de un
+ * `<p>`: el `<details>` cierra el párrafo y se queda fuera de la fila. */
+export function compartirMenu(lang, { url, titulo, invitar = '', historia = '' }) {
+  const en = lang === 'en';
+  const ic = (d) => `<svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="${d}"/></svg>`;
+  return `<details class="mas-menu toque compartir"><summary class="pill">${icono('compartir', 16)} <span>${en ? 'Share' : 'Compartir'}</span></summary>
+      <div class="mas-lista">${[
+    invitar ? `<a href="${esc(invitar)}" rel="nofollow">${ic(PATHS.invitar)}<span>${en ? 'Invite a friend' : 'Invitar a un amigo'}</span></a>` : '',
+    `<button type="button" data-compartir="${esc(url)}" data-titulo="${esc(titulo || '')}" data-copiado="${en ? 'Link copied' : 'Enlace copiado'}">${ic(PATHS.compartir)}<span aria-live="polite">${en ? 'Share link' : 'Compartir enlace'}</span></button>`,
+    historia ? `<a href="${esc(historia)}" rel="nofollow">${ic(HISTORIA_PATH)}<span>${en ? 'Share to stories' : 'Compartir en historias'}</span></a>` : '',
+  ].join('')}</div></details>`;
+}
+/** «Compartir enlace»: el menú de compartir del móvil o, sin él, copiar el
+ * enlace y decirlo un momento; luego se cierra el menú. */
+export const COMPARTIR_JS = `<script>(function(){document.querySelectorAll('[data-compartir]').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-compartir'),t=b.getAttribute('data-titulo')||document.title,d=b.closest('details');
+if(navigator.share){if(d)d.open=false;navigator.share({title:t,url:u}).catch(function(){});return;}
+var ok=function(){var s=b.querySelector('span'),antes=s.textContent;s.textContent=b.getAttribute('data-copiado');setTimeout(function(){s.textContent=antes;if(d&&d.open){d.open=false;d.querySelector('summary').focus();}},1600);};
 if(navigator.clipboard)navigator.clipboard.writeText(u).then(ok,function(){prompt('',u);});else prompt('',u);});});})();</script>`;
 
 /** Un .ics para «Añadir al calendario» (sin servidor: un enlace `data:`). */
@@ -405,21 +425,20 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
 
   const S = en
     ? {
-        when: 'When', redeem: 'Redemption window', where: 'Where', seats: 'Places left',
-        terms: 'Conditions', about: 'About', biz: 'The business',
+        where: 'Where', firstCome: 'First come, first served',
+        terms: 'Conditions', about: 'About',
         open: 'Open in the app', report: 'Report this publication', reportShort: 'Report', why: 'Why am I seeing this?',
         whyText: 'Klendar doesn’t use your messages or data from other sites to decide what to show you. Today nobody pays to appear earlier. You choose the order in “Sort by”. If you’ve picked your interests in “Your account”, those categories weigh more in that order, without hiding anything else. When you reload Discover, what you’ve seen in the last 7 days moves to the end, after “You’ve seen everything new”; only your browser remembers it, and it shows as new again if its price drops or its date changes (turn it off in “Your account” → Settings → What you see).',
         whyWeather: 'With “Based on the weather” (on by default, in Filters → “Sort by”), if it rains today where you’re looking, today’s indoor plans come first; if it’s nice out, terraces and outdoor plans. Weather data:',
         boosted: 'The business paid to feature this publication.', edit: 'Edit in the dashboard',
         code: 'Get the code', notYet: 'Not available yet', reserve: 'Reserve a place', wait: 'Join the waiting list', save: 'Save to Plans',
-        going: "I'm going", invite: 'Invite a friend',
+        going: "I'm going",
         byCode: 'Getting the code counts as going.', byReservation: 'Reserving a place counts as going.',
         later: 'Not sure yet? Save it to Plans.',
         note: 'From here or from the app, with the same account. The code is single-use and the business validates it on the spot.',
         noteNoCode: 'From here or from the app, with the same account.',
         noteEntity: 'From here or from the app, with the same account. The code is single-use and they validate it on the spot.',
-        org: 'Who organises it',
-        soldOut: 'Sold out', over: 'Ended', more: 'Everything from', hot: 'Trending',
+        soldOut: 'Sold out', over: 'Ended', hot: 'Trending',
         prior: 'Lowest price in the last 30 days', canary: 'Canary Islands time',
         boostedBadge: 'Featured', beforeClosing: 'Before closing', was: (p) => `was ${p}`,
         organised: (n) => `Organised by ${n}`,
@@ -433,21 +452,20 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
         opensTomorrow: (h) => `Reservations open tomorrow at ${h}`, opensIn: 'Opens in ',
       }
     : {
-        when: 'Cuándo', redeem: 'Se canjea', where: 'Dónde', seats: 'Plazas libres',
-        terms: 'Condiciones', about: 'Descripción', biz: 'El negocio',
+        where: 'Dónde', firstCome: 'Por orden de llegada',
+        terms: 'Condiciones', about: 'Descripción',
         open: 'Abrir en la app', report: 'Denunciar esta publicación', reportShort: 'Denunciar', why: '¿Por qué ves esto?',
         whyText: 'Klendar no usa tus mensajes ni datos de otras webs para decidir qué enseñarte. Hoy nadie paga por salir antes. El orden lo eliges en «Ordenar por». Si has elegido tus gustos en «Tu cuenta», lo de esas categorías pesa más en ese orden, sin esconder lo demás. Al volver a cargar Descubre, lo que ya viste en los últimos 7 días pasa al final, detrás de «Ya has visto todo lo nuevo»; lo recuerda solo tu navegador y vuelve a salir como nuevo si baja de precio o cambia de fecha (se apaga en «Tu cuenta» → Ajustes → Lo que ves).',
         whyWeather: 'Con «Según el tiempo» (encendido de serie, en Filtros → «Ordenar por»), si hoy llueve donde miras, lo de hoy bajo techo va antes; si hace bueno, las terrazas y el aire libre. Datos del tiempo:',
         boosted: 'El negocio ha pagado por destacar esta publicación.', edit: 'Editar en el panel',
         code: 'Conseguir el código', notYet: 'Aún no disponible', reserve: 'Reservar plaza', wait: 'Apuntarme a la lista de espera', save: 'Guardar en Planes',
-        going: 'Voy', invite: 'Invitar a un amigo',
+        going: 'Voy',
         byCode: 'Conseguir el código ya cuenta como que vas.', byReservation: 'Reservar plaza ya cuenta como que vas.',
         later: 'Si aún no lo tienes claro, guárdalo en Planes.',
         note: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo valida el negocio en el momento.',
         noteNoCode: 'Desde aquí o desde la app, con la misma cuenta.',
         noteEntity: 'Desde aquí o desde la app, con la misma cuenta. El código es de un solo uso y lo validan en el momento.',
-        org: 'Quién lo organiza',
-        soldOut: 'Agotado', over: 'Terminada', more: 'Todo lo de', hot: 'Tendencia',
+        soldOut: 'Agotado', over: 'Terminada', hot: 'Tendencia',
         prior: 'Precio más bajo de los últimos 30 días', canary: 'hora de Canarias',
         boostedBadge: 'Destacado', beforeClosing: 'Antes de cerrar', was: (p) => `antes ${p}`,
         organised: (n) => `Organiza: ${n}`,
@@ -555,8 +573,10 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
       <p class="ficha-datos">
         ${precioTxt ? `<span class="precio-pill">${esc(precioTxt)}</span>` : ''}
         ${prior ? `<s class="muted">${esc(S.was(prior))}</s>` : ''}
-        <span class="dato-chip${flash ? ' oferta' : ''}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="${flash ? 'M7 2v11h3v9l7-12h-4l4-8z' : 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z'}"/></svg>${esc(cuandoCorto(o, lang, tz))}</span>
+        <span class="dato-chip${flash ? ' oferta' : ''}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="${flash ? 'M7 2v11h3v9l7-12h-4l4-8z' : 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z'}"/></svg><span>${esc(cuandoCorto(o, lang, tz))}${tz === KZ.CANARIAS ? ` <small class="muted">(${S.canary})</small>` : ''}</span></span>
+        ${flash && !over && !soldOut && o.redeem_end_at ? `<span class="dato-chip cuenta" id="cuenta" hidden data-ini="${esc(o.redeem_start_at || '')}" data-fin="${esc(o.redeem_end_at)}"></span>` : ''}
         ${o.seats_left != null && !soldOut && !over ? `<span class="dato-chip">${esc(antesDeCerrar ? S.bags(o.seats_left) : en ? (o.seats_left === 1 ? '1 place left' : `${o.seats_left} places left`) : (o.seats_left === 1 ? 'Queda 1 plaza' : `Quedan ${o.seats_left} plazas`))}</span>` : ''}
+        ${o.seats_left != null && !soldOut && !over && o.holds_seats === false ? `<span class="dato-chip">${esc(S.firstCome)}</span>` : ''}
         ${Number(o.redemptions_count) >= 3 ? `<span class="dato-chip">${esc(S.takenBy(Number(o.redemptions_count)))}</span>` : ''}
         ${flash && Number(o.max_per_user) > 1 ? `<span class="dato-chip" id="por-persona" data-max="${Number(o.max_per_user)}">${esc(S.perUser(Number(o.max_per_user)))}</span>` : ''}
         ${o.style?.first_visit === true ? `<span class="dato-chip">${esc(en ? 'First visit' : 'Primera visita')}</span>` : ''}
@@ -570,19 +590,13 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
     </div>
     <aside class="side">
       ${over ? '' : '<div class="invita" id="invita" hidden></div>'}
-      <dl>
-        <div><dt>${flash ? S.redeem : S.when}</dt><dd>${esc(when)}${tz === KZ.CANARIAS ? ` <small class="muted">(${S.canary})</small>` : ''}</dd>
-          ${flash && !over && !soldOut && o.redeem_end_at ? `<dd id="cuenta" hidden style="color:var(--accent-text);font-weight:600" data-ini="${esc(o.redeem_start_at || '')}" data-fin="${esc(o.redeem_end_at)}"></dd>` : ''}</div>
-        ${where ? `<div><dt>${S.where}</dt><dd>${esc(where)}</dd></div>` : ''}
-        ${o.seats_left != null && !soldOut ? `<div><dt>${S.seats}</dt><dd>${o.seats_left}${o.holds_seats === false ? ` · ${en ? 'first come, first served' : 'por orden de llegada'}` : ''}</dd></div>` : ''}
-      </dl>
       ${over ? '' : (() => {
         // Lo mismo que el botón grande de la app, pero sin salir de la web.
         const id = encodeURIComponent(o.id);
         // Un solo botón de acción. Con código o reserva, conseguirlo ya
         // cuenta como «vas» (no hay «Voy» aparte). Sin código: con entradas
-        // fuera, conseguirlas manda y «Voy» queda discreto junto a «Invitar a
-        // un amigo»; sin ellas, «Voy» es el botón principal.
+        // fuera, conseguirlas manda y «Voy» queda discreto debajo; sin
+        // ellas, «Voy» es el botón principal.
         const conCodigo = flash || !!o.reservations_enabled;
         const entradas = !conCodigo && seguro(o.external_url);
         const voy = (clase) => `<a class="${clase}" id="voy" href="${cuenta(lang, `voy/${id}`)}" rel="nofollow">${icono('voy', 16)} <span>${S.going}</span></a>`;
@@ -618,10 +632,10 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
                 return `<a class="pill accent big" href="${esc(entradas)}" rel="nofollow noopener" target="_blank" aria-label="${esc(txt)}${en ? ' (opens outside Klendar)' : ' (se abre fuera de Klendar)'}">${esc(txt)}${sub}</a>`;
               })()
                 : voy('pill accent big');
-        // «Voy» e «Invitar a un amigo»: la página va en caché y no sabe quién
-        // la mira; si ya vas, lo pinta el navegador (/assets/amigos.js).
-        // Una de RRPP solo se abre con el enlace: ni invitar a un amigo, ni
-        // guardarla en Planes (luego no se abriría), ni compartirla.
+        // «Voy»: la página va en caché y no sabe quién la mira; si ya vas, lo
+        // pinta el navegador (/assets/amigos.js). Una de RRPP solo se abre
+        // con el enlace: ni invitar a un amigo, ni guardarla en Planes (luego
+        // no se abriría); compartirla, solo con el enlace del RRPP.
         const cerradaHtml = listaCerrada
           ? `<p class="note"><b>${esc(KR.abre(prom.opens_at, lang, tz))}</b> ${esc(KR.T[en ? 'en' : 'es'].closedBody)}</p>` : '';
         const nominativaHtml = nominativa ? `<p class="note">${esc(en
@@ -631,20 +645,22 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
           ? (en ? "Paused: it's no longer shown on Klendar. Your code is still valid." : 'En pausa: ya no se ve en Klendar. Tu código sigue valiendo.')
           : (en ? "Paused: it's no longer shown on Klendar. Your booking is still valid." : 'En pausa: ya no se ve en Klendar. Tu reserva sigue valiendo.'))}</b></p>` : '';
         return `${pausaHtml}${rrppHtml}${cerradaHtml}${principal}${nominativaHtml}
-          <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}"${conCodigo ? ` data-codigo="${flash ? 'codigo' : 'reservar'}"` : ''}>
-            ${entradas ? voy('pill') : ''}
-            ${deRrpp ? '' : `<a class="pill" href="${cuenta(lang, `invitar/${id}`)}" rel="nofollow">${icono('invitar', 16)} ${S.invite}</a>`}</p>
+          <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}"${conCodigo ? ` data-codigo="${flash ? 'codigo' : 'reservar'}"` : ''}${entradas ? '' : ' hidden'}>${entradas ? voy('pill') : ''}</p>
           <p class="note" id="voy-auto" hidden></p>
           ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation}${deRrpp ? '' : ` ${S.later}`}</p>` : ''}
-          <p class="acciones"><a class="pill" data-solo-equipo hidden href="/panel#/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
+          <div class="acciones"><a class="pill" data-solo-equipo hidden href="/panel#/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
             ${deRrpp ? '' : `<a class="pill" data-solo-publico data-plan="${id}" href="${cuenta(lang, `guardar/${id}`)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
-            ${openInApp(path + rpQ, S.open, 'pill ghost')}</p>
-          ${(deRrpp && !prom) || enPausa ? '' : `<p class="acciones">${compartirBoton(lang, `${BASE}${path}${rpQ}`, o.title)}${historiaBoton(lang, 'o', o.id, rpQ)}</p>`}`;
+            ${(deRrpp && !prom) || enPausa ? '' : compartirMenu(lang, {
+    url: `${BASE}${path}${rpQ}`, titulo: o.title,
+    invitar: deRrpp ? '' : cuenta(lang, `invitar/${id}`),
+    historia: historiaHref(lang, 'o', o.id, rpQ),
+  })}
+            ${openInApp(path + rpQ, S.open, 'pill ghost')}</div>`;
       })()}
-      ${serieFicha(serie, o.id, lang)}
       <p class="note">${!(flash || o.reservations_enabled) ? S.noteNoCode : entidad ? S.noteEntity : S.note}</p>
     </aside>
     <div class="d-body">
+      ${serieFicha(serie, o.id, lang)}
       ${o.description ? `<h2>${S.about}</h2><p data-tr="offer:${esc(o.id)}:description">${esc(o.description).replace(/\n/g, '<br>')}</p>` : ''}
       ${escucha ? `<h2>${esc(M.listenTitle)}</h2>
       <p class="acciones"><a class="pill escucha" href="${esc(marcas.listen_url)}" rel="nofollow noopener" target="_blank" aria-label="${esc(`${M.listenOn(escucha.nombre)} (${M.opensOutside})`)}">${KM.icono(escucha, 18)} <span>${esc(M.listenOn(escucha.nombre))}</span></a></p>` : ''}
@@ -653,9 +669,6 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
       <p class="info-linea">${icono('lugar')}<span>${o.lat ? `<a class="toque-alto" href="${esc(`https://www.google.com/maps/search/?api=1&query=${o.lat},${o.lng}`)}" rel="nofollow noopener" target="_blank">${esc(where)}</a>` : esc(where)}</span></p>
       ${toquesContacto({ phone: o.business_phone, email: o.business_email, website: o.business_website, social: o.business_social }, lang, { lat: o.lat, lng: o.lng })}` : ''}
       ${fuenteHtml(fuente, lang)}
-      <h2>${entidad ? S.org : S.biz}</h2>
-      <p>${esc(o.business_name)}${o.business_rating && o.business_ratings ? ` · ★ ${nota(o.business_rating, lang)} (${o.business_ratings})` : ''}</p>
-      <p><a href="${esc(bHref)}">${S.more} ${esc(o.business_name)} →</a></p>
       <details class="por-que" id="por-que"><summary>${S.why}</summary>
         <p class="muted">${o.is_boosted ? `${S.boosted} ` : ''}${S.whyText}</p>
         <p class="muted">${S.whyWeather} <a href="${FUENTE_TIEMPO.url}" rel="noopener" target="_blank">${FUENTE_TIEMPO.nombre}</a></p></details>
@@ -988,13 +1001,14 @@ export async function businessPage(param, lang, search = '') {
   // ¿Ayer fue uno de sus días cerrados? (migración 20261284500030 de la app): la
   // madrugada de después sigue cerrada. Sin la función, como antes.
   const ayerCerradoP = rpc('business_closed_yesterday', { p_business: id }).then((x) => x === true).catch(() => false);
-  const [offers, cuentas, sellos, carta, opiniones, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista, muni, catNeg] = await Promise.all([
+  const [offers, cuentas, sellos, carta, opinionesRes, novedades, cierres, nVerificadas, local, partidosBar, grupoInfo, sorteos, organizador, enlacesNeg, fichaInfo, preguntasRes, preguntasLista, muni, catNeg] = await Promise.all([
     ver ? [] : rpcAll('business_offers_page', { p_id: id, p_limit: POR_PAGINA_FICHA, p_offset: desde }),
     ver ? null : rpc('business_offer_counts', { p_id: id }).catch(() => null),
     rpcAll('stamp_cards_of', { p_business: id }).catch(() => []), // opcional: sin ella, la ficha sale igual
     rpcAll('business_menu', { p_business: id }),
     ver === 'novedades' || ver === 'preguntas' || ver === 'carta' ? []
-      : rpcAll('business_reviews', { p_id: id, p_limit: ver ? POR_PAGINA_LISTA : 3, p_offset: ver ? desde : 0, ...(soloVerificadas ? { p_verified_only: true } : {}) }),
+      // Si no llega, la ficha sale igual, sin decir que no hay (`resenasFallo`).
+      : rpcAll('business_reviews', { p_id: id, p_limit: ver ? POR_PAGINA_LISTA : 3, p_offset: ver ? desde : 0, ...(soloVerificadas ? { p_verified_only: true } : {}) }).catch(() => null),
     ver === 'resenas' || ver === 'preguntas' || ver === 'carta' ? []
       : rows('business_posts', `select=id,body,image_url,created_at&business_id=eq.${id}&order=created_at.desc,id.desc&limit=${ver ? POR_PAGINA_LISTA : 3}&offset=${ver ? desde : 0}`),
     rpcAll('business_closures', { p_business: id }),
@@ -1080,6 +1094,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Opening hours', kitchen: 'Kitchen', closed: 'Closed', today: 'today',
         days: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
         news: 'News', reviews: 'Reviews', write: 'Write a review', noReviews: 'No reviews yet. Been here? Be the first.',
+        reviewsFailed: "We couldn't load the reviews.", retry: 'Try again',
         user: 'Klendar user', report: 'Report', reportShort: 'Report', editBiz: 'Edit page', myBiz: 'Go to the dashboard', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu',
         verifiedCustomer: 'Verified customer',
         verifiedWhat: "They've redeemed something at this business with Klendar: an offer, an event, a stamp reward, a birthday gift or something the business gave them with “Give on the spot”. We check it against what the business itself validated or gave at the venue.",
@@ -1132,6 +1147,7 @@ export async function businessPage(param, lang, search = '') {
         hours: 'Horario', kitchen: 'Cocina', closed: 'Cerrado', today: 'hoy',
         days: ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'],
         news: 'Novedades', reviews: 'Reseñas', write: 'Escribir una reseña', noReviews: 'Todavía no hay reseñas. ¿Has estado? Sé la primera persona.',
+        reviewsFailed: 'No se han podido cargar las reseñas.', retry: 'Reintentar',
         user: 'Usuario de Klendar', report: 'Denunciar', reportShort: 'Denunciar', editBiz: 'Editar ficha', myBiz: 'Ir al panel', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta',
         verifiedCustomer: 'Cliente verificado',
         verifiedWhat: 'Ha canjeado algo en este negocio con Klendar: una oferta, un evento, un premio de sellos, un regalo de cumpleaños o algo que el negocio le dio con «Dar en el momento». Lo comprobamos con lo que el propio negocio ha validado o dado en el local.',
@@ -1373,6 +1389,18 @@ export async function businessPage(param, lang, search = '') {
     : pronto ? `<p class="muted pregunta-pronto">${esc(S.askSoon)}</p>` : '';
   const preguntasScript = pq ? `<script src="/assets/preguntas.js?v=20261111sinbarra" defer data-biz="${esc(b.id)}" data-lang="${en ? 'en' : 'es'}" data-url="${esc(supabasePublic().url)}" data-key="${esc(supabasePublic().key)}" data-nombre="${esc(b.name)}"></script>` : '';
   const nResenas = soloVerificadas ? nVerificadas : Number(b.ratings) || 0;
+  // Las reseñas, si llegan. Nunca «Todavía no hay» con «★ 4,5 (12)» al lado
+  // (revisión 19-11): si la lista falla, un aviso discreto con «Reintentar»
+  // (y la página no se guarda en la caché, para que reintentar sirva); si
+  // llega vacía pero la nota dice que hay (todas ocultas, por ejemplo),
+  // nada.
+  const opiniones = Array.isArray(opinionesRes) ? opinionesRes : [];
+  const conResenas = ver === '' || ver === 'resenas';
+  const resenasFallo = conResenas && opinionesRes === null;
+  const resenasVacio = () => (resenasFallo
+    ? `<p class="muted resenas-fallo" role="status">${esc(S.reviewsFailed)} <a href="${esc(path + search)}#resenas">${esc(S.retry)}</a></p>`
+    : nResenas > (ver === 'resenas' ? desde : 0) ? ''
+      : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`);
   // ── La carta: los platos (los [max] primeros, con su sección), las fotos,
   // los PDF y el enlace a su web. En la ficha, 5 platos y «Ver toda la
   // carta» (`?ver=carta`, la carta entera), como la app.
@@ -1448,7 +1476,8 @@ ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuent
       ? (ver === 'novedades' ? `<div class="novedades">${lista.map(novedadHtml).join('')}</div>`
         : ver === 'preguntas' ? `<div class="preguntas">${lista.map(preguntaHtml).join('')}</div>`
           : `<div class="resenas">${lista.map(resenaHtml).join('')}</div>`)
-      : `<p class="empty">${ver === 'novedades' ? '' : ver === 'preguntas' ? esc(recibe ? S.noQuestions : pronto ? S.noQuestionsYet : S.noAsk) : soloVerificadas ? S.noVerified : S.noReviews}</p>`}
+      : ver === 'resenas' ? resenasVacio()
+        : `<p class="empty">${ver === 'novedades' ? '' : esc(recibe ? S.noQuestions : pronto ? S.noQuestionsYet : S.noAsk)}</p>`}
     ${paginador(pagina, pags, enlace)}
     <p><a class="pill" href="${path}">${esc(S.back)}</a></p>
   </div>`;
@@ -1457,7 +1486,7 @@ ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuent
       consulta: `?ver=${ver}${filtro}${pagina > 1 ? `&p=${pagina}` : ''}`, privada: esDeRevision,
       head: `<meta name="robots" content="${esDeRevision ? 'noindex, nofollow' : 'noindex, follow'}">
 ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_CSS}\n${preguntasScript}` : ''}`,
-    })));
+    }), 200, resenasFallo ? 'no-store' : undefined));
   }
 
   // ── La ficha ordenada (Iván, 2026-10-22; igual en la app) ──────────────
@@ -1572,7 +1601,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
       <h2 id="resenas">${S.reviews}${b.rating && b.ratings ? ` <small class="muted">★ ${nota(b.rating, lang)} (${b.ratings})</small>` : ''}</h2>
       <p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang, `opinar/${encodeURIComponent(b.id)}`)}">${icono('resena', 16)} <span>${S.write}</span></a></p>
       ${opiniones.length ? `<div class="resenas">${opiniones.map(resenaHtml).join('')}</div>
-        ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : `<p class="empty">${soloVerificadas ? S.noVerified : S.noReviews}</p>`}
+        ${nResenas > opiniones.length ? `<p><a class="pill" href="${path}?ver=resenas${soloVerificadas ? '&amp;resenas=verificadas' : ''}">${esc(S.seeAll(nResenas))}</a></p>` : ''}` : resenasVacio()}
       ${preguntasHtml}
       ${mun
     // «Más planes en Marbella»: Descubre en ese municipio solo para esa
@@ -1594,7 +1623,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         ${b.contact_email ? `<div><span>${icono('correo')}</span><span><a href="mailto:${esc(b.contact_email)}">${esc(b.contact_email)}</a></span></div>` : ''}
         ${redes.length ? `<div><span>${icono('redes')}</span><span>${redes.join(' · ')}</span></div>` : ''}
       </div>
-      <p class="acciones" style="margin:12px 0 0">${compartirBoton(lang, `${BASE}${path}`, b.name)}${historiaBoton(lang, 'b', slug || b.id)}</p>
+      <div class="acciones" style="margin:12px 0 0">${compartirMenu(lang, { url: `${BASE}${path}`, titulo: b.name, historia: historiaHref(lang, 'b', slug || b.id) })}</div>
     </aside>
   </div>`;
 
@@ -1668,7 +1697,7 @@ ${PREGUNTAS_CSS}
 ${preguntasScript}` : ''}${partidos ? `
 ${PARTIDOS_CSS}` : ''}${grupoHtml || sorteosHtml ? `
 ${GRUPOS_CSS}` : ''}`,
-  }), 200, conVisita ? 'no-store' : undefined));
+  }), 200, conVisita || resenasFallo ? 'no-store' : undefined));
 }
 
 // ── Agenda de una ciudad ───────────────────────────────────────────────────

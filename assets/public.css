@@ -904,6 +904,23 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .mas-menu.toque > summary { width: auto; height: auto; display: inline-flex; gap: 6px; border-radius: 999px; padding: 9px 16px; }
 /* La lista, bajo la fila entera y desde su borde izquierdo: en el móvil no se sale de la pantalla. */
 .mas-menu.toque .mas-lista { left: 0; right: auto; top: calc(100% + 6px); max-width: 100%; }
+/* Un solo «Compartir» (Iván, 20-11): la pastilla abre invitar, el enlace y
+ * las historias, cada una con su icono; la lista, del ancho del botón y
+ * justo debajo, aparece con un fundido (nada con «Reducir movimiento»). */
+.mas-menu.toque.compartir { position: relative; }
+.mas-menu.toque.compartir > summary { justify-content: center; }
+.side .acciones > .mas-menu.compartir > summary { width: 100%; box-sizing: border-box; }
+.mas-menu.compartir .mas-lista { right: 0; min-width: min(260px, 100%); }
+.mas-menu.compartir .mas-lista a, .mas-menu.compartir .mas-lista button { display: flex; align-items: center; gap: 12px; padding: 12px 18px; }
+.mas-menu.compartir .mas-lista .ic { flex: none; color: var(--ink-2); }
+details.mas-menu.compartir[open] > .mas-lista { animation: mov-crece var(--mov-base) var(--mov-entra); transform-origin: top center; }
+@media (prefers-reduced-motion: reduce) { details.mas-menu.compartir[open] > .mas-lista { animation: none; } }
+/* La cuenta atrás de una oferta, junto a cuándo (en coral, como la app). */
+.dato-chip.cuenta { color: var(--accent-text); }
+/* «Forma parte de una serie», con lo demás de la publicación. */
+.d-body .serie-ficha { margin: 0 0 8px; }
+.d-body .serie-ficha .acciones { justify-content: flex-start; }
+.d-body .serie-ficha .acciones > * { flex: 0 1 auto; }
 /* Tus sellos en la tarjeta de la ficha del negocio. */
 .sellos-mios { display: inline-block; margin-top: 6px; }
 
@@ -1162,3 +1179,9 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 .muni-busca .op.on { background: var(--ink); color: var(--surface); }
 .muni-actual { margin: 4px 0 6px; }
 .muni-elige { list-style: none; padding: 0; margin: 16px 0 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+/* Las reseñas no han llegado: un aviso discreto con «Reintentar», nunca
+ * «Todavía no hay reseñas» con la nota al lado (revisión 19-11). */
+.resenas-fallo { font-size: 14px; }
+.resenas-fallo a { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; padding-block: 3px; }
+/* La nota de debajo de los botones, con su aire. */
+.side > .acciones + .note { margin-top: 12px; }
