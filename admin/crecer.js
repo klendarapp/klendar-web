@@ -305,16 +305,27 @@ PAGES.pedidos = async (v, id) => {
       <select id="crCiudad" aria-label="${esc(bi('Ciudad o zona', 'City or area'))}"></select></div>
     <div id="list"><div class="loading">${esc(bi('Cargando…', 'Loading…'))}</div></div>`;
   let filas = [];
+  // Por partes, con «Ver más» (antes se cortaba en 200 sin avisar); la
+  // primera trae además los recuentos y las ciudades.
+  let r = null;
+  const partes = porPartes('admin_venue_requests', async (n, ya) => {
+    const x = await rpc('admin_venue_requests', { p_status: CR.estado, p_city: CR.ciudad || null, p_q: CR.q || null, p_limit: n, p_offset: ya.length });
+    if (!ya.length) r = x;
+    return x?.items || [];
+  });
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
-    const r = await rpc('admin_venue_requests', { p_status: CR.estado, p_city: CR.ciudad || null, p_q: CR.q || null, p_limit: 200, p_offset: 0 });
-    filas = r?.items || [];
+    await partes.primera();
     const c = r?.counts || {};
     $('#crTabs').innerHTML = CR_ESTADOS.map(([k, nombre]) => `<button type="button" data-t="${k}" class="${CR.estado === k ? 'on' : ''}" aria-pressed="${CR.estado === k}">${esc(nombre())} <span class="muted">${fmtNum(c[k] || 0)}</span></button>`).join('');
     $$('#crTabs button').forEach((b) => { b.onclick = () => { CR.estado = b.dataset.t; aUrl(); load(); }; });
     const ciudades = r?.cities || [];
     const sel = $('#crCiudad');
     sel.innerHTML = `<option value="">${esc(bi('Todas las ciudades y zonas', 'All cities and areas'))}</option>${ciudades.map((x) => `<option value="${esc(x.id || '')}"${String(x.id || '') === CR.ciudad ? ' selected' : ''}>${esc(x.name)} (${fmtNum(x.people)})</option>`).join('')}${CR.ciudad && !ciudades.some((x) => String(x.id) === CR.ciudad) ? `<option value="${esc(CR.ciudad)}" selected>${esc(CR.ciudad)}</option>` : ''}`;
+    pintaFilas(c);
+  };
+  const pintaFilas = (c = r?.counts || {}) => {
+    filas = partes.filas;
     $('#list').innerHTML = `${CR.estado === 'open' && c.people_open ? `<p class="muted small" style="margin:0 0 10px">${esc(bi(`${fmtNum(c.people_open)} peticiones en ${fmtNum(c.open || 0)} sitios abiertos.`, `${fmtNum(c.people_open)} requests across ${fmtNum(c.open || 0)} open places.`))}</p>` : ''}${table({
       cols: [
         { h: bi('Local', 'Place'), r: (g) => `<a class="link title" href="#/pedidos/${esc(g.id)}">${esc(g.name)}</a>${g.business_name ? `<span class="sub">→ ${esc(g.business_name)}</span>` : ''}` },
@@ -327,15 +338,19 @@ PAGES.pedidos = async (v, id) => {
       rows: filas,
       empty: CR.q || CR.ciudad ? bi('Nada con esos filtros.', 'Nothing with those filters.')
         : CR.estado === 'open' ? bi('Nadie ha pedido ningún sitio todavía.', 'Nobody has asked for a place yet.') : bi('Ninguno.', 'None.'),
-    })}`;
+    })}${partes.hayMas ? botonVerMas('pedidos') : ''}`;
+    $$('#list tbody tr').forEach((tr) => tr.setAttribute('data-parte-fila', ''));
     $$('#list [data-fila]').forEach((caja) => {
       const g = filas[Number(caja.dataset.fila)];
       $$('[data-cr]', caja).forEach((b) => { b.onclick = () => esperando(b, () => crAccion(b.dataset.cr, g, load)); });
     });
+    enlazaVerMas($('#list'), partes, () => pintaFilas());
+    I18N.translate($('#list'));
   };
   $('#q').oninput = debounce(() => { CR.q = $('#q').value.trim(); load(); });
   $('#crCiudad').onchange = () => { CR.ciudad = $('#crCiudad').value; aUrl(); load(); };
-  $('#crCsv').onclick = () => downloadCsv('locales-pedidos', filas, [['name', bi('local', 'place')], [(g) => crDonde(g), bi('ciudad o zona', 'city or area')], ['people', bi('personas', 'people')], ['status', bi('estado', 'status')], ['business_name', bi('negocio', 'business')], ['last_request_at', bi('último', 'latest')], ['created_at', bi('primero', 'first')]]);
+  // El CSV, con todas (parte a parte), no solo las que se ven.
+  $('#crCsv').onclick = (e) => esperando(e.currentTarget, async () => downloadCsv('locales-pedidos', await partes.todas(), [['name', bi('local', 'place')], [(g) => crDonde(g), bi('ciudad o zona', 'city or area')], ['people', bi('personas', 'people')], ['status', bi('estado', 'status')], ['business_name', bi('negocio', 'business')], ['last_request_at', bi('último', 'latest')], ['created_at', bi('primero', 'first')]]));
   await load();
 };
 

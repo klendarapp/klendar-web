@@ -586,3 +586,29 @@ a.kpi:hover, a.kpi:focus-visible { border-color: var(--accent-text); }
 /* Una tabla que se desplaza de lado se enfoca con el teclado (admin.js,
    tablasConScroll): su foco, a la vista. */
 .tbl-wrap[tabindex="0"]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+/* Propuestas del admin (revisión general, parte 3; 20-11-2026). */
+/* «Ver más» al pie de una lista por partes. */
+.ver-mas { display: flex; justify-content: center; margin: 12px 0 0; }
+/* Tras decidir, el siguiente: arriba en la ficha. Al vaciar la lista, «Todo
+   revisado». Entran con un fundido corto (con «Reducir movimiento», quietos:
+   site.css lo anula todo). */
+.siguiente-aviso { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin: 0 0 12px; padding: 8px 12px;
+  border-radius: 12px; background: var(--soft); font-size: .875rem; animation: mov-sube var(--mov-base) var(--mov-entra) both; }
+.siguiente-aviso .ms { font-size: 18px; }
+.siguiente-aviso .link { margin-left: auto; }
+.todo-revisado { display: flex; align-items: center; gap: 12px; animation: mov-crece var(--mov-lento) var(--mov-entra) both; }
+.todo-revisado > .ms { font-size: 32px; color: #146c3a; animation: mov-pop var(--mov-lento) var(--mov-rebote) both; }
+.todo-revisado b { display: block; font-size: 1.05rem; }
+.todo-revisado span { color: var(--ink-2); }
+.todo-revisado:focus { outline: none; }
+.todo-revisado:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+@media (prefers-color-scheme: dark) { .todo-revisado > .ms { color: #8AE8B0; } }
+/* Un texto de las listas de palabras con su foto (Filtro automático). */
+.med-mini { display: block; width: 96px; height: 96px; object-fit: cover; border-radius: 10px; margin: 8px 0 0; }
+/* El cobro y «de revisión» en la ficha del negocio. */
+.cobro-ficha .ms { font-size: 16px; vertical-align: -3px; }
+.tag .ms { font-size: 14px; vertical-align: -2px; }
+/* Modo mantenimiento encendido: que se vea de lejos. */
+.card.mant.encendido { border-color: #b3261e; }
+a.tag { text-decoration: none; color: inherit; } a.tag:hover { text-decoration: underline; }

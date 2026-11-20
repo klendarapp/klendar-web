@@ -125,7 +125,7 @@ async function cargaBandeja() {
     ok(rpc('admin_media_queue', { p_tab: 'held', p_limit: 50, p_offset: 0 }), 'medios'),
     ok(rpc('admin_content_queue', { p_tab: 'held', p_limit: 50, p_offset: 0 }), 'medios'),
     ok(rpc('admin_offers_page', { p_moderation: 'pending', p_status: 'all', p_kind: 'all', p_query: null, p_business: null, p_limit: 50, p_offset: 0 }), 'publicaciones'),
-    ok(rpc('admin_text_reviews', { p_limit: 50, p_offset: 0 }), 'resenas'),
+    ok(rpc('admin_text_reviews', { p_limit: 50, p_offset: 0 }), 'medios'),
     ok(rpc('admin_business_messages', { p_status: 'review', p_limit: 50, p_offset: 0 }), 'mensajes'),
     ok(rpc('admin_duplicate_alerts', { p_limit: 200 }), 'duplicados'),
     ok(rpc('admin_feedback', { p_status: 'new', p_kind: 'all', p_query: null, p_limit: 20, p_offset: 0 }), 'sugerencias'),
@@ -182,7 +182,7 @@ function tarjetasBandeja(d, k, ctx) {
   restoDe(d.med, d.med?.rows, 'medio', '#/medios');
   restoDe(d.cont, d.cont?.rows, 'texto', '#/medios');
   restoDe(d.ofs, d.ofs?.rows, 'publicacion', '#/publicaciones');
-  restoDe(d.txt, d.txt?.rows, 'texto', '#/resenas');
+  restoDe(d.txt, d.txt?.rows, 'texto', '#/medios');
   restoDe(d.sug, d.sug?.rows, 'sugerencia', '#/sugerencias');
   ctx.fallos = d.fallos || [];
 
@@ -319,7 +319,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Approve' : 'Aprobar', fn: () => decideTexto(x, true) },
         { t: en ? 'Take down…' : 'Retirar…', cls: 'bad ghost', fn: () => decideTexto(x, false) },
       ],
-      abrir: '#/resenas?tab=cola',
+      abrir: '#/medios',
     });
   }
 

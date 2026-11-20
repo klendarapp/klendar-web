@@ -65,7 +65,12 @@ MARCAS = {'Klendar', 'Supabase', 'Google', 'Apple', 'Stripe', 'Mapbox', 'Resend'
 IGNORAR = {'sin configuración', 'Idioma / Language', 'Español', 'English', 'Invalid login credentials',
            'User already registered', 'Payload too large', 'Panel del negocio · Klendar', 'Administración · Klendar',
            # Código, no texto: idiomas y errores de Supabase que se comparan.
-           'es', 'en', 'es-ES', 'already registered', 'token has expired'}
+           'es', 'en', 'es-ES', 'already registered', 'token has expired',
+           # El mensaje de mantenimiento de siempre, en los idiomas de la app (admin.js,
+           # MANT_DEF): es lo que ve la gente, no un texto del admin.
+           'Volvemos en unos minutos. Gracias por la paciencia.', "Tornem d'aquí a uns minuts. Gràcies per la paciència.",
+           'Volvemos nuns minutos. Grazas pola paciencia.', 'Minutu batzuk barru itzuliko gara. Eskerrik asko pazientziagatik.',
+           'On revient dans quelques minutes. Merci de ta patience.', 'Torniamo tra qualche minuto. Grazie per la pazienza.'}
 CODIGO = re.compile(r"^[\w.-]+$|[{}=;()\[\]]|=>|\.(js|css|png|svg)\b|^#|^/|https?:|^\$|^[a-z_]+:|--|\\n")
 
 

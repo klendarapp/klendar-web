@@ -145,7 +145,8 @@ const nav = await chromium.launch();
   await page.locator('[data-tok]').first().click();
   await page.waitForFunction(() => !document.querySelector('[data-tok]'));
   ok(estado.rpc.some((r) => r.fn === 'admin_content_decide' && r.cuerpo.p_approve === true), 'aprobar un texto: un toque');
-  ok(/El filtro está apagado/.test(texto), 'dice que está apagado');
+  // En llano (propuestas del admin, 20-11): sin `app_config` ni «apartado FF».
+  ok(/El filtro con IA está apagado/.test(texto) && !/app_config|apartado FF/.test(texto), 'dice que está apagado, en llano');
   ok(/En duda/.test(texto) && /Tope del mes/.test(texto) && /Vídeo sin fotogramas/.test(texto), 'cada una con su motivo');
   ok(/Desnudos: Posible/.test(texto) && !/VERY_UNLIKELY/.test(texto), 'las puntuaciones, en llano y solo lo que importa');
   ok(/Galería de la ficha/.test(texto), 'dónde se usa');

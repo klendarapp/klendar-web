@@ -136,6 +136,7 @@ PAGES.artistas = async (v) => {
   const aUrl = () => ponUrl('artistas', { tab: AR.tab === 'lista' ? null : AR.tab, filtro: AR.tab === 'lista' && AR.filtro ? AR.filtro : null });
   aUrl();
   let filas = [];
+  let partesAr = null; // la lista por partes de ahora (para el CSV, con todos)
   v.innerHTML = `
     <div class="page-head"><h1>Artistas</h1><span class="spacer"></span>
       <button class="btn primary sm" type="button" id="arNuevo">Añadir un artista</button>
@@ -160,8 +161,15 @@ PAGES.artistas = async (v) => {
         <select id="arFiltro" aria-label="${esc(I18N.t('Filtro'))}">${FILTROS_AR.map((o) => `<option value="${o[0]}" ${AR.filtro === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
         <input class="grow" type="search" id="arQ" value="${esc(AR.q)}" placeholder="Buscar artista" aria-label="Buscar artista">
       </div><div id="list"><div class="loading">Cargando…</div></div>`;
-    const pinta = async () => {
-      filas = (await rpc('admin_artists', { p_q: AR.q.trim() || null, p_filter: AR.filtro || null, p_limit: 200 })) || [];
+    // Por partes (cursor: la fecha y el id del último), con «Ver más»; antes
+    // se cortaba en 200 sin avisar. Sin la migración nueva, los 200 de antes.
+    const partes = porPartes('admin_artists', (n, ya) => rpcParte('admin_artists',
+      { p_q: AR.q.trim() || null, p_filter: AR.filtro || null, p_limit: n, ...cursorDe(ya[ya.length - 1]) },
+      { p_q: AR.q.trim() || null, p_filter: AR.filtro || null, p_limit: 200 }));
+    partesAr = partes;
+    const pinta = enOrden(async () => { await partes.primera(); pintaFilas(); });
+    const pintaFilas = () => {
+      filas = partes.filas;
       $('#list', tv).innerHTML = table({ cols: [
         { h: 'Artista', r: (a) => `<span class="art-celda">${fotoArtista(a)}<span class="title">${esc(a.name)}${a.hidden ? ` <span class="tag dim">${esc(I18N.t('oculto'))}</span>` : ''}${!a.edited && !a.hidden ? ` <span class="tag">${esc(I18N.t('sin revisar'))}</span>` : ''}<span class="sub">${esc(a.bio ? a.bio.slice(0, 80) + (a.bio.length > 80 ? '…' : '') : I18N.t('Sin descripción'))}</span></span></span>` },
         { h: 'Lo escribió', r: (a) => (a.created_by_business ? `${esc(a.created_by_business.name)}<span class="sub">${esc(a.created_by_business.city || '')} · ${esc(cuandoAr(a.created_at))}</span>` : `${esc(I18N.t('Administración'))}<span class="sub">${esc(cuandoAr(a.created_at))}</span>`) },
@@ -172,7 +180,9 @@ PAGES.artistas = async (v) => {
             itemMenu(`data-ocultar="${esc(a.id)}" data-oculto="${a.hidden ? '1' : '0'}"`, esc(I18N.t(a.hidden ? 'Mostrar' : 'Ocultar'))),
             a.hidden ? '' : enlaceMenu(paginaArtista(a.slug), `${esc(I18N.t('Ver la página'))} ↗`, true),
           ], { icono: true, sm: true })}</span>` },
-      ], rows: filas, empty: AR.q.trim() || AR.filtro ? 'Ningún artista con esos filtros.' : 'Todavía no hay artistas: aparecen cuando un negocio pone «Quién actúa» en un evento.' });
+      ], rows: filas, empty: AR.q.trim() || AR.filtro ? 'Ningún artista con esos filtros.' : 'Todavía no hay artistas: aparecen cuando un negocio pone «Quién actúa» en un evento.' }) + (partes.hayMas ? botonVerMas('artistas') : '');
+      $$('#list tbody tr', tv).forEach((tr) => tr.setAttribute('data-parte-fila', ''));
+      enlazaVerMas($('#list', tv), partes, pintaFilas);
       $$('[data-editar]', tv).forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (await editaArtista(filas.find((x) => x.id === btn.dataset.editar))) pinta(); }); });
       $$('[data-ocultar]', tv).forEach((btn) => {
         btn.onclick = () => esperando(btn, async () => {
@@ -233,9 +243,11 @@ PAGES.artistas = async (v) => {
   $('#arNuevo', v).onclick = (e) => esperando(e.currentTarget, async () => {
     if (await editaArtista(null)) { AR.tab = 'lista'; aUrl(); route(); }
   });
-  $('[data-ar-csv]', v).onclick = () => {
+  $('[data-ar-csv]', v).onclick = async () => {
     if (AR.tab !== 'lista' || !filas.length) { toast(I18N.t('No hay nada que descargar.')); return; }
-    downloadCsv('artistas', filas, [['name', 'Nombre'], ['slug', 'Dirección'], [(a) => (a.hidden ? 'sí' : ''), 'Oculto'], [(a) => (a.edited ? 'sí' : ''), 'Revisado'],
+    const todos = partesAr ? await partesAr.todas().catch((e) => { toast(e.message, true); return null; }) : filas;
+    if (!todos) return;
+    downloadCsv('artistas', todos, [['name', 'Nombre'], ['slug', 'Dirección'], [(a) => (a.hidden ? 'sí' : ''), 'Oculto'], [(a) => (a.edited ? 'sí' : ''), 'Revisado'],
       [(a) => a.created_by_business?.name || '', 'Lo escribió'], ['events_upcoming', 'Próximas'], ['events_total', 'Eventos'], ['followers', 'Lo siguen'], ['created_at', 'Alta']]);
   };
   await load();

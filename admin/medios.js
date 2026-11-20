@@ -73,6 +73,31 @@ const filaTexto = (x, i, tab) => {
       ${tab === 'rejected' ? '' : `<button class="btn bad" type="button" data-tno="${i}">${esc(I18N.t('Rechazar'))}</button>`}</div>
   </div>`;
 };
+/** Un texto parado por las listas de palabras (`admin_text_reviews`, la cola
+ *  que antes estaba en «Reseñas y novedades › En revisión»): se decide igual
+ *  que antes (`decideTexto`, admin.js). */
+const filaListas = (x, i) => {
+  const cats = (x.categories || []).map((c) => I18N.t(CAT_OFENSIVA[c] || c));
+  const flags = (x.flags || []).filter((f) => f !== 'offensive').map((f) => I18N.t(FLAGS[f] || f));
+  const quien = [
+    x.business ? `<a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business)}</a>` : '',
+    x.user_email ? esc(x.user_email) : '',
+    fmtDate(x.created_at),
+    x.rating ? `<span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span>` : '',
+  ].filter(Boolean).join(' · ');
+  return `<div class="card med-texto" data-l="${i}">
+    <h3 style="margin:0 0 6px">${esc(I18N.t(TIPO_TEXTO[x.kind] || x.kind))}</h3>
+    <div><span class="tag dim">${esc(I18N.t('Listas de palabras'))}</span> ${x.kind === 'review_media' ? `<span class="tag warn">${esc(I18N.t('Moderación de imágenes'))}</span>` : [...cats, ...flags].map((c) => `<span class="tag warn">${esc(c)}</span>`).join(' ')}</div>
+    ${x.image ? `<img class="med-mini" src="${esc(x.image)}" alt="" loading="lazy">` : ''}
+    <p class="med-cita">${esc(x.text || '')}</p>
+    ${mediosResena(x.media)}
+    ${x.context ? `<p class="muted small" style="margin:6px 0">${esc(I18N.t(CONTEXTO_TEXTO[x.kind] || 'Reseña'))}: «${esc(x.context)}»</p>` : ''}
+    ${x.previous ? `<p class="muted small" style="margin:6px 0">${esc(I18N.t(x.kind === 'reply' ? 'Respuesta publicada' : ['birthday_gift', 'stamp_card_name', 'stamp_card_reward'].includes(x.kind) ? 'En uso' : 'Antes'))}: «${esc(x.previous)}»</p>` : ''}
+    <div class="meta">${quien}</div>
+    <div class="actions"><button class="btn ok" type="button" data-lok="${i}">${esc(I18N.t('Aprobar'))}</button>
+      <button class="btn bad" type="button" data-lno="${i}">${esc(I18N.t('Retirar…'))}</button></div>
+  </div>`;
+};
 const MEDIO_ETIQUETA = { adult: 'Desnudos', violence: 'Violencia', racy: 'Sugerente', medical: 'Médico' };
 const MEDIO_NIVEL = { VERY_LIKELY: ['Muy probable', 'bad'], LIKELY: ['Probable', 'bad'], POSSIBLE: ['Posible', 'warn'] };
 // Lo que recibe quien lo subió: claro y sin más que lo necesario.
@@ -201,8 +226,12 @@ PAGES.medios = async (v) => {
   const p = params();
   let tab = p.tab === 'rejected' ? 'rejected' : 'held';
   const s = (st.medios = st.medios || { limit: 30, offset: 0 });
+  const en0 = I18N.lang === 'en';
   v.innerHTML = `
     <div class="page-head"><h1>Filtro automático</h1></div>
+    ${helpBox(en0 ? 'What do I do here?' : '¿Qué hago aquí?', en0
+    ? '<p>The <b>only queue</b> for what has been held back before anyone sees it: texts (news, reviews and replies, the page and the menu, questions, birthday gifts, stamp cards…), photos and videos. Some are held by the <b>word lists</b> (insults, swear words, explicit sex, hate or threats), others by the <b>AI filter</b> when it is on, and others by <b>reports</b>. News, reviews and replies <b>are not public</b> until you approve them; a new birthday gift or stamp card name or reward is not used until then (the previous one stays). The business name, description and menu stay visible in the meantime. <b>Approve</b> if it is fine (a false alarm, or strong but acceptable); <b>Reject</b> or <b>Take down</b> if it breaks the Community guidelines: whoever posted it gets the reason and can ask for a review within 6 months. “Rejected by the filter”: what the filter rejected on its own, in case something has to be recovered.</p>'
+    : '<p>La <b>única cola</b> de lo que se ha parado antes de que lo vea nadie: textos (novedades, reseñas y respuestas, la ficha y la carta, preguntas, regalos de cumpleaños, tarjetas de sellos…), fotos y vídeos. Unos los paran las <b>listas de palabras</b> (insultos, palabras malsonantes, sexo explícito, odio o amenazas), otros el <b>filtro con IA</b> cuando está encendido y otros las <b>denuncias</b>. Las novedades, las reseñas y las respuestas <b>no se ven</b> hasta que las apruebas; un regalo de cumpleaños o el nombre o el premio de una tarjeta de sellos nuevos no se usan hasta entonces (sigue el anterior). El nombre, la descripción y la carta del negocio siguen a la vista mientras tanto. <b>Aprobar</b> si está bien (una falsa alarma o algo fuerte pero aceptable); <b>Rechazar</b> o <b>Retirar</b> si incumple las Normas de la comunidad: quien lo publicó recibe el motivo y puede pedir que se revise en 6 meses. «Rechazado por el filtro»: lo que el filtro rechazó solo, por si hay que recuperar algo.</p>')}
     <div id="medEstado"></div>
     <div class="tabs" id="medTabs"></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
@@ -211,12 +240,16 @@ PAGES.medios = async (v) => {
     ponUrl('medios', { tab: tab === 'held' ? null : tab });
     let r;
     let txt = { rows: [], counts: {} };
+    let leg = { rows: [], total: 0 };
     try {
       // Fotos y textos a la vez y por partes los dos (antes los textos iban
       // siempre desde el primero: del 31 en adelante no se llegaba nunca).
-      [r, txt] = await Promise.all([
+      // Con ellos, los textos de las listas de palabras (antes en «Reseñas y
+      // novedades › En revisión»: una sola cola de textos).
+      [r, txt, leg] = await Promise.all([
         rpc('admin_media_queue', { p_tab: tab, p_limit: s.limit, p_offset: s.offset }),
         rpc('admin_content_queue', { p_tab: tab, p_limit: s.limit, p_offset: s.offset }),
+        tab === 'held' ? rpc('admin_text_reviews', { p_limit: s.limit, p_offset: s.offset }) : Promise.resolve(leg),
       ]);
     } catch (e) {
       if (e?.obsoleta || !/could not find the function|schema cache/i.test(e?.codigo || e?.message || '')) throw e;
@@ -229,15 +262,16 @@ PAGES.medios = async (v) => {
     const cifras = `${fmtNum(c.used || 0)} / ${fmtNum(c.cap || 0)}`;
     $('#medEstado').innerHTML = c.enabled
       ? `<p class="muted" style="margin:0 0 12px">${en ? `The filter is on. Used this month: ${cifras} images.` : `El filtro está encendido. Este mes: ${cifras} imágenes.`}</p>`
-      : `<div class="card"><p style="margin:0"><b>${esc(I18N.t('El filtro está apagado.'))}</b> ${esc(I18N.t('Se enciende con app_config.image_moderation.enabled, cuando esté aprobado el texto legal (apartado FF).'))}${c.test_users ? ` ${en ? `Active for ${c.test_users} test account(s).` : `Activo para ${c.test_users} cuenta(s) de prueba.`}` : ''}</p></div>`;
-    $('#medTabs').innerHTML = [['held', 'Por decidir', (r.counts?.held || 0) + (txt.counts?.held || 0)], ['rejected', 'Rechazado por el filtro', (r.counts?.rejected || 0) + (txt.counts?.rejected || 0)]]
+      : `<div class="card"><p style="margin:0"><b>${esc(I18N.t('El filtro con IA está apagado.'))}</b> ${esc(I18N.t('Mientras tanto, aquí llega lo que paran las listas de palabras y lo que se denuncia.'))}${c.test_users ? ` ${en ? `Active for ${c.test_users} test account(s).` : `Activo para ${c.test_users} cuenta(s) de prueba.`}` : ''}</p></div>`;
+    $('#medTabs').innerHTML = [['held', 'Por decidir', (r.counts?.held || 0) + (txt.counts?.held || 0) + (tab === 'held' ? Number(leg?.total) || 0 : TEXTOS_N)], ['rejected', 'Rechazado por el filtro', (r.counts?.rejected || 0) + (txt.counts?.rejected || 0)]]
       .map(([k, t, n]) => `<button type="button" data-t="${k}" aria-pressed="${tab === k}" class="${tab === k ? 'on' : ''}">${esc(I18N.t(t))}${n ? ` <span class="badge">${fmtNum(n)}</span>` : ''}</button>`).join('');
     $$('#medTabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; s.offset = 0; load(); }; });
     const rows = r.rows || [];
     const total = tab === 'held' ? (r.counts?.held || 0) : (r.counts?.rejected || 0);
     const totalTxt = tab === 'held' ? (txt.counts?.held || 0) : (txt.counts?.rejected || 0);
+    const listas = tab === 'held' ? (leg?.rows || []) : [];
     // Una página = las fotos y los textos de ese tramo: hasta el más largo.
-    const pg = pager(s, Math.max(total, totalTxt), load);
+    const pg = pager(s, Math.max(total, totalTxt, tab === 'held' ? Number(leg?.total) || 0 : 0), load);
     const textos = txt.rows || [];
     // Si el servicio lleva tiempo sin contestar o se ha acabado el tope, aprobar todo de una vez.
     const nBloque = rows.filter((x) => ['cap', 'error'].includes(x.hold_reason)).length;
@@ -247,10 +281,10 @@ PAGES.medios = async (v) => {
     const bloque = tab === 'held' && nBloque
       ? `<div class="card"><p style="margin:0 0 8px"><b>${esc(I18N.t('El servicio no ha podido mirar estas fotos.'))}</b> ${esc(I18N.t('Se reintenta solo. Si lo has mirado y corre prisa:'))}</p>
          <button class="btn" type="button" id="medBloque">${esc(I18N.t('Aprobar en bloque'))}${todasAqui ? ` (${fmtNum(nBloque)})` : ''}</button></div>` : '';
-    $('#list').innerHTML = rows.length || textos.length
-      ? bloque + textos.map((x, i) => filaTexto(x, i, tab)).join('') + (await firmaMedios(rows.flatMap((x) => [[x.name, x.in_held], ...(x.frames || []).map((f) => [f.name, f.in_held])])), await Promise.all(rows.map((x, i) => filaMedio(x, i, tab)))).join('') + pg.html
+    $('#list').innerHTML = rows.length || textos.length || listas.length
+      ? bloque + listas.map(filaListas).join('') + textos.map((x, i) => filaTexto(x, i, tab)).join('') + (await firmaMedios(rows.flatMap((x) => [[x.name, x.in_held], ...(x.frames || []).map((f) => [f.name, f.in_held])])), await Promise.all(rows.map((x, i) => filaMedio(x, i, tab)))).join('') + pg.html
       : `<div class="tbl-wrap"><div class="empty">${esc(I18N.t(tab === 'held' ? 'No hay nada por decidir.' : 'El filtro no ha rechazado nada.'))}</div></div>`;
-    if (rows.length || textos.length) pg.bind($('#list'));
+    if (rows.length || textos.length || listas.length) pg.bind($('#list'));
     const bb = $('#medBloque');
     if (bb) {
       bb.onclick = () => esperando(bb, async () => {
@@ -261,6 +295,8 @@ PAGES.medios = async (v) => {
         await load();
       });
     }
+    $$('#list [data-lok]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await decideTexto(listas[+b.dataset.lok], true)) await load(); }); });
+    $$('#list [data-lno]').forEach((b) => { b.onclick = () => esperando(b, async () => { if (await decideTexto(listas[+b.dataset.lno], false)) await load(); }); });
     const decideTxt = async (x, aprobar, motivo) => { if (await decideContenido(x, aprobar, motivo)) await load(); };
     $$('#list [data-tok]').forEach((b) => { b.onclick = () => esperando(b, () => decideTxt(textos[+b.dataset.tok], true)); });
     $$('#list [data-tno]').forEach((b) => {
