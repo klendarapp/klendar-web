@@ -43,7 +43,7 @@ ok('1. los textos, como la app', vistas.includes('`Las reservas abren el ${d} a 
 {
   const ini = vistas.indexOf("const abren = porAbrir ? `<script>");
   const js = vistas.slice(vistas.indexOf('(function(){', ini), vistas.indexOf('</script>', ini))
-    .replace('${JSON.stringify(S.opensIn)}', JSON.stringify('Abren en '));
+    .replace('${jsonEnScript(S.opensIn)}', JSON.stringify('Abren en '));
   const els = {};
   const el = (id, extra = {}) => (els[id] = { id, hidden: false, textContent: '', dataset: {}, removed: false,
     remove() { this.removed = true; }, setAttribute(k, v) { this[k] = v; }, ...extra });
