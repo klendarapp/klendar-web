@@ -305,7 +305,8 @@ PAGES.pedidos = async (v, id) => {
       <select id="crCiudad" aria-label="${esc(bi('Ciudad o zona', 'City or area'))}"></select></div>
     <div id="list"><div class="loading">${esc(bi('Cargando…', 'Loading…'))}</div></div>`;
   let filas = [];
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const r = await rpc('admin_venue_requests', { p_status: CR.estado, p_city: CR.ciudad || null, p_q: CR.q || null, p_limit: 200, p_offset: 0 });
     filas = r?.items || [];
     const c = r?.counts || {};

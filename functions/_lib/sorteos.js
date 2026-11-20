@@ -18,7 +18,7 @@
 // public.js).
 
 import { enlaceCuenta } from './cuenta.js';
-import { esc, html, isUuid, rows, rpc, rpcAll, supabasePublic } from './page.js';
+import { esc, html, isUuid, rows, rpc, rpcAll, supabasePublic, jsonEnScript } from './page.js';
 import KS from '../../assets/textos-sorteos.js';
 import KZ from '../../assets/zona.js';
 import { BASE, bizPath, breadcrumbLd, carrusel, historiaBoton, ldScript, publicPage } from './public.js';
@@ -296,9 +296,9 @@ export async function sorteoPage(rawId, url, lang) {
       </ul>
       <p><button type="button" class="pill" id="sorteo-comprobar" hidden>${esc(S.check)}</button></p>
       <p class="sorteo-ver-res" id="sorteo-ver-res" role="status" aria-live="polite"></p>
-      <script type="application/json" id="sorteo-ver-datos">${JSON.stringify({
+      <script type="application/json" id="sorteo-ver-datos">${jsonEnScript({
     seed: g.seed, seed_hash: g.seed_hash, entries_total: g.entries_total, void_numbers: g.void_numbers || [], picked_numbers: g.picked_numbers || [],
-  }).replace(/</g, '\\u003c')}</script>` : ''}
+  })}</script>` : ''}
       <details class="sorteo-como"><summary>${esc(S.how)}</summary><p>${esc(S.howText)}</p></details>
     </section>`;
 

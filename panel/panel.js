@@ -2341,7 +2341,9 @@ PAGES.publicaciones = async (v, param) => {
             return;
           }
           if (b.dataset.act === 'stats') {
-            await cifrasDialogo(offers.find((x) => x.id === id));
+            try { await cifrasDialogo(offers.find((x) => x.id === id), b); } finally {
+              b.classList.remove('mov-ocupado'); b.removeAttribute('aria-busy'); b.disabled = false;
+            }
             return;
           }
           if (b.dataset.act === 'locales') {
@@ -2593,7 +2595,7 @@ const tarjetasPublicaciones = (rows) => `<div class="pubs">${rows.map((o) => `
 /** La lista de siempre (más densa), con las mismas acciones. */
 const tablaPublicaciones = (rows) => table({
   cols: [
-    { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
+    { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(KFotos.mini(primeraFoto(o.images)))}" data-original="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
     { h: 'Estado', r: (o) => etiquetaEstado(o) },
     { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `<span data-plazas="${esc(o.id)}">${plazasTxt(o, plazasOcupadas(o))}</span>` },
     { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
@@ -2665,8 +2667,18 @@ async function ampliarDialogo(o) {
 /** «Cifras» de una publicación: los últimos 14 días, cómo va frente a las
  * demás del negocio y, en eventos con reserva, la asistencia. Lo mismo que la
  * hoja de estadísticas de la app. */
-async function cifrasDialogo(o) {
+async function cifrasDialogo(o, boton = null) {
   if (!o) return;
+  // Mientras llegan las cifras, el botón se funde en la rueda (GLOSARIO,
+  // «Botón ocupado»): antes no daba ninguna señal y parecía que no iba.
+  boton?.classList.add('mov-ocupado');
+  boton?.setAttribute('aria-busy', 'true');
+  if (boton) boton.disabled = true;
+  const listo = () => {
+    boton?.classList.remove('mov-ocupado');
+    boton?.removeAttribute('aria-busy');
+    if (boton) boton.disabled = false;
+  };
   const [dias, bench, asis] = await Promise.all([
     rpc('offer_daily_stats', { p_offer: o.id, p_days: 14 }).catch(() => []),
     rpc('offer_benchmark', { p_offer: o.id }).catch(() => null),
@@ -2715,6 +2727,7 @@ async function cifrasDialogo(o) {
       </div>
       <p class="muted" style="margin:0">${asis.waitlist ? `${fmtNum(asis.waitlist)} ${I18N.lang === 'en' ? 'on the waiting list' : 'en lista de espera'} · ` : ''}${esc(I18N.t('El cobro es tuyo, en la puerta: aquí solo contamos plazas a precio de tarifa.'))}</p>` : ''}
     ${vistas ? '<p style="margin:0"><button type="button" class="btn sm" data-csvdia>Exportar CSV</button></p>' : ''}`;
+  listo();
   const abierto = modal({ title: o.title, html, submit: 'Cerrar', cancel: '' });
   I18N.translate($('#modal'));
   const csv = $('#modal [data-csvdia]');
@@ -3386,7 +3399,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     // El orden manda: la primera es la portada. Se mueve con las flechas.
     $('#photos').innerHTML = images.map((u, i) => `
       <div class="ph-item">
-        ${isVideo(u) ? `<div class="ph-video"><video src="${esc(u)}#t=0.1" muted playsinline preload="metadata"></video><span>▶</span></div>` : `<img src="${esc(u)}" alt="">`}
+        ${isVideo(u) ? `<div class="ph-video"><video src="${esc(u)}#t=0.1" muted playsinline preload="metadata"></video><span>▶</span></div>` : `<img src="${esc(KFotos.mini(u))}" data-original="${esc(u)}" alt="">`}
         ${i === 0 ? '<span class="ph-cover">Portada</span>' : ''}
         <button class="rm" type="button" data-i="${i}" title="Quitar">×</button>
         <div class="ph-move">
@@ -4594,7 +4607,7 @@ PAGES['antes-de-cerrar'] = async (v) => {
       `You already have one live: ${quedanTxt(s.live.seats_left ?? 0)}, until ${hora(s.live.until)}.`))}</div>` : ''}
     <div class="card antes">
       <div class="antes-ultima">
-        ${u.image ? `<img src="${esc(u.image)}" alt="" loading="lazy">` : `<span class="antes-ic">${svg('bolsa', 26)}</span>`}
+        ${u.image ? `<img src="${esc(KFotos.mini(u.image))}" data-original="${esc(u.image)}" alt="" loading="lazy">` : `<span class="antes-ic">${svg('bolsa', 26)}</span>`}
         <div><b>${esc(u.title)}</b>${trato ? `<span class="antes-trato">${esc(trato)}</span>` : ''}${u.terms ? `<small class="muted">${esc(u.terms)}</small>` : ''}</div>
       </div>
       <div class="antes-fila">
@@ -4832,7 +4845,7 @@ function tarjetaCodigo(r, estado) {
   const icono = r.kind === 'stamp_reward' ? 'loyalty' : r.kind === 'birthday_gift' ? 'cake'
     : r.kind === 'visit_coupon' ? 'local_offer' : r.kind === 'thanks_gift' ? 'volunteer_activism'
       : r.offer_kind === 'future_event' ? 'event' : 'redeem';
-  const foto = r.offer_image ? `<img src="${esc(r.offer_image)}" alt="" loading="lazy">` : `<span class="cod-ic">${ms(icono)}</span>`;
+  const foto = r.offer_image ? `<img src="${esc(KFotos.mini(r.offer_image))}" data-original="${esc(r.offer_image)}" alt="" loading="lazy">` : `<span class="cod-ic">${ms(icono)}</span>`;
   const [dar, antes] = ajeno ? ['', ''] : partesDelCanje(r);
   const lineas = [];
   // Quién: la foto si la tiene, el nombre y cuántas veces ha venido; en una
@@ -6208,7 +6221,7 @@ function htmlArchivosCarta(archivos, canManage) {
     const nombre = pdf ? (x.name || 'PDF') : bi(`Foto ${nFoto}`, `Photo ${nFoto}`);
     return `<li>
       ${pdf ? `<a class="arch-mini pdf" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer">${E.iconoPdf(26)}</a>`
-        : `<a class="arch-mini" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer"><img src="${esc(x.url)}" alt="" loading="lazy"></a>`}
+        : `<a class="arch-mini" href="${esc(x.url)}" target="_blank" rel="noopener noreferrer"><img src="${esc(KFotos.mini(x.url))}" data-original="${esc(x.url)}" alt="" loading="lazy"></a>`}
       <span class="arch-txt"><b>${esc(nombre)}</b><small>${esc([pdf ? 'PDF' : '', E.tamano(x.bytes, I18N.lang)].filter(Boolean).join(' · '))}${x.pending ? ` <span class="tag st-pending">${esc(I18N.t('En revisión'))}</span>` : ''}</small></span>
       ${canManage ? `<span class="arch-acc"><button type="button" class="btn sm ghost" data-arch-sube="${i}" ${i === 0 ? 'disabled' : ''} aria-label="${esc(bi(`Subir «${nombre}»`, `Move “${nombre}” up`))}">↑</button>
         <button type="button" class="btn sm ghost" data-arch-baja="${i}" ${i === archivos.length - 1 ? 'disabled' : ''} aria-label="${esc(bi(`Bajar «${nombre}»`, `Move “${nombre}” down`))}">↓</button>
@@ -6328,7 +6341,7 @@ PAGES.carta = async (v) => {
               <button class="btn sm bad ghost" data-sec-del="${si}">Borrar</button>` : ''}</h2>
           ${table({
             cols: [
-              { h: tc.col, r: (it) => `${it.image_url ? `<img class="thumb" src="${esc(it.image_url)}" alt="" loading="lazy">` : ''}<b class="title">${esc(it.name)}</b>${it.description ? `<span class="sub">${esc(it.description)}</span>` : ''}` },
+              { h: tc.col, r: (it) => `${it.image_url ? `<img class="thumb" src="${esc(KFotos.mini(it.image_url))}" data-original="${esc(it.image_url)}" alt="" loading="lazy">` : ''}<b class="title">${esc(it.name)}</b>${it.description ? `<span class="sub">${esc(it.description)}</span>` : ''}` },
               ...(verAlergenos() ? [{ h: 'Alérgenos', r: (it) => (it.allergens || []).length
                 ? (it.allergens || []).map((a) => `<span class="tag">${esc(nombreAlergeno(a))}</span>`).join(' ')
                 : '<span class="muted">—</span>' }] : []),
@@ -6737,7 +6750,7 @@ PAGES.novedades = async (v) => {
       '<p>A short note on your page, with no countdown or code: “octopus today”, “closed on Monday”, “the terrace is open”. For something people redeem, use a <b>publication</b>.</p><p>People who have you in their favourites get a notification (at most one a day per business, so it doesn\'t get tiring).</p>'))}
     ${table({
       cols: [
-        { h: 'Novedad', r: (p) => `${p.image_url ? `<img class="thumb" src="${esc(p.image_url)}" alt="" loading="lazy">` : ''}<span class="title">${esc(p.body || '')}</span>${p.moderation_status === 'pending' ? ' <span class="tag st-pending">En revisión</span>' : ''}` },
+        { h: 'Novedad', r: (p) => `${p.image_url ? `<img class="thumb" src="${esc(KFotos.mini(p.image_url))}" data-original="${esc(p.image_url)}" alt="" loading="lazy">` : ''}<span class="title">${esc(p.body || '')}</span>${p.moderation_status === 'pending' ? ' <span class="tag st-pending">En revisión</span>' : ''}` },
         { h: 'Cuándo', r: (p) => fmtDate(p.created_at) },
         { h: '', r: (p) => canManage ? `<div class="actions">
             <button class="btn sm ghost" data-edit="${esc(p.id)}">Editar</button>

@@ -102,7 +102,7 @@ const mediosResena = (media) => (media && media.length ? `<div class="medios">${
   const img = vid && !m.poster_url
     ? `<video src="${esc(m.url)}#t=0.5" muted playsinline preload="metadata" aria-hidden="true"></video>`
     : `<img src="${esc(vid ? m.poster_url : m.url)}" alt="" loading="lazy">`;
-  return `<a class="medio${m.in_review ? ' en-revision' : ''}" href="${esc(m.url)}" target="_blank" rel="noopener" title="${esc(que)}" aria-label="${esc(que)}">${img}${vid ? `<span class="medio-play">${ms('play_arrow')}</span>` : ''}</a>`;
+  return `<a class="medio${m.in_review ? ' en-revision' : ''}" href="${esc(urlSegura(m.url))}" target="_blank" rel="noopener" title="${esc(que)}" aria-label="${esc(que)}">${img}${vid ? `<span class="medio-play">${ms('play_arrow')}</span>` : ''}</a>`;
 }).join('')}</div>` : '');
 const debounce = (fn, ms = 350) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
 const qs = (o) => Object.entries(o).filter(([, v]) => v != null && v !== '').map(([k, v]) => `${k}=${encodeURIComponent(v)}`).join('&');
@@ -117,6 +117,22 @@ class Obsoleta extends Error {
 // Las RPC que escriben: aunque se cambie de pantalla mientras van, terminan y
 // dicen si ha ido bien (las que solo leen se cortan con `Obsoleta`).
 const ESCRIBE = /^admin_(set|record|send|delete|upsert|resolve|review|add|remove|push_retry|save|hide|collection_(add|remove|move)|run|update|dismiss|merge|handle_cancellation|mark_business_closed|release_suspension_pause|change_user_email)|^set_business_amenities$|^admin_((un)?link_venue|rename_venue|(de)?activate_city|notify_city)/;
+/** Una lista que se vuelve a pedir (buscador, «Siguiente», filtros): nunca dos
+ *  a la vez. Si se pide otra mientras va una, se hace una sola más al acabar
+ *  (con lo último escrito o pulsado): la respuesta vieja ya no puede pintarse
+ *  la última, y escribir deprisa no lanza una petición por letra (revisión
+ *  general, parte 4). */
+const enOrden = (fn) => {
+  let enCurso = null;
+  let otra = false;
+  return () => {
+    if (enCurso) { otra = true; return enCurso; }
+    enCurso = (async () => {
+      try { do { otra = false; await fn(); } while (otra); } finally { enCurso = null; }
+    })();
+    return enCurso;
+  };
+};
 async function rpc(fn, args = {}) {
   const n = RUTA_N;
   const { data, error } = await sb.rpc(fn, args);
@@ -999,12 +1015,40 @@ function renderNav(current) {
     if (b) { if (BADGES.resumen) b.textContent = BADGES.resumen; else b.remove(); }
   }
 }
-async function refreshBadges(lanzar = false) {
+// Los números del menú: si ya se están pidiendo, no se piden otra vez a la
+// vez; se piden una vez más al acabar (cada acción los pedía de nuevo, y
+// varias seguidas lanzaban varias tandas a la vez).
+let BADGES_JUNTOS = null;
+let BADGES_EN_CURSO = null;
+let BADGES_OTRA = false;
+function refreshBadges(lanzar = false) {
+  if (BADGES_EN_CURSO) { BADGES_OTRA = true; return BADGES_EN_CURSO; }
+  BADGES_EN_CURSO = (async () => {
+    try {
+      let k;
+      do { BADGES_OTRA = false; k = await pideBadges(lanzar); } while (BADGES_OTRA);
+      return k;
+    } finally { BADGES_EN_CURSO = null; }
+  })();
+  return BADGES_EN_CURSO;
+}
+async function pideBadges(lanzar = false) {
   try {
     // Todo a la vez (antes, una tras otra: 11 idas y vueltas antes de pintar).
     // Cada una, si falla, deja lo de siempre; solo admin_kpis es imprescindible.
     const o = (p, si = (x) => x, no = null) => p.then(si).catch(() => no);
-    const [k, sug, msj, textos, webErr, bajas, cambios, pausas, reclam, ents, dups] = await Promise.all([
+    // Una sola llamada (admin_badges, migración 20261288500010); sin ella (prod
+    // aún sin subir), las 11 de antes a la vez.
+    const juntos = BADGES_JUNTOS === false ? null : await rpc('admin_badges').catch((e) => {
+      if (e?.obsoleta) throw e;
+      if (/admin_badges|PGRST202|schema cache|404/i.test(`${e?.message} ${e?.codigo || ''}`)) BADGES_JUNTOS = false;
+      return null;
+    });
+    const [k, sug, msj, textos, webErr, bajas, cambios, pausas, reclam, ents, dups] = juntos
+      ? [juntos.kpis, juntos.feedback_new ?? 0, juntos.messages_pending ?? 0, juntos.texts_total ?? 0, juntos.web_errors ?? null,
+        juntos.cancellations ?? null, juntos.changes ?? null, (juntos.pauses || null)?.filter?.((x) => !x.owner_banned_at) ?? null,
+        juntos.claims_pending ?? 0, juntos.entities_pending ?? 0, juntos.duplicates_pending ?? 0]
+      : await Promise.all([
       rpc('admin_kpis'),
       o(rpc('admin_feedback', { p_status: 'new', p_limit: 1 }), (r) => r.counts?.new || 0, 0),
       // Mensajes a clientes parados por la moderación automática.
@@ -1944,7 +1988,8 @@ PAGES.negocios = async (v, id) => {
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const r = await rpc('admin_businesses_page', ultimos = { p_status: s.status, p_query: s.q || null, p_plan: s.plan || 'all', p_active: s.active === '' || s.active == null ? null : s.active === 'true', p_sort: s.sort || 'created_desc', p_limit: s.limit, p_offset: s.offset, ...(s.stuck ? { p_stuck: s.stuck } : {}) });
     rows = r.rows;
     const pg = pager(s, r.total, load);
@@ -2485,7 +2530,8 @@ PAGES.publicaciones = async (v, id) => {
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const r = await rpc('admin_offers_page', ultimos = { p_moderation: s.moderation, p_status: s.status || 'all', p_kind: s.kind || 'all', p_query: s.q || null, p_business: s.business || null, p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);
@@ -2627,7 +2673,8 @@ PAGES.canjes = async (v) => {
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const r = await rpc('admin_redemptions', ultimos = { p_status: s.status || 'all', p_query: s.q || null, p_from: s.from || null, p_to: s.to || null, p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);
@@ -2663,7 +2710,8 @@ PAGES.usuarios = async (v, id) => {
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const r = await rpc('admin_users', ultimos = { p_query: s.q || null, p_type: s.type || 'all', p_banned: s.banned === '' || s.banned == null ? null : s.banned === 'true', p_sort: s.sort || 'created_desc', p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);
@@ -2886,7 +2934,8 @@ PAGES.resenas = async (v) => {
     <div class="tabs"><button type="button" data-t="cola" aria-pressed="${tab === 'cola'}" class="${tab === 'cola' ? 'on' : ''}">En revisión${BADGES.resenas ? ` <span class="badge">${BADGES.resenas}</span>` : ''}</button><button type="button" data-t="reviews" aria-pressed="${tab === 'reviews'}" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button type="button" data-t="posts" aria-pressed="${tab === 'posts'}" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
     <div class="toolbar" ${tab === 'cola' ? 'hidden' : ''}><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…" value="${esc((tab === 'posts' ? sP.q : sR.q) || '')}"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}" ${String(sR.rating || '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     if (tab === 'cola') {
       const r = await rpc('admin_text_reviews', { p_limit: sC.limit, p_offset: sC.offset });
       const pg = pager(sC, r.total, load);
@@ -3079,7 +3128,8 @@ PAGES.denuncias = async (v, tipoRuta) => {
       <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo'], ['profile', 'Perfiles'], ['question', 'Preguntas'], ['question_answer', 'Respuestas a preguntas']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const abiertas = (s.status || 'open') === 'open';
     const q = (s.q || '').trim();
     // La búsqueda la hace la base, con todas (título, negocio, ciudad,
@@ -3152,7 +3202,7 @@ async function denunciasDe(v, tipo, id) {
       <div class="item" style="border:0;padding:0">${miniDen(tipo, d.target)}<div style="min-width:0">
         <h1 style="margin:0 0 4px;font-size:22px">${esc(tituloDen(tipo, d.target))}</h1>
         <div class="meta">${tag(tipo, 'dim')} ${estadoDen(d.state)} ${g.reviewing ? tag('reviewing') : ''} ${deQuienDen(tipo, t)}${t.city ? ` · ${esc(t.city)}` : ''}</div>
-        ${tipo === 'review_media' && t.media_url ? `<p class="meta"><a class="link" href="${esc(t.media_url)}" target="_blank" rel="noopener">${t.media_kind === 'video' ? (en ? 'Watch the video' : 'Ver el vídeo') : (en ? 'See the photo' : 'Ver la foto')} ↗</a></p>` : ''}
+        ${tipo === 'review_media' && t.media_url ? `<p class="meta"><a class="link" href="${esc(urlSegura(t.media_url))}" target="_blank" rel="noopener">${t.media_kind === 'video' ? (en ? 'Watch the video' : 'Ver el vídeo') : (en ? 'See the photo' : 'Ver la foto')} ↗</a></p>` : ''}
         ${d.live ? '' : `<p class="meta">${en ? 'It no longer exists: this is how it was when it was reported.' : 'Ya no existe: así estaba cuando lo denunciaron.'}</p>`}
         ${cifrasDen(g, abiertas.length > 0)}
         <div class="den-motivos">${Object.entries(motivos).sort((a, b) => b[1] - a[1]).map(([m, n]) => `<span class="tag ${m === 'child_abuse' || m === 'illegal' ? 'bad' : 'dim'}">${esc(motivoDen(m))} · ${n}</span>`).join(' ')}</div>
@@ -3314,7 +3364,8 @@ PAGES.reclamaciones = async (v) => {
     <div class="toolbar"><input id="q" class="grow" type="search" placeholder="${en ? 'Search by business, city, person or email…' : 'Buscar por negocio, ciudad, persona o correo…'}" aria-label="${en ? 'Search claims' : 'Buscar en reclamaciones'}" value="${esc(s.q || '')}"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
   const ESTADO = { pending: ['warn', en ? 'pending' : 'pendiente'], approved: ['ok', en ? 'approved' : 'aprobada'], rejected: ['bad', en ? 'rejected' : 'rechazada'], withdrawn: ['dim', en ? 'withdrawn' : 'retirada'] };
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const q = (s.q || '').trim();
     const r = await rpc('admin_business_claims', { p_status: s.status, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
     const total = s.status === 'all' ? Object.values(r.counts || {}).reduce((a, n) => a + n, 0) : (r.counts || {})[s.status] || 0;
@@ -3411,7 +3462,8 @@ PAGES.entidades = async (v) => {
     <div class="toolbar"><input id="q" class="grow" type="search" placeholder="${en ? 'Search by name, CIF, city, person or email…' : 'Buscar por nombre, CIF, ciudad, persona o correo…'}" aria-label="${en ? 'Search organisations' : 'Buscar en entidades'}" value="${esc(s.q || '')}"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
   const ESTADO = { pending: ['warn', en ? 'pending' : 'pendiente'], approved: ['ok', en ? 'approved' : 'aprobada'], rejected: ['bad', en ? 'rejected' : 'rechazada'], withdrawn: ['dim', en ? 'withdrawn' : 'retirada'] };
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const q = (s.q || '').trim();
     const r = await rpc('admin_entity_applications', { p_status: s.status, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
     const total = s.status === 'all' ? Object.values(r.counts || {}).reduce((a, n) => a + n, 0) : (r.counts || {})[s.status] || 0;
@@ -3552,7 +3604,8 @@ PAGES.mensajes = async (v) => {
       <select id="status">${[['all', 'Todos'], ['review', 'En revisión'], ['sent', 'Enviados'], ['rejected', 'No enviados']].map((o) => `<option value="${o[0]}" ${(s.status || 'review') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const estado = s.status || 'review';
     const q = (s.q || '').trim();
     const r = await rpc('admin_business_messages', { p_status: estado === 'all' ? null : estado, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
@@ -3629,7 +3682,8 @@ PAGES.sugerencias = async (v) => {
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const kindIcon = { suggestion: ms('lightbulb'), bug: ms('bug_report'), business: ms('storefront'), other: ms('chat_bubble') };
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const r = await rpc('admin_feedback', ultimos = { p_status: s.status, p_kind: s.kind || 'all', p_query: s.q || null, p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const c = r.counts || {};
@@ -3713,7 +3767,8 @@ PAGES.planes = async (v) => {
     <div id="tabview"></div>`;
   let csvFn = null; let ultimos = null;
   let rows = [], csvCols = [], csvName = 'suscripciones';
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
     if (tab === 'subs') {
       const s = st.subs;
@@ -3990,7 +4045,8 @@ PAGES.avisos = async (v) => {
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Send notification</b>: sends a notification (in the app and by push) to every user, users only, businesses only, or the businesses in one city. Use it sparingly (important news, incidents); everything is logged. <b>Push queue</b>: what the system is sending; if something fails (expired token, Firebase error) you'll see why and can retry.</p>` : '<p><b>Enviar notificación</b>: manda una notificación (en la app y por push) a todos los usuarios, solo a usuarios, solo a los negocios, o a los negocios de una ciudad. Úsalo con moderación (novedades importantes, incidencias); todo queda en el registro. <b>Cola de push</b>: lo que el sistema está enviando; si algo falla (token caducado, error de Firebase) verás el motivo y podrás reintentar.</p>')}
     <div class="tabs">${[['send', 'Enviar notificación'], ['history', 'Enviados'], ['push', 'Cola de push']].map((t) => `<button type="button" data-t="${t[0]}" class="${tab === t[0] ? 'on' : ''}" aria-pressed="${tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
     if (tab === 'send') {
       tv.innerHTML = `<div class="card" style="max-width:680px"><form id="sendf" style="display:grid;gap:12px">
@@ -4423,7 +4479,7 @@ PAGES.configuracion = async (v) => {
           <label class="f"><span>Días de margen desde la subida</span><input name="grace" type="number" min="3" max="60" value="${esc(fr.grace_days ?? 7)}"></label>
           <label class="f"><span>Meses tras terminar una publicación</span><input name="months" type="number" min="3" max="60" value="${esc(fr.media_months ?? 12)}"></label>
           <div><button class="btn sm">Guardar</button> <span class="muted small">${I18N.lang === 'en' ? 'updated' : 'actualizado'} ${fmtDate(cfg.storage_rules?.updated_at)}</span></div></form></div>
-      <div class="card"><h2>Envío de push</h2><form id="spf" style="display:grid;gap:10px"><label class="f"><span>URL de la función</span><input name="url" value="${esc(sp.url || '')}"></label><label class="f"><span>Clave</span><input name="key" type="password" autocomplete="off" value="${esc(sp.key || '')}"></label><div><button class="btn sm">Guardar</button></div></form></div>
+      <div class="card"><h2>Envío de push</h2><form id="spf" style="display:grid;gap:10px"><label class="f"><span>URL de la función</span><input name="url" value="${esc(sp.url || '')}"></label><label class="f"><span>Clave</span><input name="key" type="password" autocomplete="new-password" value="" placeholder="${(sp.key_set || sp.key) ? 'Guardada. Escribe otra solo para cambiarla' : 'Sin clave'}"></label><div><button class="btn sm">Guardar</button></div></form></div>
       <div class="card"><h2>Mantenimiento</h2><p class="muted small">Las publicaciones caducan solas cada 5 minutos (cron). Si ves alguna caducada que sigue apareciendo, fuerza la comprobación.</p><div class="actions"><button class="btn sm" id="expire">Caducar publicaciones vencidas ahora</button></div>
         <h3 style="margin-top:16px">Límites anti-abuso (últimas 24 h)</h3>${table({ cols: [{ h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Acción', r: (x) => esc(x.action) }, { h: 'Ventana', r: (x) => fmtDate(x.window_start) }, { h: 'Intentos', num: true, r: (x) => x.hits }], rows: limits, empty: 'Nadie ha tocado un límite.' })}</div>
     </div>`;
@@ -4471,7 +4527,8 @@ PAGES.configuracion = async (v) => {
     }
   });
   alGuardar($('#mtf'), async (c) => { if (c.enabled.checked && !await confirmDlg('Activar mantenimiento', 'Todos los usuarios verán el mensaje y no podrán usar la app hasta que lo desactives.', { danger: true, submit: 'Activar' })) return; await save('maintenance', { enabled: c.enabled.checked, message: c.message.value.trim() || null }); });
-  alGuardar($('#spf'), async (c) => { if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; await save('send_push', { url: c.url.value.trim(), key: c.key.value.trim() }); });
+  alGuardar($('#spf'), async (c) => { if (!await confirmDlg('Cambiar el envío de push', 'Si la dirección o la clave están mal, dejarán de llegar todas las notificaciones push.', { danger: true, submit: 'Guardar' })) return; // La base ya no da la clave (key_set) y, sin clave, guarda la que había. Mientras prod no tenga esa migración, la de antes (sp.key) se vuelve a mandar tal cual para no borrarla.
+    const key = c.key.value.trim() || sp.key || ''; await save('send_push', key ? { url: c.url.value.trim(), key } : { url: c.url.value.trim() }); });
   alGuardar($('#rlf'), (c) => save('rules', { block_2x1_alcohol: c.block2x1.checked }));
   alGuardar($('#gwf'), async (c) => {
     const platforms = ['web', 'android', 'ios'].filter((p) => c[p].checked);
@@ -4577,7 +4634,8 @@ PAGES.errores = async (v) => {
       });
     };
   };
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const r = await rpc('admin_web_errors', ultimos = { p_area: s.area === 'all' ? null : s.area, p_limit: s.limit, p_offset: s.offset, p_status: s.status });
     rows = r.rows || [];
     const c = r.counts || {};
@@ -4670,7 +4728,8 @@ PAGES.actividad = async (v) => {
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const linkFor = (l) => l.target_type === 'giveaway' && l.details?.business_id ? `#/negocios/${l.details.business_id}` : l.target_type === 'business' ? `#/negocios/${l.target_id}` : l.target_type === 'offer' ? `#/publicaciones/${l.target_id}` : l.target_type === 'user' ? `#/usuarios/${l.target_id}` : null;
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const r = await rpc('admin_audit', ultimos = { p_query: s.q || null, p_action: s.action || 'all', p_limit: s.limit, p_offset: s.offset });
     rows = r.rows;
     const pg = pager(s, r.total, load);

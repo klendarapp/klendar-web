@@ -19,7 +19,7 @@
 
 import { alergenosDeCategoria, cartaDeCategoria, categoriaDe, hayAlergenos, textoCarta } from './carta.js';
 import { enlaceCuenta } from './cuenta.js';
-import { esc, html, isUuid, rpc, rpcAll, supabasePublic } from './page.js';
+import { esc, html, isUuid, rpc, rpcAll, supabasePublic, jsonEnScript } from './page.js';
 import KZ from '../../assets/zona.js';
 import { money, publicPage, zonaDe } from './public.js';
 import { rejilla } from './tarjeta.js';
@@ -156,7 +156,7 @@ export async function tableQrPage(token, lang) {
   <script>(function(){var b=document.querySelector('[data-copiar]');if(b)b.addEventListener('click',function(){var t=b.getAttribute('data-copiar'),h=b.getAttribute('data-hecho'),l=b.textContent;
 function ok(){b.textContent=h;setTimeout(function(){b.textContent=l;},2500);}
 if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,function(){});}else{var r=document.createRange();r.selectNodeContents(document.getElementById('mesa-clave'));var s=getSelection();s.removeAllRanges();s.addRange(r);try{document.execCommand('copy');ok();}catch(e){}}});
-if(navigator.webdriver)return;try{var k=${JSON.stringify(sp.key)};fetch(${JSON.stringify(`${sp.url}/rest/v1/rpc/table_qr_scan`)},{method:'POST',keepalive:true,headers:{apikey:k,Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({p_token:${JSON.stringify(token)}})}).catch(function(){});}catch(e){}})();</script>`;
+if(navigator.webdriver)return;try{var k=${jsonEnScript(sp.key)};fetch(${jsonEnScript(`${sp.url}/rest/v1/rpc/table_qr_scan`)},{method:'POST',keepalive:true,headers:{apikey:k,Authorization:'Bearer '+k,'Content-Type':'application/json'},body:JSON.stringify({p_token:${jsonEnScript(token)}})}).catch(function(){});}catch(e){}})();</script>`;
 
   return pagina(`${S.title} · ${b.name}`, body, 200, 'public, max-age=30, s-maxage=30');
 }

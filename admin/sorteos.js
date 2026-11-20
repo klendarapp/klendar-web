@@ -120,7 +120,8 @@ PAGES.sorteos = async (v) => {
       <select id="status">${[['active', 'Abiertos'], ['removed', 'Retirados'], ['all', 'Todos']].map((o) => `<option value="${o[0]}" ${(s.status || 'active') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const q = (s.q || '').trim();
     const r = await rpc('admin_giveaways', { p_status: s.status || 'active', p_business: null, p_limit: q ? BUSCA_MAX : s.limit, p_offset: q ? 0 : s.offset });
     const todos = r.rows || [];

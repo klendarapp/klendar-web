@@ -51,6 +51,11 @@ export const erroresScript = () =>
 
 export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 export const isUuid = (s) => UUID.test(s || '');
+/** Un valor para meterlo en un `<script>` en línea: JSON con `<`, U+2028 y
+ *  U+2029 escapados. `JSON.stringify` solo no basta: un nombre de negocio con
+ *  «</script>» cerraría el bloque (revisión de seguridad, 20-11). */
+export const jsonEnScript = (v) => (JSON.stringify(v) ?? 'null')
+  .replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 
 /** El servidor no ha contestado (caído, sin red, 500). No es que no exista. */
 export class BackendDown extends Error {}
@@ -205,7 +210,7 @@ export function render({ lang, path, kind, title, description, image, ogTitle, o
     `<meta name="twitter:title" content="${esc(ogTitle || t)}">`,
     `<meta name="twitter:description" content="${esc(ogDescription || desc)}">`,
     `<meta name="twitter:image" content="${esc(og)}">`,
-    jsonLd ? `<script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, '\\u003c')}</script>` : '',
+    jsonLd ? `<script type="application/ld+json">${jsonEnScript(jsonLd)}</script>` : '',
   ].join('\n');
   const hero = image && !notFound ? `<img class="hero-img" src="${esc(image)}" alt="" fetchpriority="high">` : '<img class="logo" src="/assets/icon-192.png" alt="Klendar" width="72" height="72">';
   const open = notFound ? '' : `<a id="open" class="pill accent" href="${esc(intent)}" data-web="${BASE}${esc(path)}">${S.open}</a>`;

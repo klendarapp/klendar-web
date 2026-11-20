@@ -146,7 +146,8 @@ PAGES.artistas = async (v) => {
     <div class="tabs">${[['lista', 'Artistas'], ['repetidos', 'Repetidos']].map((t) => `<button type="button" data-t="${t[0]}" class="${AR.tab === t[0] ? 'on' : ''}" aria-pressed="${AR.tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
 
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const tv = $('#tabview', v);
     tv.innerHTML = '<div class="loading">Cargando…</div>';
     I18N.translate(tv);

@@ -26,7 +26,7 @@
 // que no se abre. Con el código en la dirección, la página es privada
 // (sin buscadores, sin caché compartida y sin contador).
 
-import { esc, html, isUuid, rows, rpc, rpcAll } from './page.js';
+import { esc, html, isUuid, rows, rpc, rpcAll, jsonEnScript } from './page.js';
 import {
   arteDe, AGENDA_COLOR, BASE, benefit, bizPath, collectionBase, esGenerica, firstPhoto, isSlug, isVideo, publicPage, slugDe, zonaDe,
 } from './public.js';
@@ -258,7 +258,7 @@ export async function storyPage(kind, ref, lang, rpRaw = '', para = '') {
       <p><a href="${esc(volver)}">← ${esc(S.back)}</a></p>
     </div>
   </div>
-  <script type="application/json" id="historia-datos">${JSON.stringify(datos).replace(/</g, '\\u003c')}</script>
+  <script type="application/json" id="historia-datos">${jsonEnScript(datos)}</script>
   <script src="/assets/zona.js?v=2" defer></script>
   <script src="/assets/vendor/qrcode.js?v=1" defer></script>
   <script src="/assets/historia.js?v=2" defer></script>`;

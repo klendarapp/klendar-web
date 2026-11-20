@@ -442,7 +442,7 @@ const htmlFotos = (est) => `
   </div>
   <div class="full"><h3 style="margin:6px 0 4px">Fotos del local</h3>
     <p class="muted" style="margin:0 0 10px">Hasta 12 fotos: el local, el ambiente, lo que haces. Se ven en tu ficha.</p>
-    <div class="thumbs">${est.galeria.map((u, i) => `<div class="thumb"><img src="${esc(u)}" alt="">
+    <div class="thumbs">${est.galeria.map((u, i) => `<div class="thumb"><img src="${esc(KFotos.mini(u))}" data-original="${esc(u)}" alt="">
       <button class="btn sm bad ghost" type="button" data-gal-quitar="${i}">Quitar</button></div>`).join('')}</div>
     ${est.galeria.length < TOPE.galeria
       ? `<p style="margin:10px 0 0"><button class="btn sm" type="button" data-foto="gallery">Añadir fotos</button> <span class="muted small">${esc(topeHasta(TOPE.galeria))}</span></p>`

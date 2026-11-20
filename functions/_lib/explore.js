@@ -16,7 +16,7 @@
 //   (`?vista=lista`) es solo de la web, para quien llega desde Google.
 
 import { enlaceCuenta } from './cuenta.js';
-import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido } from './page.js';
+import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido, jsonEnScript } from './page.js';
 import KZ from '../../assets/zona.js';
 import { zonaDeConexion } from './conexion.js';
 import {
@@ -481,7 +481,7 @@ function ambienteHtml(e, lang, link) {
       data-on="${esc(link({ ambiente: true }))}" data-off="${esc(link({ ambiente: false }))}"> <span>${esc(T.chk)}</span></label>
   </div>
   <p class="ambiente-aviso" id="ambiente-aviso" role="status" aria-live="polite" hidden></p>
-  <script type="application/json" id="ambiente-textos">${JSON.stringify(textos).replace(/</g, '\\u003c')}</script>
+  <script type="application/json" id="ambiente-textos">${jsonEnScript(textos)}</script>
   <script src="/assets/ambiente.js?v=2" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
 }
 
@@ -533,7 +533,7 @@ const mapaHtml = (items, lang, S) => {
   return `<div id="mapa" class="mapa-explorar" role="region" aria-label="${esc(S.mapView)}" data-no="${esc(S.mapNo)}" data-textos="${esc(JSON.stringify(textos))}"></div>
   <p class="ambiente-leyenda" id="ambiente-leyenda" hidden></p>
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
-  <script type="application/json" id="mapaPuntos">${JSON.stringify(puntos).replace(/</g, '\u003c')}</script>
+  <script type="application/json" id="mapaPuntos">${jsonEnScript(puntos)}</script>
   <script src="/assets/iconos-mapa.js?v=2"></script>
   <script src="/assets/mapa.js?v=9"></script>`;
 };
@@ -582,7 +582,7 @@ const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
     </div>
     <div class="avisame-caja" data-avisame-caja hidden></div>
   </section>
-  <script type="application/json" id="avisame-textos">${JSON.stringify(textos).replace(/</g, '\\u003c')}</script>
+  <script type="application/json" id="avisame-textos">${jsonEnScript(textos)}</script>
   <script src="/assets/avisame.js?v=20261118captcha" defer data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-lang="${en ? 'en' : 'es'}"></script>`;
 };
 

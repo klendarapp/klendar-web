@@ -194,7 +194,8 @@ PAGES.emisiones = async (v) => {
     <div class="tabs">${[['ligas', 'Ligas'], ['proximas', 'Próximas'], ['bares', 'De los bares'], ['equipos', 'Equipos'], ['seguir', 'Seguir']].map((t) => `<button type="button" data-t="${t[0]}" class="${EM.tab === t[0] ? 'on' : ''}" aria-pressed="${EM.tab === t[0]}">${t[1]}</button>`).join('')}</div>
     <div id="tabview"></div>`;
 
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     const tv = $('#tabview', v);
     tv.innerHTML = '<div class="loading">Cargando…</div>';
     I18N.translate(tv);

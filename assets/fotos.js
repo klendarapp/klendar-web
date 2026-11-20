@@ -128,5 +128,26 @@
     }
   }
 
-  window.KFotos = Object.freeze({ TAM, reduce, MINI, rutaMiniatura, miniatura, subeMiniatura });
+  /** La dirección para enseñar una foto pequeña (una lista, una tabla): su
+   *  miniatura de Storage si puede tenerla; si no (vídeo, PDF, otra web…), la
+   *  misma. Con `<img src="${mini(u)}" data-original="${u}">`, si la
+   *  miniatura no existe (fotos de antes) se carga la original sola (abajo).
+   *  Rendimiento y coste (revisión general, parte 4, 20-11). */
+  function mini(url) {
+    const de = '/storage/v1/object/public/business-images/';
+    if (typeof url !== 'string' || !url.includes(de)) return url;
+    const limpia = url.replace(/[?#].*$/, '');
+    if (/(-thumb|-poster|-frame\d+)\.[a-z0-9]+$|\.(mp4|mov|m4v|webm|pdf|gif|svg)$/i.test(limpia)) return url;
+    return rutaMiniatura(limpia);
+  }
+  // Una miniatura que no existe: la original, una sola vez (sin `onerror` en
+  // el HTML, que la CSP no deja).
+  document.addEventListener('error', (e) => {
+    const img = e.target;
+    if (!(img instanceof HTMLImageElement)) return;
+    const o = img.dataset.original;
+    if (o && img.getAttribute('src') !== o) { img.removeAttribute('data-original'); img.src = o; }
+  }, true);
+
+  window.KFotos = Object.freeze({ TAM, reduce, MINI, rutaMiniatura, miniatura, subeMiniatura, mini });
 }());

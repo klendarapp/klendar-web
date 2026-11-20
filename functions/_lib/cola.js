@@ -9,7 +9,7 @@
 // ni contador de visitas. Con una sesión de «Tu cuenta» guardada, la etiqueta
 // del <head> lleva directamente al turno en vivo (`/cuenta/cola/<código>`).
 
-import { esc, html, rpc, supabasePublic } from './page.js';
+import { esc, html, rpc, supabasePublic, jsonEnScript } from './page.js';
 import { publicPage } from './public.js';
 import KC from '../../assets/cola.js';
 
@@ -131,12 +131,12 @@ export async function queueScreenPage(rawCode, lang) {
 ${vale ? `<script src="/assets/vendor/qrcode.js?v=1"></script>
 <script>
 (function () {
-  var S = ${JSON.stringify({ ...S, wait: undefined })};
+  var S = ${jsonEnScript({ ...S, wait: undefined })};
   var esperaTxt = ${en ? `function (m) { return m <= 1 ? 'Approximate wait: 1 min' : 'Approximate wait: about ' + m + ' min'; }` : `function (m) { return m <= 1 ? 'Espera aproximada: 1 min' : 'Espera aproximada: unos ' + m + ' min'; }`};
-  var qr = qrcode(0, 'M'); qr.addData(${JSON.stringify(joinUrl)}); qr.make();
+  var qr = qrcode(0, 'M'); qr.addData(${jsonEnScript(joinUrl)}); qr.make();
   var caja = document.querySelector('.lado .qr'); if (caja) caja.innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
   var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); };
-  var pre = ${JSON.stringify(en ? 'No. ' : 'Nº ')};
+  var pre = ${jsonEnScript(en ? 'No. ' : 'Nº ')};
   function pinta(d) {
     var b = (d && d.business) || {}; var q = d && d.queue;
     var h = '<h1>' + esc(b.name) + '</h1>';
@@ -152,12 +152,12 @@ ${vale ? `<script src="/assets/vendor/qrcode.js?v=1"></script>
     }
     document.getElementById('numeros').innerHTML = h;
   }
-  pinta(${JSON.stringify(info)});
+  pinta(${jsonEnScript(info)});
   setInterval(function () {
-    fetch(${JSON.stringify(`${sp.url}/rest/v1/rpc/queue_screen`)}, {
+    fetch(${jsonEnScript(`${sp.url}/rest/v1/rpc/queue_screen`)}, {
       method: 'POST',
-      headers: { apikey: ${JSON.stringify(sp.key)}, Authorization: 'Bearer ' + ${JSON.stringify(sp.key)}, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ p_code: ${JSON.stringify(code)} }),
+      headers: { apikey: ${jsonEnScript(sp.key)}, Authorization: 'Bearer ' + ${jsonEnScript(sp.key)}, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ p_code: ${jsonEnScript(code)} }),
     }).then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { if (d && d.ok) pinta(d); }).catch(function () {});
   }, 5000);
 })();

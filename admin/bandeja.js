@@ -133,8 +133,10 @@ async function cargaBandeja() {
     ok(rpc('admin_ai_reports', { p_status: 'new', p_limit: 50, p_offset: 0 })),
   ]);
   // Las fotos retenidas se ven con un enlace firmado de 5 minutos (como en «Filtro automático»).
-  const fotos = await Promise.all(((med?.rows) || []).map((x) => (x.kind === 'video' && x.frames?.length
-    ? urlMedio(x.frames[0].name, x.frames[0].in_held) : urlMedio(x.name, x.in_held)).catch(() => '')));
+  // Todas de una vez (una petición; antes, una por foto antes de pintar).
+  const cual = (x) => (x.kind === 'video' && x.frames?.length ? [x.frames[0].name, x.frames[0].in_held] : [x.name, x.in_held]);
+  await firmaMedios(((med?.rows) || []).map(cual));
+  const fotos = await Promise.all(((med?.rows) || []).map((x) => urlMedio(...cual(x)).catch(() => '')));
   return { extra, pv, ents, recl, den, med, cont, ofs, txt, msj, dups, sug, ia, fotos, fallos: [...new Set(fallos)] };
 }
 

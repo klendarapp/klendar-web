@@ -10,7 +10,7 @@ import KZ from '../../assets/zona.js';
 // Dinero, fechas cortas y el beneficio: los mismos que pinta la tarjeta, en
 // un solo sitio (`assets/tarjeta.js`, que también usa el panel del negocio).
 import KT from '../../assets/tarjeta.js';
-import { BackendDown, CONTADOR, datosDePrueba, erroresScript, esc, fmtWhen, html, isUuid, rows, supabasePublic } from './page.js';
+import { BackendDown, CONTADOR, datosDePrueba, erroresScript, esc, fmtWhen, html, isUuid, rows, supabasePublic, jsonEnScript } from './page.js';
 
 import { siteFooter, siteHeader } from './chrome.js';
 
@@ -105,7 +105,7 @@ export const isSlug = (s) => typeof s === 'string' && s.length <= 100 && /^[a-z0
 export const bizPath = (lang, slugOrId) => `${lang === 'en' ? '/en' : ''}/b/${encodeURIComponent(slugOrId || '')}`;
 
 /** Datos estructurados listos para el <head>. */
-export const ldScript = (obj) => `<script type="application/ld+json">${JSON.stringify(obj).replace(/</g, '\\u003c')}</script>`;
+export const ldScript = (obj) => `<script type="application/ld+json">${jsonEnScript(obj)}</script>`;
 
 /** Migas para Google: [[nombre, ruta], …] → BreadcrumbList. */
 export const breadcrumbLd = (migas) => ({
@@ -405,8 +405,8 @@ function desdeHistorias() {
 var p=location.pathname.split('/').filter(Boolean);if(p[0]==='en')p.shift();
 var k={o:'offer',b:'business',coleccion:'collection',collection:'collection',sorteo:'business',giveaway:'business'}[p[0]];if(!k||!p[1])return;
 if(p[0]==='sorteo'||p[0]==='giveaway'){var n=document.querySelector('[data-ref-negocio]');p[1]=n&&n.getAttribute('data-ref-negocio');if(!p[1]||p.length>2)return;}
-var key=${JSON.stringify(sp.key)};
-fetch(${JSON.stringify(sp.url + '/rest/v1/rpc/log_ref_visit')},{method:'POST',keepalive:true,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({p_ref:ref,p_kind:k,p_target:decodeURIComponent(p[1])})}).catch(function(){});
+var key=${jsonEnScript(sp.key)};
+fetch(${jsonEnScript(sp.url + '/rest/v1/rpc/log_ref_visit')},{method:'POST',keepalive:true,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({p_ref:ref,p_kind:k,p_target:decodeURIComponent(p[1])})}).catch(function(){});
 q.delete('ref');var r=q.toString();history.replaceState(history.state,'',location.pathname+(r?'?'+r:'')+location.hash);}catch(e){}})();</script>`;
 }
 

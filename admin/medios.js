@@ -83,10 +83,27 @@ const MEDIO_RAZONES = [
   'Muestra a menores de forma que no permiten las Normas de la comunidad.',
 ];
 
+// Enlaces firmados de lo retenido: 5 minutos; se reutilizan 4 (rendimiento,
+// 20-11: la bandeja firmaba hasta 50, uno a uno, antes de pintar).
+const FIRMADAS = new Map();
+const firmadaViva = (nombre) => { const f = FIRMADAS.get(nombre); return f && f.hasta > Date.now() ? f.url : null; };
 const urlMedio = async (nombre, enRetenido) => {
   if (!enRetenido) return sb.storage.from(MEDIO_BUCKET).getPublicUrl(nombre).data.publicUrl;
+  const viva = firmadaViva(nombre);
+  if (viva) return viva;
   const { data } = await sb.storage.from('media-held').createSignedUrl(nombre, 300);
+  if (data?.signedUrl) FIRMADAS.set(nombre, { url: data.signedUrl, hasta: Date.now() + 240000 });
   return data?.signedUrl || '';
+};
+/** Firma de una vez (una sola petición) lo retenido de una lista: `[[nombre, enRetenido], …]`.
+ *  Después, urlMedio de cada uno sale de lo ya firmado. */
+const firmaMedios = async (pares) => {
+  const faltan = [...new Set(pares.filter(([n, held]) => held && n && !firmadaViva(n)).map(([n]) => n))];
+  if (!faltan.length) return;
+  try {
+    const { data } = await sb.storage.from('media-held').createSignedUrls(faltan, 300);
+    for (const x of data || []) if (x?.signedUrl && x.path) FIRMADAS.set(x.path, { url: x.signedUrl, hasta: Date.now() + 240000 });
+  } catch { /* cada una se firma luego por su cuenta */ }
 };
 
 /** Rechazar: un toque en el motivo y ya. */
@@ -189,7 +206,8 @@ PAGES.medios = async (v) => {
     <div id="medEstado"></div>
     <div class="tabs" id="medTabs"></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
-  const load = async () => {
+  const load = enOrden(() => cargaLista());
+  const cargaLista = async () => {
     ponUrl('medios', { tab: tab === 'held' ? null : tab });
     let r;
     let txt = { rows: [], counts: {} };
@@ -230,7 +248,7 @@ PAGES.medios = async (v) => {
       ? `<div class="card"><p style="margin:0 0 8px"><b>${esc(I18N.t('El servicio no ha podido mirar estas fotos.'))}</b> ${esc(I18N.t('Se reintenta solo. Si lo has mirado y corre prisa:'))}</p>
          <button class="btn" type="button" id="medBloque">${esc(I18N.t('Aprobar en bloque'))}${todasAqui ? ` (${fmtNum(nBloque)})` : ''}</button></div>` : '';
     $('#list').innerHTML = rows.length || textos.length
-      ? bloque + textos.map((x, i) => filaTexto(x, i, tab)).join('') + (await Promise.all(rows.map((x, i) => filaMedio(x, i, tab)))).join('') + pg.html
+      ? bloque + textos.map((x, i) => filaTexto(x, i, tab)).join('') + (await firmaMedios(rows.flatMap((x) => [[x.name, x.in_held], ...(x.frames || []).map((f) => [f.name, f.in_held])])), await Promise.all(rows.map((x, i) => filaMedio(x, i, tab)))).join('') + pg.html
       : `<div class="tbl-wrap"><div class="empty">${esc(I18N.t(tab === 'held' ? 'No hay nada por decidir.' : 'El filtro no ha rechazado nada.'))}</div></div>`;
     if (rows.length || textos.length) pg.bind($('#list'));
     const bb = $('#medBloque');

@@ -8,6 +8,10 @@
 {
   const automaticoSinFoto = PAGES.automatico;
   PAGES.automatico = async (v, param) => {
+    // Se pide ya, a la vez que las otras tarjetas de Automático (antes, una detrás de otra).
+    const datos = rpc('admin_photo_fill_overview');
+    const datos2 = rpc('admin_link_fill_overview');
+    datos.catch(() => {}); datos2.catch(() => {});
     await automaticoSinFoto(v, param);
     const hueco = document.createElement('div');
     hueco.className = 'card';
@@ -31,7 +35,7 @@
       });
     };
     try {
-      pinta(await rpc('admin_photo_fill_overview'));
+      pinta(await datos);
     } catch (e) {
       // Antes se quitaba la tarjeta sin decir nada (era para cuando faltaba la
       // migración): un fallo se dice y el interruptor no desaparece.
@@ -59,7 +63,7 @@
       });
     };
     try {
-      pinta2(await rpc('admin_link_fill_overview'));
+      pinta2(await datos2);
     } catch (e) {
       // Antes se quitaba la tarjeta sin decir nada (era para cuando faltaba la
       // migración): un fallo se dice y el interruptor no desaparece.

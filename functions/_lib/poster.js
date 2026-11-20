@@ -11,7 +11,7 @@
 // privada (sin buscadores ni caché compartida).
 
 import { textoCarta, tipoCartaDe } from './carta.js';
-import { erroresScript, esc, html, isUuid, rpc } from './page.js';
+import { erroresScript, esc, html, isUuid, rpc, jsonEnScript } from './page.js';
 import { benefit, fmtDay, fmtEnd, fmtTime, zonaDe } from './public.js';
 import { notFound } from './views.js';
 import KR from '../../assets/rrpp-enlace.js';
@@ -109,7 +109,7 @@ ${rpQ ? '<meta name="robots" content="noindex, nofollow">\n<meta name="referrer"
 </main>
 <script src="/assets/vendor/qrcode.js?v=1"></script>
 <script>
-  var q = qrcode(0, 'M'); q.addData(${JSON.stringify(url)}); q.make();
+  var q = qrcode(0, 'M'); q.addData(${jsonEnScript(url)}); q.make();
   document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
 </script>
 </body>
@@ -283,7 +283,7 @@ ${numeros.length
     : `<main class="folio${mesa ? ' mesa' : ''}">${mesa ? cartel().repeat(4) : cartel()}</main>`}
 <script src="/assets/vendor/qrcode.js?v=1"></script>
 <script>
-  var q = qrcode(0, 'M'); q.addData(${JSON.stringify(url)}); q.make();
+  var q = qrcode(0, 'M'); q.addData(${jsonEnScript(url)}); q.make();
   var svg = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
   document.querySelectorAll('.qr').forEach(function (el) { el.innerHTML = svg; });
 </script>

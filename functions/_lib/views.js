@@ -9,7 +9,7 @@
 // (/cuenta), que hace lo mismo que la app desde el navegador.
 
 import { enlaceCuenta } from './cuenta.js';
-import { cabeceraEdad, edadDeclarada, esc, fmtWhen, html, isUuid, preguntaEdadEncendida, rpc, rpcAll, rows, supabasePublic } from './page.js';
+import { cabeceraEdad, edadDeclarada, esc, fmtWhen, html, isUuid, preguntaEdadEncendida, rpc, rpcAll, rows, supabasePublic, jsonEnScript } from './page.js';
 import KZ from '../../assets/zona.js';
 import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, discoverBase, exploreBase,
@@ -740,21 +740,21 @@ var t=Date.parse(p.dataset.abre),c=document.getElementById('abren-cuenta');
 function dur(ms){var m=Math.ceil(ms/60000);if(m>=60)return Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');return Math.max(1,m)+' min';}
 function tic(){var n=Date.now();if(n>=t){var a=document.querySelector('[data-principal="avisame"]'),r=document.getElementById('abren-reservar'),x=document.getElementById('avisame-nota');
 if(a)a.remove();if(x)x.hidden=true;p.hidden=true;if(r){r.hidden=false;r.setAttribute('data-principal','codigo');}return;}
-if(t-n<864e5){c.textContent=' · '+${JSON.stringify(S.opensIn)}+dur(t-n);c.hidden=false;}setTimeout(tic,Math.max(1000,Math.min(30000,t-n)));}tic();})();</script>` : '';
+if(t-n<864e5){c.textContent=' · '+${jsonEnScript(S.opensIn)}+dur(t-n);c.hidden=false;}setTimeout(tic,Math.max(1000,Math.min(30000,t-n)));}tic();})();</script>` : '';
   // La cuenta atrás, como en la app («Quedan 1 h 31 min»): siempre en coral y
   // la urgencia con la negrita (menos de 60 min, menos de 15). Se calcula en el
   // navegador: la página va en caché y una hora escrita aquí saldría vieja.
   const cuentaAtras = `<script>(function(){var el=document.getElementById('cuenta');if(!el)return;
 var ini=Date.parse(el.dataset.ini)||0,fin=Date.parse(el.dataset.fin);
 function dur(ms){var m=Math.floor(ms/60000);if(m>=1440)return Math.floor(m/1440)+' d';if(m>=60)return Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');return Math.max(1,m)+' min';}
-function tic(){var n=Date.now();if(n>=fin){el.textContent=${JSON.stringify(S.over)};return;}
-el.textContent=n<ini?${JSON.stringify(en ? 'Starts in ' : 'Empieza en ')}+dur(ini-n):${en ? "dur(fin-n)+' left'" : "'Quedan '+dur(fin-n)"};
+function tic(){var n=Date.now();if(n>=fin){el.textContent=${jsonEnScript(S.over)};return;}
+el.textContent=n<ini?${jsonEnScript(en ? 'Starts in ' : 'Empieza en ')}+dur(ini-n):${en ? "dur(fin-n)+' left'" : "'Quedan '+dur(fin-n)"};
 el.style.fontWeight=n<ini?600:fin-n<900e3?800:fin-n<3600e3?700:600;el.hidden=false;setTimeout(tic,30000);}tic();})();</script>`;
   const sp = supabasePublic();
   // Cuenta la visita para las estadísticas del negocio. Sin guardar nada en el
   // navegador (ni cookies ni sessionStorage): la base ya no cuenta dos veces a
   // la misma persona en 30 minutos (`offer_views_dedupe`).
-  const vista = `<script>(function(){try{if(navigator.webdriver)return;fetch(${JSON.stringify(sp.url + '/rest/v1/offer_views')},{method:'POST',keepalive:true,headers:{apikey:${JSON.stringify(sp.key)},Authorization:'Bearer '+${JSON.stringify(sp.key)},'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({offer_id:'${o.id}'})});}catch(e){}})();</script>`;
+  const vista = `<script>(function(){try{if(navigator.webdriver)return;fetch(${jsonEnScript(sp.url + '/rest/v1/offer_views')},{method:'POST',keepalive:true,headers:{apikey:${jsonEnScript(sp.key)},Authorization:'Bearer '+${jsonEnScript(sp.key)},'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({offer_id:'${o.id}'})});}catch(e){}})();</script>`;
 
   if (privada) {
     const res = html(publicPage({
