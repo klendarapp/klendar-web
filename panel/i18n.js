@@ -588,6 +588,8 @@ const I18N = makeI18N({
     "Tres cosas y tu negocio está listo para que la gente lo encuentre.": "Three steps and people can start finding your business.",
     "Pon tu logo y una foto": "Add your logo and a photo",
     "Publica tu primera oferta": "Post your first offer",
+    "Publica tu primer evento": "Post your first event",
+    "Con su fecha y su sitio: cada evento lleva el suyo.": "With its date and place: each event has its own.",
     "Te la dejamos casi hecha: cambia el precio y la hora.": "We've almost done it for you: change the price and the time.",
     "Tus plantillas": "Your templates",
     "Plantillas": "Templates",

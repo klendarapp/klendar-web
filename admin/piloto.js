@@ -245,16 +245,27 @@ PAGES.automatico = async (v) => {
     const filas = await rpc('admin_piloto_list', { p_kind: kind });
     caja.innerHTML = `<form class="toolbar" data-anade><input class="grow" name="v" required maxlength="120" placeholder="${kind === 'brand' ? (en ? 'A brand…' : 'Una marca…') : (en ? 'a-domain.es' : 'un-dominio.es')}" aria-label="${en ? 'Add' : 'Añadir'}"><button class="btn sm ok">${en ? 'Add' : 'Añadir'}</button></form>
       <div class="tags-lista">${filas.map((x) => `<span class="tag dim">${esc(x.value)} <button type="button" class="linkbtn" data-quita="${esc(x.id)}" aria-label="${en ? 'Remove' : 'Quitar'} ${esc(x.value)}">×</button></span>`).join(' ')}</div>`;
-    $('[data-anade]', caja).onsubmit = async (e) => {
+    // Cada botón, bloqueado mientras va (un doble clic añadía dos veces), y
+    // con su aviso al terminar; tras añadir, el foco vuelve a la casilla.
+    $('[data-anade]', caja).onsubmit = (e) => {
       e.preventDefault();
-      try {
-        await rpc('admin_piloto_list_add', { p_kind: kind, p_value: e.target.elements.v.value, p_note: null });
-        pintaLista(caja);
-      } catch (x) { toast(x.message === 'invalid_domain' ? (en ? 'That domain is not valid here' : 'Ese dominio no vale aquí') : x.message, true); }
+      const valor = e.target.elements.v.value;
+      esperando($('[data-anade] button', caja), async () => {
+        try {
+          await rpc('admin_piloto_list_add', { p_kind: kind, p_value: valor, p_note: null });
+          toast(en ? `Added: ${valor.trim()}` : `Añadido: ${valor.trim()}`);
+          await pintaLista(caja);
+          $('[data-anade] input', caja)?.focus();
+        } catch (x) { toast((x.codigo || x.message) === 'invalid_domain' ? (en ? 'That domain is not valid here' : 'Ese dominio no vale aquí') : x.message, true); }
+      });
     };
-    $$('[data-quita]', caja).forEach((q) => { q.onclick = async () => {
-      try { await rpc('admin_piloto_list_remove', { p_id: q.dataset.quita }); pintaLista(caja); } catch (x) { toast(x.message, true); }
-    }; });
+    $$('[data-quita]', caja).forEach((q) => { q.onclick = () => esperando(q, async () => {
+      try {
+        await rpc('admin_piloto_list_remove', { p_id: q.dataset.quita });
+        toast(en ? 'Removed' : 'Quitado');
+        await pintaLista(caja);
+      } catch (x) { toast(x.message, true); }
+    }); });
   };
   $$('[data-lista]', v).forEach(pintaLista);
 };

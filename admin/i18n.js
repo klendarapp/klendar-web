@@ -104,6 +104,7 @@ const I18N = makeI18N({
   'Aprobar en bloque': 'Approve all',
   '¿Aprobar todas sin mirarlas una a una?': 'Approve them all without checking each one?',
   'Se publican sin que las haya mirado nadie más: mira antes las que puedas.': 'They go live without anyone else having checked them: look at what you can first.',
+  'Son todas las que el servicio no ha podido mirar, también las de las otras páginas.': 'That’s all the ones the service couldn’t check, including those on the other pages.',
   'Contiene insultos, odio o amenazas.': 'It contains insults, hate or threats.',
   'Contiene contenido sexual o anuncia sexo de pago.': 'It contains sexual content or advertises paid sex.',
   'Promociona drogas, armas, tabaco, apuestas o medicamentos.': 'It promotes drugs, weapons, tobacco, gambling or medicines.',

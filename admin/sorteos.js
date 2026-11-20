@@ -32,9 +32,9 @@ const SORTEO_ADM_ERR = {
   not_active: ['Ese sorteo ya no está abierto (se ha sorteado, cancelado o retirado).', 'That giveaway is no longer open (it has been drawn, cancelled or removed).'],
   not_found: ['Ese sorteo ya no existe.', 'That giveaway no longer exists.'],
 };
-const sorteoAdmErr = (m) => {
-  const k = Object.keys(SORTEO_ADM_ERR).find((x) => String(m || '').includes(x));
-  return k ? bi(...SORTEO_ADM_ERR[k]) : m;
+const sorteoAdmErr = (e) => {
+  const k = Object.keys(SORTEO_ADM_ERR).find((x) => String(e?.codigo || e?.message || '').includes(x));
+  return k ? bi(...SORTEO_ADM_ERR[k]) : e?.message;
 };
 const sorteoAdmPub = (id) => `${APP_URL}${I18N.lang === 'en' ? '/en/giveaway/' : '/sorteo/'}${id}`;
 
@@ -84,7 +84,7 @@ async function sorteoAdmRetira(boton) {
     const res = await rpc('admin_remove_giveaway', { p_id: fila.dataset.sorteoAdm, p_reason: r.reason });
     toast(bi(`Sorteo retirado${res?.entries ? ` · avisadas ${res.entries} personas` : ''}`, `Giveaway removed${res?.entries ? ` · ${res.entries} people notified` : ''}`));
     return true;
-  } catch (e) { toast(sorteoAdmErr(e.message), true); return false; }
+  } catch (e) { toast(sorteoAdmErr(e), true); return false; }
 }
 
 /** Engancha los «Retirar…» de una caja; `luego` repinta. */

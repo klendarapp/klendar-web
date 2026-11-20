@@ -54,8 +54,11 @@
     };
     try {
       pinta(await rpc('admin_assistant_overview'));
-    } catch {
-      hueco.remove();
+    } catch (e) {
+      // Antes se quitaba la tarjeta sin decir nada (era para cuando faltaba la
+      // migración): un fallo se dice y el interruptor no desaparece.
+      if (e?.obsoleta) { hueco.remove(); return; }
+      hueco.innerHTML = `<p class="err" style="margin:0">${esc(I18N.lang === 'en' ? "This switch could not be loaded. Reload the page to try again." : 'No se ha podido cargar este interruptor. Recarga la página para volver a intentarlo.')}</p>`;
     }
   };
 }

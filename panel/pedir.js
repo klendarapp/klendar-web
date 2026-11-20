@@ -221,7 +221,7 @@ function pedTarjetaFestivo(q, alContestar) {
 
 /** En el resumen, si no hay otro aviso: el festivo de esta semana. */
 async function pedFestivo(caja) {
-  if (!caja || !gestiona() || esOrganizador()) return;
+  if (!caja || !gestiona() || esOrganizador() || (typeof esEntidad === 'function' && esEntidad())) return;
   const lista = await rpc('business_holiday_questions', { p_business: BIZ.id }).catch(() => null);
   const q = Array.isArray(lista) ? lista[0] : null;
   if (!q) { caja.replaceChildren(); return; }

@@ -1943,7 +1943,10 @@ PAGES.resumen = async (v) => {
       <p style="margin:2px 0 10px"><a class="link" href="#/publicaciones/nueva-flash?idea=1">Prefiero escribir otra</a></p>
       <h3 class="sug-titulo">Completa tu ficha</h3>` : ''}
       <p class="muted" style="margin:0 0 8px">Nada de esto frena tu alta: hazlo ahora o cuando quieras.</p>
-      ${sinLocal && sinNada ? paso('', false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1') : ''}
+      ${sinLocal && sinNada ? (esEntidad()
+        // Una entidad publica eventos: su primer evento, no una oferta.
+        ? paso('', false, 'Publica tu primer evento', 'Con su fecha y su sitio: cada evento lleva el suyo.', '#/publicaciones/nuevo-evento')
+        : paso('', false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')) : ''}
       ${faltan.map((f) => paso('', f.hecho, f.titulo, '', f.href)).join('')}
     </div>` : ''}
     <div id="ideasIA" style="margin-top:14px"></div>
@@ -7286,6 +7289,8 @@ PAGES.informe = async (v, param) => {
   const best = hours.slice().sort((a, b) => b.redeemed - a.redeemed)[0];
   const maxDay = Math.max(1, ...(r.daily || []).map((d) => Math.max(d.views, d.codes)));
 
+  // Una entidad no vende ni fideliza: sin euros ni clientes que repiten.
+  const entidadCifras = typeof esEntidad === 'function' && esEntidad();
   // «Cuánto te ha traído Klendar»: al menos tantos euros en tantas visitas.
   const visitas = (n) => bi(n === 1 ? '1 visita' : `${fmtNum(n)} visitas`, n === 1 ? '1 visit' : `${fmtNum(n)} visits`);
   const conTicket = t.brought_with_ticket > 0
@@ -7319,7 +7324,7 @@ PAGES.informe = async (v, param) => {
           { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
           { h: 'Códigos', num: true, r: (o) => fmtNum(o.codes) },
           { h: 'Canjes', num: true, r: (o) => fmtNum(o.redeemed) },
-          { h: 'Ha traído', num: true, r: (o) => (o.brought_cents ? esc(eurosEnteros(o.brought_cents, o.currency)) : '—') },
+          ...(entidadCifras ? [] : [{ h: 'Ha traído', num: true, r: (o) => (o.brought_cents ? esc(eurosEnteros(o.brought_cents, o.currency)) : '—') }]),
           { h: 'Plazas libres', num: true, r: (o) => (o.max_redemptions == null ? '—' : `${o.seats_left}/${o.max_redemptions}`) },
         ],
         rows: r.offers || [],
@@ -7355,16 +7360,16 @@ PAGES.informe = async (v, param) => {
     <div class="page-head"><h1>Cifras</h1><span class="spacer"></span>
       <span class="periodo" role="group" aria-label="${esc(bi('Periodo', 'Period'))}">${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}"${d === days ? ' aria-current="true"' : ''}>${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}</span>
     </div>
-    <div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
+    ${entidadCifras ? '' : `<div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
       ${grande ? `<p class="trajo-min">${esc(bi('Al menos', 'At least'))}</p><p class="trajo-cifra">${esc(cifraTrajo)}</p>` : ''}
       <p class="${grande ? 'muted' : ''}" style="margin:4px 0 10px">${esc(fraseTrajoTodo)}</p>
       ${comoTrajo}
-    </div>
+    </div>`}
 
     <div class="kpis kpis-top">
       <div class="kpi"><b>${fmtNum(t.brought_visits)}</b><span>${esc(bi('Visitas', 'Visits'))}</span></div>
-      <div class="kpi"><b>${fmtNum(loy.new_customers)}</b><span>${esc(bi('Clientes nuevos', 'New customers'))}</span></div>
-      <div class="kpi"><b>${fmtNum(loy.repeat_customers)}</b><span>${esc(bi('Repiten', 'Come back'))}</span></div>
+      ${entidadCifras ? '' : `<div class="kpi"><b>${fmtNum(loy.new_customers)}</b><span>${esc(bi('Clientes nuevos', 'New customers'))}</span></div>
+      <div class="kpi"><b>${fmtNum(loy.repeat_customers)}</b><span>${esc(bi('Repiten', 'Come back'))}</span></div>`}
       <div class="kpi"><b>${t.ratings ? `${Number(t.rating).toLocaleString(LOC(), { minimumFractionDigits: 1, maximumFractionDigits: 1 })} (${t.ratings})` : '—'}</b><span>${esc(I18N.t('Valoración'))}</span></div>
     </div>
 

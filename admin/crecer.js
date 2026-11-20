@@ -80,9 +80,9 @@ function crGratisProvincia(p) {
 }
 /** Un error de las RPC de crecer, en cristiano. */
 const crError = (e) => {
-  const m = String(e?.message || '');
+  const m = String(e?.codigo || e?.message || '');
   for (const [k, txt] of Object.entries(CR_ERR)) if (m.includes(k)) return txt();
-  return m || bi('No se ha podido completar. Prueba otra vez.', "Couldn't complete it. Try again.");
+  return e?.message || bi('No se ha podido completar. Prueba otra vez.', "Couldn't complete it. Try again.");
 };
 
 // ── La carta ────────────────────────────────────────────────────────────────

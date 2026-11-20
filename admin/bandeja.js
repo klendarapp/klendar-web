@@ -50,6 +50,13 @@ const BJ_USO_IA = {
 const BJ_MOTIVO_IA = { offensive: ['Ofensiva', 'Offensive'], wrong: ['Incorrecta', 'Incorrect'], other: ['Otro', 'Other'] };
 
 const bjEn = () => I18N.lang === 'en';
+/** El nombre del apartado de cada parte que puede fallar al cargar la bandeja. */
+const bjApartado = (k) => ({
+  negocios: ['Negocios', 'Businesses'], entidades: ['Entidades', 'Organisations'], reclamaciones: ['Reclamaciones', 'Claims'],
+  denuncias: ['Denuncias', 'Reports'], medios: ['Filtro automático', 'Automatic filter'], publicaciones: ['Publicaciones', 'Publications'],
+  resenas: ['Reseñas y novedades', 'Reviews and news'], mensajes: ['Mensajes a clientes', 'Customer messages'],
+  duplicados: ['Posibles duplicados', 'Possible duplicates'], sugerencias: ['Sugerencias', 'Feedback'],
+}[k] || [k, k])[bjEn() ? 1 : 0];
 const bjT = (es, en) => (bjEn() ? en : es);
 const bjCorta = (s, n = 220) => { const t = String(s || '').replace(/\s+/g, ' ').trim(); return t.length > n ? `${t.slice(0, n - 1)}…` : t; };
 /** La línea de la máquina: `cls` ok / warn / bad / dim. */
@@ -105,27 +112,30 @@ function bjOpinion(ai, encendida) {
 
 /** Pide todo lo pendiente a la vez (una sola rueda de carga: la del Resumen). */
 async function cargaBandeja() {
-  const ok = (p) => p.catch((e) => { if (e?.obsoleta) throw e; return null; });
+  // Lo que falla se apunta (`fallos`): la bandeja lo dice en vez de quedarse
+  // sin esa parte y presumir de «Todo al día».
+  const fallos = [];
+  const ok = (p, que = null) => p.catch((e) => { if (e?.obsoleta) throw e; if (que) fallos.push(que); return null; });
   const [extra, pv, ents, recl, den, med, cont, ofs, txt, msj, dups, sug, ia] = await Promise.all([
     ok(rpc('admin_inbox_extra')),
-    ok(rpc('admin_pending_now', { p_limit: 100 })),
-    ok(rpc('admin_entity_applications', { p_status: 'pending', p_limit: 100, p_offset: 0 })),
-    ok(rpc('admin_business_claims', { p_status: 'pending', p_limit: 100, p_offset: 0 })),
-    ok(rpc('admin_report_groups', { p_status: 'open', p_type: 'all', p_min_open: 1, p_limit: 100, p_offset: 0 })),
-    ok(rpc('admin_media_queue', { p_tab: 'held', p_limit: 50, p_offset: 0 })),
-    ok(rpc('admin_content_queue', { p_tab: 'held', p_limit: 50, p_offset: 0 })),
-    ok(rpc('admin_offers_page', { p_moderation: 'pending', p_status: 'all', p_kind: 'all', p_query: null, p_business: null, p_limit: 50, p_offset: 0 })),
-    ok(rpc('admin_text_reviews', { p_limit: 50, p_offset: 0 })),
-    ok(rpc('admin_business_messages', { p_status: 'review', p_limit: 50, p_offset: 0 })),
-    ok(rpc('admin_duplicate_alerts', { p_limit: 200 })),
-    ok(rpc('admin_feedback', { p_status: 'new', p_kind: 'all', p_query: null, p_limit: 20, p_offset: 0 })),
+    ok(rpc('admin_pending_now', { p_limit: 100 }), 'negocios'),
+    ok(rpc('admin_entity_applications', { p_status: 'pending', p_limit: 100, p_offset: 0 }), 'entidades'),
+    ok(rpc('admin_business_claims', { p_status: 'pending', p_limit: 100, p_offset: 0 }), 'reclamaciones'),
+    ok(rpc('admin_report_groups', { p_status: 'open', p_type: 'all', p_min_open: 1, p_limit: 100, p_offset: 0 }), 'denuncias'),
+    ok(rpc('admin_media_queue', { p_tab: 'held', p_limit: 50, p_offset: 0 }), 'medios'),
+    ok(rpc('admin_content_queue', { p_tab: 'held', p_limit: 50, p_offset: 0 }), 'medios'),
+    ok(rpc('admin_offers_page', { p_moderation: 'pending', p_status: 'all', p_kind: 'all', p_query: null, p_business: null, p_limit: 50, p_offset: 0 }), 'publicaciones'),
+    ok(rpc('admin_text_reviews', { p_limit: 50, p_offset: 0 }), 'resenas'),
+    ok(rpc('admin_business_messages', { p_status: 'review', p_limit: 50, p_offset: 0 }), 'mensajes'),
+    ok(rpc('admin_duplicate_alerts', { p_limit: 200 }), 'duplicados'),
+    ok(rpc('admin_feedback', { p_status: 'new', p_kind: 'all', p_query: null, p_limit: 20, p_offset: 0 }), 'sugerencias'),
     // Sin la migración (prod aún sin ella), null: la bandeja sale igual.
     ok(rpc('admin_ai_reports', { p_status: 'new', p_limit: 50, p_offset: 0 })),
   ]);
   // Las fotos retenidas se ven con un enlace firmado de 5 minutos (como en «Filtro automático»).
   const fotos = await Promise.all(((med?.rows) || []).map((x) => (x.kind === 'video' && x.frames?.length
     ? urlMedio(x.frames[0].name, x.frames[0].in_held) : urlMedio(x.name, x.in_held)).catch(() => '')));
-  return { extra, pv, ents, recl, den, med, cont, ofs, txt, msj, dups, sug, ia, fotos };
+  return { extra, pv, ents, recl, den, med, cont, ofs, txt, msj, dups, sug, ia, fotos, fallos: [...new Set(fallos)] };
 }
 
 /** Las tarjetas, de todo lo pedido. `k`: admin_kpis; `ctx`: lo que el Resumen ya tiene (ATT, festivos…). */
@@ -157,6 +167,22 @@ function tarjetasBandeja(d, k, ctx) {
     });
   }
   if ((d.pv?.total || 0) > (d.pv?.rows || []).length) ctx.mas.push(['negocio', d.pv.total - d.pv.rows.length, '#/negocios?status=pending']);
+  // Las demás también se piden por partes: lo que no cabe, dicho y con su enlace
+  // (antes se cortaban sin avisar y la bandeja parecía al día).
+  const restoDe = (x, filas, tipo, href) => {
+    const total = Number(x?.total ?? x?.counts?.pending ?? x?.counts?.held ?? x?.counts?.new ?? 0);
+    const vistos = (filas || []).length;
+    if (total > vistos) ctx.mas.push([tipo, total - vistos, href]);
+  };
+  restoDe(d.ents, d.ents?.items, 'entidad', '#/entidades');
+  restoDe(d.recl, d.recl?.items, 'reclamacion', '#/reclamaciones');
+  restoDe(d.den, d.den?.rows, 'denuncia', '#/denuncias');
+  restoDe(d.med, d.med?.rows, 'medio', '#/medios');
+  restoDe(d.cont, d.cont?.rows, 'texto', '#/medios');
+  restoDe(d.ofs, d.ofs?.rows, 'publicacion', '#/publicaciones');
+  restoDe(d.txt, d.txt?.rows, 'texto', '#/resenas');
+  restoDe(d.sug, d.sug?.rows, 'sugerencia', '#/sugerencias');
+  ctx.fallos = d.fallos || [];
 
   // Entidades.
   for (const x of d.ents?.items || []) {
@@ -482,7 +508,8 @@ function tarjetaBandeja(cards, ctx) {
       : 'Lo más urgente, arriba. Cada caso se decide aquí; «Abrir en su apartado», para el historial y los casos raros. Lo que dice la IA es una opinión: decides tú.'}</p>
     <div class="bandeja-filtros" id="bandejaFiltros" role="toolbar" aria-label="${en ? 'Filter by type' : 'Filtrar por tipo'}"></div>
     <div class="bandeja-lista" id="bandejaLista" role="list">${cards.map(htmlTarjeta).join('')}</div>
-    <p class="bandeja-vacia muted" id="bandejaVacia"${cards.length ? ' hidden' : ''}>${ms('task_alt')} ${en ? 'All up to date: nothing is waiting for you.' : 'Todo al día: no hay nada esperando una decisión.'}</p>
+    ${(ctx.fallos || []).length ? `<p class="err" role="alert" style="margin:6px 0">${en ? 'Part of it could not be loaded' : 'No se ha podido cargar una parte'}: ${ctx.fallos.map((f) => esc(bjApartado(f))).join(', ')}. <button class="btn sm" type="button" data-bandeja-reintentar>${en ? 'Try again' : 'Reintentar'}</button></p>` : ''}
+    <p class="bandeja-vacia muted" id="bandejaVacia"${cards.length || (ctx.fallos || []).length ? ' hidden' : ''}>${ms('task_alt')} ${en ? 'All up to date: nothing is waiting for you.' : 'Todo al día: no hay nada esperando una decisión.'}</p>
     ${(ctx.mas || []).map(([, n, href]) => `<p class="small" style="margin:6px 0 0"><a class="link" href="${esc(href)}">${en ? `${n} more in its section` : `${n} más en su apartado`}</a></p>`).join('')}
   </section>`;
 }
@@ -492,6 +519,8 @@ function activaBandeja(v, cards) {
   const caja = $('#bandeja', v);
   if (!caja) return;
   const porKey = new Map(cards.map((c) => [c.key, c]));
+  const reintentar = caja.querySelector('[data-bandeja-reintentar]');
+  if (reintentar) reintentar.onclick = () => route();
   let filtro = '';
   try { filtro = localStorage.getItem(BANDEJA_FILTRO) || ''; } catch { /* sin almacenamiento */ }
 
@@ -519,7 +548,7 @@ function activaBandeja(v, cards) {
     $$('.bj', caja).forEach((el) => { el.hidden = !!filtro && el.dataset.tipo !== filtro; });
     const total = porKey.size;
     $('#bandejaN', caja).textContent = fmtNum(total);
-    $('#bandejaVacia', caja).hidden = total > 0;
+    $('#bandejaVacia', caja).hidden = total > 0 || !!caja.querySelector('[data-bandeja-reintentar]');
     const listos = [...porKey.values()].filter((c) => c.listo);
     $('#bandejaListos', caja).hidden = !listos.length;
     $('#bandejaListosN', caja).textContent = fmtNum(listos.length);

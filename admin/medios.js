@@ -100,8 +100,9 @@ function eligeMotivoMedio(lista = MEDIO_RAZONES) {
   return new Promise((resolve) => {
     const d = $('#modal');
     d.classList.remove('ancho');
+    d.setAttribute('aria-labelledby', 'modalTit');
     d.innerHTML = `<form method="dialog">
-      <h2>${esc(I18N.t('¿Por qué lo rechazas?'))}</h2>
+      <h2 id="modalTit">${esc(I18N.t('¿Por qué lo rechazas?'))}</h2>
       <p class="muted" style="margin:0">${esc(I18N.t('Quien lo subió recibe este motivo y puede pedir que se revise en 6 meses.'))}</p>
       <div class="med-razones">${lista.map((m, i) => `<button type="button" class="btn bad" data-r="${i}">${esc(I18N.t(m))}</button>`).join('')}</div>
       <label class="f ancho"><span>${esc(I18N.t('Otro motivo'))}</span><textarea name="otro"></textarea></label>
@@ -118,6 +119,9 @@ function eligeMotivoMedio(lista = MEDIO_RAZONES) {
       cerrar(otro);
     };
     d.showModal();
+    // El foco, en «Cancelar»: con el primer motivo enfocado, un Intro de más
+    // rechazaba con «Contiene desnudos…».
+    $('[data-cancel]', d).focus();
   });
 }
 
@@ -190,10 +194,14 @@ PAGES.medios = async (v) => {
     let r;
     let txt = { rows: [], counts: {} };
     try {
-      r = await rpc('admin_media_queue', { p_tab: tab, p_limit: s.limit, p_offset: s.offset });
-      txt = await rpc('admin_content_queue', { p_tab: tab, p_limit: s.limit, p_offset: 0 });
+      // Fotos y textos a la vez y por partes los dos (antes los textos iban
+      // siempre desde el primero: del 31 en adelante no se llegaba nunca).
+      [r, txt] = await Promise.all([
+        rpc('admin_media_queue', { p_tab: tab, p_limit: s.limit, p_offset: s.offset }),
+        rpc('admin_content_queue', { p_tab: tab, p_limit: s.limit, p_offset: s.offset }),
+      ]);
     } catch (e) {
-      if (e?.obsoleta || !/could not find the function|schema cache/i.test(e?.message || '')) throw e;
+      if (e?.obsoleta || !/could not find the function|schema cache/i.test(e?.codigo || e?.message || '')) throw e;
       // La web se publica antes que la base: hasta subir la migración, sin error.
       $('#list').innerHTML = `<div class="tbl-wrap"><div class="empty">${esc(I18N.t('Esta base aún no tiene el filtro: falta subir la migración.'))}</div></div>`;
       return;
@@ -209,21 +217,26 @@ PAGES.medios = async (v) => {
     $$('#medTabs button').forEach((b) => { b.onclick = () => { tab = b.dataset.t; s.offset = 0; load(); }; });
     const rows = r.rows || [];
     const total = tab === 'held' ? (r.counts?.held || 0) : (r.counts?.rejected || 0);
-    const pg = pager(s, total, load);
+    const totalTxt = tab === 'held' ? (txt.counts?.held || 0) : (txt.counts?.rejected || 0);
+    // Una página = las fotos y los textos de ese tramo: hasta el más largo.
+    const pg = pager(s, Math.max(total, totalTxt), load);
     const textos = txt.rows || [];
     // Si el servicio lleva tiempo sin contestar o se ha acabado el tope, aprobar todo de una vez.
     const nBloque = rows.filter((x) => ['cap', 'error'].includes(x.hold_reason)).length;
+    // Aprobar en bloque coge todas las de esos motivos, también las de otras
+    // páginas: el número solo se enseña si caben todas en esta.
+    const todasAqui = s.offset === 0 && total <= rows.length;
     const bloque = tab === 'held' && nBloque
       ? `<div class="card"><p style="margin:0 0 8px"><b>${esc(I18N.t('El servicio no ha podido mirar estas fotos.'))}</b> ${esc(I18N.t('Se reintenta solo. Si lo has mirado y corre prisa:'))}</p>
-         <button class="btn" type="button" id="medBloque">${esc(I18N.t('Aprobar en bloque'))} (${fmtNum(nBloque)})</button></div>` : '';
+         <button class="btn" type="button" id="medBloque">${esc(I18N.t('Aprobar en bloque'))}${todasAqui ? ` (${fmtNum(nBloque)})` : ''}</button></div>` : '';
     $('#list').innerHTML = rows.length || textos.length
-      ? bloque + textos.map((x, i) => filaTexto(x, i, tab)).join('') + (await Promise.all(rows.map((x, i) => filaMedio(x, i, tab)))).join('') + (rows.length ? pg.html : '')
+      ? bloque + textos.map((x, i) => filaTexto(x, i, tab)).join('') + (await Promise.all(rows.map((x, i) => filaMedio(x, i, tab)))).join('') + pg.html
       : `<div class="tbl-wrap"><div class="empty">${esc(I18N.t(tab === 'held' ? 'No hay nada por decidir.' : 'El filtro no ha rechazado nada.'))}</div></div>`;
-    if (rows.length) pg.bind($('#list'));
+    if (rows.length || textos.length) pg.bind($('#list'));
     const bb = $('#medBloque');
     if (bb) {
       bb.onclick = () => esperando(bb, async () => {
-        if (!(await confirmDlg(I18N.t('¿Aprobar todas sin mirarlas una a una?'), I18N.t('Se publican sin que las haya mirado nadie más: mira antes las que puedas.')))) return;
+        if (!(await confirmDlg(I18N.t('¿Aprobar todas sin mirarlas una a una?'), `${I18N.t('Se publican sin que las haya mirado nadie más: mira antes las que puedas.')}${todasAqui ? '' : ` ${I18N.t('Son todas las que el servicio no ha podido mirar, también las de las otras páginas.')}`}`))) return;
         const b = await rpc('admin_media_approve_bulk', { p_reasons: ['cap', 'error'] });
         toast(`${I18N.t('Aprobadas')}: ${fmtNum(b.approved || 0)}`);
         refreshBadges();

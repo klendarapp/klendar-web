@@ -135,7 +135,7 @@ async function rpc(fn, args = {}) {
     if (msg.includes('admin_session_expired')) { setTimeout(() => cierraSesion('caducada'), 0); throw new Obsoleta(); }
     if (msg.includes('not_admin')) throw new Error('Esta cuenta no es administradora.');
     // Eliminar una cuenta pide haber confirmado la contraseña hace poco.
-    if (msg.includes('reauth_required')) throw new Error('Por seguridad, vuelve a confirmar que eres tú.');
+    if (msg.includes('reauth_required')) { IDENTIDAD_OK = 0; throw new Error('Por seguridad, vuelve a confirmar que eres tú.'); }
     // Dueña de un negocio: primero se traspasa o se elimina el negocio (con
     // avisos a cada persona afectada), desde su ficha.
     if (msg.includes('owns_business')) {
@@ -152,10 +152,14 @@ async function rpc(fn, args = {}) {
     // Un código sin traducir o un mensaje técnico de Postgres se apunta en la
     // consola y se dice en cristiano; un texto escrito para personas, tal cual.
     console.error(fn, error);
+    // El código de la base viaja en `codigo`: cada módulo traduce los suyos
+    // (crecer.js, sorteos.js, piloto.js, la fusión…), aunque aquí se diga
+    // en cristiano. Antes se perdía y salía siempre «Prueba otra vez».
+    const malo = (texto) => Object.assign(new Error(texto), { codigo: msg });
     if (/^[a-z0-9_]+$/.test(msg) || /violates|constraint|syntax|relation|column|function|permission denied|null value|invalid input|duplicate key/i.test(msg)) {
-      throw new Error('No se ha podido completar. Prueba otra vez.');
+      throw malo('No se ha podido completar. Prueba otra vez.');
     }
-    throw new Error(msg || 'No se ha podido completar. Prueba otra vez.');
+    throw malo(msg || 'No se ha podido completar. Prueba otra vez.');
   }
   return data;
 }
@@ -183,6 +187,9 @@ const RPC_ERRORS = {
 function toast(msg, bad = false) {
   if (!msg) return; // una respuesta de una pantalla que ya no está
   const t = document.createElement('div');
+  // Los lectores de pantalla lo anuncian (el contenedor es `aria-live`; un
+  // error, en cuanto sale).
+  if (bad) t.setAttribute('role', 'alert');
   t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = I18N.t(msg);
   $('#toasts').appendChild(t);
   setTimeout(() => t.remove(), bad ? 6000 : 3500);
@@ -213,8 +220,9 @@ function modal({ title, intro, warn, fields = [], submit = 'Guardar', danger = f
     const conGrupos = fields.some((f) => f.campos);
     const planos = fields.flatMap((f) => f.campos || [f]);
     d.classList.toggle('ancho', conGrupos);
+    d.setAttribute('aria-labelledby', 'modalTit');
     d.innerHTML = `<form method="dialog">
-      <h2>${esc(title)}</h2>
+      <h2 id="modalTit">${esc(title)}</h2>
       ${intro ? `<p class="muted" style="margin:0">${intro}</p>` : ''}
       ${warn ? `<div class="warn">${warn}</div>` : ''}
       ${fields.map((f) => (f.campos ? grupo(f) : field(f))).join('')}
@@ -249,7 +257,12 @@ function abrePlegadosAlFallar(form) {
 // la contraseña actual. Se comprueba con una sesión aparte y la de este
 // navegador (la que pasó el segundo factor) queda confirmada 10 minutos.
 // Devuelve true si se confirma.
+// Dentro de esos 10 minutos no se vuelve a pedir (aprobar cinco
+// reclamaciones seguidas eran cinco contraseñas): se recuerda en esta pestaña
+// con un minuto de margen; la base sigue mandando (`reauth_required`).
+let IDENTIDAD_OK = 0;
 async function confirmaIdentidad() {
+  if (Date.now() - IDENTIDAD_OK < 9 * 60e3) return true;
   let id = null;
   try { id = await window.KL_IDENTIDAD?.(sb); } catch { id = null; }
   if (!id) { toast('No se ha podido completar. Prueba otra vez.', true); return false; }
@@ -260,6 +273,7 @@ async function confirmaIdentidad() {
       if (!r) return false;
       try {
         await id.conClave(r.clave);
+        IDENTIDAD_OK = Date.now();
         return true;
       } catch (e) {
         toast(e?.code === 'invalid_credentials' ? 'La contraseña no es correcta.' : errAuth(e), true);
@@ -310,7 +324,7 @@ function bars(series, key, labelFn) {
 // Tabla + paginación.
 function table({ cols, rows, onRow, empty = 'Nada por aquí.' }) {
   if (!rows.length) return `<div class="tbl-wrap"><div class="empty">${esc(empty)}</div></div>`;
-  return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th ${c.num ? 'class="num"' : ''}>${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr class="${onRow ? 'row' : ''}" data-i="${i}">${cols.map((c) => `<td ${c.num ? 'class="num"' : ''}>${c.r(r, i)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+  return `<div class="tbl-wrap"><table class="tbl"><thead><tr>${cols.map((c) => `<th ${c.num ? 'class="num"' : ''}>${esc(c.h)}</th>`).join('')}</tr></thead><tbody>${rows.map((r, i) => `<tr class="${onRow ? 'row' : ''}" data-i="${i}"${onRow ? ' tabindex="0"' : ''}>${cols.map((c) => `<td ${c.num ? 'class="num"' : ''}>${c.r(r, i)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 function pager(state, total, onChange) {
   const pages = Math.max(1, Math.ceil(total / state.limit));
@@ -644,6 +658,9 @@ function alPanel() {
   try { nuevo = sessionStorage.getItem(LOGIN_NUEVO) === '1'; sessionStorage.removeItem(LOGIN_NUEVO); } catch { /* sin almacenamiento */ }
   if (nuevo && currentRoute()[0] !== 'resumen') history.replaceState(null, '', `${location.pathname}${location.search}#/resumen`);
   route();
+  // Al recargar en otra pantalla (#/negocios…), los numeritos del menú
+  // también (antes solo los pedía el Resumen y el menú salía sin ellos).
+  if (currentRoute()[0] !== 'resumen') refreshBadges();
   vigila();
 }
 
@@ -759,6 +776,7 @@ let CERRANDO = false;
 /** Cierra la sesión del admin en este navegador (y en sus otras pestañas) y
  * lo explica en la pantalla de entrar. */
 async function cierraSesion(motivo) {
+  IDENTIDAD_OK = 0;
   if (CERRANDO) return;
   CERRANDO = true;
   paraVigilancia();
@@ -906,6 +924,10 @@ if (I18N.lang === 'en') document.title = 'Administration · Klendar';
 // Un enlace dentro de una fila que se abre al pulsarla: va a su sitio sin
 // abrir la fila (sin `onclick` en el HTML, que una CSP estricta no deja).
 document.addEventListener('click', (e) => { if (e.target instanceof Element && e.target.closest('[data-sin-fila]')) e.stopPropagation(); }, true);
+// Una fila que abre su ficha (`tr.row`, enfocable): Intro o Espacio, como un clic.
+document.addEventListener('keydown', (e) => {
+  if ((e.key === 'Enter' || e.key === ' ') && e.target?.matches?.('tr.row')) { e.preventDefault(); e.target.click(); }
+});
 document.addEventListener('keydown', (e) => { if (e.key === '/' && !/input|textarea|select/i.test(e.target.tagName)) { const s = $('#q'); if (s) { e.preventDefault(); s.focus(); } } });
 
 // ── Navegación ──────────────────────────────────────────────────────────────
@@ -1025,9 +1047,16 @@ const ENTIDADES = {
 };
 const nombreEntidad = (k) => (ENTIDADES[k] ? ENTIDADES[k][I18N.lang === 'en' ? 1 : 0] : '');
 
+// La última pantalla pintada: si se vuelve a pintar la misma (tras guardar
+// algo en Configuración, en la ficha de un negocio…), se queda donde estaba
+// en vez de saltar arriba del todo.
+let RUTA_PINTADA = null;
 async function route() {
   if (!ME || !$('#mfa').hidden) return;
   const n = ++RUTA_N;
+  const misma = RUTA_PINTADA === currentRoute().join("/");
+  const y = misma ? window.scrollY : 0;
+  RUTA_PINTADA = currentRoute().join("/");
   const [page, id] = currentRoute();
   // Con la sesión guardada, la primera pintada puede llegar antes de que
   // carguen las pantallas de sus propios ficheros (festivos.js, sorteos.js…,
@@ -1044,13 +1073,19 @@ async function route() {
   // una caja que ya no está en la página.
   const v = document.createElement('div');
   v.innerHTML = '<div class="loading">Cargando…</div>';
+  // La misma pantalla: «Cargando…» sin perder el alto (si no, la página se
+  // encoge y el sitio se pierde).
+  if (misma) v.style.minHeight = `${$('#view').offsetHeight}px`;
   $('#view').replaceChildren(v);
   I18N.translate(v);
-  window.scrollTo(0, 0);
+  window.scrollTo(0, y);
   try {
     const fn = PAGES[page] || PAGES.resumen;
     await fn(v, id);
-    if (n === RUTA_N) { nombraControles(v); I18N.translate(v); }
+    if (n === RUTA_N) {
+      nombraControles(v); I18N.translate(v);
+      if (misma) { v.style.minHeight = ''; window.scrollTo(0, y); }
+    }
   } catch (e) {
     if (n !== RUTA_N || e?.obsoleta) return;
     console.error(e);
@@ -1222,7 +1257,7 @@ function seccionAlta(fu, f) {
   const en = I18N.lang === 'en';
   const cab = `<div class="page-head cf-cab"><h2 id="cfAlta">Alta de negocios</h2><span class="spacer"></span>
       ${fu ? `<div class="chart-tabs" id="cfAltaTipo" role="group" aria-label="${esc(I18N.t('Tipo'))}">${[['business', 'Negocios'], ['entity', 'Entidades']].map(([k, t]) => `<button type="button" data-k="${k}" class="${f.alta === k ? 'on' : ''}" aria-pressed="${f.alta === k}">${t}</button>`).join('')}</div>${csvBtn('alta')}` : ''}</div>`;
-  if (!fu) return `${cab}<p class="muted">${esc(en ? 'Not available yet: this database is missing the app migration 20261281700000.' : 'Aún no está: a esta base le falta la migración 20261281700000 de la app.')}</p>`;
+  if (!fu) return `${cab}<p class="err">${esc(en ? 'It could not be loaded. Reload the page to try again.' : 'No se ha podido cargar. Recarga la página para volver a intentarlo.')}</p>`;
   const k = fu[f.alta] || {};
   const st = k.steps || {};
   const total = k.total || 0;
@@ -1291,9 +1326,9 @@ PAGES.cifras = async (v) => {
     rpc('admin_stats_places', args),
     rpc('admin_stats_businesses', args),
     rpc('admin_stats_sources', args),
-    // Embudo del alta (migración 20261281700000 de la app): sin ella en la
-    // base, el resto de Cifras sigue igual.
-    rpc('admin_stats_business_funnel', args).catch(() => null),
+    // Embudo del alta: si falla, el resto de Cifras sigue igual (y la
+    // tarjeta lo dice).
+    rpc('admin_stats_business_funnel', args).catch((e) => { if (e?.obsoleta) throw e; return null; }),
   ]);
   const rapidos = [[7, '7 días'], [30, '30 días'], [90, '90 días'], [365, '12 meses']];
   const rapidoOn = (n) => f.hasta === hoy && f.desde === diaMadridISO(-(n - 1));
@@ -1574,7 +1609,7 @@ function tarjetaAvisosCorreo(al) {
   const titulo = `<h2>${ms('mail')} ${en ? 'Email alerts' : 'Avisos por correo'}</h2>`;
   if (!al) {
     return `<div class="card" id="avisosCorreo">${titulo}
-      <p class="muted small" style="margin:0">${en ? 'Not in this database yet: the migration 20261262700000 and the <code>admin-alerts</code> function still have to be uploaded (ROADMAP).' : 'Aún no están en esta base: falta subir la migración 20261262700000 y la función <code>admin-alerts</code> (ROADMAP).'}</p>${masInfo}</div>`;
+      <p class="err small" style="margin:0">${en ? 'They could not be loaded (and neither could “Look at now”, above). Reload the page to try again.' : 'No se han podido cargar (ni «Para mirar ya», arriba). Recarga la página para volver a intentarlo.'}</p>${masInfo}</div>`;
   }
   const c = al.config || {};
   const fallo = al.last_failed && (!al.last_urgent || al.last_failed > al.last_urgent) && (!al.last_daily || al.last_failed > al.last_daily);
@@ -1804,6 +1839,10 @@ PAGES.resumen = async (v) => {
   const series = k.series || [];
   ATT = att;
   const urg = ATT?.urgent || [];
+  // Lo que depende de ATT, con el ATT de ahora (los números del menú se
+  // calcularon antes de que llegara: «Filtro automático» salía sin número).
+  const conAtt = { medios: (ATT?.pending?.media_held || 0) + (ATT?.pending?.content_held || 0), errores: (WEB_ERR?.new_24h || 0) + (ATT?.tasks?.crons || []).length };
+  for (const [x, n] of Object.entries(conAtt)) { if (n) BADGES[x] = n; else delete BADGES[x]; }
   BADGES.resumen = totalPendiente(k);
   renderNav('resumen');
   const ctxBandeja = { att: ATT, festivos, cambios: CAMBIOS?.rows || [], pausas: PAUSAS || [], bajas: BAJAS?.items || [], webErr: WEB_ERR, mas: [] };
@@ -2264,6 +2303,9 @@ async function businessAction(a, b, d) {
           options: [['', I18N.lang === 'en' ? '— Not an organisation' : '— No es una entidad'], ...['council', 'district', 'merchants', 'neighbours', 'ngo', 'other'].map((k) => [k, nombreEntidad(k)])] }],
         submit: I18N.lang === 'en' ? 'Save' : 'Guardar' });
       if (!r) return;
+      // Sin cambio, nada (antes «— No es una entidad» en un negocio que no lo
+      // era decía «Ya no es una entidad», y el mismo tipo, «Marcada como entidad»).
+      if ((r.kind || '') === (b.entity_kind || '')) { toast(I18N.lang === 'en' ? 'Nothing has changed.' : 'No has cambiado nada.'); return; }
       // Quitarla pide un motivo, que le llega al negocio (app y correo) con lo
       // que le queda y su fecha (migración 20261285400110). Queda en el
       // registro de actividad.
@@ -2358,7 +2400,7 @@ async function businessAction(a, b, d) {
         { name: 'plan', label: 'Plan', type: 'select', value: cur?.plan || 'standard', options: plans.filter((p) => p.is_offered !== false || p.slug === cur?.plan).map((p) => [p.slug, `${p.names?.es || p.slug} · ${fmtMoney(p.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}`]) },
         { name: 'status', label: 'Estado', type: 'select', value: 'active', options: [['active', 'Activa (pagada)'], ['trial', 'Prueba gratuita'], ['past_due', 'Impagada'], ['cancelled', 'Cancelada']] },
         { name: 'period_end', label: 'Fin del periodo', type: 'date', value: cur?.period_end || '', help: 'Vacío = sin fecha de fin. «Gratis de lanzamiento»: como pronto dentro de 30 días (se avisa al negocio al momento por push, correo y en «Mi negocio», y otra vez 7 días y 1 día antes).' },
-        { name: 'method', label: 'Forma de pago', type: 'select', value: 'transfer', options: [['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['card', 'Tarjeta'], ['none', 'Ninguna']] },
+        { name: 'method', label: 'Forma de pago', type: 'select', value: ['transfer', 'cash', 'card', 'none'].includes(cur?.payment_method) ? cur.payment_method : 'transfer', options: [['transfer', 'Transferencia'], ['cash', 'Efectivo'], ['card', 'Tarjeta'], ['none', 'Ninguna']] },
       ] });
       if (!r) return;
       await rpc('admin_set_subscription', { p_business: b.id, p_plan_slug: r.plan, p_status: r.status, p_period_end: r.period_end || null, p_payment_method: r.method }); toast('Plan actualizado');
@@ -3199,7 +3241,7 @@ async function fusionar(actual, otra, { ir = true } = {}) {
   try {
     await rpc('admin_merge_businesses', { p_keep: keep, p_drop: drop, p_reason: r.reason || null });
   } catch (e) {
-    if (String(e.message).includes('merge_manual')) {
+    if (String(e.codigo || e.message).includes('merge_manual')) {
       toast(en ? 'The page that goes has content: follow the manual procedure (RUNBOOK §4b).' : 'La ficha que sobra tiene contenido: sigue el procedimiento manual (RUNBOOK §4b).', true);
       return false;
     }
@@ -4272,9 +4314,9 @@ async function pintaADedo(v, c) {
           { h: '#', num: true, r: (x, i) => i + 1 },
           { h: 'Publicación', r: (x) => `<span class="title">${esc(x.title)}<span class="sub">${esc(x.business_name || '')}${x.city ? ' · ' + esc(x.city) : ''}</span></span>` },
           { h: 'Se ve', r: (x) => x.visible ? tag('active') : '<span class="muted">ahora no</span>' },
-          { h: '', r: (x) => `<span class="actions">
-              <button class="btn sm" data-move="${esc(x.offer_id)}" data-delta="-1">↑</button>
-              <button class="btn sm" data-move="${esc(x.offer_id)}" data-delta="1">↓</button>
+          { h: '', r: (x, i) => `<span class="actions">
+              <button class="btn sm" data-move="${esc(x.offer_id)}" data-delta="-1" aria-label="${esc(`${I18N.lang === 'en' ? 'Move up' : 'Subir'}: ${x.title || ''}`)}"${i === 0 ? ' disabled' : ''}>↑</button>
+              <button class="btn sm" data-move="${esc(x.offer_id)}" data-delta="1" aria-label="${esc(`${I18N.lang === 'en' ? 'Move down' : 'Bajar'}: ${x.title || ''}`)}"${i === items.length - 1 ? ' disabled' : ''}>↓</button>
               <button class="btn sm bad ghost" data-out="${esc(x.offer_id)}">Quitar</button></span>` },
         ],
         rows: items,
@@ -4297,15 +4339,20 @@ async function pintaADedo(v, c) {
     q.oninput = debounce(() => { busqueda = q.value; dibuja(); });
     // Cada botón, bloqueado mientras va (un doble clic subía dos puestos) y
     // con el error dicho si falla.
-    const accion = (b, trabajo) => esperando(b, async () => {
-      try { await trabajo(); await dibuja(); } catch (e) { toast(e.message, true); }
+    const accion = (b, trabajo, despues = null) => esperando(b, async () => {
+      try { await trabajo(); await dibuja(); despues?.(); } catch (e) { toast(e.message, true); }
     });
     $$('[data-in]', v).forEach((b) => { b.onclick = () => accion(b, async () => {
       await rpc('admin_collection_add', { p_collection: c.id, p_offer: b.dataset.in });
       toast('Añadida');
     }); });
     $$('[data-out]', v).forEach((b) => { b.onclick = () => accion(b, () => rpc('admin_collection_remove', { p_collection: c.id, p_offer: b.dataset.out })); });
-    $$('[data-move]', v).forEach((b) => { b.onclick = () => accion(b, () => rpc('admin_collection_move', { p_collection: c.id, p_offer: b.dataset.move, p_delta: +b.dataset.delta })); });
+    // Tras mover, el foco sigue en la misma flecha de la misma publicación
+    // (o en la otra si ha llegado arriba o abajo del todo).
+    $$('[data-move]', v).forEach((b) => { b.onclick = () => accion(b, () => rpc('admin_collection_move', { p_collection: c.id, p_offer: b.dataset.move, p_delta: +b.dataset.delta }), () => {
+      const mismas = $$(`[data-move="${CSS.escape(b.dataset.move)}"]`, v);
+      (mismas.find((x) => x.dataset.delta === b.dataset.delta && !x.disabled) || mismas.find((x) => !x.disabled))?.focus();
+    }); });
   };
 
   await dibuja();
@@ -4313,7 +4360,14 @@ async function pintaADedo(v, c) {
 
 // ── Configuración ───────────────────────────────────────────────────────────
 PAGES.configuracion = async (v) => {
-  const cfg = await rpc('admin_config');
+  // Las tres a la vez (antes, una detrás de otra).
+  const [cfg, limits, fotos] = await Promise.all([
+    rpc('admin_config'),
+    rpc('admin_rate_limits', { p_limit: 50 }),
+    // Fotos y vídeos sin usar (`storage_cleanup_count`): lo que se borraría.
+    // Si falla, la tarjeta lo dice (no «nada que borrar»).
+    rpc('storage_cleanup_count', { p_examples: 3 }).catch((e) => { if (e?.obsoleta) throw e; return null; }),
+  ]);
   const mv = cfg.min_version?.value || {}, lv = cfg.latest_version?.value || {}, mt = cfg.maintenance?.value || {}, sp = cfg.send_push?.value || {};
   const rl = cfg.rules?.value || {};
   // Sorteos (migración 20261243100000 de la app): apagados al lanzar.
@@ -4322,9 +4376,6 @@ PAGES.configuracion = async (v) => {
   // La pregunta de edad sin cuenta (migraciones 20261250100000 y
   // 20261254100000 de la app): encendida de serie.
   const ag = cfg.adults_gate?.value || { enabled: true };
-  const limits = await rpc('admin_rate_limits', { p_limit: 50 });
-  // Fotos y vídeos sin usar (`storage_cleanup_count`): lo que se borraría.
-  const fotos = await rpc('storage_cleanup_count', { p_examples: 3 }).catch(() => null);
   const fr = cfg.storage_rules?.value || { modo: 'contar', grace_days: 7, media_months: 12 };
   const MOTIVOS_FOTO = I18N.lang === 'en'
     ? { sin_uso: 'not used anywhere', caducada: 'from old publications', cuenta_borrada: 'deleted accounts', avatar_cambiado: 'old profile photos', resena_borrada: 'deleted reviews', negocio_borrado: 'deleted businesses' }
@@ -4366,7 +4417,7 @@ PAGES.configuracion = async (v) => {
           ? `Every night, files that nothing uses any more are deleted: from deleted accounts and businesses, old profile photos, deleted reviews and, if the mode is <b>delete</b>, what a business uploaded and no longer uses and the media of publications that ended more than N months ago. In <b>count only</b> mode the new rules just count: check the list below before switching. Nothing uploaded in the last days is touched (an upload in progress isn't saved anywhere yet).`
           : `Cada noche se borran los archivos que ya no usa nada: de cuentas y negocios eliminados, fotos de perfil cambiadas, reseñas borradas y, si el modo es <b>borrar</b>, lo que un negocio subió y ya no usa y los medios de publicaciones que terminaron hace más de N meses. En modo <b>solo contar</b> lo nuevo solo se cuenta: revisa la lista de abajo antes de cambiarlo. Nada subido en los últimos días se toca (una subida a medias aún no está guardada en ningún sitio).`}</p>
         ${fotos ? `<p class="small" style="margin:0 0 8px"><b>${fmtNum(fotos.total)}</b> ${I18N.lang === 'en' ? 'files' : 'archivos'} · ${mb(fotos.bytes)}</p>
-          ${Object.keys(fotos.por_motivo || {}).length ? `<ul class="small" style="margin:0 0 10px;padding-left:18px">${Object.entries(fotos.por_motivo).map(([k, x]) => `<li>${esc(MOTIVOS_FOTO[k] || k)}: <b>${fmtNum(x.n)}</b> (${mb(x.bytes)})${(x.ejemplos || []).length ? `<br><code class="small">${x.ejemplos.map(esc).join('<br>')}</code>` : ''}</li>`).join('')}</ul>` : `<p class="muted small">${I18N.lang === 'en' ? 'Nothing to delete right now.' : 'Ahora mismo no hay nada que borrar.'}</p>`}` : ''}
+          ${Object.keys(fotos.por_motivo || {}).length ? `<ul class="small" style="margin:0 0 10px;padding-left:18px">${Object.entries(fotos.por_motivo).map(([k, x]) => `<li>${esc(MOTIVOS_FOTO[k] || k)}: <b>${fmtNum(x.n)}</b> (${mb(x.bytes)})${(x.ejemplos || []).length ? `<br><code class="small">${x.ejemplos.map(esc).join('<br>')}</code>` : ''}</li>`).join('')}</ul>` : `<p class="muted small">${I18N.lang === 'en' ? 'Nothing to delete right now.' : 'Ahora mismo no hay nada que borrar.'}</p>`}` : `<p class="err small" style="margin:0 0 8px">${I18N.lang === 'en' ? 'The list of what would be deleted could not be loaded: reload before changing the mode.' : 'No se ha podido cargar la lista de lo que se borraría: recarga antes de cambiar el modo.'}</p>`}
         <form id="frf" style="display:grid;gap:10px">
           <label class="f"><span>Modo</span><select name="modo"><option value="contar" ${fr.modo !== 'borrar' ? 'selected' : ''}>Solo contar</option><option value="borrar" ${fr.modo === 'borrar' ? 'selected' : ''}>Borrar</option></select></label>
           <label class="f"><span>Días de margen desde la subida</span><input name="grace" type="number" min="3" max="60" value="${esc(fr.grace_days ?? 7)}"></label>
@@ -4387,7 +4438,18 @@ PAGES.configuracion = async (v) => {
       esperando(boton, () => trabajo(form.elements));
     };
   };
-  alGuardar($('#mvf'), async (c) => { if (!await confirmDlg('Cambiar la versión mínima', 'Quien tenga una versión anterior tendrá que actualizar para seguir usando la app.', { danger: true, submit: 'Guardar' })) return; await save('min_version', { android: c.android.value.trim(), ios: c.ios.value.trim() }); });
+  // La versión mínima obliga a actualizar: el mismo formato que la última
+  // (tres números) y sin preguntar si no ha cambiado nada (una errata como
+  // «0.19» obligaba a todos, o a nadie).
+  alGuardar($('#mvf'), async (c) => {
+    const en = I18N.lang === 'en';
+    const v = { android: c.android.value.trim(), ios: c.ios.value.trim() };
+    const mal = Object.values(v).find((x) => x && !/^\d+\.\d+\.\d+$/.test(x));
+    if (mal) { toast(en ? `“${mal}” is not a version: use three numbers, like 0.1.9.` : `«${mal}» no es una versión: pon tres números, como 0.1.9.`, true); return; }
+    if (v.android === (mv.android || '') && v.ios === (mv.ios || '')) { toast(en ? 'Nothing has changed.' : 'No has cambiado nada.'); return; }
+    if (!await confirmDlg('Cambiar la versión mínima', 'Quien tenga una versión anterior tendrá que actualizar para seguir usando la app.', { danger: true, submit: 'Guardar' })) return;
+    await save('min_version', v);
+  });
   // «Hay una versión nueva» (aviso suave, no bloquea): migración 20261277600000
   // de la app. Sin ella aplicada, la base dice `unknown_key` y se explica.
   alGuardar($('#lvf'), async (c) => {
@@ -4635,9 +4697,9 @@ PAGES.ayuda = async (v) => {
       <div class="card">${I18N.lang === 'en' ? `<h2>Daily routine (5 minutes)</h2><ol style="margin:0;padding-left:18px"><li><b>Overview</b>: check “Waiting for you”.</li><li><b>Pending businesses</b>: check that they exist (website, phone, Google Maps) and verify or reject them with a reason.</li><li><b>Publications to moderate</b>: approve or take down with a reason.</li><li><b>Open reports</b>: review and resolve them (always with a reason if you take something down).</li><li><b>Failed push</b>: if there are many, something is wrong with Firebase.</li></ol>` : `<h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Weekly routine</h2><ul style="margin:0;padding-left:18px"><li><b>Plans and payments</b>: subscriptions expiring in 7 days → contact the business; record the bank transfers received.</li><li><b>Users</b>: handle access or erasure requests received by email (info@klendar.app).</li><li><b>Feedback</b>: read what has come in, set the status and reply to whatever deserves a reply.</li><li><b>Activity log</b>: check that everything that was done makes sense.</li></ul>` : `<h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Moderation criteria</h2><ul style="margin:0;padding-left:18px"><li>The venue's or product's own photos; no third-party images without permission.</li><li>A clear offer that can be honoured: price, conditions, places, opening hours. Nothing misleading.</li><li>Alcohol: always 18+ (it's marked automatically and doesn't wait), without encouraging drinking (Law 34/1988).</li><li>No third parties' personal data, insults, discrimination or sexual content.</li><li>If in doubt, mark it “under review” and ask the business for more information with “Send notification”.</li></ul><p class="muted small" style="margin:8px 0 0">Reference: <a class="link" href="/en/community-guidelines" target="_blank">Community guidelines</a> · <a class="link" href="/en/business-terms" target="_blank">Business terms</a>.</p>` : `<h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: siempre +18 (se marca solo y sale sin esperar), sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar notificación».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="/normas" target="_blank">Normas de la comunidad</a> · <a class="link" href="/negocios" target="_blank">Condiciones para negocios</a>.</p>`}</div>
-      <div class="card">${I18N.lang === 'en' ? `<h2>Legal duties this panel covers</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Digital Services Act): every content takedown comes with a reason and a way to appeal (6 months, info@klendar.app); reports are handled diligently.</li><li><b>GDPR</b>: consents visible on the user's page; erasure with “Delete account”; access with “Export CSV”.</li><li><b>Log</b>: every administrative action is logged with its author and date.</li></ul>` : `<h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (6 meses, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Borrar cuenta»; acceso con «Exportar CSV».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul>`}</div>
+      <div class="card">${I18N.lang === 'en' ? `<h2>Legal duties this panel covers</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Digital Services Act): every content takedown comes with a reason and a way to appeal (6 months, info@klendar.app); reports are handled diligently.</li><li><b>GDPR</b>: consents visible on the user's page; erasure with “Delete account…”; access with “Export all”.</li><li><b>Log</b>: every administrative action is logged with its author and date.</li></ul>` : `<h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (6 meses, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Eliminar cuenta…»; acceso con «Exportar todo».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul>`}</div>
     </div>
-    <div class="card"><h2>Atajos</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `<code>/</code> jumps to the page's search box · Click any row to open its details · “Export CSV” downloads what you see with the filters applied.` : `<code>/</code> salta al buscador de la página · Pulsa en cualquier fila para abrir su ficha · «Exportar CSV» descarga lo que ves con los filtros aplicados.`}</p></div>
+    <div class="card"><h2>Atajos</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `<code>/</code> jumps to the page's search box · Click a row (or Tab to it and press Enter) to open its details · “Export all” downloads every row with the filters applied, not just this page.` : `<code>/</code> salta al buscador de la página · Pulsa en una fila (o llega con Tab y pulsa Intro) para abrir su ficha · «Exportar todo» descarga todas las filas con los filtros aplicados, no solo esta página.`}</p></div>
     <div class="card"><h2>Si algo falla</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `If you see “This account is not an administrator”, ask another administrator to add you. If the panel doesn't load any data, check Supabase's status (<a class="link" href="https://status.supabase.com" target="_blank" rel="noopener">status.supabase.com</a>). Technical support: dev@klendar.app.` : `Si ves «Esta cuenta no es administradora» pide a otro administrador que te añada. Si el panel no carga datos, comprueba el estado de Supabase (<a class="link" href="https://status.supabase.com" target="_blank" rel="noopener">status.supabase.com</a>). Soporte técnico: dev@klendar.app.`}</p></div>`;
 };
 

@@ -27,7 +27,7 @@ function ok(cond, nombre, extra = '') {
   else { fallos += 1; console.log(`  MAL ${nombre} ${String(extra).slice(0, 400)}`); }
 }
 
-async function abre(nav, { ancho = 1280, alto = 900, movil = false, lang = 'es' } = {}) {
+async function abre(nav, { ancho = 1280, alto = 900, movil = false, lang = 'es', falla = [] } = {}) {
   const ctx = await nav.newContext({ viewport: { width: ancho, height: alto }, deviceScaleFactor: movil ? 3 : 1, isMobile: movil, hasTouch: movil, locale: 'es-ES', timezoneId: 'Europe/Madrid' });
   await ctx.addInitScript(([k, v, a, l]) => {
     try { localStorage.setItem(k, v); localStorage.setItem(a, v); localStorage.setItem('klendar_lang', l); localStorage.removeItem('klendar.admin.bandeja.filtro'); } catch { /* */ }
@@ -45,6 +45,8 @@ async function abre(nav, { ancho = 1280, alto = 900, movil = false, lang = 'es' 
     if (url.pathname.startsWith('/rest/v1/rpc/')) {
       const fn = url.pathname.split('/').pop();
       const cuerpo = req.postData() ? JSON.parse(req.postData()) : {};
+      // Una cola que falla (revisión general, parte 3): error de la base.
+      if (falla.includes(fn)) return json({ code: 'XX000', message: 'canceling statement due to statement timeout' }, 500);
       return json(contesta(fn, cuerpo, estado));
     }
     if (url.pathname.startsWith('/rest/v1/admin_users')) return json([{ user_id: U }]);
@@ -184,6 +186,30 @@ for (const [nombre, ancho, alto] of [['iPhone (390)', 390, 844], ['móvil estrec
   if (ancho === 390) await page.screenshot({ path: `${OUT}/bandeja_movil_dialogo.png` });
   await page.click('#modal [data-cancel]');
   ok(errs.length === 0, 'sin errores de JavaScript', errs.join(' | '));
+  await ctx.close();
+}
+
+// Revisión general, parte 3 (20-11): una parte que no carga no se queda
+// callada ni deja «Todo al día».
+console.log('Una parte que falla');
+{
+  const { ctx, page, errs } = await abre(nav, { falla: ['admin_report_groups', 'admin_media_queue'] });
+  await page.goto(`${BASE}/admin#/resumen`, { waitUntil: 'load' });
+  await page.waitForSelector('#bandeja', { timeout: 15000 });
+  const t = await page.textContent('#bandeja');
+  ok(await page.isVisible('#bandeja [data-bandeja-reintentar]'), 'dice que una parte no se ha podido cargar, con «Reintentar»');
+  ok(t.includes('Denuncias') && t.includes('Filtro automático'), 'y cuál', t.slice(0, 300));
+  ok(!(await page.$$eval('#bandeja .bj', (xs) => xs.some((x) => x.dataset.tipo === 'denuncia'))), 'sin tarjetas de lo que ha fallado');
+  ok(errs.length === 0, 'sin errores de JavaScript', errs.join(' | '));
+  await ctx.close();
+}
+{
+  const todas = ['admin_pending_now', 'admin_entity_applications', 'admin_business_claims', 'admin_report_groups', 'admin_media_queue', 'admin_content_queue',
+    'admin_offers_page', 'admin_text_reviews', 'admin_business_messages', 'admin_duplicate_alerts', 'admin_feedback', 'admin_ai_reports', 'admin_inbox_extra'];
+  const { ctx, page } = await abre(nav, { falla: todas });
+  await page.goto(`${BASE}/admin#/resumen`, { waitUntil: 'load' });
+  await page.waitForSelector('#bandeja', { timeout: 15000 });
+  ok(await page.isHidden('#bandejaVacia'), 'si falla todo, nunca «Todo al día»');
   await ctx.close();
 }
 
