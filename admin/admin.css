@@ -608,7 +608,8 @@ a.kpi:hover, a.kpi:focus-visible { border-color: var(--accent-text); }
 .med-mini { display: block; width: 96px; height: 96px; object-fit: cover; border-radius: 10px; margin: 8px 0 0; }
 /* El cobro y «de revisión» en la ficha del negocio. */
 .cobro-ficha .ms { font-size: 16px; vertical-align: -3px; }
-.tag .ms { font-size: 14px; vertical-align: -2px; }
+/* (admin.css también lo carga el panel: solo en la cabecera de una ficha del admin.) */
+.detail-head .tag .ms { font-size: 14px; vertical-align: -2px; }
 /* Modo mantenimiento encendido: que se vea de lejos. */
 .card.mant.encendido { border-color: #b3261e; }
-a.tag { text-decoration: none; color: inherit; } a.tag:hover { text-decoration: underline; }
+.detail-head a.tag { text-decoration: none; color: inherit; } .detail-head a.tag:hover { text-decoration: underline; }
