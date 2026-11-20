@@ -285,10 +285,13 @@ const estado3 = { dado: false };
   await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#iaApagar');
   await p.click('#iaApagar');
-  await p.waitForSelector('#modal[open]');
-  await p.click('#modal button[type=submit]');
+  // Sin preguntar (se deshace): apagadas y el aviso con «Deshacer».
   await p.waitForTimeout(300);
+  ok(await p.locator('#modal[open]').count() === 0, 'apagar no pregunta antes');
   ok(estado.llamadas.some(([f, b]) => f === 'set_business_ideas' && b.p_on === false), 'se apagan por negocio');
+  await p.click('#toasts .toast-accion');
+  await p.waitForTimeout(300);
+  ok(estado.llamadas.some(([f, b]) => f === 'set_business_ideas' && b.p_on === true), '«Deshacer» las vuelve a encender');
   await ctx.close();
 }
 

@@ -229,17 +229,23 @@ PAGES.rrpp = async (v, param) => {
       PAGES.rrpp(v);
     } catch (e) { toast(rrppError(e), true); }
   };
+  // Cancelar una invitación se deshace, como en Equipo: sin preguntar,
+  // fuera de la lista y con «Deshacer»; se cancela de verdad cuando se va el
+  // aviso (deshacer no le manda otro correo). Como la app.
   $$('[data-rrpp-cancela]', v).forEach((b) => {
-    b.onclick = async () => {
+    b.onclick = () => {
       const p = filas.find((x) => x.id === b.dataset.rrppCancela) || {};
-      if (!await confirmDlg(bi('Cancelar la invitación', 'Cancel the invitation'),
-        esc(bi(`${p.email || ''} ya no podrá aceptarla.`, `${p.email || ''} won't be able to accept it.`)),
-        { danger: true, submit: bi('Cancelar la invitación', 'Cancel the invitation') })) return;
-      try {
-        rrppOk(await rpc('set_promoter_status', { p_promoter: p.id, p_status: 'removed' }));
-        toast(bi('Invitación cancelada', 'Invitation cancelled'));
-        PAGES.rrpp(v);
-      } catch (e) { toast(rrppError(e), true); }
+      const fila = b.closest('tr') || b.closest('li') || b.parentElement;
+      quitaConDeshacer(bi('Invitación cancelada', 'Invitation cancelled'), {
+        ocultar: () => { fila.hidden = true; },
+        mostrar: () => { fila.hidden = false; },
+        hacer: async () => {
+          try {
+            rrppOk(await rpc('set_promoter_status', { p_promoter: p.id, p_status: 'removed' }));
+            if (v.isConnected) PAGES.rrpp(v);
+          } catch (e) { toast(rrppError(e), true); fila.hidden = false; }
+        },
+      });
     };
   });
   $$('[data-rrpp-dias]', v).forEach((b) => {

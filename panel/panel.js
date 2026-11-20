@@ -143,6 +143,28 @@ const toast = (msg, bad = false) => {
   };
   setTimeout(quita, bad ? 6000 : 3500);
 };
+/** Hecho y con «Deshacer» unos segundos, en lugar de preguntar antes lo que
+ * se puede deshacer (como `showUndoSnack` en la app): días cerrados, una
+ * sección de la carta, cancelar una invitación, «Cerrar por hoy»… */
+function toastDeshacer(msg, alDeshacer) {
+  const aviso = document.createElement('div');
+  aviso.className = 'toast';
+  aviso.innerHTML = `<span>${esc(I18N.t(msg))}</span> <button type="button" class="toast-accion">${esc(I18N.t('Deshacer'))}</button>`;
+  $('#toasts').appendChild(aviso);
+  const fuera = () => aviso.isConnected && aviso.parentNode.removeChild(aviso);
+  aviso.querySelector('button').onclick = () => { fuera(); alDeshacer(); };
+  setTimeout(fuera, 6000);
+}
+/** Quitar algo que se puede deshacer sin preguntar: `ocultar()` ya, y
+ * `hacer()` de verdad cuando se va el aviso sin «Deshacer» (`mostrar()` lo
+ * devuelve). Para lo que, hecho y deshecho, dejaría rastro (un correo a otra
+ * persona, un id nuevo). Como `removeWithUndo` en la app. */
+function quitaConDeshacer(msg, { ocultar, mostrar, hacer }) {
+  let deshecho = false;
+  ocultar();
+  toastDeshacer(msg, () => { deshecho = true; mostrar(); });
+  setTimeout(() => { if (!deshecho) hacer(); }, 6000);
+}
 /** Confirmación breve al terminar un formulario (publicar, una solicitud):
  * una tarjeta en el centro con la marca de «hecho» que se dibuja, que se va
  * sola (como `showDone` en la app). No tapa nada que se pueda tocar. */
@@ -1150,7 +1172,20 @@ async function noBusiness() {
  * la app pone «Nails & Co ▾»). Tus locales y, al final, «Nuevo negocio» (el
  * alta). Recuerda el último usado (`klendar.biz`). */
 function renderBizPicker() {
-  const opciones = BIZZES.map((b) => `<option value="${esc(b.id)}" ${b.id === BIZ.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')
+  // Cada local dice lo más grave, uno solo (como «Cambiar de local» en la
+  // app): parado por el cobro, cerrado y, si no, la verificación. El actual
+  // es el elegido.
+  const estado = (b) => {
+    const hasta = b.paused_until ? new Date(b.paused_until) : null;
+    return b.hold === 'blocked' ? I18N.t('Bloqueado')
+      : b.hold === 'paused' ? I18N.t('En pausa')
+      : hasta && hasta.getUTCFullYear() >= 9000 ? I18N.t('Cerrado hasta nuevo aviso')
+      : hasta && hasta > new Date() ? I18N.t('Cerrado por hoy')
+      : b.verification_status === 'rejected' ? I18N.t('Rechazado')
+      : b.verification_status === 'pending' ? I18N.t('Pendiente de verificación')
+      : '';
+  };
+  const opciones = BIZZES.map((b) => `<option value="${esc(b.id)}" ${b.id === BIZ.id ? 'selected' : ''}>${esc(b.name)}${estado(b) ? ` · ${esc(estado(b))}` : ''}</option>`).join('')
     + `<option value="__nuevo">${esc(bi('+ Nuevo negocio', '+ New business'))}</option>`;
   for (const sel of $$('#bizSelect, #bizTop')) {
     sel.innerHTML = opciones;
@@ -1905,6 +1940,9 @@ PAGES.resumen = async (v) => {
   const sinCobro = entidad || cobro().entity === true;
   const aviso = cerradoDeVerdad ? avisoCerrado()
     : condiciones ? avisoCondiciones(condiciones)
+    // Cerrado por hoy (lo ha hecho el negocio y se abre con un toque): antes
+    // que lo del cobro o la verificación, que no cambian hoy. Como la app.
+    : pausado() && !cerradoIndef() ? avisoCerradoHoy()
     : BIZ.verification_status !== 'verified' && BIZ.entity?.pending ? entAvisoPendiente()
     : BIZ.verification_status !== 'verified' ? avisoVerificacion()
       // Se bloquea en 7 días o menos (prueba, gratis, lo pagado o un impago).
@@ -1930,6 +1968,8 @@ PAGES.resumen = async (v) => {
   const negocioBtn = (href, icon, txt) => `<a class="herr-btn" href="${href}">${icono(icon)}<span>${esc(I18N.t(txt))}</span></a>`;
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1>${BIZ.entity?.kind ? `<span class="tag badge-entidad">${icono('entidad')} ${esc(entSello(BIZ.entity.kind))}</span>` : ''}<span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
+      ${!cerradoIndef() && !pausado() && gestiona() && BIZ.verification_status === 'verified'
+        ? `<button class="btn sm ghost" type="button" id="pausa" title="${esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}">${esc(I18N.t('Cerrar por hoy'))}</button>` : ''}
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
     ${aviso}
     ${aviso ? '' : '<div id="festivoCaja"></div>'}
@@ -1958,8 +1998,9 @@ PAGES.resumen = async (v) => {
     <div id="ideasIA" style="margin-top:14px"></div>
     <!-- Ordenado como la app (Iván, 2026-10-22): «Lo esencial», «Por
          contestar», «¿Hay sitio ahora?» y «Ahora» (3 filas y «Ver N más»); al
-         lado en el escritorio y debajo en el móvil, las publicaciones y
-         «Cerrado por hoy». -->
+         lado en el escritorio y debajo en el móvil, las publicaciones.
+         «Cerrar por hoy», arriba junto a «Ver cómo se ve» (cerrado, el
+         aviso de arriba con «Abrir de nuevo»). -->
     <div class="resumen-cols">
     <div class="resumen-izq">
     ${herrEsencialHtml(s)}
@@ -1973,12 +2014,12 @@ PAGES.resumen = async (v) => {
     </div>
     <div class="resumen-der">
     <div class="card resumen-pubs"><h2>Últimas publicaciones</h2>
-      <ul class="pub-lineas">${offers.map((o) => `<li><a href="#/publicaciones/${esc(o.id)}"><b class="title" translate="no">${esc(o.title)}</b>${etiquetaEstado(o)}${ms('chevron_right')}</a></li>`).join('')
+      <ul class="pub-lineas">${offers.map((o) => `<li><a href="#/publicaciones/${esc(o.id)}"><b class="title" translate="no">${esc(o.title)}</b>${etiquetaEstado(o)}${etiquetaOculta(o)}${ms('chevron_right')}</a></li>`).join('')
         || `<li class="muted">${esc(I18N.t('Todavía no has publicado nada.'))}</li>`}</ul>
       ${table({
       cols: [
         { h: 'Publicación', r: (o) => `<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
-        { h: 'Estado', r: (o) => etiquetaEstado(o) },
+        { h: 'Estado', r: (o) => etiquetaEstado(o) + etiquetaOculta(o) },
         { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
         { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
         { h: '', r: (o) => `<a class="btn sm" href="#/publicaciones/${esc(o.id)}">Abrir</a>` },
@@ -1987,12 +2028,6 @@ PAGES.resumen = async (v) => {
       empty: 'Todavía no has publicado nada.',
     })}
       <p style="margin:10px 0 0"><a class="link" href="#/publicaciones">${esc(bi(`Ver todas (${fmtNum(nTodas)}) · ${fmtNum(nActivas)} activas`, `See all (${fmtNum(nTodas)}) · ${fmtNum(nActivas)} active`))}</a></p></div>
-    ${!cerradoIndef() && gestiona() && BIZ.verification_status === 'verified' ? `<div class="card pausa"><div>
-        <h2 style="margin:0">Cerrado por hoy</h2>
-        <p class="muted" style="margin:4px 0 0">${pausado()
-          ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.'))
-          : esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}</p></div>
-        <button class="btn ${pausado() ? 'primary' : ''}" id="pausa">${pausado() ? 'Abrir de nuevo' : 'Cerrar por hoy'}</button></div>` : ''}
     </div>
     </div>
     <a class="mas-herr" href="#/herramientas">${icono('herramientas')}<span><b>${esc(bi('Más herramientas', 'More tools'))}</b>
@@ -2063,28 +2098,44 @@ PAGES.resumen = async (v) => {
         : g === 'nueva-flash' ? '#/publicaciones/nueva-flash' : '#/publicaciones/nuevo-evento';
     };
   });
-  const pausa = $('#pausa', v);
-  if (pausa) {
-    pausa.onclick = async () => {
-      // Hasta las 5 de la mañana: mañana abre solo (lo mismo que la app).
-      // Las 5 del negocio, no las del ordenador desde el que se pulsa; de
-      // madrugada (antes de las 5), las de hoy: no 27 horas.
-      const hasta = enDiasNegocio(partesNegocio(new Date()).h < 5 ? 0 : 1, 5);
-      const cerrar = !pausado();
-      if (pausa.disabled) return;
-      pausa.disabled = true;
-      try {
-        await rpc('set_business_pause', { p_business: BIZ.id, p_until: cerrar ? hasta.toISOString() : null });
-        BIZ.paused_until = cerrar ? hasta.toISOString() : null;
-        toast(cerrar ? 'Cerrado por hoy' : 'Abierto de nuevo');
-        // Eventos con reservas o lista de espera hasta mañana: ¿cancelar y avisar o dejarlos?
-        if (cerrar) await avisaEventosDelCierre({ p_until: hasta.toISOString() });
-        route();
-      } catch (e) { toast(friendly(e.message), true); pausa.disabled = false; }
-    };
+  // «Cerrar por hoy» (arriba) y «Abrir de nuevo» (en el aviso): sin
+  // preguntar antes, con «Deshacer» en el aviso de abajo.
+  for (const b of [$('#pausa', v), $('#pausa-abrir', v)]) {
+    if (b) b.onclick = () => cambiaCerradoHoy(b, b.id === 'pausa');
   }
   sugActiva(v, sugerencias, () => route());
 };
+
+/** Cerrado por hoy: el único aviso de arriba del resumen, con «Abrir de
+ * nuevo» a quien gestiona (el personal sabe que está cerrado). */
+function avisoCerradoHoy() {
+  return `<div class="card pausa" role="status"><div>
+        <h2 style="margin:0">${esc(I18N.t('Hoy estás cerrado'))}</h2>
+        <p class="muted" style="margin:4px 0 0">${esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.'))}${gestiona() ? '' : ` ${esc(I18N.t('Solo el propietario o un encargado puede abrirlo de nuevo.'))}`}</p></div>
+        ${gestiona() ? `<button class="btn primary" type="button" id="pausa-abrir">${esc(I18N.t('Abrir de nuevo'))}</button>` : ''}</div>`;
+}
+
+/** Cierra hasta las 5 de la mañana del negocio (mañana abre solo; de
+ * madrugada, antes de las 5, las de hoy: no 27 horas) o abre de nuevo.
+ * Lo mismo que la app. Se deshace desde el aviso. */
+async function cambiaCerradoHoy(boton, cerrar, { deshacer = true } = {}) {
+  if (boton?.disabled) return;
+  if (boton) boton.disabled = true;
+  const negocio = BIZ.id;
+  const hasta = enDiasNegocio(partesNegocio(new Date()).h < 5 ? 0 : 1, 5);
+  try {
+    await rpc('set_business_pause', { p_business: negocio, p_until: cerrar ? hasta.toISOString() : null });
+    if (BIZ?.id !== negocio) return;
+    BIZ.paused_until = cerrar ? hasta.toISOString() : null;
+    // Eventos con reservas o lista de espera hasta mañana: ¿cancelar y avisar o dejarlos?
+    if (cerrar && deshacer) await avisaEventosDelCierre({ p_until: hasta.toISOString() });
+    if (deshacer) {
+      toastDeshacer(cerrar ? 'Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.' : 'Abierto de nuevo',
+        () => cambiaCerradoHoy(null, !cerrar, { deshacer: false }));
+    }
+    route();
+  } catch (e) { toast(friendly(e.message), true); if (boton) boton.disabled = false; }
+}
 
 /** «¿Hay sitio ahora?» en el resumen: tres botones iguales (Hay sitio ·
  * Casi lleno · Lleno), lo marcado y cuándo, y «Quitar». Cualquiera del
@@ -2513,6 +2564,10 @@ const FILTROS_PUB = [
   ['terminada', bi('Terminadas', 'Ended')],
   ['archivada', bi('Archivadas', 'Archived')],
 ];
+/** Cerrado (por hoy o hasta nuevo aviso): una activa no la ve nadie. Como
+ * «Oculta: estás cerrado» en «Para hoy» de la app. */
+const etiquetaOculta = (o) => (pausado() && sePuedePausar(o)
+  ? ` <span class="tag" translate="no">${esc(I18N.t('Oculta: estás cerrado'))}</span>` : '');
 const etiquetaEstado = (o) => {
   const [nombre, cls] = ESTADOS_PUB[estadoPub(o)];
   const cuando = estadoPub(o) === 'programada' ? ` · ${fmtDate(o.publish_at)}` : '';
@@ -5126,9 +5181,13 @@ PAGES.validar = async (v) => {
         { h: 'Ticket', r: (r) => {
           // Una validación deshecha no cuenta: sin importe (como la app).
           if (r.undone) return '';
-          const editable = r.ticket_until && new Date(r.ticket_until) > new Date();
+          // El personal no ve importes (la base no se los da): «Ticket
+          // apuntado», sin cuánto, y no se le ofrece apuntar otro encima.
+          const hay = r.has_ticket === true || r.ticket_cents != null;
+          const editable = r.ticket_until && new Date(r.ticket_until) > new Date() && (gestiona() || !hay);
           const valor = r.ticket_cents != null ? `<b>${esc(fmtMoney(r.ticket_cents, r.currency))}</b>`
-            : r.estimate_cents != null ? `<span class="muted">${esc(bi('Estimado', 'Estimated'))}: ${esc(fmtMoney(r.estimate_cents, r.currency))}</span>` : '';
+            : r.estimate_cents != null ? `<span class="muted">${esc(bi('Estimado', 'Estimated'))}: ${esc(fmtMoney(r.estimate_cents, r.currency))}</span>`
+            : hay ? `<span class="muted">${esc(bi('Ticket apuntado', 'Receipt added'))}</span>` : '';
           const boton = editable ? `<button class="btn sm ghost" type="button" data-ticket="${esc(r.code)}" data-cents="${r.ticket_cents ?? ''}">${esc(I18N.t(r.ticket_cents != null ? 'Cambiar' : 'Añadir ticket'))}</button>` : '';
           return `<span class="ticket-celda">${valor}${valor && boton ? ' ' : ''}${boton}</span>`;
         } },
@@ -6097,9 +6156,9 @@ async function categoriaDelNegocio() {
   return BIZ.category_id;
 }
 const TEXTOS_CARTA = {
-  dish: { add: 'Añadir plato', edit: 'Editar plato', col: 'Plato', ej: 'Tortilla de patata', sus: ['sus platos', 'its dishes'] },
-  service: { add: 'Añadir servicio', edit: 'Editar servicio', col: 'Servicio', ej: '', sus: ['sus servicios', 'its services'] },
-  product: { add: 'Añadir producto', edit: 'Editar producto', col: 'Producto', ej: '', sus: ['sus productos', 'its products'] },
+  dish: { add: 'Añadir plato', edit: 'Editar plato', col: 'Plato', ej: 'Tortilla de patata' },
+  service: { add: 'Añadir servicio', edit: 'Editar servicio', col: 'Servicio', ej: '' },
+  product: { add: 'Añadir producto', edit: 'Editar producto', col: 'Producto', ej: '' },
 };
 
 // ── Archivos de la carta (fotos y PDF) ──────────────────────────────────────
@@ -6417,10 +6476,17 @@ PAGES.carta = async (v) => {
       if (!r?.name) return;
       carta[i].name = r.name; sucia = true; pinta();
     }; });
-    $$('[data-sec-del]', v).forEach((b) => { b.onclick = async () => {
+    // Quitar una sección se deshace (no se guarda hasta «Guardar»): sin
+    // preguntar, con «Deshacer» en el aviso. Como la app.
+    $$('[data-sec-del]', v).forEach((b) => { b.onclick = () => {
       const i = +b.dataset.secDel;
-      if (!await confirmDlg('Borrar sección', bi(`Se quita «${esc(carta[i].name)}» con ${tc.sus[0]}. No se guarda hasta que le des a «${esc(guardarTxt)}».`, `“${esc(carta[i].name)}” and ${tc.sus[1]} are removed. Nothing is saved until you press “${esc(guardarTxt)}”.`), { danger: true, submit: 'Borrar' })) return;
-      carta.splice(i, 1); sucia = true; pinta();
+      const [quitada] = carta.splice(i, 1);
+      sucia = true; pinta();
+      toastDeshacer(bi(`Sección «${quitada.name}» quitada`, `Section “${quitada.name}” removed`), () => {
+        if (!v.isConnected) return;
+        carta.splice(Math.min(i, carta.length), 0, quitada);
+        sucia = true; pinta();
+      });
     }; });
     $$('[data-sec-up]', v).forEach((b) => { b.onclick = () => {
       const i = +b.dataset.secUp;
@@ -6838,6 +6904,18 @@ function planCard(sub) {
     <a class="btn sm" href="#/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
 }
 
+/** «¿Quién puede qué?» de Equipo: el mismo texto que la app
+ * (`panelTeamIntro`), un párrafo por papel. */
+function quienPuedeQue() {
+  const papel = (rol, txt) => `<p><b>${esc(I18N.t(rol))}</b>: ${esc(I18N.t(txt))}</p>`;
+  return helpBox(I18N.t('¿Quién puede qué?'), papel('Empleado', 'valida códigos y bonos, suma sellos, lleva la cola, los encargos y la puerta, y ve las cifras (sin importes) y las reseñas.')
+    + papel('Encargado', 'además publica, edita la ficha y las herramientas, e invita o quita empleados.')
+    + papel('Propietario', 'todo, también el plan, los datos del negocio y los encargados.'));
+}
+
+// Equipo, como la app: primero quién está (lo de cada día), las
+// invitaciones sin contestar y, debajo, añadir a alguien con «¿Quién puede
+// qué?» junto al rol.
 PAGES.equipo = async (v) => {
   const [team, invites] = await Promise.all([
     rpc('business_team', { p_id: BIZ.id }),
@@ -6845,20 +6923,25 @@ PAGES.equipo = async (v) => {
   ]);
   const canManage = ['owner', 'manager'].includes(BIZ.role);
   v.innerHTML = `
-    <div class="page-head"><h1>Equipo</h1><span class="spacer"></span>
-      ${canManage ? '<button class="btn sm primary" id="add">Añadir a alguien</button>' : ''}</div>
-    ${helpBox('¿Quién puede qué?', bi('<p><b>Empleado</b>: valida códigos QR. <b>Encargado</b>: además publica, edita la ficha y lleva el equipo. <b>Propietario</b>: todo; no se le puede cambiar el rol desde aquí.</p>',
-      '<p><b>Staff</b>: validates QR codes. <b>Manager</b>: also publishes, edits the business page and runs the team. <b>Owner</b>: everything; their role can\'t be changed from here.</p>'))}
+    <div class="page-head"><h1>Equipo</h1></div>
     <div id="list"></div>
-    ${invites.length ? `<div class="card" style="margin-top:14px"><h2>Invitaciones pendientes</h2>
+    ${invites.length ? `<div class="card" style="margin-top:14px" id="invitaciones"><h2>Invitaciones pendientes</h2>
       <p class="muted">Aún no han contestado. Caducan a los 14 días y puedes cancelarlas.</p>
       ${table({ cols: [
         { h: 'Correo', r: (i) => esc(i.email) },
         { h: 'Rol', r: (i) => tag(i.role) },
         { h: 'Fecha de invitación', r: (i) => fmtDate(i.created_at) },
         { h: 'Caduca', r: (i) => (i.expires_at ? fmtDate(i.expires_at) : '—') },
-        { h: '', r: (i) => canManage ? `<button class="btn sm ghost" data-cancel="${esc(i.id)}">Cancelar</button>` : '' },
-      ], rows: invites })}</div>` : ''}`;
+        { h: '', r: (i) => canManage ? `<button class="btn sm ghost" type="button" data-cancel="${esc(i.id)}">Cancelar</button>` : '' },
+      ], rows: invites })}</div>` : ''}
+    ${canManage ? `<div class="card" style="margin-top:14px"><h2>Añadir a alguien al equipo</h2>
+      <form class="form" id="anadir" novalidate>
+      <label class="f"><span>Correo</span><input name="email" type="email" autocomplete="off" required></label>
+      <label class="f"><span>Rol</span><select name="role"><option value="staff">Empleado</option><option value="manager">Encargado</option></select></label>
+      ${quienPuedeQue()}
+      <p class="muted full" style="margin:0">${esc(I18N.t('Le llega una invitación (en la app y por correo) que tiene que aceptar. Si aún no tiene cuenta, la verá al crearla con ese correo. Caduca a los 14 días. Tiene que tener 16 años (18 si tu negocio es +18).'))}</p>
+      <div class="actions full"><button class="btn primary" type="submit">Añadir</button></div>
+    </form></div>` : quienPuedeQue()}`;
   $('#list').innerHTML = table({
     cols: [
       { h: 'Persona', r: (m) => `<b class="title">${esc(m.display_name || m.email || '')}</b><span class="sub">${esc(m.email || '')}</span>` },
@@ -6872,25 +6955,27 @@ PAGES.equipo = async (v) => {
     rows: team,
   });
   if (canManage) {
-    $('#add').onclick = async () => {
-      const r = await modal({
-        title: 'Añadir a alguien al equipo',
-        intro: esc(I18N.t('Le llega una invitación (en la app y por correo) que tiene que aceptar. Si aún no tiene cuenta, la verá al crearla con ese correo. Caduca a los 14 días. Tiene que tener 16 años (18 si tu negocio es +18).')),
-        fields: [
-          { name: 'email', label: 'Correo', type: 'email', required: true },
-          { name: 'role', label: 'Rol', type: 'select', value: 'staff', options: [['staff', 'Empleado'], ['manager', 'Encargado']] },
-        ],
-        submit: 'Añadir',
-      });
-      if (!r) return;
+    const form = $('#anadir', v);
+    form.onsubmit = async (ev) => {
+      ev.preventDefault();
+      const boton = $('button[type="submit"]', form);
+      const email = form.elements.email.value.trim();
+      // Un correo mal escrito no se manda (como la app).
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+        toast(friendly('invalid_email'), true);
+        form.elements.email.focus();
+        return;
+      }
+      if (boton.disabled) return;
+      boton.disabled = true;
       try {
-        const res = await rpc('add_business_member', { p_business_id: BIZ.id, p_email: r.email, p_role: r.role });
-        if (!res.ok) { toast(friendly(res.error), true); return; }
+        const res = await rpc('add_business_member', { p_business_id: BIZ.id, p_email: email, p_role: form.elements.role.value });
+        if (!res.ok) { toast(friendly(res.error), true); boton.disabled = false; return; }
         // Siempre es una invitación que la persona acepta (antes, con cuenta,
         // entraba sin que se le preguntara).
         toast(res.invited ? 'Invitación enviada: entrará en el equipo cuando la acepte' : 'Añadido al equipo');
         route();
-      } catch (e) { toast(friendly(e.message), true); }
+      } catch (e) { toast(friendly(e.message), true); boton.disabled = false; }
     };
     $$('[data-role]', v).forEach((b) => {
       b.onclick = async () => {
@@ -6901,6 +6986,8 @@ PAGES.equipo = async (v) => {
         } catch (e) { toast(friendly(e.message), true); }
       };
     });
+    // Quitar a alguien del equipo sí se pregunta: deja de ver el panel al
+    // momento y, para volver, tiene que aceptar otra invitación.
     $$('[data-remove]', v).forEach((b) => {
       b.onclick = async () => {
         if (!await confirmDlg('Quitar del equipo', 'Dejará de poder validar códigos y de ver el panel.', { danger: true, submit: 'Quitar' })) return;
@@ -6911,11 +6998,20 @@ PAGES.equipo = async (v) => {
         } catch (e) { toast(friendly(e.message), true); }
       };
     });
+    // Cancelar una invitación se deshace: sin preguntar, con «Deshacer». Se
+    // cancela de verdad cuando se va el aviso (deshacer no manda otro correo).
     $$('[data-cancel]', v).forEach((b) => {
-      b.onclick = async () => {
-        const { error } = await sb.from('business_invites').delete().eq('id', b.dataset.cancel);
-        if (error) { toast(friendly(error.message), true); return; }
-        toast('Invitación cancelada'); route();
+      b.onclick = () => {
+        const fila = b.closest('tr') || b.parentElement;
+        const id = b.dataset.cancel;
+        quitaConDeshacer('Invitación cancelada', {
+          ocultar: () => { fila.hidden = true; },
+          mostrar: () => { fila.hidden = false; },
+          hacer: async () => {
+            const { error } = await sb.from('business_invites').delete().eq('id', id);
+            if (error) { toast(friendly(error.message), true); fila.hidden = false; }
+          },
+        });
       };
     });
   }
@@ -7307,7 +7403,9 @@ PAGES.informe = async (v, param) => {
   const best = hours.slice().sort((a, b) => b.redeemed - a.redeemed)[0];
   const maxDay = Math.max(1, ...(r.daily || []).map((d) => Math.max(d.views, d.codes)));
 
-  // Una entidad no vende ni fideliza: sin euros ni clientes que repiten.
+  // Una entidad no vende ni fideliza: sin euros ni clientes que repiten. Y
+  // el personal no ve importes en ningún sitio (§4zzz-propnegC de la app; la
+  // base tampoco se los da): ni «Cuánto te ha traído» ni «Ha traído».
   const entidadCifras = typeof esEntidad === 'function' && esEntidad();
   // «Cuánto te ha traído Klendar»: al menos tantos euros en tantas visitas.
   const visitas = (n) => bi(n === 1 ? '1 visita' : `${fmtNum(n)} visitas`, n === 1 ? '1 visit' : `${fmtNum(n)} visits`);
@@ -7342,7 +7440,7 @@ PAGES.informe = async (v, param) => {
           { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
           { h: 'Códigos', num: true, r: (o) => fmtNum(o.codes) },
           { h: 'Canjes', num: true, r: (o) => fmtNum(o.redeemed) },
-          ...(entidadCifras ? [] : [{ h: 'Ha traído', num: true, r: (o) => (o.brought_cents ? esc(eurosEnteros(o.brought_cents, o.currency)) : '—') }]),
+          ...(entidadCifras || !gestiona() ? [] : [{ h: 'Ha traído', num: true, r: (o) => (o.brought_cents ? esc(eurosEnteros(o.brought_cents, o.currency)) : '—') }]),
           { h: 'Plazas libres', num: true, r: (o) => (o.max_redemptions == null ? '—' : `${o.seats_left}/${o.max_redemptions}`) },
         ],
         rows: r.offers || [],
@@ -7378,7 +7476,7 @@ PAGES.informe = async (v, param) => {
     <div class="page-head"><h1>Cifras</h1><span class="spacer"></span>
       <span class="periodo" role="group" aria-label="${esc(bi('Periodo', 'Period'))}">${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}"${d === days ? ' aria-current="true"' : ''}>${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}</span>
     </div>
-    ${entidadCifras ? '' : `<div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
+    ${entidadCifras || !gestiona() ? '' : `<div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
       ${grande ? `<p class="trajo-min">${esc(bi('Al menos', 'At least'))}</p><p class="trajo-cifra">${esc(cifraTrajo)}</p>` : ''}
       <p class="${grande ? 'muted' : ''}" style="margin:4px 0 10px">${esc(fraseTrajoTodo)}</p>
       ${comoTrajo}
@@ -7665,19 +7763,27 @@ PAGES.cerrados = async (v) => {
     })}</div>` : ''}
     ${gestiona() ? `<p class="actions cierres-anadir"><button class="btn primary principal" type="button" id="anadirCierre">${esc(I18N.t('Añadir…'))}</button></p>` : ''}`;
 
-  $$('[data-del]', v).forEach((b) => { b.onclick = async () => {
-    const c = lista[+b.dataset.del];
-    if (!(await confirmDlg('¿Quitar estos días cerrados?', I18N.t('Tus publicaciones vuelven a verse esos días.'), { submit: 'Quitar', danger: true }))) return;
-    const r = await rpc('delete_business_closure', { p_id: c.id }).catch(() => null);
-    if (!r?.ok) { toast(ERR_CIERRE[r?.error] || 'No se ha podido guardar', true); return; }
-    toast('Días cerrados quitados'); route();
+  // Quitar unos días cerrados o un día con otro horario se deshace: sin
+  // preguntar, fuera de la lista y con «Deshacer»; se quita de verdad cuando
+  // se va el aviso (como la app).
+  const quitaFila = (b, msg, fn, id, errores) => {
+    const fila = b.closest('tr') || b.parentElement;
+    const negocio = BIZ.id;
+    quitaConDeshacer(msg, {
+      ocultar: () => { fila.hidden = true; },
+      mostrar: () => { fila.hidden = false; },
+      hacer: async () => {
+        const r = await rpc(fn, { p_id: id }).catch(() => null);
+        if (!r?.ok) { toast(errores[r?.error] || 'No se ha podido guardar', true); fila.hidden = false; return; }
+        if (v.isConnected && BIZ?.id === negocio) route();
+      },
+    });
+  };
+  $$('[data-del]', v).forEach((b) => { b.onclick = () => {
+    quitaFila(b, 'Días cerrados quitados', 'delete_business_closure', lista[+b.dataset.del].id, ERR_CIERRE);
   }; });
-  $$('[data-del-dia]', v).forEach((b) => { b.onclick = async () => {
-    const d = dias[+b.dataset.delDia];
-    if (!(await confirmDlg('¿Quitar este día?', I18N.t('Ese día vuelve a ir con tu horario de siempre.'), { submit: 'Quitar', danger: true }))) return;
-    const r = await rpc('delete_business_day_hours', { p_id: d.id }).catch(() => null);
-    if (!r?.ok) { toast(PED_ERR_DIA[r?.error] || 'No se ha podido guardar', true); return; }
-    toast('Día con otro horario quitado'); route();
+  $$('[data-del-dia]', v).forEach((b) => { b.onclick = () => {
+    quitaFila(b, 'Día con otro horario quitado', 'delete_business_day_hours', dias[+b.dataset.delDia].id, PED_ERR_DIA);
   }; });
   const anadir = $('#anadirCierre', v);
   if (!anadir) return;

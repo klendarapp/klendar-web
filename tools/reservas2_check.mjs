@@ -35,7 +35,7 @@ ok('1. «Tu cuenta», igual', cuenta.includes('te la guardamos hasta las ${hora}
   && !cuenta.includes('Si ya no queda'));
 
 // 2: los cuatro sitios desde los que se cierra.
-ok('2. «Cerrado por hoy»', panel.includes('if (cerrar) await avisaEventosDelCierre({ p_until: hasta.toISOString() });'));
+ok('2. «Cerrado por hoy»', panel.includes('if (cerrar && deshacer) await avisaEventosDelCierre({ p_until: hasta.toISOString() });'));
 ok('2. «Días cerrados»', panel.includes('await avisaEventosDelCierre({ p_starts: r.from, p_ends: to });'));
 ok('2. «Cerrar hasta nuevo aviso»', panel.includes('await avisaEventosDelCierre({});'));
 ok('2. un festivo cerrado', /answer === 'closed'[^\n]*\n\s*await avisaEventosDelCierre\(\{ p_starts: q\.day, p_ends: q\.day \}\)/.test(pedir));

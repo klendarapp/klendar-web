@@ -265,7 +265,7 @@ PAGES.cola = async (v) => {
       recarga();
       return;
     }
-    colaToastDeshacer(`${e ? `${colaNumero(e.number)} · ` : ''}${I18N.t(COLA_ESTADO[estado])}`,
+    toastDeshacer(`${e ? `${colaNumero(e.number)} · ` : ''}${I18N.t(COLA_ESTADO[estado])}`,
       () => haz(null, 'queue_return', { p_entry: id }));
   };
 
@@ -361,17 +361,6 @@ PAGES.cola = async (v) => {
     $$('[data-plazo]', v).forEach((p) => { p.textContent = bi(`Le quedan ${colaQueda(p.dataset.plazo)}`, `${colaQueda(p.dataset.plazo)} left`); });
   }, 1000);
 };
-
-/** Un aviso con «Deshacer» unos segundos (como el de la app). */
-function colaToastDeshacer(msg, alDeshacer) {
-  const aviso = document.createElement('div');
-  aviso.className = 'toast';
-  aviso.innerHTML = `<span>${esc(msg)}</span> <button type="button" class="toast-accion">${esc(I18N.t('Deshacer'))}</button>`;
-  $('#toasts').appendChild(aviso);
-  const fuera = () => aviso.isConnected && aviso.parentNode.removeChild(aviso);
-  aviso.querySelector('button').onclick = () => { fuera(); alDeshacer(); };
-  setTimeout(fuera, 6000);
-}
 
 // ── En el inicio del panel ──────────────────────────────────────────────────
 /** «Cola virtual · 3 esperando», si hoy hay cola (abierta o cerrada: los de

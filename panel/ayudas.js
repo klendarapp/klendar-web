@@ -250,9 +250,19 @@ window.KAyudas = (() => {
       }
       const apagar = $('#iaApagar', caja);
       if (apagar) {
+        // Apagarlas se deshace (vuelven sin pedir otras: las de la semana se
+        // guardan): sin preguntar, con «Deshacer». Como la app.
         apagar.onclick = async () => {
-          if (!(await confirmDlg(t('¿Apagar las ideas de este negocio?'), '', { submit: t('Apagar las ideas') }))) return;
-          await rpc('set_business_ideas', { p_business: BIZ.id, p_on: false }).catch(() => {});
+          if (apagar.disabled) return;
+          apagar.disabled = true;
+          const negocio = BIZ.id;
+          try {
+            await rpc('set_business_ideas', { p_business: negocio, p_on: false });
+          } catch (e) { toast(friendly(e.message), true); apagar.disabled = false; return; }
+          toastDeshacer(t('Ideas apagadas'), async () => {
+            await rpc('set_business_ideas', { p_business: negocio, p_on: true }).catch((e) => toast(friendly(e.message), true));
+            if (caja.isConnected && BIZ?.id === negocio) pinta();
+          });
           pinta();
         };
       }
