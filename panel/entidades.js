@@ -74,7 +74,7 @@ const entError = (code) => I18N.t(ENT_ERRORES[code] || 'Algo ha fallado');
  * comprobado? (`BIZ.entity`, lo pone `entCarga`). */
 const esEntidad = () => !!(BIZ?.entity?.kind || BIZ?.entity?.pending);
 /** Lo que un panel de entidad no enseña (el menú y las rutas). */
-const SIN_ENTIDAD = ['fidelizar', 'rrpp', 'partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados', 'cola', 'grupos',
+const SIN_ENTIDAD = ['fidelizar', 'rrpp', 'partidos', 'antes-de-cerrar', 'cerrados', 'cola', 'grupos',
   'sellos', 'bonos', 'cumpleanos', 'mensajes', 'sorteos', 'cupon', 'habituales', 'plan',
   // Las herramientas del local (tanda D): tampoco escribiendo la dirección.
   'aforo', 'wifi-clientes', 'menu-del-dia', 'pedidos'];
@@ -270,11 +270,40 @@ function entPasoIncompleto(n) {
   return false;
 }
 
+/** ¿Tiene 18 años con esa fecha (`AAAA-MM-DD`)? Como `user_age_ok(…, 18)`
+ * de la base: sin fecha, no. */
+function entMayorDeEdad(fecha, hoy = new Date()) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(fecha || ''));
+  if (!m) return false;
+  const limite = new Date(hoy.getFullYear() - 18, hoy.getMonth(), hoy.getDate());
+  return new Date(+m[1], +m[2] - 1, +m[3]) <= limite;
+}
+
 async function entAlta(v, param) {
   if (!ALTA_ENT) ALTA_ENT = entAltaNueva();
   const A = ALTA_ENT;
   const paso = Math.min(3, Math.max(1, parseInt(param, 10) || 1));
   for (let n = 1; n < paso; n++) if (entPasoIncompleto(n)) { location.hash = `#/alta/entidad/${n}`; return; }
+  // Los 18 años, al empezar: antes se sabía al enviar, después de rellenarlo
+  // todo y subir el documento (§4zzz-propent). La base lo vuelve a mirar al
+  // enviar (`adult_required`). Sin red, sigue (lo dirá la base, como antes).
+  if (!A.edadOk && ME?.id) {
+    let r = null;
+    try { r = await sb.from('profiles').select('birth_date').eq('id', ME.id).maybeSingle(); } catch { /* sin red */ }
+    if (r && !r.error) {
+      const fecha = r.data?.birth_date;
+      if (!entMayorDeEdad(fecha)) {
+        v.innerHTML = `<section class="vacio" aria-labelledby="entEdadT">
+          <h1 id="entEdadT">Dar de alta una entidad</h1>
+          <p>${esc(I18N.t(ENT_ERRORES.adult_required))}</p>
+          <div class="vacio-botones">${fecha ? '' : `<a class="btn primary" href="${APP_URL}/cuenta/perfil">${esc(I18N.t('Poner mi fecha de nacimiento'))}</a>`}
+            <a class="btn" href="#/alta">Atrás</a></div></section>`;
+        I18N.translate(v);
+        return;
+      }
+      A.edadOk = true;
+    }
+  }
 
   const cuerpo = {
     1: () => `<div class="help full">Comprobamos que representas a la entidad antes de hacerla pública (normalmente en 24–48 h); hasta entonces no se puede publicar. Hace falta tener 18 años. Las entidades no pagan cuota, nunca.</div>

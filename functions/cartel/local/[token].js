@@ -7,7 +7,7 @@ import { venuePosterPage } from '../../_lib/poster.js';
 export const onRequestGet = (ctx) => {
   configure(ctx.env);
   const url = new URL(ctx.request.url);
-  return guard('es', url.pathname, () => venuePosterPage(ctx.params.token, 'es', url.searchParams.get('mesa') === '1'));
+  return guard('es', url.pathname, () => venuePosterPage(ctx.params.token, 'es', url.searchParams.get('mesa') === '1', url.searchParams.get('agenda') === '1'));
 };
 
 // HEAD igual que GET (el middleware quita el cuerpo): comprobadores de enlaces

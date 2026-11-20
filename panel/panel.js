@@ -1302,6 +1302,8 @@ const SVG = {
   school: 'M12 3 1 9l4 2.18v6L12 21l7-3.82v-6l2-1.09V17h2V9L12 3zm6.82 6L12 12.72 5.18 9 12 5.28 18.82 9zM17 15.99l-5 2.73-5-2.73v-3.72L12 15l5-2.73v3.72z',
   // QR que lleva a otra web en «Validar códigos» (gpp_maybe; no está en la
   // fuente recortada y salía «G»).
+  // Pendiente de verificación (hourglass_top: no está en la fuente recortada).
+  reloj: 'M6 2l.01 6L10 12l-3.99 4.01L6 22h12v-6l-4-4 4-3.99V2H6zm10 14.5V20H8v-3.5l4-4 4 4z',
   gpp_maybe: 'M12 2 4 5v6.09c0 5.05 3.41 9.76 8 10.91 4.59-1.15 8-5.86 8-10.91V5l-8-3zm6 9.09c0 4-2.55 7.7-6 8.83-3.45-1.13-6-4.82-6-8.83v-4.7l6-2.25 6 2.25v4.7zM11 15h2v2h-2zm0-8h2v6h-2z',
 };
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
@@ -1369,6 +1371,29 @@ const NAV_BLOQUEO = [
   ]],
 ];
 const menuActual = () => (bloqueado() ? NAV_BLOQUEO : NAV);
+/** En una entidad, sus palabras: «Tu entidad», «Dar de baja la entidad»…
+ * (Iván, 20-11; §4zzz-propent). Lo demás, tal cual. */
+const PALABRAS_ENTIDAD = {
+  'Tu negocio': 'Tu entidad',
+  'Dar de baja el negocio': 'Dar de baja la entidad',
+  '← Dar de baja el negocio': '← Dar de baja la entidad',
+  'Eliminar el negocio': 'Eliminar la entidad',
+  'Traspasar el negocio': 'Traspasar la entidad',
+  'Descargar los datos del negocio': 'Descargar los datos de la entidad',
+  'Solo el propietario puede dar de baja el negocio.': 'Solo el propietario puede dar de baja la entidad.',
+  'Cartel del local': 'Cartel «Sigue nuestra agenda»',
+};
+const palabraEntidad = (t) => (t && typeof esEntidad === 'function' && esEntidad() && PALABRAS_ENTIDAD[t]) || t;
+/** Lo mismo en una pantalla ya pintada (antes de traducirla): los títulos y
+ * botones de «Dar de baja», la ficha… sin tocar cada plantilla. */
+function palabrasEntidadEn(root) {
+  if (!root || typeof esEntidad !== 'function' || !esEntidad()) return;
+  const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = w.nextNode(); n; n = w.nextNode()) {
+    const t = n.nodeValue.trim();
+    if (t && PALABRAS_ENTIDAD[t]) n.nodeValue = n.nodeValue.replace(t, PALABRAS_ENTIDAD[t]);
+  }
+}
 /** «Esta sección es del propietario o de un encargado»: el único aviso para
  * el personal que llega a algo que no es suyo, por la dirección, un enlace o
  * «Nueva oferta» (antes había dos distintos; Iván, 20-11). Con el candado y
@@ -1395,9 +1420,10 @@ function renderNav(current) {
     const vis = items.filter((n) => visibleEnMenu(n[0]));
     if (!vis.length) return '';
     const id = `navg${g++}`;
+    const tit = palabraEntidad(titulo);
     return `<div class="nav-grupo" ${titulo ? `role="group" aria-labelledby="${id}"` : ''}>
-      ${titulo ? `<p class="group" id="${id}">${esc(titulo)}</p>` : ''}
-      ${vis.map((n) => `<a class="nav ${marcada(current, n) ? 'on' : ''}" href="#/${n[0]}"${marcada(current, n) ? ' aria-current="page"' : ''}>${icono(n[1])}<span>${esc(n[2])}</span></a>`).join('')}
+      ${titulo ? `<p class="group" id="${id}">${esc(tit)}</p>` : ''}
+      ${vis.map((n) => `<a class="nav ${marcada(current, n) ? 'on' : ''}" href="#/${n[0]}"${marcada(current, n) ? ' aria-current="page"' : ''}>${icono(n[1])}<span>${esc(palabraEntidad(n[2]))}</span></a>`).join('')}
     </div>`;
   }).join('');
   I18N.translate($('#nav'));
@@ -1556,7 +1582,7 @@ async function route() {
   try {
     await (PAGES[page] || PAGES.resumen)(v, param);
     if (n === RUTA_N) {
-      sinDobleEnvio(v); I18N.translate(v);
+      sinDobleEnvio(v); palabrasEntidadEn(v); I18N.translate(v);
       // Cambiar de pantalla con el teclado o un lector de pantalla: el foco va
       // al título de la nueva (si no, se queda en un enlace que ya no está).
       if (FOCO_AL_TITULO) {
@@ -1610,6 +1636,18 @@ function avisoVerificacion() {
     : rechazado && gestiona() ? `<button class="btn sm primary" type="button" id="otra-revision">${ms('check')}${esc(I18N.t('Pedir otra revisión'))}</button>` : ''}</p></div>`;
 }
 
+/** «Pendiente de verificación · Lo que publiques se verá cuando…», en una
+ * línea: cuando arriba hay otro aviso más grave y el de la verificación no
+ * cabe (como la app; §4zzz-propent). */
+function lineaVerificacion() {
+  const ent = typeof esEntidad === 'function' && esEntidad();
+  // Con el alta de entidad aún sin comprobar no se puede publicar.
+  const txt = BIZ.entity?.pending ? 'Podrás publicar cuando verifiquemos la entidad.'
+    : ent ? 'Lo que publiques se verá cuando verifiquemos la entidad.'
+      : 'Lo que publiques se verá cuando verifiquemos tu negocio.';
+  return `<p class="linea-pendiente">${svg('reloj', 18)}<span><b>${esc(I18N.t('Pendiente de verificación'))}</b> · ${esc(I18N.t(txt))}</span></p>`;
+}
+
 /** Cambian las condiciones para negocios (Reglamento (UE) 2019/1150, art.
  * 3.2; `business_terms_notice`): qué cambia, desde cuándo, las condiciones y
  * su historial, «Dar de baja el negocio» (sin coste hasta esa fecha) y
@@ -1621,7 +1659,13 @@ function avisoCondiciones(t) {
   const dia = new Date(`${String(t.applies_on).slice(0, 10)}T12:00:00Z`)
     .toLocaleDateString(LOC(), { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
   const url = `${APP_URL}${en ? '/en/business-terms' : '/negocios'}`;
-  const resumen = (en && t.summary_en) || t.summary_es || '';
+  // Una entidad: lo que escribe administración suele ser de un apartado de
+  // negocios («Dónde verlo», el cobro…); a ella, lo general y el historial
+  // para ver qué cambia. Y «la entidad», no «el negocio» (§4zzz-propent).
+  const ent = typeof esEntidad === 'function' && esEntidad();
+  const resumen = ent
+    ? I18N.t('Hemos actualizado las condiciones. Puedes ver qué cambia, apartado por apartado, en «Historial de cambios».')
+    : (en && t.summary_en) || t.summary_es || '';
   const n = t.more || 0;
   const otros = n > 0
     ? ' ' + bi(n === 1 ? 'Hay 1 cambio más en el historial.' : `Hay ${n} cambios más en el historial.`,
@@ -1629,6 +1673,8 @@ function avisoCondiciones(t) {
     : '';
   const cuando = t.applied
     ? bi(`Se aplican desde el ${dia}.`, `They apply from ${dia}.`)
+    : ent ? bi(`Se aplican desde el ${dia}. Si no estás de acuerdo, puedes dar de baja la entidad sin coste antes de esa fecha.`,
+      `They apply from ${dia}. If you don't agree, you can take your organisation off Klendar at no cost before then.`)
     : bi(`Se aplican desde el ${dia}. Si no estás de acuerdo, puedes dar de baja el negocio sin coste antes de esa fecha.`,
       `They apply from ${dia}. If you don't agree, you can close your business on Klendar at no cost before then.`);
   // En catalán, gallego, euskera, francés, alemán e italiano: en qué idioma
@@ -1637,11 +1683,11 @@ function avisoCondiciones(t) {
     ? `<p class="muted small" style="margin:2px 0 0">${esc(en ? I18N.t('Las condiciones se abren en inglés. La versión que vale es la española.') : I18N.t('Las condiciones están en español, que es la versión que vale.'))}</p>`
     : '';
   return `<div class="help aviso-condiciones"><b>${esc(I18N.t('Cambian las condiciones para negocios'))}</b>
-    <p style="margin:6px 0 0" translate="no">${esc(resumen)}</p>${nota}
+    <p style="margin:6px 0 0"${ent ? '' : ' translate="no"'}>${esc(resumen)}</p>${nota}
     <p class="muted" style="margin:6px 0 0">${esc(cuando + otros)}</p>
     <p style="margin:8px 0 0"><a class="link" href="${esc(url)}" target="_blank" rel="noopener">${esc(I18N.t('Ver las condiciones'))}</a>
       &nbsp;·&nbsp; <a class="link" href="${esc(url)}#historial" target="_blank" rel="noopener">${esc(I18N.t('Historial de cambios'))}</a></p>
-    <p class="botones-iguales" style="margin:10px 0 0"><a class="btn sm" href="#/baja">${esc(I18N.t('Dar de baja el negocio'))}</a>
+    <p class="botones-iguales" style="margin:10px 0 0"><a class="btn sm" href="#/baja">${esc(I18N.t(ent ? 'Dar de baja la entidad' : 'Dar de baja el negocio'))}</a>
       <button class="btn sm" type="button" id="condiciones-ok">${esc(I18N.t('Entendido'))}</button></p></div>`;
 }
 
@@ -1706,7 +1752,15 @@ function causaBloqueo(bill) {
     case 'cancel': return bi(`Tu suscripción se canceló y terminó el ${dia}. Para seguir, vuelve a contratar el plan.`, `Your subscription was cancelled and ended on ${dia}. To carry on, sign up for the plan again.`);
     case 'unpaid': return bi('No hemos podido cobrar el plan y ha pasado el margen para ponerlo al día. Para seguir, paga lo pendiente.', 'We couldn’t take the payment for the plan and the time to settle it has run out. To carry on, pay what’s due.');
     case 'dispute': return bi('El banco ha devuelto el recibo del plan. Para resolverlo, escríbenos a info@klendar.app.', 'The bank returned the payment for the plan. To sort it out, write to us at info@klendar.app.');
-    case 'entity': return bi('Ya no es una cuenta de entidad y no tiene ningún plan. Para seguir, elige tu plan.', 'It’s no longer an organisation account and has no plan. To carry on, choose your plan.');
+    case 'entity': {
+      // Con el motivo que escribió administración (`block_reason`, en inglés
+      // si lo hay para en, fr, de e it; migración 20261288800000 de la app).
+      const m0 = String((I18N.pub === 'en' && bill.block_reason_en) || bill.block_reason || '').trim();
+      const m = m0 && !/[.!?…]$/.test(m0) ? `${m0}.` : m0;
+      return m
+        ? bi(`Ya no es una cuenta de entidad y no tiene ningún plan. Motivo: ${m} Para seguir, elige tu plan.`, `It’s no longer an organisation account and has no plan. Reason: ${m} To carry on, choose your plan.`)
+        : bi('Ya no es una cuenta de entidad y no tiene ningún plan. Para seguir, elige tu plan.', 'It’s no longer an organisation account and has no plan. To carry on, choose your plan.');
+    }
     case 'none': return bi('No tiene ningún plan. Para seguir, elige tu plan.', 'It has no plan. To carry on, choose your plan.');
     default: return null;
   }
@@ -1962,16 +2016,23 @@ PAGES.resumen = async (v) => {
   // Lo último del «un solo aviso arriba»: a la ficha le falta el horario o
   // una foto. Sale si no hay otro aviso ni pregunta de festivo (la pinta
   // pedFestivo después) ni «Primeros pasos» (allí ya lo dice).
+  // Pendiente de verificación con otro aviso más grave arriba (las
+  // condiciones, cerrado por hoy…): en una línea, que se vea igual (como Hoy
+  // en la app; §4zzz-propent).
+  const avisoEsVerif = !cerradoDeVerdad && !condiciones && !(pausado() && !cerradoIndef())
+    && BIZ.verification_status !== 'verified';
+  const lineaPendiente = BIZ.verification_status === 'pending' && !avisoEsVerif ? lineaVerificacion() : '';
   const fichaSitios = !aviso && candidato && !primeros && !sinLocal && BIZ.verification_status === 'verified'
     ? fichaSitiosFalta(ficha) : null;
   // Lo de «Tu negocio» (el resto está en el menú): botones iguales.
   const negocioBtn = (href, icon, txt) => `<a class="herr-btn" href="${href}">${icono(icon)}<span>${esc(I18N.t(txt))}</span></a>`;
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1>${BIZ.entity?.kind ? `<span class="tag badge-entidad">${icono('entidad')} ${esc(entSello(BIZ.entity.kind))}</span>` : ''}<span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
-      ${!cerradoIndef() && !pausado() && gestiona() && BIZ.verification_status === 'verified'
+      ${!cerradoIndef() && !pausado() && gestiona() && BIZ.verification_status === 'verified' && !entidad
         ? `<button class="btn sm ghost" type="button" id="pausa" title="${esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}">${esc(I18N.t('Cerrar por hoy'))}</button>` : ''}
       <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
     ${aviso}
+    ${lineaPendiente}
     ${aviso ? '' : '<div id="festivoCaja"></div>'}
     ${fichaSitios ? '<div id="fichaSitiosCaja"></div>' : ''}
     <!-- Crear y validar, iguales y uno al lado del otro (como «Mi negocio» en
@@ -1979,7 +2040,7 @@ PAGES.resumen = async (v) => {
          en coral y «Validar códigos» en tinta. Un empleado no publica: solo
          «Validar códigos», y en coral (es su botón principal). -->
     <div class="quick quick-2">
-      ${gestiona() ? `<button class="primary" data-go="crear">${svg('mas', 24).replace('class="ms svg"', 'class="ic ms svg"')}Crear<small>Oferta, evento o novedad</small></button>` : ''}
+      ${gestiona() ? `<button class="primary" data-go="crear">${svg('mas', 24).replace('class="ms svg"', 'class="ic ms svg"')}Crear<small>${entidad ? 'Evento o novedad' : 'Oferta, evento o novedad'}</small></button>` : ''}
       <button class="${gestiona() ? 'tinta' : 'primary'}" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
     </div>
     ${primeros ? `<div class="card primeros" style="margin-top:14px"><h2>${sugerencias.length ? 'Primeros pasos' : 'Completa tu ficha'}</h2>
@@ -2034,7 +2095,7 @@ PAGES.resumen = async (v) => {
       <small>${esc(typeof esEntidad === 'function' && esEntidad()
         ? bi('Series, tele, enlaces, tu web… Activa lo que te sirva.', 'Series, TV, links, your website… Turn on whatever helps.')
         : bi('Cola virtual, tele, partidos, carta… Activa lo que te sirva.', 'Virtual queue, TV, matches, menu… Turn on whatever helps.'))}</small></span>${ms('chevron_right')}</a>
-    <h2 class="grupo-titulo">${esc(bi('Tu negocio', 'Your business'))}</h2>
+    <h2 class="grupo-titulo">${esc(entidad ? bi('Tu entidad', 'Your organisation') : bi('Tu negocio', 'Your business'))}</h2>
     <div class="herr-grid">
       ${gestiona() ? negocioBtn('#/equipo', 'group', 'Equipo') : ''}
       ${negocioBtn('#/resenas', 'reviews', 'Reseñas')}
@@ -2231,10 +2292,10 @@ PAGES.publicaciones = async (v, param) => {
   OTROS_LOCALES = otros || [];
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
-      ${gestiona() ? `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>
+      ${gestiona() ? `${esEntidad() ? '' : `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>`}
       <a class="btn sm" href="#/publicaciones/nuevo-evento">${ms('event')}Nuevo evento</a>` : ''}
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
-    ${helpBox('¿Oferta o evento?', bi('<p><b>Oferta</b>: de unas horas a varios días, o cada semana, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
+    ${esEntidad() ? '' : helpBox('¿Oferta o evento?', bi('<p><b>Oferta</b>: de unas horas a varios días, o cada semana, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
       '<p><b>Offer</b>: from a few hours to several days, or every week, with a countdown and a limit (“coffee + toast €2.50 until noon”). <b>Event</b>: something with a date, which people save to their agenda and where people can reserve a place.</p>'))}
     <div class="pubs-barra"><div id="filtroArch"></div><div id="vistaSw"></div></div>
     <div id="list"></div>
@@ -2356,8 +2417,8 @@ PAGES.publicaciones = async (v, param) => {
     $('#list').innerHTML = !nTotal && !offers.length
       ? `<div class="card sin-pubs"><h2>${esc(I18N.t('Todavía no has publicado nada.'))}</h2>
           <p class="muted">${esc(I18N.t('Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.'))}</p>
-          ${gestiona() ? `<p class="actions" style="margin:12px 0 0"><a class="btn primary" href="#/publicaciones/nueva-flash">${ms('bolt')}${esc(I18N.t('Nueva oferta'))}</a>
-          <a class="btn" href="#/publicaciones/nuevo-evento">${ms('event')}${esc(I18N.t('Nuevo evento'))}</a></p>` : ''}</div>`
+          ${gestiona() ? `<p class="actions" style="margin:12px 0 0">${esEntidad() ? '' : `<a class="btn primary" href="#/publicaciones/nueva-flash">${ms('bolt')}${esc(I18N.t('Nueva oferta'))}</a>`}
+          <a class="btn${esEntidad() ? ' primary' : ''}" href="#/publicaciones/nuevo-evento">${ms('event')}${esc(I18N.t('Nuevo evento'))}</a></p>` : ''}</div>`
       : (vista === 'lista' ? tablaPublicaciones(filas) : tarjetasPublicaciones(filas)) + (hayMas ? botonVerMas('pubs') : '');
     activaVideos($('#list'));
     const mas = $('[data-ver-mas="pubs"]', $('#list'));
@@ -2995,6 +3056,16 @@ async function offerForm(v, id, kindDefault, desde = null) {
   const serieCopia = !id && desde?.from
     ? (await seriesDeNegocio()).find((s) => s.status === 'active' && (s.offer_ids || []).includes(desde.from)) || null
     : null;
+  // Una entidad (ayuntamiento, asociación…): solo eventos gratis, sin
+  // descuento, precio, «Quién la ve», primera visita ni +18 (la base tampoco
+  // lo deja: `entity_events_only`; §4zzz-propent). Lo nuevo que llega como
+  // oferta (el calendario, una idea) se abre como evento; lo de antes de
+  // ser entidad se edita tal cual.
+  const entidadPub = typeof esEntidad === 'function' && esEntidad();
+  if (entidadPub && !id) {
+    o = { ...o, discount: null, price_cents: null, adults_only: false, audience: 'all' };
+    if (o.kind !== 'future_event') o = { ...o, kind: 'future_event', event_at: o.event_at || o.redeem_start_at, event_end_at: null };
+  }
   let kind = o.kind === 'future_event' ? 'future_event' : 'flash_offer';
   const isFlash = () => kind === 'flash_offer';
   const disc = o.discount || {};
@@ -3071,9 +3142,9 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <button type="button" role="menuitem" id="saveTpl">Guardar como plantilla…</button>
           <button type="button" role="menuitem" id="borraTpl">Borrar plantillas…</button>
         </div></details></div>
-    <p class="tipo-linea"><span id="tipoPregunta"></span> <button type="button" class="linkbtn" id="cambiaTipo"></button></p>
+    <p class="tipo-linea"${entidadPub ? ' hidden' : ''}><span id="tipoPregunta"></span> <button type="button" class="linkbtn" id="cambiaTipo"></button></p>
     <div class="pub-editor">
-    <form class="pub-form" id="form" novalidate>
+    <form class="pub-form${entidadPub ? ' es-entidad' : ''}" id="form" novalidate>
       <input type="hidden" name="kind" value="${kind}">
       <div id="ideaIA"></div>
       <div id="fotoRellena"></div>
@@ -3099,7 +3170,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       </fieldset>
       ${organizador ? dondeHtml : ''}
       ${quienActuaHtml()}
-      <fieldset class="f plano" id="descuento"><legend>Descuento</legend>
+      <fieldset class="f plano solo-negocio" id="descuento"><legend>Descuento</legend>
         ${elige('discount_type', [['', I18N.t('Sin descuento')], ['percent', '%'], ['fixed', I18N.t('Precio fijo')], ['2x1', '2x1'], ['free', I18N.t('Gratis')], ['other', I18N.t('Otro')]], disc.type || '', I18N.t('Descuento'))}
         <div class="dos" id="descFila">
           <label class="f" id="valorRow"><span id="valorTxt">${esc(I18N.t('Descuento'))}</span><input name="discount_value" value="${esc(cifraDescuento(disc))}"></label>
@@ -3112,14 +3183,18 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <p class="hint" id="alcAyuda">Solo la verán mayores de 18. Comprueba que tu comunidad lo permite.</p>
         </div>
       </fieldset>
-      <label class="f"><span>Precio <small>(opcional)</small></span><input name="price" inputmode="decimal" value="${o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="12,00"></label>
+      <label class="f solo-negocio"><span>Precio <small>(opcional)</small></span><input name="price" inputmode="decimal" value="${o.price_cents == null ? '' : (o.price_cents / 100).toFixed(2).replace('.', ',')}" placeholder="12,00"></label>
       <label class="f" id="entradasRow"><span>Enlace de entradas <small>(opcional)</small></span><input name="external_url" value="${esc(o.external_url || '')}" placeholder="https://"></label>
       <p class="hint" id="entradasAyuda" hidden></p>
       ${ayuda([
-        [I18N.t('Oferta'), I18N.t('De unas horas a varios días, o cada semana.')],
-        [I18N.t('Evento'), I18N.t('Con fecha y hora. Puede tener precio y enlace para entradas.')],
-        [I18N.t('Precio anterior'), I18N.t('Obligatorio al anunciar una rebaja: tiene que ser el precio más bajo que hayas tenido en los últimos 30 días.')],
-        [I18N.t('¿Incluye bebidas alcohólicas?'), I18N.t('Hay que responder: varias comunidades prohíben el 2x1 en bebidas alcohólicas y la sanción es para el negocio. Si el 2x1 es de comida, refrescos o servicios, marca «No lleva alcohol».')],
+        ...(entidadPub ? [
+          [I18N.t('Evento'), I18N.t('Con fecha y hora, gratis. Puede llevar un enlace para apuntarse.')],
+        ] : [
+          [I18N.t('Oferta'), I18N.t('De unas horas a varios días, o cada semana.')],
+          [I18N.t('Evento'), I18N.t('Con fecha y hora. Puede tener precio y enlace para entradas.')],
+          [I18N.t('Precio anterior'), I18N.t('Obligatorio al anunciar una rebaja: tiene que ser el precio más bajo que hayas tenido en los últimos 30 días.')],
+          [I18N.t('¿Incluye bebidas alcohólicas?'), I18N.t('Hay que responder: varias comunidades prohíben el 2x1 en bebidas alcohólicas y la sanción es para el negocio. Si el 2x1 es de comida, refrescos o servicios, marca «No lleva alcohol».')],
+        ]),
         [I18N.t('Programar publicación'), I18N.t('Un borrador no lo ve nadie hasta que lo publiques. «Programar» lo deja en borrador y lo publica solo a la hora que elijas (hasta 60 días).')],
       ])}
 
@@ -3193,12 +3268,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
       ${guiasHtml()}
       ${bloque('bMas', I18N.t('Más opciones'), `
         <label class="opcion bl-fila" id="cierreRow"><input type="checkbox" name="before_closing" ${o.style?.badge === 'before_closing' ? 'checked' : ''}><span><b>Antes de cerrar</b><br><small class="muted">Lo que te sobra del día, con descuento y para recoger hasta el cierre. Sale con su sello y en el filtro «Antes de cerrar».</small></span></label>
-        <fieldset class="f full filtro-sellos"><legend>Quién la ve</legend>
+        <fieldset class="f full filtro-sellos solo-negocio"><legend>Quién la ve</legend>
           ${AUDIENCIAS.map(([k, t]) => `<label class="opcion"><input type="radio" name="audience" value="${k}" ${(o.audience || 'all') === k ? 'checked' : ''}><span>${esc(t)}</span></label>`).join('')}
           <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Los demás ven que es exclusiva, sin el beneficio.</p>
           ${rrppHtml.quien}
         </fieldset>
-        <label class="opcion bl-fila" id="primeraRow"${(o.audience || 'all') === 'promoters' ? ' hidden' : ''}><input type="checkbox" name="first_visit" ${o.style?.first_visit === true || /[?&]primera=1\b/.test(location.hash) ? 'checked' : ''}><span><b>${esc(bi('Solo para quien viene por primera vez', 'First-time visitors only'))}</b><br><small class="muted">${esc(bi('Solo la podrá sacar quien no haya canjeado nunca nada en tu negocio. Tu equipo no cuenta.', "Only people who have never redeemed anything at your business can get it. Your team doesn't count."))}</small></span></label>
+        <label class="opcion bl-fila solo-negocio" id="primeraRow"${(o.audience || 'all') === 'promoters' ? ' hidden' : ''}><input type="checkbox" name="first_visit" ${o.style?.first_visit === true || /[?&]primera=1\b/.test(location.hash) ? 'checked' : ''}><span><b>${esc(bi('Solo para quien viene por primera vez', 'First-time visitors only'))}</b><br><small class="muted">${esc(bi('Solo la podrá sacar quien no haya canjeado nunca nada en tu negocio. Tu equipo no cuenta.', "Only people who have never redeemed anything at your business can get it. Your team doesn't count."))}</small></span></label>
         <div class="bl-fila">
           <p class="etq">${esc(MK.cardTitle)}</p>
           ${eligeVarios('card_requirements', KMp.CARDS.map((c) => [c, MK.card[c]]), o.card_requirements, MK.cardTitle)}
@@ -3222,7 +3297,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
         </div>
         <label class="opcion bl-fila"><input type="checkbox" name="solo_friendly" ${o.solo_friendly ? 'checked' : ''}><span><b>${esc(MK.solo)}</b><br><small class="muted">${esc(MK.soloHint)}</small></span></label>
         <label class="opcion bl-fila" id="solidarioRow"><input type="checkbox" name="charity" ${o.charity ? 'checked' : ''}><span><b>${esc(MK.charity)}</b><br><small class="muted">${esc(MK.charityHint)}</small></span></label>
-        <label class="opcion bl-fila"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span><b>Solo para mayores de 18</b><br><small class="muted">Si menciona alcohol, se marca +18 solo y sale al momento.</small></span></label>
+        <label class="opcion bl-fila solo-negocio"><input type="checkbox" name="adults_only" ${o.adults_only ? 'checked' : ''}><span><b>Solo para mayores de 18</b><br><small class="muted">Si menciona alcohol, se marca +18 solo y sale al momento.</small></span></label>
         <label class="f bl-fila" id="escuchaRow"><span>${esc(MK.listenField)}</span><input name="listen_url" type="url" inputmode="url" maxlength="300" autocomplete="off" spellcheck="false" placeholder="https://open.spotify.com/…" value="${esc(o.listen_url || '')}">
           <small class="hint" id="escuchaAyuda">${esc(MK.listenHint)}</small></label>
         <label class="f bl-fila"><span>Condiciones <small>(letra pequeña)</small></span><textarea name="terms" rows="2" maxlength="300" placeholder="${esc(I18N.t('Ej. Solo en el local. No acumulable.'))}">${esc(o.terms || '')}</textarea></label>
@@ -4292,6 +4367,10 @@ async function offerForm(v, id, kindDefault, desde = null) {
     // Cambios que la base avisa a quien ya tiene reserva o código (la misma
     // regla que `offers_codes_follow`): cuándo es (alargar el final no
     // cuenta), pausarla o marcarla +18. Se dice antes de guardar.
+    // Una entidad: gratis, para todo el mundo, sin primera visita ni +18.
+    if (entidadPub) {
+      Object.assign(data, { discount: null, price_cents: null, audience: 'all', first_visit_only: false, adults_only: false });
+    }
     if (id && !['cancelled', 'archived'].includes(data.status)) {
       const min = (s) => (s ? Math.floor(new Date(s).getTime() / 6e4) : null);
       const evento = data.kind === 'future_event';
@@ -4573,7 +4652,7 @@ PAGES.calendario = async (v, param) => {
     const delDia = porDia.get(dia) || [];
     const proximo = delDia.length ? null : await siguienteDe(dia);
     const crear = gestiona() ? `<div class="actions cal-crear">
-        <a class="btn sm" href="#/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta este día'))}</a>
+        ${esEntidad() ? '' : `<a class="btn sm" href="#/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta este día'))}</a>`}
         <a class="btn sm" href="#/publicaciones/nuevo-evento?dia=${dia}">${ms('event')}${esc(I18N.t('Evento este día'))}</a></div>` : '';
     $('#cal', v).innerHTML = `
       <section class="cal-mes" aria-labelledby="calTitulo">
@@ -6604,6 +6683,7 @@ PAGES['cartel-local'] = async (v) => {
   if (d?.ok === false) throw new Error(friendly(d.error));
   const base = I18N.pub === 'en' ? '/en/poster/venue/' : '/cartel/local/';
   const url = `https://klendar.app/v/${d.token}`;
+  if (typeof esEntidad === 'function' && esEntidad()) { cartelAgenda(v, d, base, url); return; }
   const tarjetas = d.visit_cards || [];
   const nombres = tarjetas.map((c) => c.name).join(', ');
   const n = d.visit_stamps_30d || 0;
@@ -6652,6 +6732,34 @@ PAGES['cartel-local'] = async (v) => {
     };
   }
 };
+
+/** El cartel de una entidad: «Sigue nuestra agenda», con el mismo QR (lleva
+ * a su ficha con todo lo que publica), sin dirección ni sellos. Se imprime
+ * en la web con `?agenda=1`. Como la app (Iván, 20-11; §4zzz-propent). */
+function cartelAgenda(v, d, base, url) {
+  const q = (mesa) => `${base}${esc(d.token)}?agenda=1${mesa ? '&mesa=1' : ''}`;
+  v.innerHTML = `
+    <p class="crumbs"><a href="#/herramientas">${esc(bi('Más herramientas', 'More tools'))}</a></p>
+    <div class="page-head"><h1>${esc(I18N.t('Cartel «Sigue nuestra agenda»'))}</h1></div>
+    ${helpBox('¿Para qué sirve?', `<p>${esc(I18N.t('Para el tablón de anuncios, la entrada o tus actividades. Quien lo escanea con la cámara del móvil ve tu ficha con todo lo que publicas y puede seguirte para enterarse de lo próximo.'))}</p>`)}
+    <div class="card cartel-local">
+      <div id="qr" class="cl-qr" role="img" aria-label="QR ${esc(url)}"></div>
+      <div class="cl-txt">
+        <p><b>${esc(I18N.t('Sigue nuestra agenda'))}</b></p>
+        <p class="muted">${esc(I18N.t('Escanea para ver todo lo que organizamos y seguirnos'))}</p>
+        <p class="acciones">
+          <a class="btn primary" href="${q(false)}" target="_blank" rel="noopener">Imprimir en A4</a>
+          <a class="btn" href="${q(true)}" target="_blank" rel="noopener">Imprimir tamaño mesa</a>
+        </p>
+        <p class="hint">${esc(I18N.t('Tamaño mesa: cuatro por folio, para recortar.'))}</p>
+        <p class="cartel-url">${esc(url)}</p>
+      </div>
+    </div>`;
+  const qr = window.qrcode(0, 'M');
+  qr.addData(url);
+  qr.make();
+  $('#qr', v).innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+}
 
 // ── Poner en la tele ────────────────────────────────────────────────────────
 // «Klendar en la tele del local»: klendar.app/tv abierto en la tele enseña un

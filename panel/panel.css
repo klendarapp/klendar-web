@@ -1308,3 +1308,12 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .resumen-preguntas dt { font-weight: 600; margin-top: 8px; }
 .resumen-preguntas dd { margin: 0; }
 .respuestas-fila { display: block; font-size: .86em; }
+
+/* Entidades (§4zzz-propent): lo que una entidad no tiene en el formulario de
+   publicar (descuento, precio, «Quién la ve», primera visita, +18). */
+.es-entidad .solo-negocio { display: none !important; }
+/* «Pendiente de verificación · …» en una línea, debajo de un aviso más grave. */
+.linea-pendiente { display: flex; gap: 8px; align-items: flex-start; margin: 10px 0 0; font-size: 14px; }
+.linea-pendiente .svg { flex: none; margin-top: 1px; }
+.linea-pendiente span { color: var(--ink-2, inherit); }
+.linea-pendiente b { color: var(--ink, inherit); }

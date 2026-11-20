@@ -138,6 +138,10 @@ const TV = {
     help: 'Para la barra, la puerta o las mesas. Se imprime igual en blanco y negro.',
     helpTable: 'Cuatro por folio: recórtalos por las líneas y ponlos en las mesas.',
     changed: 'Este cartel ya no vale', changedBody: 'El local ha cambiado su QR. Imprime el cartel nuevo desde el panel o desde la app.',
+    // Una entidad (`?agenda=1`): «Sigue nuestra agenda», sin dirección ni sellos.
+    agendaTitle: 'Cartel «Sigue nuestra agenda»', agendaHead: 'Sigue nuestra agenda',
+    agendaScan: 'Escanea para ver todo lo que organizamos y seguirnos',
+    agendaHelp: 'Para el tablón de anuncios, la entrada o tus actividades. Se imprime igual en blanco y negro.',
   },
   en: {
     lang: 'en', title: 'Venue poster', point: 'Point your phone camera here', print: 'Print',
@@ -147,6 +151,9 @@ const TV = {
     help: 'For the counter, the door or the tables. It prints fine in black and white.',
     helpTable: 'Four per sheet: cut along the lines and put them on the tables.',
     changed: 'This poster no longer works', changedBody: 'The venue has changed its QR code. Print the new poster from the dashboard or the app.',
+    agendaTitle: '“Follow our events” poster', agendaHead: 'Follow our events',
+    agendaScan: 'Scan to see everything we organise and follow us',
+    agendaHelp: 'For the notice board, the entrance or your activities. It prints fine in black and white.',
   },
 };
 
@@ -171,7 +178,7 @@ ${erroresScript()}
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <style>${FUENTES}</style>`;
 
-export async function venuePosterPage(token, lang, mesa) {
+export async function venuePosterPage(token, lang, mesa, agenda = false) {
   const S = TV[lang === 'en' ? 'en' : 'es'];
   const base = lang === 'en' ? '/en/poster/venue' : '/cartel/local';
   const valido = /^[A-Za-z0-9_-]{16}$/.test(token || '');
@@ -188,6 +195,16 @@ export async function venuePosterPage(token, lang, mesa) {
   if (!b?.name) return notFound(S.lang, `${base}/${token}`, 'b');
 
   const url = `https://klendar.app/v/${token}`;
+  if (agenda) {
+    // Una entidad (ayuntamiento, asociación…): sin local, sin dirección ni
+    // sellos; el QR lleva a su ficha con todo lo que publica.
+    const q = (m) => `?agenda=1${m ? '&mesa=1' : ''}`;
+    const navA = `<nav aria-label="${esc(S.agendaTitle)}"><a href="${base}/${esc(token)}${q(false)}"${mesa ? '' : ' aria-current="page"'}>${esc(S.a4)}</a><a href="${base}/${esc(token)}${q(true)}"${mesa ? ' aria-current="page"' : ''}>${esc(S.table)}</a></nav>`;
+    return paginaCartel({
+      S, b: { ...b, address: '', city: '' }, url, mesa, nav: navA, titulo: `${S.agendaTitle} · ${b.name}`,
+      que: S.agendaHead, invita: S.agendaScan, ayuda: mesa ? S.helpTable : S.agendaHelp,
+    });
+  }
   const sellos = (info.visit_cards || []).length > 0;
   // «… nuestra carta…», «… nuestros servicios…» según su tipo (Iván, 18-11).
   const tipo = await tipoCartaDe(b.id);

@@ -67,6 +67,9 @@ function supabaseFalso(estado) {
       if (r !== undefined) return json(typeof r === 'function' ? r(body) : r);
       return json(null);
     }
+    // La fecha de nacimiento (los 18 años se miran al empezar el alta de una
+    // entidad; §4zzz-propent): sin `nacimiento`, una persona adulta.
+    if (p.startsWith('/rest/v1/profiles')) return json({ birth_date: estado.nacimiento === undefined ? '1990-01-01' : estado.nacimiento });
     if (p.startsWith('/rest/v1/businesses')) return json(estado.bizzes.length ? [{ id: BIZ, name: 'Ayuntamiento de Prueba', time_zone: 'Europe/Madrid', city: 'Getafe', amenities: [] }] : []);
     if (p.startsWith('/rest/v1/')) return json([]);
     return json({});
@@ -76,7 +79,8 @@ function supabaseFalso(estado) {
 async function panel(nav, nombre, t, vp) {
   const ctx = await nav.newContext({ viewport: vp });
   await ctx.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion()]);
-  const estado = { subidas: [], llamadas: [], bizzes: [], rpc: {} };
+  // Primero sin fecha de nacimiento (no puede empezar), luego con ella.
+  const estado = { subidas: [], llamadas: [], bizzes: [], rpc: {}, nacimiento: null };
   const ent = { entity_kind: null, can_apply: true, why: null, application: null };
   Object.assign(estado.rpc, {
     my_consents: { terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true },
@@ -103,6 +107,17 @@ async function panel(nav, nombre, t, vp) {
   await p.waitForSelector('text=¿Qué vas a dar de alta?');
   ok(await p.locator('.crear-op').count() === 2, `${nombre}/${t} panel: dos opciones al empezar`);
   await foto('alta-elegir');
+  // Sin fecha de nacimiento: lo dice al empezar, con el camino a ponerla
+  // (antes, al final, después de subir el documento; §4zzz-propent).
+  await p.click('text=Un ayuntamiento, asociación u ONG');
+  await p.waitForSelector('#entEdadT');
+  ok((await p.locator('#view').innerText()).includes('hace falta tener 18 años')
+    && await p.locator('a[href$="/cuenta/perfil"]').count() === 1
+    && await p.locator('#altaEnt').count() === 0, `${nombre}/${t} los 18 años, al empezar`);
+  await foto('alta-entidad-sin-edad');
+  estado.nacimiento = '1990-01-01';
+  await p.click('#view a[href="#/alta"]');
+  await p.waitForSelector('text=¿Qué vas a dar de alta?');
   await p.click('text=Un ayuntamiento, asociación u ONG');
   await p.waitForSelector('#altaEnt');
   ok((await p.content()).includes('Paso 1 de 3 · La entidad'), `${nombre}/${t} paso 1 de la entidad`);
@@ -147,6 +162,22 @@ async function panel(nav, nombre, t, vp) {
   ok(!/Fidelizar|RRPP|Días cerrados/.test(menu) && /Equipo/.test(menu), `${nombre}/${t} el menú de una entidad`);
   const resumen = await p.locator('#view').innerText();
   ok(!/Fidelizar|Tu plan/.test(resumen) && /Series y repeticiones/.test(resumen), `${nombre}/${t} el resumen de una entidad`);
+  // Sus palabras y lo que no tiene (§4zzz-propent).
+  // Con lo escondido en el móvil (el «Evento o novedad» de «Crear»).
+  const resumenTodo = await p.locator('#view').textContent();
+  ok(/Tu entidad/.test(resumenTodo) && !/Tu negocio/.test(resumenTodo) && /Evento o novedad/.test(resumenTodo)
+    && !/Cerrar por hoy|Oferta, evento o novedad/.test(resumenTodo), `${nombre}/${t} el resumen con palabras de entidad, sin «Cerrar por hoy» ${JSON.stringify((resumenTodo.match(/Tu (negocio|entidad)|Evento o novedad|Cerrar por hoy|Oferta, evento o novedad/g) || []))}`);
+  ok(/Tu entidad/.test(menu) && !/Tu negocio/.test(menu), `${nombre}/${t} el menú: «Tu entidad»`);
+  // Su cartel: «Sigue nuestra agenda», que se imprime con ?agenda=1.
+  estado.rpc.business_visit_qr = { ok: true, token: 'AbCdEfGhIjKlMnOp', can_change: true, visit_cards: [], visit_stamps_30d: 0 };
+  await p.goto(`${BASE}/panel#/cartel-local`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('h1:has-text("Sigue nuestra agenda")');
+  const cartel = await p.locator('#view').innerText();
+  ok(!/sello/i.test(cartel) && await p.locator('a[href*="agenda=1"]').count() === 2
+    && await p.locator('#cambiar').count() === 0, `${nombre}/${t} el cartel de la agenda, sin sellos`);
+  await foto('panel-entidad-cartel');
+  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('[data-go=crear]');
   await foto('panel-entidad-pendiente');
   await p.click('[data-go=crear]');
   ok(await p.locator('text=Podrás publicar cuando verifiquemos la entidad.').count() > 0, `${nombre}/${t} «Crear» no publica hasta verificarla`);

@@ -114,11 +114,17 @@ async function herrCrear() {
   const grupo = (titulo, ops) => (ops.length ? `<h3 class="crear-grupo">${esc(titulo)}</h3>${lista(ops)}` : '');
   const opMenu = ['#/menu-del-dia', 'restaurant_menu', bi('Menú del día', 'Daily menu'), bi('Foto de la pizarra y precio: hasta el cierre, en un toque.', 'Photo of the board and price: until closing, in one tap.')];
   const opAntes = ['#/antes-de-cerrar', 'bolsa', bi('Antes de cerrar', 'Before closing'), bi('Lo que te ha sobrado hoy, con lo de la última vez ya puesto. Se paga en el local.', "What's left over today, with last time's details filled in. Paid at the venue.")];
+  // Una entidad publica eventos y novedades, gratis (la base tampoco le deja
+  // crear una oferta; §4zzz-propent).
   const arriba = [
-    ['#/publicaciones/nueva-flash', 'bolt', bi('Oferta', 'Offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.')],
-    ['#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora. Puede tener precio y enlace para entradas.', 'With a date and time. It can have a price and a ticket link.')],
+    ent ? null : ['#/publicaciones/nueva-flash', 'bolt', bi('Oferta', 'Offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.')],
+    ent
+      ? ['#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora, gratis. Puede llevar un enlace para apuntarse.', 'Has a date and time, free. Can include a sign-up link.')]
+      : ['#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora. Puede tener precio y enlace para entradas.', 'With a date and time. It can have a price and a ticket link.')],
     menu ? opMenu : antes ? opAntes : null,
-    ['#/novedades', 'campaign', bi('Novedad', 'News'), bi('Una novedad del local: una foto, una carta nueva, un cambio de horario.', 'News from your place: a photo, a new menu, a change in opening hours.')],
+    ent
+      ? ['#/novedades', 'campaign', bi('Novedad', 'News'), bi('Una novedad de la entidad: una foto, un aviso, un cambio de fechas.', 'News from the organisation: a photo, a notice, a change of dates.')]
+      : ['#/novedades', 'campaign', bi('Novedad', 'News'), bi('Una novedad del local: una foto, una carta nueva, un cambio de horario.', 'News from your place: a photo, a new menu, a change in opening hours.')],
   ].filter(Boolean);
   const delDia = [
     menu && antes ? opAntes : null,
@@ -528,6 +534,13 @@ PAGES.herramientas = async (v) => {
       grupo: 'local', usa: false,
       icon: 'qr_code_2', titulo: bi('Cartel del local', 'Venue poster'),
       frase: bi('Para tu puerta o tu mostrador: un QR que abre tu ficha y suma un sello por visita.', 'For your door or counter: a QR that opens your page and adds a stamp per visit.'),
+      botones: [[abrir, '#/cartel-local']],
+    }) : '',
+    // Una entidad: el cartel de su agenda (§4zzz-propent).
+    edit && esEntidad() ? herrT({
+      grupo: 'local', usa: false,
+      icon: 'qr_code_2', titulo: bi('Cartel «Sigue nuestra agenda»', '“Follow our events” poster'),
+      frase: bi('Para el tablón de anuncios o la entrada: un QR que abre tu ficha con todo lo que publicas.', 'For the notice board or the entrance: a QR that opens your page with everything you publish.'),
       botones: [[abrir, '#/cartel-local']],
     }) : '',
     herrT({

@@ -3,6 +3,25 @@
 'use strict';
 
 const I18N = makeI18N({
+  // Entidades (§4zzz-propent, 20-11-2026)
+  "Poner mi fecha de nacimiento": "Add my date of birth",
+  "Tu entidad": "Your organisation",
+  "Dar de baja la entidad": "Leave Klendar",
+  "← Dar de baja la entidad": "← Leave Klendar",
+  "Eliminar la entidad": "Delete the organisation",
+  "Traspasar la entidad": "Hand over the organisation",
+  "Descargar los datos de la entidad": "Download the organisation data",
+  "Solo el propietario puede dar de baja la entidad.": "Only the owner can take the organisation off Klendar.",
+  "Cartel «Sigue nuestra agenda»": "“Follow our events” poster",
+  "Hemos actualizado las condiciones. Puedes ver qué cambia, apartado por apartado, en «Historial de cambios».": "We’ve updated the terms. You can see what changes, section by section, in “Change history”.",
+  "Lo que publiques se verá cuando verifiquemos la entidad.": "What you publish will show once we verify the organisation.",
+  "Lo que publiques se verá cuando verifiquemos tu negocio.": "What you publish will show once we verify your business.",
+  "Evento o novedad": "Event or news",
+  "Con fecha y hora, gratis. Puede llevar un enlace para apuntarse.": "Has a date and time, free. Can include a sign-up link.",
+  "Para el tablón de anuncios, la entrada o tus actividades. Quien lo escanea con la cámara del móvil ve tu ficha con todo lo que publicas y puede seguirte para enterarse de lo próximo.": "For the notice board, the entrance or your activities. Anyone who scans it with their phone camera sees your page with everything you publish and can follow you to hear about what’s next.",
+  "Sigue nuestra agenda": "Follow our events",
+  "Escanea para ver todo lo que organizamos y seguirnos": "Scan to see everything we organise and follow us",
+  "Tamaño mesa: cuatro por folio, para recortar.": "Table size: four per sheet, to cut out.",
   // «Preguntas al reservar» (panel, 2026-11-17)
   "Elegir varias": "Pick several",
   "Número": "Number",

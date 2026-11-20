@@ -202,6 +202,9 @@ window.KAyudas = (() => {
     const pinta = async () => {
       let w;
       try { w = await rpc('business_ideas_week', { p_business: BIZ.id }); } catch { return; }
+      // Una entidad, solo ideas de eventos (la base ya no le da otras; esto
+      // es la segunda defensa, §4zzz-propent).
+      if (w?.ideas && typeof esEntidad === 'function' && esEntidad()) w.ideas = w.ideas.filter((i) => i.kind === 'future_event');
       if (!w?.available || !caja.isConnected) { caja.innerHTML = ''; return; }
       const cabeza = `<div class="ia-cabeza"><h2>${esc(t('Ideas para esta semana'))}</h2>
         ${w.enabled ? `<button type="button" class="linkbtn" id="iaApagar">${esc(t('Apagar las ideas'))}</button>` : ''}</div>`;
