@@ -794,8 +794,9 @@ RUTAS.ajustes = async ([sub]) => {
     [PUB_EN ? 'community-guidelines' : 'normas', 'Normas de la comunidad'],
   ].map(([ruta, txt]) => `<a href="${pre}/${ruta}" target="_blank" rel="noopener">${esc(t(txt))}</a>`).join(' · ')}${notaLegal()}</dd>
       </dl>
-      <p><button class="pill" id="descargar">${ic('download')} ${esc(t('Descargar mis datos'))}</button></p>
-      <p class="muted">${esc(t('Un archivo JSON con todo lo que Klendar guarda de ti (derecho de acceso y portabilidad).'))}</p>
+      <!-- Descargar tus datos está en «Tus datos» (Cuenta): aquí, el camino hasta allí, no un segundo botón que hace lo mismo (revisión 19-11), como la app. -->
+      <p><a class="pill" href="/cuenta/tus-datos">${ic('privacy_tip')} ${esc(t('Tus datos'))}</a></p>
+      <p class="muted">${esc(t('Qué guardamos, descargarlo y borrar tus historiales'))}</p>
       <p class="muted">${esc(t('Si no usas Klendar en 24 meses, te avisamos por correo; si sigues sin entrar, la cuenta se borra a los 36 meses. Basta con entrar una vez para conservarla.'))}</p>
     </section>
 
@@ -993,7 +994,6 @@ RUTAS.ajustes = async ([sub]) => {
       // La base apaga también «Cerca de ti» (Ajustes → Notificaciones).
     });
   });
-  $('#descargar').addEventListener('click', (ev) => ocupado(ev.currentTarget, descargaMisDatos));
 
   // Las capturas de «Sugerencias y mejoras» están en un Storage privado:
   // export_my_data da sus rutas (`media`) y aquí se piden enlaces firmados de
@@ -1069,7 +1069,7 @@ RUTAS.ajustes = async ([sub]) => {
     });
   });
 };
-/** «Descargar mis datos»: el JSON de `export_my_data` (Ajustes y «Tus datos»). */
+/** «Descargar mis datos»: el JSON de `export_my_data` (en «Tus datos»). */
 async function descargaMisDatos() {
   const datos = await llamar('export_my_data', {});
   await enlacesDeCapturas(datos);
