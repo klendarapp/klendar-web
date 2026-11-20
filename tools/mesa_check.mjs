@@ -210,11 +210,17 @@ async function panel(nav, nombre, t, vp) {
     await crear.click();
     await p.waitForSelector('#modal[open] .crear-op');
     ok(/Menú del día/.test(await p.locator('#modal').innerText()), `${nombre}/${t} crear: ofrece «Menú del día»`);
-    // «¿Qué quieres publicar?» con todo (Iván, 18-11): los dos grupos de abajo.
-    const hoja = await p.locator('#modal').innerText();
-    ok(/Nueva oferta/.test(hoja) && /De unas horas a varios días, o cada semana/.test(hoja), `${nombre}/${t} crear: «Nueva oferta» con su línea`);
-    ok(/Para los tuyos/.test(hoja) && /Crear oferta de primera visita/.test(hoja) && /Avisar a mis clientes/.test(hoja), `${nombre}/${t} crear: «Para los tuyos»`);
-    ok(/Para vender o dar en el local/.test(hoja) && /Crear un bono/.test(hoja) && /Nueva tarjeta de sellos/.test(hoja), `${nombre}/${t} crear: «Para vender o dar en el local»`);
+    // «¿Qué quieres publicar?» (Iván, 18-11 y 20-11): arriba las cuatro de
+    // siempre, solo con su nombre; lo demás en «Más formas de publicar ▾».
+    let hoja = await p.locator('#modal').innerText();
+    ok(/\bOferta\b/.test(hoja) && !/Nueva oferta/.test(hoja) && /De unas horas a varios días, o cada semana/.test(hoja), `${nombre}/${t} crear: «Oferta» con su línea`);
+    ok(/Más formas de publicar/.test(hoja) && !/Para los tuyos/.test(hoja), `${nombre}/${t} crear: lo demás, plegado`);
+    await p.click('#modal .crear-mas > summary');
+    await p.waitForTimeout(400);
+    hoja = await p.locator('#modal').innerText();
+    ok(await p.locator('#modal .crear-mas[open]').count() === 1, `${nombre}/${t} crear: «Más formas de publicar» se abre`);
+    ok(/Para los tuyos/.test(hoja) && /Oferta de primera visita/.test(hoja) && /Avisar a mis clientes/.test(hoja), `${nombre}/${t} crear: «Para los tuyos»`);
+    ok(/Para vender o dar en el local/.test(hoja) && /\bBono\b/.test(hoja) && /Tarjeta de sellos/.test(hoja) && !/Crear un bono/.test(hoja), `${nombre}/${t} crear: «Para vender o dar en el local»`);
     await p.screenshot({ path: `${OUT}/panel-crear-${nombre}-${t}.png` });
     await p.keyboard.press('Escape');
   } else ok(false, `${nombre}/${t} crear: no se encuentra el botón`);

@@ -1334,6 +1334,18 @@ const NAV_BLOQUEO = [
   ]],
 ];
 const menuActual = () => (bloqueado() ? NAV_BLOQUEO : NAV);
+/** «Esta sección es del propietario o de un encargado»: el único aviso para
+ * el personal que llega a algo que no es suyo, por la dirección, un enlace o
+ * «Nueva oferta» (antes había dos distintos; Iván, 20-11). Con el candado y
+ * salida al resumen, centrado como las pantallas vacías. */
+function pintaSoloGestion(v) {
+  v.innerHTML = `<section class="vacio" aria-labelledby="soloGestionT">
+      <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
+      <h1 id="soloGestionT">Esta sección es del propietario o de un encargado</h1>
+      <div class="vacio-botones"><a class="btn primary" href="#/resumen">Ir al resumen</a></div></section>`;
+  I18N.translate(v);
+}
+
 const barraActual = () => (bloqueado() ? ['resumen', 'validar', ...(gestiona() ? ['plan'] : [])] : BARRA);
 const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario())
   && (k !== 'antes-de-cerrar' || !!ANTES?.suggested)
@@ -1480,12 +1492,8 @@ async function route() {
     renderNav(page);
     abreMenu(false);
     const v = document.createElement('div');
-    v.innerHTML = `<section class="vacio" aria-labelledby="soloGestionT">
-      <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
-      <h1 id="soloGestionT">Esta sección es del propietario o de un encargado</h1>
-      <div class="vacio-botones"><a class="btn primary" href="#/resumen">Ir al resumen</a></div></section>`;
+    pintaSoloGestion(v);
     $('#view').replaceChildren(v);
-    I18N.translate(v);
     return;
   }
   if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
@@ -1770,17 +1778,16 @@ function avisoParado(bill) {
     ${boton}</div>`;
 }
 
-/** El resumen de un negocio parado: el aviso, «Validar códigos» y, para el
- * propietario, descargar los datos y darse de baja. */
+/** El resumen de un negocio parado: el aviso y, para el propietario,
+ * descargar los datos y darse de baja. Validar sigue en el menú y en la
+ * barra de abajo (sin el botón de antes, que lo repetía; Iván, 20-11, como
+ * el modo negocio de la app). */
 function pintaParado(v) {
   const bill = cobro();
   const dueno = esPropietario();
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="spacer"></span></div>
     ${avisoParado(bill)}
-    <div class="quick quick-2 parado-validar">
-      <button type="button" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>${esc(bi('Los códigos y bonos que ya tiene la gente', 'The codes and passes people already have'))}</small></button>
-    </div>
     ${dueno ? tarjetaDescarga() : ''}
     ${dueno ? `<div class="card"><h2>Dar de baja el negocio</h2>
       <p class="muted" style="margin:0 0 10px">${esc(bi('Si dejas Klendar: cancelar la suscripción, traspasar el negocio o eliminarlo.', 'If you’re leaving Klendar: cancel the subscription, transfer the business or delete it.'))}</p>
@@ -1788,7 +1795,6 @@ function pintaParado(v) {
     ${dueno ? '' : `<div class="card"><h2>Salir del equipo</h2>
       <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
       <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
-  $('[data-go="validar"]', v).onclick = () => { location.hash = '#/validar'; };
   activaDescarga(v);
   const volver = $('#volver-abrir', v);
   if (volver) volver.onclick = () => volverAAbrir(volver);
@@ -2143,8 +2149,7 @@ async function pintaAforo(caja, estado = null, { enPuerta = false } = {}) {
 // ── Publicaciones ───────────────────────────────────────────────────────────
 PAGES.publicaciones = async (v, param) => {
   if (!gestiona() && (param === 'nueva-flash' || param === 'nuevo-evento')) {
-    v.innerHTML = '<div class="card"><p style="margin:0">Publicar es cosa de quien lleva el negocio. Tú puedes <a class="link" href="#/validar">validar códigos</a>.</p></div>';
-    I18N.translate(v);
+    pintaSoloGestion(v);
     return;
   }
   // «Crear a partir de esta» (?from=) y «Repetir mañana» (?from=&repeat=1),
@@ -2776,8 +2781,8 @@ const forKids = (adultos, valor) => (valor === 'no' ? false : valor === 'si' && 
 async function offerForm(v, id, kindDefault, desde = null) {
   // Un empleado valida códigos, no publica (como en la app).
   if (!gestiona()) {
-    // Con salida, como al ir a «Nueva oferta»: validar códigos.
-    v.innerHTML = '<div class="card"><p style="margin:0">Publicar es cosa de quien lleva el negocio. Tú puedes <a class="link" href="#/validar">validar códigos</a>.</p></div>';
+    // El mismo aviso que al entrar por la dirección en algo que no es suyo.
+    pintaSoloGestion(v);
     return;
   }
   let o = { kind: kindDefault || 'flash_offer', max_per_user: 1, code_ttl_minutes: 5, images: [], status: 'active',

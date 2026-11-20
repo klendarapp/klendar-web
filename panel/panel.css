@@ -1044,6 +1044,20 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .crear-op > span:not(.ms) { flex: 1; display: grid; gap: 2px; }
 .crear-op small { color: var(--ink-2); font-weight: 500; }
 button.crear-op { width: 100%; background: none; font: inherit; text-align: start; cursor: pointer; }
+/* «Más formas de publicar ▾»: plegado dice qué hay dentro; al abrirlo, lo
+   de dentro llega con un fundido que sube un poco (y el hueco crece suave
+   donde se puede). Con «Reducir movimiento», de golpe (site.css). */
+details.crear-mas { margin: 8px 0 4px; }
+details.crear-mas .b-cuerpo { gap: 0; padding: 0 12px 12px; }
+details.crear-mas .b-cuerpo > .crear-ops:first-child { margin-top: 0; }
+details.crear-mas[open] .b-cuerpo { animation: mov-sube var(--mov-base) var(--mov-entra) both; }
+@supports (interpolate-size: allow-keywords) {
+  details.crear-mas { interpolate-size: allow-keywords; }
+  details.crear-mas::details-content { height: 0; overflow: clip;
+    transition: height var(--mov-base) var(--mov-mueve), content-visibility var(--mov-base) allow-discrete; }
+  details.crear-mas[open]::details-content { height: auto; }
+}
+@media (prefers-reduced-motion: reduce) { details.crear-mas::details-content { transition: none; } }
 /* «Días cerrados» sin nada por delante (como la app: centrado). */
 .cierres-vacio { padding: 12px 0; margin: 0; }
 /* «Cifras»: lo importante arriba y el detalle en bloques plegables. */
@@ -1101,7 +1115,6 @@ details.plegable[open] > summary { margin-bottom: 12px; }
    su botón (coral solo «Pagar» o «Volver a abrir») y «Validar códigos». */
 .aviso-parado h2 { margin: 0 0 8px; display: flex; align-items: center; gap: 8px; }
 .aviso-parado .btn.primary { min-width: 180px; justify-content: center; }
-.parado-validar { margin: 0 0 16px; }
 .aviso-cobro .btn { margin: 0; }
 
 /* «Dar en el momento» (panel/momento.js) */

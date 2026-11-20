@@ -107,7 +107,6 @@ const I18N = makeI18N({
     'Negocio': 'Business',
     'Sesión': 'Session',
     'Salir': 'Log out',
-    'Publicar es cosa de quien lleva el negocio. Tú puedes': "Publishing is up to whoever runs the business. You can",
     'validar códigos': 'validate codes',
     'Ese vídeo dura más de 45 segundos. Recórtalo y vuelve a subirlo.': 'That video is longer than 45 seconds. Trim it and upload it again.',
     'Menú': 'Menu',
