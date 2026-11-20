@@ -28,6 +28,9 @@ const SEGURIDAD = {
   // Lo mínimo que no rompe nada: sin <base> ajeno, sin plugins y sin iframes
   // de fuera (igual que X-Frame-Options). El widget trae la suya.
   'content-security-policy': "base-uri 'self'; object-src 'none'; frame-ancestors 'none'",
+  // Solo informe (§4zzz-segF): no bloquea; la consola dice qué rompería una
+  // CSP de scripts de verdad. La misma que `/*` en `_headers`.
+  'content-security-policy-report-only': "script-src 'self' https://challenges.cloudflare.com https://api.mapbox.com https://static.cloudflareinsights.com; worker-src 'self' blob:",
 };
 
 // Páginas públicas, iguales para todo el mundo (dependen solo de la

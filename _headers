@@ -1,6 +1,12 @@
 # La CSP mínima de /* es la misma que pone functions/_middleware.js a lo que
 # pasa por las Functions: lo estático ya no pasa por ahí (`_routes.json`).
 # Las zonas con su propia CSP la quitan antes (`! Content-Security-Policy`).
+# CSP de scripts en SOLO INFORME (revisión de seguridad 20-11, §4zzz-segF del
+# RUNBOOK de la app): no bloquea nada; la consola del navegador dice qué
+# rompería una CSP de verdad («[Report Only] Refused to…»). Sin `report-uri`:
+# cada aviso sería una llamada a las Functions (varias por visita). Llega a
+# todo, también al admin, al panel y a «Tu cuenta», que ya tienen la suya
+# obligatoria. La misma en functions/_middleware.js (SEGURIDAD).
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
@@ -8,6 +14,7 @@
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
   Content-Security-Policy: base-uri 'self'; object-src 'none'; frame-ancestors 'none'
+  Content-Security-Policy-Report-Only: script-src 'self' https://challenges.cloudflare.com https://api.mapbox.com https://static.cloudflareinsights.com; worker-src 'self' blob:
 # Zonas con sesión (admin, panel, «Tu cuenta»). Cada zona va dos veces: la
 # página (`/panel`, sin barra desde el 11-11) y lo de dentro (`/panel/*`):
 # `/panel/*` no cubre `/panel`.

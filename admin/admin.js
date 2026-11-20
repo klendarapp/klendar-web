@@ -1761,6 +1761,9 @@ function urgenteTexto(x) {
       return [en ? `Hidden after several reports: ${tipo}` : `Oculto por denuncias: ${tipo}`,
         x.target_type && x.target_id ? `#/denuncias/${x.target_type}/${x.target_id}` : '#/denuncias', 'visibility_off'];
     }
+    // Tope de traducciones del día de un negocio (migración 20261288900000 de la app, §4zzz-segF).
+    case 'translation_cap': return [en ? `Translations: “${x.title}” has reached today’s limit` : `Traducciones: «${x.title}» ha llegado a su tope de hoy`,
+      x.target_id ? `#/negocios/${x.target_id}` : '#/negocios', 'translate'];
     case 'dispute': return [en ? `Stripe: payment dispute or return${x.livemode === false ? ' (test)' : ''}` : `Stripe: disputa o devolución de un cobro${x.livemode === false ? ' (pruebas)' : ''}`, '#/planes', 'gavel'];
     default: return [x.title, '#/resumen', 'warning'];
   }

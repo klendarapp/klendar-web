@@ -95,5 +95,21 @@ if (def) {
 ok('el admin no pinta la clave de push', !/value="\$\{esc\(sp\.key/.test(admin));
 ok('Configuración usa key_set', /sp\.key_set/.test(admin));
 
+// 6. CSP de scripts en solo informe (§4zzz-segF): la misma en `_headers` (/*) y en el middleware, con lo que de
+//    verdad carga la web (Turnstile, Mapbox, el contador de Cloudflare), y todavía no obligatoria.
+{
+  const cab = readFileSync(path.join(RAIZ, '_headers'), 'utf8');
+  const mw = readFileSync(path.join(RAIZ, 'functions/_middleware.js'), 'utf8');
+  const enCab = /^\/\*\r?\n(?: {2}.*\r?\n)*? {2}Content-Security-Policy-Report-Only: (.+)$/m.exec(cab)?.[1]?.trim();
+  const enMw = /'content-security-policy-report-only': "([^"]+)"/.exec(mw)?.[1];
+  ok('CSP solo informe en /* de _headers', !!enCab);
+  ok('la misma en el middleware', !!enCab && enCab === enMw, `${enCab} / ${enMw}`);
+  for (const d of ["script-src 'self'", 'https://challenges.cloudflare.com', 'https://api.mapbox.com', 'https://static.cloudflareinsights.com']) {
+    ok(`CSP solo informe con ${d}`, (enCab || '').includes(d));
+  }
+  const general = cab.split(/^# Zonas con sesión/m)[0];
+  ok('la CSP obligatoria de /* sigue sin script-src', !/^ {2}Content-Security-Policy: .*script-src/m.test(general));
+}
+
 console.log(fallos ? `\n${fallos} fallo(s)` : '\nTodo bien');
 process.exit(fallos ? 1 : 0);
