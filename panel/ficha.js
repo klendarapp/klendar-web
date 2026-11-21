@@ -246,8 +246,11 @@ const htmlBasico = (d) => `
 const htmlDonde = (d) => {
   const SAf = globalThis.KlendarArtistas.t(I18N.lang);
   const sin = !!d.sin_local;
+  // En el alta que empezó en «¿Qué vas a dar de alta?» ya se sabe (un local
+  // u «Organizo eventos o actividades»): la casilla, oculta (§4zzz-altatres).
+  const casilla = `<input type="checkbox" name="no_fixed_venue" ${sin ? 'checked' : ''}${d.elegido ? ' hidden style="display:none"' : ''}>`;
   return `
-  <label class="f full casilla"><input type="checkbox" name="no_fixed_venue" ${sin ? 'checked' : ''}><span>${esc(SAf.noVenue)}</span></label>
+  ${d.elegido ? casilla : `<label class="f full casilla">${casilla}<span>${esc(SAf.noVenue)}</span></label>`}
   <label class="f full" data-dir${sin ? ' hidden' : ''}><span>Dirección *</span><input name="address" maxlength="120" required placeholder="Calle y número" value="${esc(d.address || '')}"></label>
   <label class="f full"><span>Ciudad *</span><input name="city" maxlength="60" required value="${esc(d.city || '')}"></label>
   <div class="full" data-punto-caja>
@@ -933,6 +936,15 @@ PAGES.alta = async (v, param) => {
   if (param === undefined) param = partes[0];
   if (param === 'entidad') return entAlta(v, partes[1]);
   if (!param) return entElegir(v);
+  // «Un local» u «Organizo eventos o actividades»: la misma alta, ya con o
+  // sin local fijo, sin volver a preguntarlo dentro.
+  if (param === 'local' || param === 'eventos') {
+    if (!ALTA) ALTA = altaNueva();
+    ALTA.sin_local = param === 'eventos';
+    ALTA.elegido = true;
+    param = '1';
+    history.replaceState(null, '', '#/alta/1');
+  }
   const cats = CATS.length ? CATS
     : ((await sb.from('categories').select('*').order('position', { ascending: true })).data || []);
   if (!ALTA) ALTA = altaNueva();

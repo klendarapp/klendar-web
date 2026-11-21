@@ -105,8 +105,24 @@ async function panel(nav, nombre, t, vp) {
 
   await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
   await p.waitForSelector('text=¿Qué vas a dar de alta?');
-  ok(await p.locator('.crear-op').count() === 2, `${nombre}/${t} panel: dos opciones al empezar`);
+  ok(await p.locator('.crear-op').count() === 3, `${nombre}/${t} panel: tres opciones al empezar`);
   await foto('alta-elegir');
+  // «Organizo eventos o actividades»: la misma alta, ya sin local fijo y sin
+  // la casilla; «Un local», con dirección (§4zzz-altatres).
+  for (const [op, sin] of [['Organizo eventos o actividades', true], ['Un local', false]]) {
+    await p.click(`text=${op}`);
+    await p.waitForSelector('#alta');
+    ok(await p.evaluate(() => location.hash) === '#/alta/1'
+      && await p.evaluate(() => ALTA.sin_local) === sin, `${nombre}/${t} «${op}»: al paso 1, sin_local=${sin}`);
+    await p.evaluate(() => { ALTA.name = 'Prueba'; ALTA.category_id = 1; location.hash = '#/alta/2'; });
+    await p.waitForSelector('[name=city]');
+    ok(await p.locator('[name=no_fixed_venue]').isChecked() === sin
+      && !(await p.locator('[name=no_fixed_venue]').isVisible())
+      && await p.locator('[name=address]').isVisible() === !sin, `${nombre}/${t} «${op}»: paso 2 sin la casilla del local`);
+    await p.evaluate(() => { location.hash = '#/alta'; });
+    await p.waitForSelector('text=¿Qué vas a dar de alta?');
+  }
+  await p.evaluate(() => { ALTA = null; });
   // Sin fecha de nacimiento: lo dice al empezar, con el camino a ponerla
   // (antes, al final, después de subir el documento; §4zzz-propent).
   await p.click('text=Un ayuntamiento, asociación u ONG');

@@ -2,8 +2,10 @@
    y ONG). Lo mismo que la app (`lib/features/entities/`, migración
    20261219100000 de la app):
 
-   - El alta empieza con «¿Qué vas a dar de alta?» (`#/alta`): un negocio
-     (`#/alta/1…3`, en ficha.js) o un ayuntamiento, asociación u ONG
+   - El alta empieza con «¿Qué vas a dar de alta?» (`#/alta`): un local
+     (`#/alta/local`), eventos o actividades sin local fijo
+     (`#/alta/eventos`; los dos siguen en `#/alta/1…3`, en ficha.js) o un
+     ayuntamiento, asociación u ONG
      (`#/alta/entidad/1…3`, aquí): la entidad (tipo, nombre oficial, CIF y
      web oficial), la zona (el punto en el mapa, el municipio y, si quiere,
      el distrito o el barrio) y quién la da de alta (nombre, cargo, el
@@ -251,8 +253,9 @@ function entElegir(v) {
     <p class="muted" style="max-width:640px">Elige lo que eres: el alta cambia para pedirte solo lo que hace falta.</p>
     ${otro ? '' : `<p class="muted" style="max-width:640px">${esc(I18N.t('¿Te han invitado al equipo de un negocio? Entonces no hace falta: entra con el mismo correo con el que te invitaron y aparecerá solo.'))}</p>`}
     <div class="crear-ops alta-elegir" style="max-width:640px">
-      ${op('#/alta/1', 'storefront', 'Un negocio', 'Un bar, un restaurante, una tienda, una sala… o fiestas y eventos sin local fijo.')}
-      ${op('#/alta/entidad/1', 'entidad', 'Un ayuntamiento, asociación u ONG', 'Ayuntamiento, junta de distrito, asociación de comerciantes o de vecinos, ONG u otra entidad sin ánimo de lucro. Publicáis eventos y campañas; antes comprobamos quiénes sois.')}
+      ${op('#/alta/local', 'storefront', 'Un local', 'Bar, restaurante, tienda, gimnasio, peluquería, sala… Si tienes varios locales, los añades después.')}
+      ${op('#/alta/eventos', 'event', 'Organizo eventos o actividades', 'Fiestas, conciertos, festivales, mercadillos, promotoras, DJ o artistas, food trucks, clases o rutas… sin local fijo.')}
+      ${op('#/alta/entidad/1', 'entidad', 'Un ayuntamiento, asociación u ONG', 'Ayuntamiento, junta de distrito, asociación vecinal o de comerciantes, club deportivo, ONG u otra entidad sin ánimo de lucro. Publicáis eventos y campañas; antes comprobamos quiénes sois.')}
     </div>`;
 }
 
