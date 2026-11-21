@@ -1131,6 +1131,9 @@ function hoyISO() {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
+/** Donde se abre el calendario de la fecha de nacimiento si aún no hay
+ * ninguna: el 1 de enero de hace 30 años. */
+const FECHA_SUGERIDA = () => `${new Date().getFullYear() - 30}-01-01`;
 const LIMITES_NACIMIENTO = () => `min="${new Date().getFullYear() - 110}-01-01" max="${hoyISO()}"`;
 
 /** Años cumplidos a día de hoy de una fecha AAAA-MM-DD. */
@@ -1236,7 +1239,10 @@ function activaNacimiento(el) {
   el.addEventListener('blur', () => { if (el.value.trim()) avisa(); });
   caja.querySelector('.campo-fecha-btn').addEventListener('click', () => {
     const v = isoDeFecha(el.value);
-    nativo.value = v >= nativo.min && v <= nativo.max ? v : '';
+    // Vacío, el calendario se abría en hoy y llegar a 1985 eran cientos de
+    // meses: se abre hace 30 años (como la app, §4zzz-altatres). Solo se
+    // escribe en el campo al elegir (`change`); cancelar no pone nada.
+    nativo.value = v >= nativo.min && v <= nativo.max ? v : FECHA_SUGERIDA();
     try {
       nativo.showPicker();
     } catch {

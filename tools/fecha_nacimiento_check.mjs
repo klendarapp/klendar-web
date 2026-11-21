@@ -175,7 +175,13 @@ async function pruebaRegistro(nav, motor) {
   ok((await p.evaluate(() => window.abierto.join())) === '1980-03-15', 'el calendario se abre en lo escrito');
   await p.fill(CAMPO, texto(ahora.getFullYear() + 1, 3, 15));
   await p.getByRole('button', { name: 'Elige la fecha' }).click();
-  ok((await p.evaluate(() => window.abierto.at(-1))) === '', 'con una fecha imposible, se abre vacío');
+  // Vacío o imposible: en hace 30 años, no en hoy (§4zzz-altatres), y sin
+  // escribir nada en el campo hasta elegir.
+  const sugerida = `${ahora.getFullYear() - 30}-01-01`;
+  ok((await p.evaluate(() => window.abierto.at(-1))) === sugerida, 'con una fecha imposible, se abre hace 30 años');
+  await p.fill(CAMPO, '');
+  await p.getByRole('button', { name: 'Elige la fecha' }).click();
+  ok((await p.evaluate(() => window.abierto.at(-1))) === sugerida && await valor(p) === '', 'vacío: se abre hace 30 años y el campo sigue vacío', await valor(p));
   await elige(p, '1990-07-20');
   ok(await valor(p) === '20/07/1990', 'lo elegido se ve en el campo', await valor(p));
   ok(await aviso(p) === '', 'elegida y válida: sin aviso', await aviso(p));
