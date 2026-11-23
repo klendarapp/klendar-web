@@ -142,6 +142,19 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
     await p.waitForSelector('.neg-tiles');
     ok(await p.$eval('#tabbar a[href="#/negocio"]', (a) => a.getAttribute('aria-current')) === 'page', `${nombre}: la barra marca Negocio`);
   }
+  // Dentro del panel, solo el menú del negocio (§4zzz-tabletojo): ni las
+  // pestañas de cliente ni «Para negocios» ni tu cuenta; «Volver a Klendar»,
+  // la campana y el idioma, sí.
+  ok(!(await visible(p, 'header.top .pestanas')) && !(await visible(p, 'header.top .top-negocios')) && !(await visible(p, 'header.top .top-entrar')),
+    `${nombre}: sin la barra de cliente de la web`);
+  ok(await visible(p, '.panel-volver') && await p.$eval('.panel-volver', (a) => a.getAttribute('href')) === '/descubre', `${nombre}: «Volver a Klendar» a Descubre`);
+  ok(await visible(p, 'header.top details.idioma'), `${nombre}: el idioma, a la vista`);
+  if (lateral) {
+    // El menú lateral sigue el tema: claro en modo claro.
+    const fondo = await p.$eval('#side', (e) => getComputedStyle(e).backgroundColor);
+    const [r, g, b] = fondo.match(/\d+/g).map(Number);
+    ok(r > 200 && g > 200 && b > 200, `${nombre}: menú lateral claro en modo claro (${fondo})`);
+  }
   await p.screenshot({ path: `${OUT}/panelapp_${nombre.replace(' ', '_')}.png` });
   ok(!errores.length, `${nombre}: sin errores (${errores.join(' | ')})`);
   await ctx.close();
