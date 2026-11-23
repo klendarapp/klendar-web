@@ -37,7 +37,7 @@ const T = (en) => (en
       soon: (d) => `Starts on ${d}`, empty: 'Nothing here yet',
       emptyBody: 'Businesses are filling it up: come back in a few days or remove a filter.',
       when: 'When?', type: 'Type', any: 'Any time', today: 'Today', tomorrow: 'Tomorrow',
-      weekend: 'This weekend', next10: 'Next 10 days', all: 'All', offers: 'Offers', events: 'Events',
+      weekend: 'This weekend', next10: 'Next 10 days', offers: 'Offers', events: 'Events',
       plans: (n) => (n === 1 ? '1 plan' : `${n} plans`),
       desc: (place, dates) => `Klendar seasonal guide${place ? ` in ${place}` : ''}${dates ? `: ${dates}` : ''}.`,
       titleIn: (t, p) => `${t} in ${p}`, pick: 'Pick your place', more: 'More places', go: 'See',
@@ -50,7 +50,7 @@ const T = (en) => (en
       soon: (d) => `Empieza el ${d}`, empty: 'Aún no hay nada aquí',
       emptyBody: 'Los negocios la van llenando: vuelve en unos días o quita algún filtro.',
       when: '¿Cuándo?', type: 'Tipo', any: 'Cuando sea', today: 'Hoy', tomorrow: 'Mañana',
-      weekend: 'Este finde', next10: 'Próximos 10 días', all: 'Todo', offers: 'Ofertas', events: 'Eventos',
+      weekend: 'Este finde', next10: 'Próximos 10 días', offers: 'Ofertas', events: 'Eventos',
       plans: (n) => (n === 1 ? '1 plan' : `${n} planes`),
       desc: (place, dates) => `Guía de temporada de Klendar${place ? ` en ${place}` : ''}${dates ? `: ${dates}` : ''}.`,
       titleIn: (t, p) => `${t} en ${p}`, pick: 'Elige tu sitio', more: 'Más sitios', go: 'Ver',
@@ -197,10 +197,14 @@ export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
 
   const L = en ? 'en' : 'es';
   const cuandoUrl = q.get(en ? 'when' : 'cuando') || '';
-  const tipoUrl = q.get(en ? 'type' : 'tipo') || '';
+  // El tipo, de varios a la vez y sin «Todo» (§4zzz-chips): los pulsados en
+  // orden fijo (ofertas, eventos); a la base, uno solo o nada (los dos o
+  // ninguno = todo). El `?tipo=todos` de antes no cuenta.
+  const tiposUrl = q.getAll(en ? 'type' : 'tipo').flatMap((v) => String(v).split(','));
+  const tiposOk = Object.keys(TIPO[L]).filter((k) => tiposUrl.includes(k));
   const when = CUANDO[L][cuandoUrl] || null;
-  const kind = TIPO[L][tipoUrl] || null;
-  const filtrado = Boolean(when || kind);
+  const kind = tiposOk.length === 1 ? TIPO[L][tiposOk[0]] : null;
+  const filtrado = Boolean(when || tiposOk.length);
   const zona = Boolean(elegido || punto);
   const res = zona
     ? await rpc('guide_offers', {
@@ -216,7 +220,7 @@ export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
     const p = new URLSearchParams();
     if (puntoUrl) { p.set('lat', String(punto.lat)); p.set('lng', String(punto.lng)); p.set('km', String(km)); }
     if (c) p.set(en ? 'when' : 'cuando', c);
-    if (t) p.set(en ? 'type' : 'tipo', t);
+    for (const x of Object.keys(TIPO[L]).filter((k) => t.includes(k))) p.append(en ? 'type' : 'tipo', x);
     const s = p.toString();
     return s ? `${path}?${s}` : path;
   };
@@ -224,12 +228,17 @@ export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
   const cuandos = en
     ? [['', S.any], ['today', S.today], ['tomorrow', S.tomorrow], ['weekend', S.weekend], ['next10', S.next10]]
     : [['', S.any], ['hoy', S.today], ['manana', S.tomorrow], ['finde', S.weekend], ['10dias', S.next10]];
-  const tipos = en ? [['', S.all], ['offers', S.offers], ['events', S.events]] : [['', S.all], ['ofertas', S.offers], ['eventos', S.events]];
+  const tipos = en ? [['offers', S.offers], ['events', S.events]] : [['ofertas', S.offers], ['eventos', S.events]];
   const cuandoOk = when ? cuandoUrl : '';
-  const tipoOk = kind ? tipoUrl : '';
+  // Un chip del tipo se pulsa y se suelta (el lector dice «pulsado»).
+  const chipTipo = (k, n) => {
+    const on = tiposOk.includes(k);
+    const otros = on ? tiposOk.filter((x) => x !== k) : [...tiposOk, k];
+    return `<a class="chip${on ? ' on' : ''}" href="${esc(enlace(cuandoOk, otros))}" role="button" aria-pressed="${on}" rel="nofollow">${esc(n)}</a>`;
+  };
   const filtros = zona ? `<nav class="filters" aria-label="${esc(S.when)}">
-    <div class="frow"><span class="flabel">${esc(S.when)}</span>${cuandos.map(([k, n]) => chip(enlace(k, tipoOk), n, k === cuandoOk)).join('')}</div>
-    <div class="frow"><span class="flabel">${esc(S.type)}</span>${tipos.map(([k, n]) => chip(enlace(cuandoOk, k), n, k === tipoOk)).join('')}</div>
+    <div class="frow"><span class="flabel">${esc(S.when)}</span>${cuandos.map(([k, n]) => chip(enlace(k, tiposOk), n, k === cuandoOk)).join('')}</div>
+    <div class="frow"><span class="flabel">${esc(S.type)}</span>${tipos.map(([k, n]) => chipTipo(k, n)).join('')}</div>
   </nav>` : '';
 
   // «Elige tu sitio»: los municipios con planes (los primeros a la vista y

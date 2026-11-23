@@ -92,6 +92,15 @@ const ultima = (fn) => pedidas.filter((p) => p.u.endsWith(`/rpc/${fn}`)).pop()?.
   const f = await pagina('/guia/navidad/malaga?tipo=eventos');
   ok('1. con filtro: a la base y noindex', ultima('guide_offers')?.p_filters?.kind === 'future_event'
     && !f.h.includes('Chocolate con churros') && f.h.includes('noindex'));
+  // El tipo, sin «Todo» y de varios a la vez (§4zzz-chips).
+  ok('1. el tipo sin «Todo», con aria-pressed', !/>Todo<\/a>/.test(h) && /role="button" aria-pressed="false" rel="nofollow">Eventos</.test(h));
+  ok('1. con Eventos, pulsado', /aria-pressed="true" rel="nofollow">Eventos</.test(f.h));
+  const dos = await pagina('/guia/navidad/malaga?tipo=eventos&tipo=ofertas');
+  ok('1. con los dos: todo, los dos pulsados y en orden fijo', ultima('guide_offers')?.p_filters?.kind === undefined
+    && dos.h.includes('Chocolate con churros') && (dos.h.match(/aria-pressed="true"/g) || []).length === 2
+    && dos.h.includes('?cuando=finde&amp;tipo=ofertas&amp;tipo=eventos'));
+  const viejo = await pagina('/guia/navidad/malaga?tipo=todos');
+  ok('1. el ?tipo=todos de antes = todo', ultima('guide_offers')?.p_filters?.kind === undefined && !/aria-pressed="true"/.test(viejo.h));
   const en = await pagina('/en/guide/navidad/malaga', 'en');
   ok('1. en inglés: «Christmas in Málaga»', en.h.includes('<h1>Christmas in Málaga</h1>'));
   const sin = await pagina('/guia/navidad/zaragoza');
