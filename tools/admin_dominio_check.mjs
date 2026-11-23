@@ -234,7 +234,7 @@ try {
         await pg.goto(`${ADMIN}/admin#/negocios`);
         await pg.waitForSelector('#login:not([hidden])');
         const logo = await pg.getAttribute('#login a.brand', 'href');
-        ok(`${nombre}: el logo de «Entrar» lleva a la web pública`, logo === `${BASE}/`, logo);
+        ok(`${nombre}: el logo de «Entrar» lleva a la web pública`, logo === BASE, logo);
         // «¿Has olvidado la contraseña?»: la vuelta, por «Tu cuenta» de la web pública.
         await pg.fill('#email', 'admindom@example.com');
         await pg.click('#doReset');

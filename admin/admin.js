@@ -647,7 +647,7 @@ const notaBusqueda = (n, de) => `<p class="muted small" style="margin:0 0 10px">
 // ── Sesión ──────────────────────────────────────────────────────────────────
 const insecure = location.protocol === 'http:' && !LOCAL;
 // El logo de «Entrar» lleva a la web pública (en admin.klendar.app, `/` es el admin).
-for (const a of document.querySelectorAll('#login a.brand[href="/"]')) a.href = `${WEB}/`;
+for (const a of document.querySelectorAll('#login a.brand[href="/"]')) a.href = WEB;
 if (insecure) {
   document.body.innerHTML = I18N.lang === 'en'
     ? '<div class="login"><h2>Insecure connection</h2><p class="muted">This panel only works over HTTPS: <a href="https://admin.klendar.app/admin">https://admin.klendar.app/admin</a>.</p></div>'
@@ -806,7 +806,7 @@ function pantallaMfa(html) {
   // quedaba abajo de la página en la del código de 6 cifras).
   window.KL_CAPTCHA?.quita?.();
   const box = $('#mfa');
-  box.innerHTML = `<a class="brand" href="${WEB}/"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar <small class="muted">· admin</small></a>
+  box.innerHTML = `<a class="brand" href="${WEB}"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar <small class="muted">· admin</small></a>
     ${html}
     <button class="btn sm ghost" id="mfaSalir" type="button">Cerrar sesión</button>
     <span class="lang" id="langMfa" aria-label="Idioma / Language"></span>`;
