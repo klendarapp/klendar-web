@@ -47,7 +47,7 @@ function filaPedidos() {
 const fichaNegocio = (slug, id) => `${pre}/b/${encodeURIComponent(slug || id)}`;
 
 /** El centro [lat, lng] de una celda de «Cerca de mí» (como assets/celda.js), o null. */
-const centroDeCelda = function(c){var B='0123456789bcdefghjkmnpqrstuvwxyz',la=[-90,90],lo=[-180,180],p=1;if(!/^[0-9b-hjkmnp-z]{5}$/.test(c||''))return null;for(var i=0;i<c.length;i++){var n=B.indexOf(c.charAt(i));for(var b=4;b>=0;b--){var r=p?lo:la,m=(r[0]+r[1])/2;if(n>>b&1)r[0]=m;else r[1]=m;p=!p;}}return[Math.round((la[0]+la[1])*5e4)/1e5,Math.round((lo[0]+lo[1])*5e4)/1e5];};
+const centroDeCeldaGuardada = function(c){var B='0123456789bcdefghjkmnpqrstuvwxyz',la=[-90,90],lo=[-180,180],p=1;if(!/^[0-9b-hjkmnp-z]{5}$/.test(c||''))return null;for(var i=0;i<c.length;i++){var n=B.indexOf(c.charAt(i));for(var b=4;b>=0;b--){var r=p?lo:la,m=(r[0]+r[1])/2;if(n>>b&1)r[0]=m;else r[1]=m;p=!p;}}return[Math.round((la[0]+la[1])*5e4)/1e5,Math.round((lo[0]+lo[1])*5e4)/1e5];};
 /** La zona guardada de Explorar (la ciudad elegida), si la hay; con «Cerca
  * de mí», la localidad de ese punto según Mapbox (redondeado, ~1 km). */
 async function zonaGuardada() {
@@ -60,7 +60,7 @@ async function zonaGuardada() {
   const ciudad = (q.get('ciudad') || q.get('city') || '').trim();
   if (ciudad) return ciudad.replace(/(^|[\s-])(\p{Ll})/gu, (m, a, b) => a + b.toUpperCase()).slice(0, 80);
   // «Cerca de mí» se guarda como su celda (assets/celda.js): su centro.
-  const c = centroDeCelda(q.get('celda') || q.get('cell'));
+  const c = centroDeCeldaGuardada(q.get('celda') || q.get('cell'));
   const lat = c ? c[0] : Number(q.get('lat'));
   const lng = c ? c[1] : Number(q.get('lng'));
   if ((!c && !q.get('lat')) || !Number.isFinite(lat) || !Number.isFinite(lng)) return '';

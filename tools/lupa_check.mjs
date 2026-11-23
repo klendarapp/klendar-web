@@ -30,7 +30,8 @@ const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
-const POS = 'lat=40.417&lng=-3.704';
+// «Cerca de mí» va como su celda (assets/celda.js).
+const POS = 'celda=ezjmg';
 
 /** Va a la página (dev a veces da 500: se repite). */
 async function ve(page, url, sel = '#barra') {
@@ -142,7 +143,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       ok(abierto.n > 0 && abierto.ex === 'true' && abierto.abierta && abierto.panel, `${t} un grupo despliega sus tipos sin cerrar nada`);
       // Un tipo abre Explorar › Sitios con esa categoría puesta (sin texto), con la misma zona.
       const cat = await page.evaluate(() => document.querySelector('#buscar a.busq-cat').getAttribute('href'));
-      ok(/^\/explorar\?/.test(cat) && /que=sitios/.test(cat) && /categoria=/.test(cat) && !/[?&]q=/.test(cat) && /lat=/.test(cat), `${t} tocar un tipo abre Sitios con su categoría (${cat})`);
+      ok(/^\/explorar\?/.test(cat) && /que=sitios/.test(cat) && /categoria=/.test(cat) && !/[?&]q=/.test(cat) && /celda=/.test(cat), `${t} tocar un tipo abre Sitios con su categoría (${cat})`);
       // Escape la cierra y el foco vuelve a la lupa.
       await page.keyboard.press('Escape');
       await page.waitForTimeout(250);
@@ -157,7 +158,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
       // cargándolos todos a la vez.)
       await Promise.all([page.waitForURL(/\/explorar\?/, { waitUntil: 'commit' }), page.press('#buscar input[name=q]', 'Enter')]);
       const u = new URL(page.url());
-      ok(u.searchParams.get('q') === 'bar' && u.searchParams.get('lat'), `${t} «Buscar» lleva a Explorar con la palabra y la misma zona (${u.search})`);
+      ok(u.searchParams.get('q') === 'bar' && u.searchParams.get('celda'), `${t} «Buscar» lleva a Explorar con la palabra y la misma zona (${u.search})`);
       ok(errores.length === 0, `${t} sin errores de JavaScript (${errores.join(' | ')})`);
 
       // ── Explorar: atajos a Descubre, el panel con los tipos y vacío sin «0» ──

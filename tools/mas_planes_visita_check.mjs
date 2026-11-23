@@ -134,15 +134,15 @@ async function caso(nav, nombre) {
   ok((await aviso(p).innerText()) === 'Volver a Alcañiz', `${nombre}: aviso «Volver a Alcañiz» (resolve_municipality)`);
 
   // C. Lo de siempre, «Cerca de mí» (con su posición): «Volver a cerca de mí».
-  await p.goto(`${BASE}/descubre?lat=36.721&lng=-4.421`, { waitUntil: 'domcontentloaded' });
+  await p.goto(`${BASE}/descubre?celda=eysbg`, { waitUntil: 'domcontentloaded' });
   await visita(p, '/b/nails-co-madrid', 'Más planes en Madrid', '/descubre?ciudad=madrid&visita=1');
   await aviso(p).waitFor({ timeout: 8000 });
   ok((await aviso(p).innerText()) === 'Volver a cerca de mí', `${nombre}: aviso «Volver a cerca de mí»`);
   const g3 = await guardado(p);
-  ok(g3.includes('lat=36.721') && !g3.includes('ciudad='), `${nombre}: lo guardado sigue con tu posición (${g3})`);
-  await Promise.all([p.waitForURL((u) => u.search.includes('lat='), { timeout: 10000 }).catch(() => {}),
+  ok(g3.includes('celda=eysbg') && !g3.includes('ciudad='), `${nombre}: lo guardado sigue con tu posición (${g3})`);
+  await Promise.all([p.waitForURL((u) => u.search.includes('celda='), { timeout: 10000 }).catch(() => {}),
     p.locator('#visita [data-visita-volver]').click()]);
-  ok(new URL(p.url()).searchParams.get('lat') === '36.721', `${nombre}: «Volver a cerca de mí» vuelve a tu posición`);
+  ok(new URL(p.url()).searchParams.get('celda') === 'eysbg', `${nombre}: «Volver a cerca de mí» vuelve a tu posición`);
 
   // D. En inglés.
   await p.goto(`${BASE}/en/discover?todas=1`, { waitUntil: 'domcontentloaded' });
