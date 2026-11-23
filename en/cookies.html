@@ -61,7 +61,7 @@
 <script src="/assets/cabecera.js?v=20261119idioma" defer></script>
 <main class="doc" id="contenido">
 <h1>Cookie policy</h1>
-<div class="meta">Last updated: 12 November 2026 · Version 2026-09-29</div>
+<div class="meta">Last updated: 23 November 2026 · Version 2026-09-29</div>
 <p class="notice">This is a courtesy translation provided for information only. In case of any discrepancy, the <a href="/cookies">Spanish version</a> prevails.</p>
 
 <p><strong>In short.</strong> klendar.app uses <strong>a single cookie</strong>, and only if you answer “Are you 18 or over?”: it stores your answer so we don't ask again. Apart from that, it only stores in your browser what is essential for what you ask it to do (your session, your language, your filters, the codes a business validates offline) and it counts visits without cookies and without identifying you. None of this is used for advertising or to follow you across other sites, so we don't ask for your consent (art. 22.2 of the Spanish LSSI-CE). If we ever add anything that needs it, we will ask you first.</p>
@@ -75,9 +75,9 @@
 <tr><td><code>klendar.tab</code></td><td>All of klendar.app (session storage)</td><td>Keep the bottom bar on the tab you came from when you open a listing, as in the app</td><td>Until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>sb-…-auth-token</code></td><td>“Your account” and business dashboard (local storage)</td><td>Keep you logged in</td><td>Until you log out</td><td>Technical (authentication)</td></tr>
 <tr><td><code>sb-…-auth-token-…code-verifier</code></td><td>“Your account” and business dashboard (local storage)</td><td>A one-time secret that checks that the return from Google reaches the same browser where you started logging in (PKCE)</td><td>Until you finish logging in or log out</td><td>Technical (security)</td></tr>
-<tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
-<tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Admin (local storage)</td><td>When there was last activity (to log out after 30 minutes without any) and why the session was closed, so we can tell you</td><td>Until the next time you log in</td><td>Technical (security)</td></tr>
-<tr><td><code>klendar.admin.nav.sistema</code>, <code>klendar.admin.resumen.mas</code></td><td>Admin (local storage)</td><td>Remember whether you left the “System” menu group and “More” in the summary open</td><td>Until you change it</td><td>Preference you chose</td></tr>
+<tr><td><code>sb-…-admin-auth-token</code></td><td>Admin (admin.klendar.app, local storage)</td><td>Keep the admin session, separate from the “Your account” one</td><td>Until you log out, after 30 minutes of inactivity or after 12 hours</td><td>Technical (authentication)</td></tr>
+<tr><td><code>klendar.admin.actividad</code>, <code>klendar.admin.cierre</code></td><td>Admin (admin.klendar.app, local storage)</td><td>When there was last activity (to log out after 30 minutes without any) and why the session was closed, so we can tell you</td><td>Until the next time you log in</td><td>Technical (security)</td></tr>
+<tr><td><code>klendar.admin.nav.sistema</code>, <code>klendar.admin.resumen.mas</code></td><td>Admin (admin.klendar.app, local storage)</td><td>Remember whether you left the “System” menu group and “More” in the summary open</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.acceso.aviso</code></td><td>“Your account” and business dashboard (session storage)</td><td>Tell you if an email link has expired or was already used</td><td>Until the notice is shown or the tab is closed</td><td>Technical</td></tr>
 <tr><td><code>klendar.intencion</code></td><td>Publication and business pages, Discover, Explore and “Your account” (session storage)</td><td>Remember the button you just pressed (save, reserve, get the code…) so it's done once you've logged in, and never done if you arrive through an outside link</td><td>Until it's used, 15 minutes at most or until the tab is closed</td><td>Technical (security)</td></tr>
 <tr><td><code>klendar.biz</code></td><td>Business dashboard</td><td>Remember which business you were managing</td><td>Until you log out</td><td>Technical</td></tr>
@@ -120,6 +120,7 @@
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>23 November 2026</strong>: Klendar's administration now lives at admin.klendar.app: its local storage (the admin team's session and preferences) is kept at that address, separate from klendar.app.</li>
   <li><strong>12 November 2026</strong>: New klendar.asistente.permiso key, for the help assistant (only when not logged in).</li>
   <li><strong>9 November 2026</strong>: In the app, the anti-bot check's web view is also prepared just before you use it: on the last welcome screen and in Account if you're not logged in.</li>
   <li><strong>4 November 2026</strong>: In the app, the anti-bot check runs in a web view of klendar.app/captcha that is prepared when you open those screens and only shows if you need to tick the box.</li>
