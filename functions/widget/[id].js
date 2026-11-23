@@ -1,3 +1,4 @@
+import { CSP_WIDGET } from '../_lib/csp.js';
 import { configure, erroresScript, esc, isUuid, rpc, rpcAll } from '../_lib/page.js';
 import { benefit, bizPath, firstPhoto, fmtDay, fmtEnd, fmtLong, fmtTime, guard, slugDe, zonaDe } from '../_lib/public.js';
 
@@ -93,15 +94,7 @@ ${erroresScript()}
     <span class="mu">${esc(S.by)}</span>
   </div>
 </div>
-<script>
-  // Le decimos a la web que nos embebe cuánto medimos, para que no haya
-  // barras de desplazamiento dentro del recuadro.
-  function alto() {
-    var h = document.getElementById('box').getBoundingClientRect().height + 4;
-    parent.postMessage({ klendar: 'height', height: Math.ceil(h) }, '*');
-  }
-  addEventListener('load', alto); addEventListener('resize', alto); alto();
-</script>
+<script src="/assets/widget-alto.js?v=1"></script>
 </body></html>`;
 
   return new Response(html, {
@@ -112,7 +105,8 @@ ${erroresScript()}
       // Este es el único sitio del dominio que se deja meter en un iframe:
       // es justo para lo que está hecho. Manda `frame-ancestors`; el
       // X-Frame-Options del resto del sitio no lo pone el middleware aquí.
-      'content-security-policy': "base-uri 'self'; object-src 'none'; frame-ancestors *",
+      // Y solo sus scripts, nada en línea (_lib/csp.js, RUNBOOK §4zzz-csp).
+      'content-security-policy': CSP_WIDGET,
     },
   });
   });

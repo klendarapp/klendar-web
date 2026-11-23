@@ -184,7 +184,7 @@ try {
         const AXE = readFileSync(axeRuta, 'utf8');
         for (const tema of ['light', 'dark']) {
           for (const ruta of [`/cartel/${flash.id}`, `/cartel/pegatina/${negocio.id}?fondo=claro`, `/cartel/${exclusiva.id}`]) {
-            const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, colorScheme: tema });
+            const ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, colorScheme: tema, bypassCSP: true }); // axe va con addScriptTag (en línea)
             await web.conDatos(ctx);
             const p = await ctx.newPage();
             await p.goto(`${web.BASE}${ruta}`, { waitUntil: 'networkidle' });

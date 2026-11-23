@@ -12,7 +12,7 @@
 // privada (sin buscadores ni caché compartida).
 
 import { textoCarta, tipoCartaDe } from './carta.js';
-import { erroresScript, esc, html, isUuid, rpc, jsonEnScript } from './page.js';
+import { erroresScript, esc, html, isUuid, rpc } from './page.js';
 import { zonaDe } from './public.js';
 import { notFound } from './views.js';
 import { NOMBRE_IDIOMA, TP, diaCorto, diaLargo, dinero, hora, idiomaCartel, webDe } from './cartel_idiomas.js';
@@ -377,7 +377,7 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', que
       <h1>${esc(b.name)}</h1>
       ${que ? `<p class="que">${queIcono}${esc(que)}</p>` : ''}
       <p class="invita">${esc(invita)}</p>
-      <div class="qr" role="img" aria-label="QR ${esc(url)}"></div>
+      <div class="qr" role="img" aria-label="QR ${esc(url)}" data-qr="${esc(url)}" data-nivel="M"></div>
       ${notas.length ? `<div class="bajo-qr"><p class="apunta">${esc(S.point)}</p>${notas.map((n) => `<p class="nota">${esc(n)}</p>`).join('')}</div>`
     : `<p class="apunta">${esc(S.point)}</p>`}
       ${dir ? `<p class="dir">${esc(dir)}</p>` : ''}
@@ -439,18 +439,14 @@ function paginaCartel({ S, b, url, mesa = false, nav = '', titulo, que = '', que
 <div class="barra">
   <p>${esc(ayuda)}</p>
   ${nav}
-  <button onclick="print()">${esc(S.print)}</button>
+  <button type="button" data-imprimir>${esc(S.print)}</button>
 </div>
 ${numeros.length
     ? Array.from({ length: Math.ceil(numeros.length / 4) }, (_, i) =>
         `<main class="folio mesa">${numeros.slice(i * 4, i * 4 + 4).map((n) => cartel(n)).join('')}</main>`).join('')
     : `<main class="folio${mesa ? ' mesa' : ''}">${mesa ? cartel().repeat(4) : cartel()}</main>`}
-<script src="/assets/vendor/qrcode.js?v=1"></script>
-<script>
-  var q = qrcode(0, 'M'); q.addData(${jsonEnScript(url)}); q.make();
-  var svg = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
-  document.querySelectorAll('.qr').forEach(function (el) { el.innerHTML = svg; });
-</script>
+<script src="/assets/vendor/qrcode.js?v=1" defer></script>
+<script src="/assets/cartel.js?v=${CARTEL_JS_V}" defer></script>
 </body>
 </html>`, 200, 'no-store');
 }

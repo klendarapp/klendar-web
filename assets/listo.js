@@ -118,11 +118,12 @@
 
   /** La etiqueta del <head> que lleva a «Tu cuenta» si hay sesión guardada. */
   function saltoConSesion(lang, code, ref) {
-    const destino = JSON.stringify(`${cuenta(lang, `listo/${code}`)}`);
+    const destino = cuenta(lang, `listo/${code}`);
     // Solo la sesión de este proyecto (`ref`, el de la Function): la de otro
     // Supabase (dev, tras pasar la web a prod) llevaría a «Tu cuenta» sin sesión.
-    const k = JSON.stringify(ref ? `sb-${String(ref).replace(/[^a-z0-9-]/g, '')}-auth-token` : '');
-    return `<script>(function(){try{var s=JSON.parse(localStorage.getItem(${k})||'null');if(s&&(s.access_token||s.currentSession)){location.replace(${destino});}}catch(e){}})();</script>`;
+    const k = ref ? `sb-${String(ref).replace(/[^a-z0-9-]/g, '')}-auth-token` : '';
+    // En un fichero (assets/salto-sesion.js): la CSP de scripts no deja nada en línea (RUNBOOK §4zzz-csp).
+    return `<script src="/assets/salto-sesion.js?v=1" data-clave="${esc(k)}" data-destino="${esc(destino)}"></script>`;
   }
 
   const KlendarListo = { T, esc, codigoValido, cuerpo, titulo, saltoConSesion };

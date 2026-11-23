@@ -138,9 +138,10 @@ def main() -> int:
                 for m in HASH_DENTRO.finditer(linea):
                     if m[1] not in (PANEL if propio == 'panel' else ADMIN):
                         malos.append(f'{donde}: «#/{m[1]}» (el {propio} no tiene esa pantalla)')
-    # Cada página estática (`x.html`) sin barra: fuera de las Functions por su
-    # dirección exacta (`_routes.json`) y con su `/x/ /x 301` en `_redirects`
-    # (sin él, Cloudflare da un 308); las zonas con sesión pasan por el middleware.
+    # Cada página estática (`x.html`) sin barra: con su `/x/ /x 301` en
+    # `_redirects` (sin él, Cloudflare da un 308) y pasando por el middleware
+    # (no en el exclude de `_routes.json`), que le pone el nonce de la CSP
+    # (§4zzz-csp). Menos /captcha, que va con `no-transform` y fuera.
     import json
     fuera = set(json.loads(lee('_routes.json'))['exclude'])
     reglas = set(l.strip() for l in lee('_redirects').splitlines() if l.strip() and not l.startswith('#'))
@@ -148,8 +149,11 @@ def main() -> int:
         ruta = '/' + os.path.relpath(f, RAIZ).replace(os.sep, '/')[:-5]
         if ruta in ('/index', '/404', '/en/404') or ruta in ('/cuenta', '/panel', '/admin', '/tv', '/alta'):
             continue
-        if ruta not in fuera:
-            malos.append(f'_routes.json: falta «{ruta}» en exclude (la página estática pasaría por las Functions)')
+        if ruta == '/captcha':
+            if ruta not in fuera:
+                malos.append('_routes.json: falta «/captcha» en exclude (va con no-transform, sin pasar por las Functions)')
+        elif ruta in fuera:
+            malos.append(f'_routes.json: «{ruta}» está en exclude (sin el middleware, la CSP no lleva nonce y Cloudflare no puede meter su script)')
         # `/captcha/` sigue sirviéndose tal cual (200) para la app hasta la 0.1.7.
         if f'{ruta}/ {ruta} 301' not in reglas and not (ruta in CON_BARRA_200 and f'{ruta}/ {ruta} 200' in reglas):
             malos.append(f'_redirects: falta «{ruta}/ {ruta} 301»')

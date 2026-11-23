@@ -1279,23 +1279,9 @@ function guardaFiltros(e, lang, base, explorar = false) {
     // Una búsqueda (que se ve en lista) no cambia la vista que se recuerda.
     ...(explorar ? { ex: 1, ...(e.q ? {} : { x: { es: vistaDe('es'), en: vistaDe('en') } }) } : {}),
   }).replace(/</g, '\\u003c');
-  return `<script>(function(d){try{var K='klendar.filtros',X='klendar.explorar',s=sessionStorage,ls=localStorage;
-var sin=s.getItem('klendar.filtros.sin');s.removeItem('klendar.filtros.sin');
-var n=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||{};
-var g=JSON.parse(ls.getItem(K)||'null');
-var gu=JSON.parse(ls.getItem('klendar.gustos')||'null'),gq=gu&&Array.isArray(gu.c)?gu.c.filter(function(x){return /^[a-z0-9-]{1,40}$/.test(x);}).slice(0,5).join(','):'';
-var conG=function(u){var q=new URL(u,location.href);if(gq)q.searchParams.set('gustos',gq);else q.searchParams.delete('gustos');return q.pathname+q.search+q.hash;};
-var libre=!sin&&n.type!=='back_forward',vx=d.ex?JSON.parse(ls.getItem(X)||'null'):null,ex=d.ex&&libre&&!location.search&&vx&&vx[d.L]?vx[d.L]:'';
-var seis=new Date();if(seis.getHours()<6)seis.setDate(seis.getDate()-1);seis.setHours(6,0,0,0);
-var viejo=function(s,t){var u=new URLSearchParams(s||'');if(!(t>=seis.getTime())){var w=u.get('cuando')||u.get('when');if((w==='ahora'||w==='now')&&u.get('km')==='1'&&/^(cerca|nearest)$/.test(u.get('orden')||u.get('sort')||'')){u.delete('km');u.delete('orden');u.delete('sort');}['cuando','when','abierto','open','comer-ahora','food-now','momento','moment'].forEach(function(k){u.delete(k);});}if(!(Date.now()-t<216e5)){['lat','lng','celda','cell'].forEach(function(k){u.delete(k);});}return u.toString();};
-var gq0=g&&g[d.L]?viejo(g[d.L],g.t):'';
-if(d.v&&libre&&gq0){location.replace(conG(d.b+'?'+gq0+(d.r?'&'+d.r:'')+(ex?'&'+ex:'')+location.hash));return;}
-if(ex){location.replace(conG(d.b+'?'+ex+location.hash));return;}
-if(d.x)ls.setItem(X,JSON.stringify(d.x));
-var A=d.A,t=Date.now();
-if(d.vi){var Z=['ciudad','city','lat','lng','celda','cell','km','todas'],P=/^(lat|lng|celda|cell)$/,o=g||{},vp=Date.now()-(o.t||0)<216e5,f=function(L){var u=new URLSearchParams(A[L]||''),w=new URLSearchParams(o[L]||'');Z.forEach(function(k){u.delete(k);});Z.forEach(function(k){if(!vp&&P.test(k))return;w.getAll(k).forEach(function(v){u.append(k,v);});});return u.toString();};A={es:f('es'),en:f('en')};if(vp&&o.t&&/(^|&)(lat|celda|cell)=/.test(o[d.L]||''))t=o.t;}
-ls.setItem(K,JSON.stringify({t:t,es:A.es,en:A.en}));
-if(gq!==d.g)location.replace(conG(location.href));}catch(x){}})(${datos});</script>`;
+  // En assets/filtros-guarda.js, sin `defer` (la CSP de scripts no deja nada en
+  // línea, RUNBOOK §4zzz-csp): los datos, como JSON que no se ejecuta.
+  return `<script type="application/json" id="klFiltros">${datos}</script><script src="/assets/filtros-guarda.js?v=1"></script>`;
 }
 
 /** «El sitio» de la hoja: todo menos «Apto para niños», que es «Con niños»
@@ -1364,8 +1350,8 @@ export function dependeDeLaConexion(searchParams) {
 // cuando llegan las letras. Antes del primer pintado (`requestAnimationFrame`),
 // no mientras se lee la página: medir a mitad de la lectura tumbaba WebKit
 // al llegar desde el formulario de una hoja.
-const FILA_MIDE = "(function(){var b=document.getElementById('barra');if(!b)return;"
-  + "function corta(){return Array.prototype.some.call(b.querySelectorAll('.barra-preg .chip-t'),function(t){return t.offsetParent&&t.scrollWidth>t.clientWidth+1;});}"
+// FILA_MIDE: en assets/fila-mide.js (la CSP de scripts no deja nada en línea,
+// RUNBOOK §4zzz-csp). Lo que hace cada paso:
   // El texto corto («Todas», «5 km») va por el ancho de la PANTALLA (menos
   // de 400 px), como la app, no por el hueco de cada vista: en el
   // escritorio, Descubre decía «Todas» y Explorar «Todas las ciudades»
@@ -1373,11 +1359,6 @@ const FILA_MIDE = "(function(){var b=document.getElementById('barra');if(!b)retu
   // sin iconos y, si ni así, el corto.
   // Y si aun así no cabe, lo elegido en corto («2 horas», «Bares +2»; Iván,
   // 11-11, como la app) en vez de «Próximas…» o «Bares, Re…».
-  + "function largos(){Array.prototype.forEach.call(b.querySelectorAll('.chip-t[data-corto]'),function(t){t.textContent=t.getAttribute('data-largo');});}"
-  + "function cortos(){Array.prototype.forEach.call(b.querySelectorAll('.chip-t[data-corto]'),function(t){if(t.scrollWidth>t.clientWidth+1)t.textContent=t.getAttribute('data-corto');});}"
-  + "function mide(){largos();b.classList.remove('fila-corta','fila-sin-iconos');var e=innerWidth<400;if(e)b.classList.add('fila-corta');if(!corta())return;b.classList.add('fila-sin-iconos');if(!e&&corta())b.classList.add('fila-corta');if(corta())cortos();}"
-  + "(window.requestAnimationFrame||setTimeout)(mide);window.KL_FILA=mide;var t;addEventListener('resize',function(){clearTimeout(t);t=setTimeout(mide,60);});"
-  + "if(document.fonts&&document.fonts.ready)document.fonts.ready.then(mide);})();";
 
 export async function explorePage(url, lang, modo = 'explorar', request = null) {
   const en = lang === 'en';
@@ -2304,7 +2285,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     </div>
     ${hojaFiltros}
   </div>
-  <script>${FILA_MIDE}</script>
+  <script src="/assets/fila-mide.js?v=1"></script>
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=7" defer></script>
   <script src="/assets/gustos.js?v=20261113lupa" defer data-lang="${en ? 'en' : 'es'}"></script>
@@ -2375,7 +2356,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ? `<div class="cerca-aviso edad-aviso" data-edad><span>${esc(S.ageHidden(ocultos18))} <strong>${esc(S.ageQ)}</strong></span>
         <button type="button" class="pill ink" data-edad-si>${esc(S.ageYes)}</button>
         <button type="button" class="pill" data-edad-no>${esc(S.ageNo)}</button></div>
-  <script>(function(){var b=document.querySelector('[data-edad]');if(!b)return;function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else{b.remove();document.querySelectorAll('[data-tras-edad]').forEach(function(a){if(a.hasAttribute('data-cerca-aviso')&&!navigator.geolocation)return;a.hidden=false;});}}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`
+  <script src="/assets/edad.js?v=1" defer></script>`
     : '';
   const invitaCerca = !descubre && !cerca && !city
     ? `<p class="cerca-aviso" data-cerca-aviso${ocultos18 ? ' data-tras-edad hidden' : ''}>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
@@ -2430,9 +2411,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // adelante ocultas (sin zona, todas: es lo que ve Google).
   const mfAttr = (c, i) => (mfCliente && numOk(c.lat) ? ` data-lat="${Number(c.lat).toFixed(3)}" data-lng="${Number(c.lng).toFixed(3)}"` : '')
     + (mfCliente && zonaMf && i >= MF_MAX ? ' hidden' : '');
-  const mfScript = mfCliente && ciudadesMas.length > 1 ? `<script>(function(){try{var g=JSON.parse(localStorage.getItem('klendar.gustos')||'null'),h=g&&g.home;if(!h||!isFinite(+h.lat)||!isFinite(+h.lng))return;
-var r=function(d){return d*Math.PI/180;},km=function(a){var la=+a.getAttribute('data-lat'),ln=+a.getAttribute('data-lng');if(!a.hasAttribute('data-lat'))return 1e9;var x=Math.sin(r(la-h.lat)/2),y=Math.sin(r(ln-h.lng)/2);return 12742*Math.asin(Math.min(1,Math.sqrt(x*x+Math.cos(r(h.lat))*Math.cos(r(la))*y*y)));};
-document.querySelectorAll('[data-mf] p').forEach(function(p){var l=Array.prototype.slice.call(p.children);l.map(function(a,i){return{a:a,i:i,d:km(a)};}).sort(function(a,b){return a.d-b.d||a.i-b.i;}).forEach(function(x,i){x.a.hidden=i>=${MF_MAX};p.appendChild(x.a);});});}catch(x){}})();</script>` : '';
+  const mfScript = mfCliente && ciudadesMas.length > 1 ? `<script src="/assets/mas-formas.js?v=1" data-max="${MF_MAX}"></script>` : '';
   const masFormas = negocios ? '' : `<section class="mas-formas" aria-labelledby="masFormas">
     <h2 id="masFormas">${esc(S.more)}</h2>
     ${ciudadesMas.length ? `<div class="mf-fila"${mfCliente ? ' data-mf' : ''}><h3>${esc(S.todayIn)}</h3><p>${ciudadesMas.map((c, i) => `<a${mfAttr(c, i)} href="${todayBase(lang)}/${CITY(c.slug || c.city)}">${esc(c.slug ? c.city : PRETTY(c.city))}</a>`).join('')}</p></div>

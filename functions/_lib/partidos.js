@@ -18,7 +18,6 @@
 // sesión (`broadcast_business_ok`).
 
 import { enlaceCuenta } from './cuenta.js';
-import KCe from '../../assets/celda.js';
 import { esc, html, rows, rpc, rpcAll, supabasePublic, isUuid } from './page.js';
 import KZ from '../../assets/zona.js';
 import KE from '../../assets/emisiones.js';
@@ -205,13 +204,8 @@ export function zonaMenu(e, lang, ciudades, link) {
  * de 6 h) y sin zona en la dirección: se vuelve a la misma página con ella,
  * como en Explorar. Los enlaces de la propia página dejan una marca para no
  * pisarse (`klendar.filtros.sin`, /assets/tarjetas.js). */
-export const recuperaZona = () => `<script>(function(){try{var q=new URLSearchParams(location.search);
-if(q.has('lat')||q.has('ciudad')||q.has('city'))return;var s=sessionStorage;var sin=s.getItem('klendar.filtros.sin');s.removeItem('klendar.filtros.sin');if(sin)return;
-var n=(performance.getEntriesByType&&performance.getEntriesByType('navigation')[0])||{};if(n.type==='back_forward')return;
-var g=JSON.parse(localStorage.getItem('klendar.filtros')||'null');if(!g||Date.now()-g.t>216e5)return;
-var a=new URLSearchParams(g[/^\\/en(\\/|$)/.test(location.pathname)?'en':'es']||'');var z=new URLSearchParams();
-var cc=(${KCe.CENTRO_EN_LINEA})(a.get('celda')||a.get('cell'));if(cc){z.set('lat',cc[0].toFixed(3));z.set('lng',cc[1].toFixed(3));if(a.get('km'))z.set('km',a.get('km'));}else if(a.get('lat')&&a.get('lng')){z.set('lat',a.get('lat'));z.set('lng',a.get('lng'));if(a.get('km'))z.set('km',a.get('km'));}else{var c=a.get('ciudad')||a.get('city');if(c)z.set(/^\\/en\\//.test(location.pathname)?'city':'ciudad',c);}
-if(!z.toString())return;q.forEach(function(v,k){z.set(k,v);});location.replace(location.pathname+'?'+z.toString()+location.hash);}catch(x){}})();</script>`;
+// En assets/recupera-zona.js, sin `defer` (CSP de scripts, RUNBOOK §4zzz-csp).
+export const recuperaZona = () => '<script src="/assets/recupera-zona.js?v=1"></script>';
 
 // ── Una fila de partido ───────────────────────────────────────────────────
 /** «Lo ponen 3 bares cerca · 1 con oferta» (lo de la oferta, en coral: es

@@ -402,13 +402,9 @@ ${conTarjetas || conAmigos ? `<script src="/assets/celda.js?v=1" defer></script>
  */
 function desdeHistorias() {
   const sp = supabasePublic();
-  return `<script>(function(){try{var q=new URLSearchParams(location.search);var ref=q.get('ref');if(['stories','whatsapp','tv','local_qr'].indexOf(ref)<0||navigator.webdriver)return;
-var p=location.pathname.split('/').filter(Boolean);if(p[0]==='en')p.shift();
-var k={o:'offer',b:'business',coleccion:'collection',collection:'collection',sorteo:'business',giveaway:'business'}[p[0]];if(!k||!p[1])return;
-if(p[0]==='sorteo'||p[0]==='giveaway'){var n=document.querySelector('[data-ref-negocio]');p[1]=n&&n.getAttribute('data-ref-negocio');if(!p[1]||p.length>2)return;}
-var key=${jsonEnScript(sp.key)};
-fetch(${jsonEnScript(sp.url + '/rest/v1/rpc/log_ref_visit')},{method:'POST',keepalive:true,headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json'},body:JSON.stringify({p_ref:ref,p_kind:k,p_target:decodeURIComponent(p[1])})}).catch(function(){});
-q.delete('ref');var r=q.toString();history.replaceState(history.state,'',location.pathname+(r?'?'+r:'')+location.hash);}catch(e){}})();</script>`;
+  // En un fichero (CSP de scripts, RUNBOOK §4zzz-csp) y sin `defer`, como
+  // cuando iba en línea: quita `?ref=` antes de que corran los demás.
+  return `<script src="/assets/ref-visita.js?v=1" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
 }
 
 /** «Compartir en historias»: la imagen vertical para Instagram y compañía
@@ -425,7 +421,7 @@ export function openInApp(path, label = 'Abrir en la app', cls = 'pill accent bi
   // el enlace), que entonces dice «Muy pronto…» (assets/cabecera-yo.js).
   const intent = `intent://klendar.app${deep}#Intent;scheme=https;package=app.klendar;S.browser_fallback_url=${encodeURIComponent(`${BASE}${path}#sin-app`)};end`;
   return `<a class="${cls}" id="open" data-web="${BASE}${esc(deep)}" href="${esc(intent)}">${esc(label)}</a>
-<script>(function(){var a=document.getElementById('open');if(!a)return;if(!/Android/i.test(navigator.userAgent||''))a.remove();})();</script>`;
+<script src="/assets/abrir-app.js?v=1"></script>`;
 }
 
 /** Cuando el servidor no contesta: decirlo claro y no mentir con un 404.

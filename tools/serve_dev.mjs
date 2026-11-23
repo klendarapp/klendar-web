@@ -7,6 +7,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { direccionBuena } from '../functions/_lib/direccion.js';
+import { CSP_PUBLICA } from '../functions/_lib/csp.js';
 
 // En las pruebas (SUPABASE_BLOQUEADO, lo pone tools/_supabase_simulado.mjs a
 // los serve_dev que lanza; a mano, SUPABASE_BLOQUEADO=1): lo que las Functions
@@ -188,6 +189,10 @@ createServer(async (req, res) => {
       const out = await (post ? mod.onRequestPost : mod.onRequestGet)({ request, params, env: { ...process.env, ASSETS }, next: async () => SIGUE });
       if (out !== SIGUE) {
       const cabeceras = Object.fromEntries(out.headers);
+      // Como functions/_middleware.js: lo que pintan las Functions lleva la CSP
+      // pública si no trae la suya (§4zzz-csp). Sin nonce: en local Cloudflare
+      // no mete su script.
+      if (!cabeceras['content-security-policy']) cabeceras['content-security-policy'] = CSP_PUBLICA;
       if (cabeceras.location) cabeceras.location = cabeceras.location.replace(/^https:\/\/klendar\.app/, '');
       res.writeHead(out.status, cabeceras);
       // En local, sin el contador de Cloudflare (su servidor no acepta
@@ -212,7 +217,7 @@ createServer(async (req, res) => {
     if (e.code === 'ENOENT' || e.code === 'EISDIR') {
       try {
         const nf = await readFile(join(ROOT, /^\/en(\/|$)/.test(path) ? 'en/404.html' : '404.html'));
-        res.writeHead(404, { 'content-type': TYPES['.html'] });
+        res.writeHead(404, { ...cabecerasDe(/^\/en(\/|$)/.test(path) ? '/en/404.html' : '/404.html'), 'content-type': TYPES['.html'] });
         res.end(nf);
         return;
       } catch { /* sin 404.html: el texto de abajo */ }

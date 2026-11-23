@@ -1,20 +1,19 @@
-# La CSP mínima de /* es la misma que pone functions/_middleware.js a lo que
-# pasa por las Functions: lo estático ya no pasa por ahí (`_routes.json`).
-# Las zonas con su propia CSP la quitan antes (`! Content-Security-Policy`).
-# CSP de scripts en SOLO INFORME (revisión de seguridad 20-11, §4zzz-segF del
-# RUNBOOK de la app): no bloquea nada; la consola del navegador dice qué
-# rompería una CSP de verdad («[Report Only] Refused to…»). Sin `report-uri`:
-# cada aviso sería una llamada a las Functions (varias por visita). Llega a
-# todo, también al admin, al panel y a «Tu cuenta», que ya tienen la suya
-# obligatoria. La misma en functions/_middleware.js (SEGURIDAD).
+# La CSP de /* es la misma que pone functions/_middleware.js a lo que pasa
+# por las Functions (functions/_lib/csp.js, CSP_PUBLICA; tools/revseg_check.mjs
+# y tools/csp_check.mjs miran que sean iguales). Obligatoria desde el 23-11
+# (§4zzz-csp del RUNBOOK de la app; antes, del 20-11, solo informe): solo
+# scripts de klendar.app, Turnstile, Mapbox y el contador de Cloudflare, nada
+# en línea ni `onclick=`. Las páginas estáticas también pasan por el
+# middleware (`_routes.json`): les pone un nonce nuevo en cada visita para el
+# script que mete Cloudflare (Bot Fight Mode). Las zonas con su propia CSP la
+# quitan antes (`! Content-Security-Policy`).
 /*
   Strict-Transport-Security: max-age=31536000; includeSubDomains
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: geolocation=(), camera=(), microphone=()
-  Content-Security-Policy: base-uri 'self'; object-src 'none'; frame-ancestors 'none'
-  Content-Security-Policy-Report-Only: script-src 'self' https://challenges.cloudflare.com https://api.mapbox.com https://static.cloudflareinsights.com; worker-src 'self' blob:
+  Content-Security-Policy: script-src 'self' https://challenges.cloudflare.com https://api.mapbox.com https://static.cloudflareinsights.com; worker-src 'self' blob:; base-uri 'self'; object-src 'none'; frame-ancestors 'none'
 # Zonas con sesión (admin, panel, «Tu cuenta»). Cada zona va dos veces: la
 # página (`/panel`, sin barra desde el 11-11) y lo de dentro (`/panel/*`):
 # `/panel/*` no cubre `/panel`.
@@ -172,7 +171,7 @@
 /widget/*
   ! Content-Security-Policy
   ! X-Frame-Options
-  Content-Security-Policy: frame-ancestors *
+  Content-Security-Policy: script-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors *
   X-Robots-Tag: noindex
 
 # Explorar y Descubre: «Cerca de mí» pide la ubicación (solo al pulsarlo).

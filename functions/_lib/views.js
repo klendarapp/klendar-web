@@ -90,11 +90,8 @@ export const masMenu = (items, lang, { soloPublico = false } = {}) => `<details 
       <summary aria-label="${lang === 'en' ? 'More options' : 'Más opciones'}" title="${lang === 'en' ? 'More options' : 'Más opciones'}">${icono('mas', 22)}</summary>
       <div class="mas-lista">${items.filter(Boolean).join('')}</div>
     </details>`;
-export const MENU_JS = `<script>(function(){var c=function(x){document.querySelectorAll('details.mas-menu[open]').forEach(function(d){if(!x||!d.contains(x))d.open=false;});};
-document.addEventListener('click',function(e){c(e.target);});
-document.addEventListener('keydown',function(e){if(e.key==='Escape'){var d=document.querySelector('details.mas-menu[open]');c(null);if(d)d.querySelector('summary').focus();}});
-document.querySelectorAll('.mas-lista a').forEach(function(a){a.addEventListener('click',function(){c(null);});});
-function pq(){var d=document.getElementById(location.hash.slice(1));if(d&&d.tagName==='DETAILS'&&d.classList.contains('por-que'))d.open=true;}addEventListener('hashchange',pq);pq();})();</script>`;
+// Fuera de la página (CSP de scripts, RUNBOOK §4zzz-csp): assets/mas-menu.js.
+export const MENU_JS = '<script src="/assets/mas-menu.js?v=1" defer></script>';
 
 /** Redes: el negocio puede guardar el @ o el enlace entero. */
 const redUrl = (red, v) => {
@@ -162,10 +159,8 @@ export function compartirMenu(lang, { url, titulo, invitar = '', historia = '' }
 }
 /** «Compartir enlace»: el menú de compartir del móvil o, sin él, copiar el
  * enlace y decirlo un momento; luego se cierra el menú. */
-export const COMPARTIR_JS = `<script>(function(){document.querySelectorAll('[data-compartir]').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-compartir'),t=b.getAttribute('data-titulo')||document.title,d=b.closest('details');
-if(navigator.share){if(d)d.open=false;navigator.share({title:t,url:u}).catch(function(){});return;}
-var ok=function(){var s=b.querySelector('span'),antes=s.textContent;s.textContent=b.getAttribute('data-copiado');setTimeout(function(){s.textContent=antes;if(d&&d.open){d.open=false;d.querySelector('summary').focus();}},1600);};
-if(navigator.clipboard)navigator.clipboard.writeText(u).then(ok,function(){prompt('',u);});else prompt('',u);});});})();</script>`;
+// Fuera de la página (CSP de scripts, RUNBOOK §4zzz-csp): assets/compartir.js.
+export const COMPARTIR_JS = '<script src="/assets/compartir.js?v=1" defer></script>';
 
 /** Un .ics para «Añadir al calendario» (sin servidor: un enlace `data:`). */
 function icsHref(o, lugar, url) {
@@ -319,13 +314,13 @@ function puertaEdad(lang, path) {
     : { t: '¿Tienes 18 años o más?', b: 'Este plan es solo para mayores de 18. Solo te lo preguntamos esta vez y la respuesta se queda en este navegador.', si: 'Tengo 18 años o más', no: 'Soy menor' };
   const body = `
   <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a></p>
-  <section class="vacio" data-edad>
+  <section class="vacio" data-edad data-edad-salir="${esc(exploreBase(lang))}">
     <h1>${esc(S.t)}</h1>
     <p>${esc(S.b)}</p>
     <div class="vacio-botones"><button type="button" class="pill ink" data-edad-si>${esc(S.si)}</button>
       <button type="button" class="pill" data-edad-no>${esc(S.no)}</button></div>
   </section>
-  <script>(function(){var b=document.querySelector('[data-edad]');function f(v){document.cookie='klendar_18='+v+'; Max-Age=31536000; Path=/; SameSite=Lax'+(location.protocol==='https:'?'; Secure':'');if(v==='1')location.reload();else location.href='${exploreBase(lang)}';}b.querySelector('[data-edad-si]').addEventListener('click',function(){f('1');});b.querySelector('[data-edad-no]').addEventListener('click',function(){f('0');});})();</script>`;
+  <script src="/assets/edad.js?v=1" defer></script>`;
   const r = html(publicPage({
     lang, path, body, title: S.t, description: S.b, head: '<meta name="robots" content="noindex">',
   }), 200, 'no-store');
@@ -730,35 +725,18 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
   // la ficha se siga abriendo con el enlace (y no sale en el sitemap).
   const indexable = !(o.adults_only || fuente || over || enPausa);
 
-  // La vista cuenta para el negocio (panel e informe), como en la app. Solo
-  // desde un navegador de verdad y una vez por sesión: los robots de Google o
-  // de WhatsApp no ejecutan esto.
-  // La apertura de las reservas: la cuenta atrás con menos de 24 h y, al
-  // llegar la hora, «Reservar plaza» en lugar de «Avísame».
-  const abren = porAbrir ? `<script>(function(){var p=document.getElementById('abren');if(!p)return;
-var t=Date.parse(p.dataset.abre),c=document.getElementById('abren-cuenta');
-function dur(ms){var m=Math.ceil(ms/60000);if(m>=60)return Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');return Math.max(1,m)+' min';}
-function tic(){var n=Date.now();if(n>=t){var a=document.querySelector('[data-principal="avisame"]'),r=document.getElementById('abren-reservar'),x=document.getElementById('avisame-nota');
-if(a)a.remove();if(x)x.hidden=true;p.hidden=true;if(r){r.hidden=false;r.setAttribute('data-principal','codigo');}return;}
-if(t-n<864e5){c.textContent=' · '+${jsonEnScript(S.opensIn)}+dur(t-n);c.hidden=false;}setTimeout(tic,Math.max(1000,Math.min(30000,t-n)));}tic();})();</script>` : '';
-  // La cuenta atrás, como en la app («Quedan 1 h 31 min»): siempre en coral y
-  // la urgencia con la negrita (menos de 60 min, menos de 15). Se calcula en el
-  // navegador: la página va en caché y una hora escrita aquí saldría vieja.
-  const cuentaAtras = `<script>(function(){var el=document.getElementById('cuenta');if(!el)return;
-var ini=Date.parse(el.dataset.ini)||0,fin=Date.parse(el.dataset.fin);
-function dur(ms){var m=Math.floor(ms/60000);if(m>=1440)return Math.floor(m/1440)+' d';if(m>=60)return Math.floor(m/60)+' h'+(m%60?' '+(m%60)+' min':'');return Math.max(1,m)+' min';}
-function tic(){var n=Date.now();if(n>=fin){el.textContent=${jsonEnScript(S.over)};return;}
-el.textContent=n<ini?${jsonEnScript(en ? 'Starts in ' : 'Empieza en ')}+dur(ini-n):${en ? "dur(fin-n)+' left'" : "'Quedan '+dur(fin-n)"};
-el.style.fontWeight=n<ini?600:fin-n<900e3?800:fin-n<3600e3?700:600;el.hidden=false;setTimeout(tic,30000);}tic();})();</script>`;
+  // La cuenta atrás («Quedan 1 h 31 min», calculada en el navegador: la página
+  // va en caché), la apertura de las reservas (al llegar la hora, «Reservar
+  // plaza» en lugar de «Avísame») y la vista que cuenta para el negocio (solo
+  // un navegador de verdad; la base no cuenta dos veces a la misma persona en
+  // 30 minutos, `offer_views_dedupe`): assets/oferta.js, sin <script> en línea
+  // (CSP de scripts, RUNBOOK §4zzz-csp); lo de cada ficha, en la etiqueta.
   const sp = supabasePublic();
-  // Cuenta la visita para las estadísticas del negocio. Sin guardar nada en el
-  // navegador (ni cookies ni sessionStorage): la base ya no cuenta dos veces a
-  // la misma persona en 30 minutos (`offer_views_dedupe`).
-  const vista = `<script>(function(){try{if(navigator.webdriver)return;fetch(${jsonEnScript(sp.url + '/rest/v1/offer_views')},{method:'POST',keepalive:true,headers:{apikey:${jsonEnScript(sp.key)},Authorization:'Bearer '+${jsonEnScript(sp.key)},'Content-Type':'application/json',Prefer:'return=minimal'},body:JSON.stringify({offer_id:'${o.id}'})});}catch(e){}})();</script>`;
+  const fichaJs = `<script src="/assets/oferta.js?v=1" defer data-lang="${en ? 'en' : 'es'}" data-over="${esc(S.over)}" data-abre-en="${esc(S.opensIn)}"${porAbrir ? ' data-abren="1"' : ''} data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-oferta="${esc(o.id)}"></script>`;
 
   if (privada) {
     const res = html(publicPage({
-      lang, path, image: cover || o.business_cover || o.business_logo, body: body + cuentaAtras + abren + vista + MENU_JS + COMPARTIR_JS,
+      lang, path, image: cover || o.business_cover || o.business_logo, body: body + fichaJs + MENU_JS + COMPARTIR_JS,
       title: `${o.title} · ${o.business_name}`,
       description, privada: true, consulta: rpQ, contador: false,
       head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `
@@ -770,7 +748,7 @@ ${ARTISTAS_CSS}` : ''}
     return res;
   }
   return html(publicPage({
-    lang, path, image: cover || o.business_cover || o.business_logo, body: body + cuentaAtras + abren + vista + MENU_JS + COMPARTIR_JS,
+    lang, path, image: cover || o.business_cover || o.business_logo, body: body + fichaJs + MENU_JS + COMPARTIR_JS,
     title: `${o.title} · ${o.business_name}`,
     description,
     head: `${traducir(lang, `offer:${o.id}`)}${actua.html ? `

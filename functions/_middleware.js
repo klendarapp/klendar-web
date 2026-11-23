@@ -17,6 +17,7 @@
 // en el límite de CPU del plan gratis, 10 ms; ver RUNBOOK §3f).
 import { direccionBuena } from './_lib/direccion.js';
 import { EN_CACHE, desdeLaCache } from './_lib/cache.js';
+import { CSP_PUBLICA, conNonce, nonceNuevo } from './_lib/csp.js';
 
 const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/i;
 
@@ -25,12 +26,12 @@ const SEGURIDAD = {
   'strict-transport-security': 'max-age=31536000; includeSubDomains',
   'x-content-type-options': 'nosniff',
   'referrer-policy': 'strict-origin-when-cross-origin',
-  // Lo mínimo que no rompe nada: sin <base> ajeno, sin plugins y sin iframes
-  // de fuera (igual que X-Frame-Options). El widget trae la suya.
-  'content-security-policy': "base-uri 'self'; object-src 'none'; frame-ancestors 'none'",
-  // Solo informe (§4zzz-segF): no bloquea; la consola dice qué rompería una
-  // CSP de scripts de verdad. La misma que `/*` en `_headers`.
-  'content-security-policy-report-only': "script-src 'self' https://challenges.cloudflare.com https://api.mapbox.com https://static.cloudflareinsights.com; worker-src 'self' blob:",
+  // CSP de scripts obligatoria (§4zzz-csp; antes, solo informe): solo los
+  // scripts de klendar.app, Turnstile, Mapbox y el contador de Cloudflare;
+  // nada en línea. Sin <base> ajeno, sin plugins y sin iframes de fuera
+  // (igual que X-Frame-Options). La misma que `/*` en `_headers`
+  // (_lib/csp.js). El widget trae la suya.
+  'content-security-policy': CSP_PUBLICA,
 };
 
 // Páginas públicas, iguales para todo el mundo (dependen solo de la
@@ -91,6 +92,19 @@ export async function onRequest(ctx) {
 
   const cabeceras = new Headers(res.headers);
   for (const [k, v] of Object.entries(SEGURIDAD)) if (!cabeceras.has(k)) cabeceras.set(k, v);
+  // La de solo informe ya no se usa (§4zzz-csp): fuera, venga de donde venga.
+  cabeceras.delete('content-security-policy-report-only');
+  const conSesion = /^\/(cuenta|panel|admin|tv)(\/|$)/.test(pathname);
+  // 6. Las páginas públicas (también las estáticas, que pasan por aquí desde
+  //    el 23-11 solo para esto) llevan un nonce nuevo en `script-src` en cada
+  //    respuesta: Cloudflare se lo pone al <script> en línea que mete él
+  //    (Bot Fight Mode) y la CSP no lo bloquea. Nuestro HTML nunca lo lleva.
+  //    Las zonas con sesión van con `no-transform` (Cloudflare no les mete
+  //    nada) y con su CSP de `_headers`, tal cual. Ver _lib/csp.js.
+  if (!head && !conSesion && /text\/html/i.test(cabeceras.get('content-type') || '')) {
+    const csp = cabeceras.get('content-security-policy');
+    if (csp && /(^|;)\s*script-src\s/.test(csp)) cabeceras.set('content-security-policy', conNonce(csp, nonceNuevo()));
+  }
   // El widget se incrusta en webs de negocios; el resto no se deja enmarcar.
   if (!pathname.startsWith('/widget/') && !cabeceras.has('x-frame-options')) cabeceras.set('x-frame-options', 'DENY');
   if (!cabeceras.has('permissions-policy')) {
@@ -104,7 +118,6 @@ export async function onRequest(ctx) {
   //    Cloudflare. `no-transform` no basta: Pages lo mete igual en el HTML
   //    estático (comprobado en producción, 2026-09-30), la CSP lo tendría que
   //    bloquear y la consola se llenaría de avisos. Se quita aquí.
-  const conSesion = /^\/(cuenta|panel|admin|tv)(\/|$)/.test(pathname);
   if (!head && conSesion && typeof HTMLRewriter === 'function' && /text\/html/i.test(cabeceras.get('content-type') || '')) {
     cabeceras.delete('content-length'); // el cuerpo cambia de tamaño
     const limpio = new HTMLRewriter()

@@ -95,20 +95,21 @@ if (def) {
 ok('el admin no pinta la clave de push', !/value="\$\{esc\(sp\.key/.test(admin));
 ok('Configuración usa key_set', /sp\.key_set/.test(admin));
 
-// 6. CSP de scripts en solo informe (§4zzz-segF): la misma en `_headers` (/*) y en el middleware, con lo que de
-//    verdad carga la web (Turnstile, Mapbox, el contador de Cloudflare), y todavía no obligatoria.
+// 6. CSP de scripts (§4zzz-segF, solo informe; desde el 23-11 obligatoria, §4zzz-csp): la misma en `_headers`
+//    (/*) y en el middleware (functions/_lib/csp.js), con lo que de verdad carga la web (Turnstile, Mapbox, el
+//    contador de Cloudflare). Lo demás de la CSP (nonce, páginas, navegadores): tools/csp_check.mjs.
 {
   const cab = readFileSync(path.join(RAIZ, '_headers'), 'utf8');
   const mw = readFileSync(path.join(RAIZ, 'functions/_middleware.js'), 'utf8');
-  const enCab = /^\/\*\r?\n(?: {2}.*\r?\n)*? {2}Content-Security-Policy-Report-Only: (.+)$/m.exec(cab)?.[1]?.trim();
-  const enMw = /'content-security-policy-report-only': "([^"]+)"/.exec(mw)?.[1];
-  ok('CSP solo informe en /* de _headers', !!enCab);
-  ok('la misma en el middleware', !!enCab && enCab === enMw, `${enCab} / ${enMw}`);
+  const { CSP_PUBLICA } = await import(new URL('../functions/_lib/csp.js', import.meta.url));
+  const enCab = /^\/\*\r?\n(?: {2}.*\r?\n)*? {2}Content-Security-Policy: (.+)$/m.exec(cab)?.[1]?.trim();
+  ok('CSP obligatoria en /* de _headers', !!enCab);
+  ok('la misma en el middleware', enCab === CSP_PUBLICA && /'content-security-policy': CSP_PUBLICA/.test(mw), `${enCab} / ${CSP_PUBLICA}`);
   for (const d of ["script-src 'self'", 'https://challenges.cloudflare.com', 'https://api.mapbox.com', 'https://static.cloudflareinsights.com']) {
-    ok(`CSP solo informe con ${d}`, (enCab || '').includes(d));
+    ok(`CSP con ${d}`, (enCab || '').includes(d));
   }
-  const general = cab.split(/^# Zonas con sesión/m)[0];
-  ok('la CSP obligatoria de /* sigue sin script-src', !/^ {2}Content-Security-Policy: .*script-src/m.test(general));
+  ok("sin 'unsafe-inline' ni 'unsafe-eval' en la de /*", !/unsafe-(inline|eval)/.test(enCab || ''));
+  ok('ya sin la de solo informe', !/^ {2}Content-Security-Policy-Report-Only:/m.test(cab));
 }
 
 console.log(fallos ? `\n${fallos} fallo(s)` : '\nTodo bien');

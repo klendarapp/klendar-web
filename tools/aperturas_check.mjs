@@ -41,17 +41,18 @@ ok('1. los textos, como la app', vistas.includes('`Las reservas abren el ${d} a 
   && vistas.includes("notify: 'Tell me'"));
 // La cuenta atrás, con un reloj de mentira.
 {
-  const ini = vistas.indexOf("const abren = porAbrir ? `<script>");
-  const js = vistas.slice(vistas.indexOf('(function(){', ini), vistas.indexOf('</script>', ini))
-    .replace('${jsonEnScript(S.opensIn)}', JSON.stringify('Abren en '));
+  // Desde el 23-11, en assets/oferta.js (CSP de scripts, §4zzz-csp); el texto, en `data-abre-en`.
+  ok('1. la ficha carga assets/oferta.js con la apertura', vistas.includes('data-abre-en="${esc(S.opensIn)}"${porAbrir ? \' data-abren="1"\' : \'\'}'));
+  const js = lee('assets/oferta.js');
   const els = {};
   const el = (id, extra = {}) => (els[id] = { id, hidden: false, textContent: '', dataset: {}, removed: false,
     remove() { this.removed = true; }, setAttribute(k, v) { this[k] = v; }, ...extra });
   const corre = (ahora, abre) => {
     el('abren', { dataset: { abre } }); el('abren-cuenta', { hidden: true }); el('abren-reservar', { hidden: true });
     el('avisame-nota'); el('avisame');
-    const document = { getElementById: (i) => els[i] || null, querySelector: () => els.avisame };
-    new Function('document', 'Date', 'setTimeout', js)(document, { now: () => ahora, parse: Date.parse }, () => {});
+    const document = { getElementById: (i) => els[i] || null, querySelector: () => els.avisame,
+      currentScript: { dataset: { lang: 'es', abren: '1', abreEn: 'Abren en ' } } };
+    new Function('document', 'Date', 'setTimeout', 'navigator', 'fetch', js)(document, { now: () => ahora, parse: Date.parse }, () => {}, { webdriver: true }, () => {});
   };
   const t = Date.parse('2026-11-21T09:00:00Z');
   corre(t - 3 * 864e5, '2026-11-21T09:00:00Z');

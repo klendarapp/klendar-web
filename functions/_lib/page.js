@@ -245,14 +245,7 @@ ${siteHeader(lang, '/', '/en')}
   <div class="vacio-botones">${botones}</div>
   <p style="margin-top:16px;font-size:13px"><a href="/">${S.home}</a></p>
 </div></div>
-<script>
-(function () {
-  var a = document.getElementById('open'); if (!a) return;
-  var ua = navigator.userAgent || '';
-  if (!/Android/i.test(ua)) a.href = a.getAttribute('data-web');
-  setTimeout(function () { if (/Android|iPhone|iPad/i.test(ua)) location.href = a.href; }, 400);
-})();
-</script>
+<script src="/assets/abrir-app.js?v=1" data-modo="salta"></script>
 ${CONTADOR}
 </body></html>`;
 }
