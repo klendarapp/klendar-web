@@ -141,7 +141,7 @@ const I18N = makeI18N({
     'Te hemos contado el motivo en un aviso. Si crees que es un error, escríbenos a info@klendar.app en un plazo de 6 meses.': 'We’ve told you why in a notification. If you think this is a mistake, write to us at info@klendar.app within 6 months.',
     'Resumen': 'Overview',
     'Esta sección es del propietario o de un encargado': 'This section is for the owner or a manager',
-    'Ir al resumen': 'Go to the overview',
+    'Ir a Hoy': 'Go to Today',
     // «Mi negocio» ordenado (panel/herramientas.js)
     'Lo esencial': 'The essentials',
     'Tu negocio': 'Your business',
@@ -1356,7 +1356,8 @@ const I18N = makeI18N({
     "Idea aplicada: repasa precio y hora": "Idea applied: check the price and time",
     // Ayuda: preguntas frecuentes (tanda A, 2026-10-06)
     "Preguntas frecuentes": "Frequently asked questions",
-    "Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.": "What businesses (and people) ask us most, with search. The same as in the app, in “My business” → Help.",
+    "Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en Negocio › Ayuda.": "What businesses (and people) ask us most, with search. The same as in the app, in Business › Help.",
+    "Está ordenado igual que el modo negocio de la app: Hoy (lo del día), Validar, Publicar y Negocio (tu ficha y todas las herramientas, por grupos).": "It’s organised just like business mode in the app: Today (what’s on today), Validate, Publish and Business (your page and all the tools, in groups).",
     "Ver las preguntas frecuentes": "See the frequently asked questions",
     // Poner en la tele (tanda B, 2026-10-06)
     "Poner en la tele": "Show on TV",

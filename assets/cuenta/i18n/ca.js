@@ -2113,6 +2113,7 @@ KL_DIC('ca', {
   "Vigilar una zona fija": "Vigila una zona fixa",
   "Volver": "Torna",
   "Volver a activar": "Torna a activar",
+  "Volver a Hoy": "Torna a Avui",
   "Volver a la ficha": "Torna a la fitxa",
   "Volver a la publicación": "Torna a la publicació",
   "Volver al resumen": "Torna al resum",

@@ -6,8 +6,9 @@
  * - Arriba, los ajustes: «Aceptamos grupos», hasta cuántas personas, para
  *   qué y una nota (`business_group_settings_get` /
  *   `save_business_group_settings`).
- * - Debajo, «Peticiones» (`business_group_requests`) con «Sin cerrar» ·
- *   «Aceptadas» · «Todas»: «Enviar propuesta» (texto, precio orientativo y
+ * - Debajo, «Peticiones» (`business_group_requests`) con los chips «Sin
+ *   cerrar» y «Aceptadas», de varios a la vez y sin «Todas» (Iván, 23-11:
+ *   ninguno o los dos pulsados, todas): «Enviar propuesta» (texto, precio orientativo y
  *   condiciones; se puede corregir mientras no la acepten) o «No podemos»
  *   (`respond_group_request`). Quien pide y su contacto, solo al aceptar.
  *
@@ -21,7 +22,10 @@
 const KGp = globalThis.KlendarGrupos;
 const grupoL = () => I18N.lang;
 const grupoT = () => KGp.t(grupoL());
-let GRUPO_FILTRO = 'open';
+/** Los chips pulsados («open», «done»). Al entrar, «Sin cerrar», como antes. */
+const GRUPO_CHIPS = new Set(['open']);
+/** Lo que se pide a la base: uno pulsado, ese; ninguno o los dos, todas. */
+const grupoFiltro = () => (GRUPO_CHIPS.size === 1 ? [...GRUPO_CHIPS][0] : 'all');
 
 /** Llama a la base; si dice que no, lanza el error ya en palabras. */
 async function grupoRpc(fn, args) {
@@ -42,7 +46,7 @@ PAGES.grupos = async (v) => {
   const L = grupoL();
   const [cfg, lista] = await Promise.all([
     rpc('business_group_settings_get', { p_business: BIZ.id }),
-    rpc('business_group_requests', { p_business: BIZ.id, p_filter: GRUPO_FILTRO }),
+    rpc('business_group_requests', { p_business: BIZ.id, p_filter: grupoFiltro() }),
   ]);
   const kinds = cfg.kinds || [];
   v.innerHTML = `
@@ -53,11 +57,11 @@ PAGES.grupos = async (v) => {
       `<p>Tick “We take groups” and you'll appear in “Groups and companies”: people pick up to 3 places and ask them all for a quote (date, people, budget per person and a note).</p>
       <p>You have <b>72 hours</b> to reply with a proposal or say you can't. Until they accept your proposal you don't know who's asking; when they do, we share their email or phone number so you can confirm it. Klendar doesn't charge anything.</p>`))}
     <h2 class="grupo-h">${esc(S.requests)}</h2>
-    <div class="seg" role="group" aria-label="${esc(S.requests)}">
-      ${['open', 'done', 'all'].map((f) => `<button type="button" class="btn sm${GRUPO_FILTRO === f ? '' : ' ghost'}" aria-pressed="${GRUPO_FILTRO === f}" data-filtro="${f}">${esc(S.segs[f])}</button>`).join('')}
+    <div class="pills grupo-chips" role="group" aria-label="${esc(S.requests)}">
+      ${['open', 'done'].map((f) => `<button type="button"${GRUPO_CHIPS.has(f) ? ' class="on"' : ''} aria-pressed="${GRUPO_CHIPS.has(f)}" data-filtro="${f}">${esc(S.segs[f])}</button>`).join('')}
     </div>
     <div class="grupo-peticiones">${(lista || []).length ? lista.map(grupoTarjeta).join('')
-      : `<div class="empty">${esc(GRUPO_FILTRO === 'done'
+      : `<div class="empty">${esc(grupoFiltro() === 'done'
         ? bi('No hay peticiones aquí.', 'No requests here.')
         // Qué llega aquí, con un ejemplo (como la app, «Ayuda guiada»).
         : bi('Cuando alguien te pida presupuesto para un grupo, por ejemplo «cena de empresa para 20 personas», lo verás aquí.', 'When someone asks you for a quote for a group, for example “company dinner for 20 people”, you’ll see it here.'))}</div>`}</div>
@@ -94,7 +98,13 @@ PAGES.grupos = async (v) => {
       PAGES.grupos(v).then(() => I18N.translate(v));
     } catch (e2) { err.textContent = e2.message; }
   };
-  $$('[data-filtro]', v).forEach((b) => { b.onclick = () => { GRUPO_FILTRO = b.dataset.filtro; PAGES.grupos(v).then(() => I18N.translate(v)); }; });
+  $$('[data-filtro]', v).forEach((b) => {
+    b.onclick = () => {
+      const f = b.dataset.filtro;
+      if (GRUPO_CHIPS.has(f)) GRUPO_CHIPS.delete(f); else GRUPO_CHIPS.add(f);
+      PAGES.grupos(v).then(() => { I18N.translate(v); $(`[data-filtro="${f}"]`, v)?.focus(); });
+    };
+  });
   $$('[data-propuesta]', v).forEach((b) => {
     b.onclick = () => grupoPropuesta((lista || []).find((x) => x.id === b.dataset.propuesta), v);
   });

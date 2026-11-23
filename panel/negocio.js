@@ -171,7 +171,9 @@ const negDelicado = (titulo) => `<section class="neg-grupo neg-delicado" id="g-d
     <h2 id="gt-delicado">${esc(titulo)}</h2>
     ${tarjetaDescarga()}
     <div class="card"><h3>Dar de baja el negocio</h3>
-      <p class="muted" style="margin:0 0 10px">${esc(bi('Si dejas Klendar: cerrar hasta nuevo aviso, cancelar la suscripción, traspasar el negocio o eliminarlo.', 'If you’re leaving Klendar: close until further notice, cancel the subscription, transfer the business or delete it.'))}</p>
+      <p class="muted" style="margin:0 0 10px">${esc(esEntidad()
+    ? bi('Si dejas Klendar: cerrar hasta nuevo aviso, traspasar la entidad o eliminarla.', 'If you’re leaving Klendar: close until further notice, hand over the organisation or delete it.')
+    : bi('Si dejas Klendar: cerrar hasta nuevo aviso, cancelar la suscripción, traspasar el negocio o eliminarlo.', 'If you’re leaving Klendar: close until further notice, cancel the subscription, transfer the business or delete it.'))}</p>
       <a class="btn" href="#/baja">Dar de baja el negocio</a></div></section>`;
 
 /** Al final: «Salir del equipo» (quien no es propietario) y, en el móvil,

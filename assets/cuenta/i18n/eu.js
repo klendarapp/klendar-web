@@ -2113,6 +2113,7 @@ KL_DIC('eu', {
   "Vigilar una zona fija": "Zaindu eremu finko bat",
   "Volver": "Itzuli",
   "Volver a activar": "Aktibatu berriro",
+  "Volver a Hoy": "Itzuli Gaur atalera",
   "Volver a la ficha": "Itzuli fitxara",
   "Volver a la publicación": "Itzuli argitalpenera",
   "Volver al resumen": "Itzuli laburpenera",

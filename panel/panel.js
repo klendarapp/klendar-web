@@ -7952,6 +7952,7 @@ PAGES.ayuda = async (v) => {
     <div data-asistente hidden></div>
     <div class="card"><h2>Qué puedes hacer aquí</h2>
       <p>Este panel hace lo mismo que la app, desde el ordenador o desde el navegador del móvil: dar de alta el negocio, publicar ofertas y eventos, ver cómo van, validar códigos en la puerta y llevar el equipo.</p>
+      <p>Está ordenado igual que el modo negocio de la app: Hoy (lo del día), Validar, Publicar y Negocio (tu ficha y todas las herramientas, por grupos).</p>
       <p class="muted">Para validar, escanea el QR con la cámara (la del móvil o la del portátil) o escribe el código que la persona tiene debajo del QR.</p></div>
     <div class="grid2">
       <div class="card"><h3>Una oferta que funciona</h3><ul style="margin:0;padding-left:18px">
@@ -7966,7 +7967,7 @@ PAGES.ayuda = async (v) => {
         <li>El día del evento, usa «Asistentes» para dar entrada.</li></ul></div>
     </div>
     <div class="card"><h2>Preguntas frecuentes</h2>
-      <p class="muted">Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en «Mi negocio» → Ayuda.</p>
+      <p class="muted">Lo que más nos preguntan los negocios (y la gente), con buscador. Lo mismo que en la app, en Negocio › Ayuda.</p>
       <p style="margin:8px 0 0"><a class="btn sm" href="${I18N.pub === 'en' ? '/en/faq' : '/preguntas'}#negocios">${ms('help')}${esc(I18N.t('Ver las preguntas frecuentes'))}</a></p></div>
     <div class="card"><h2>¿Algo no cuadra?</h2><p class="muted" style="margin:0">Escríbenos a <a class="link" href="mailto:info@klendar.app">info@klendar.app</a> y lo miramos.</p></div>`;
   // El asistente de ayuda (assets/asistente.js), arriba y solo si está

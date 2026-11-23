@@ -2113,6 +2113,7 @@ KL_DIC('de', {
   "Vigilar una zona fija": "Festes Gebiet beobachten",
   "Volver": "Zurück",
   "Volver a activar": "Wieder aktivieren",
+  "Volver a Hoy": "Zurück zu Heute",
   "Volver a la ficha": "Zurück zur Seite",
   "Volver a la publicación": "Zurück zum Beitrag",
   "Volver al resumen": "Zurück zur Übersicht",

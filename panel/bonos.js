@@ -218,9 +218,10 @@ async function bonoVendidos(v, soloActivos = true, cargados = null, masPrevio = 
   const hayMas = masPrevio ?? lista.length >= BONOS_POR_PARTE;
   v.innerHTML = `
     <div class="page-head"><h1>Bonos vendidos</h1><span class="spacer"></span><a class="btn sm ghost" href="#/bonos">← Bonos</a></div>
-    <div class="seg" role="group" aria-label="${esc(I18N.t('Bonos vendidos'))}">
-      <button type="button" class="btn sm${soloActivos ? '' : ' ghost'}" aria-pressed="${soloActivos}" data-f="1">Activos</button>
-      <button type="button" class="btn sm${soloActivos ? ' ghost' : ''}" aria-pressed="${!soloActivos}" data-f="0">Todos</button>
+    <!-- Un chip, sin «Todos» (Iván, 23-11): pulsado, los activos; sin
+         pulsar, todos. -->
+    <div class="pills" role="group" aria-label="${esc(I18N.t('Bonos vendidos'))}">
+      <button type="button"${soloActivos ? ' class="on"' : ''} aria-pressed="${soloActivos}" data-f="activos">Activos</button>
     </div>
     ${table({
     cols: [
@@ -233,7 +234,12 @@ async function bonoVendidos(v, soloActivos = true, cargados = null, masPrevio = 
     rows: lista || [],
     empty: 'Cuando vendas un bono, lo verás aquí con quién lo vendió y cada uso.',
   })}${hayMas ? botonVerMas('bonos') : ''}`;
-  $$('[data-f]', v).forEach((b) => { b.onclick = () => bonoVendidos(v, b.dataset.f === '1'); });
+  $$('[data-f]', v).forEach((b) => {
+    b.onclick = async () => {
+      b.disabled = true;
+      try { await bonoVendidos(v, !soloActivos); I18N.translate(v); $('[data-f="activos"]', v)?.focus(); } catch (e) { toast(friendly(e.message), true); b.disabled = false; }
+    };
+  });
   const mas = $('[data-ver-mas="bonos"]', v);
   if (mas) {
     mas.onclick = async () => {
