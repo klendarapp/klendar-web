@@ -142,7 +142,11 @@
 
 /* ── Calendario (la agenda de Explorar en la app) ──────────────────────── */
 .calendario { display: grid; gap: 22px 28px; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); align-items: start; }
-@media (max-width: 900px) { .calendario { grid-template-columns: minmax(0, 1fr); } }
+/* Una tablet en vertical (desde 720, como la app): el calendario y lo del día
+   también lado a lado; en una columna, el calendario medía 730 de ancho y lo
+   del día quedaba debajo, fuera de la vista (§4zzz-tabletojo). */
+@media (min-width: 720px) and (max-width: 900px) { .calendario { grid-template-columns: minmax(0, 340px) minmax(0, 1fr); gap: 22px 16px; } }
+@media (max-width: 719px) { .calendario { grid-template-columns: minmax(0, 1fr); } }
 .cal-mes { margin: 0; background: var(--elevated); border: 1px solid var(--glass-border); border-radius: 28px; padding: 14px 12px 12px; position: sticky; top: 84px; }
 @media (max-width: 900px) { .cal-mes { position: static; } }
 .cal-cab { display: grid; grid-template-columns: 44px 1fr 44px; align-items: center; margin: 0 0 4px; }

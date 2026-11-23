@@ -76,7 +76,7 @@
   });
   let tarjetaJs = null;
   const conArte = () => tarjetaJs || (tarjetaJs = Promise.all([
-    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=20261119a11y2' }),
+    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=20261123ojo' }),
     globalThis.KlendarTarjeta ? null : cargar('script', { src: '/assets/tarjeta.js?v=20261028rp' }),
   ]).then(() => globalThis.KlendarTarjeta || null));
 
