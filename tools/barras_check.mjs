@@ -44,13 +44,18 @@ ok([precioDeUrl('free'), precioDeUrl('0'), precioDeUrl('10'), precioDeUrl('50'),
 const web = await webConDatos({ puerto: Number(process.env.PORT || 8997) });
 const pide = async (ruta) => (await fetch(`${web.BASE}${ruta}`)).text();
 const ultima = (fn) => [...web.llamadas].reverse().find((l) => l.fn === fn)?.args;
-const POS = 'lat=40.417&lng=-3.704';
+// «Cerca de mí» va como su celda (assets/celda.js): la base recibe el radio
+// más la media diagonal de la celda (el navegador quita lo de más lejos).
+const KCe = (await import('../assets/celda.js')).default;
+const CELDA = KCe.de(40.417, -3.704);
+const POS = `celda=${CELDA}`;
+const MARGEN = KCe.margenM(CELDA);
 let nav = null;
 try {
   web.llamadas.length = 0;
   let h = await pide(`/explorar?vista=lista&${POS}&km=63`);
   ok(/class="barra-valor"[^>]*>A menos de 63 km</.test(h), '«A menos de 63 km» encima');
-  ok(ultima('public_explore')?.p_filters?.radius_m === 63000, 'pide 63 km a la base', JSON.stringify(ultima('public_explore')?.p_filters));
+  ok(ultima('public_explore')?.p_filters?.radius_m === 63000 + MARGEN, 'pide 63 km a la base (más la media celda)', JSON.stringify(ultima('public_explore')?.p_filters));
   const marcas = [...h.matchAll(/<a class="barra-m[^"]*"[^>]*data-v="(\d+)"[^>]*href="([^"]+)"/g)].map((m) => [m[1], m[2]]);
   ok(marcas.map((m) => m[0]).join() === '5,10,25,50,100', 'las cinco marcas son enlaces', JSON.stringify(marcas));
   ok(marcas.find((m) => m[0] === '100')?.[1].includes('km=100') && !marcas.find((m) => m[0] === '5')?.[1].includes('km='), 'cada marca lleva su km (5, el de serie, sin km)');
@@ -60,10 +65,10 @@ try {
 
   web.llamadas.length = 0;
   await pide(`/explorar?vista=lista&${POS}&km=3`);
-  ok(ultima('public_explore')?.p_filters?.radius_m === 3000, 'un enlace de antes (km=3) sigue valiendo');
+  ok(ultima('public_explore')?.p_filters?.radius_m === 3000 + MARGEN, 'un enlace de antes (km=3) sigue valiendo');
   web.llamadas.length = 0;
   await pide(`/explorar?vista=lista&${POS}&km=250`);
-  ok(ultima('public_explore')?.p_filters?.radius_m === 100000, 'km=250 → 100 km (nada más lejos de lo que se puede)');
+  ok(ultima('public_explore')?.p_filters?.radius_m === 100000 + MARGEN, 'km=250 → 100 km (nada más lejos de lo que se puede)');
 
   // Sin nada a la vista con 63 km: «Ampliar a 100 km».
   const vacia = await webConDatos({ puerto: Number(process.env.PORT || 8997) + 2, rpc: { public_explore: () => ({ total: 0, items: [] }) } });

@@ -516,6 +516,39 @@
     }).poner(puntos);
   }
 
+  // ── La cámara, la misma en Planes y en Sitios ─────────────────────────
+  // Pasar de «Planes» a «Sitios» (o al revés) con el mapa abierto es otra
+  // página: sin esto, cada una ponía su centro y su zoom (Planes, los que
+  // abarcan sus puntos; Sitios, los de la distancia). Se recuerda dónde
+  // estaba el mapa (en esta pestaña, `sessionStorage`, 30 min) para la misma
+  // zona (`data-zona`: la celda, la ciudad, «todas» o la aproximada); si se
+  // cambia de zona en «¿Dónde?», el mapa va a la nueva.
+  const CAMARA = 'klendar.mapa.camara';
+  const camara = {
+    /** { lng, lat, zoom } guardados para [zona], o null. */
+    lee(zona) {
+      if (!zona) return null;
+      try {
+        const c = JSON.parse(sessionStorage.getItem(CAMARA) || 'null');
+        if (c && c.z === zona && Date.now() - c.t < 30 * 60e3 && Number.isFinite(c.lng) && Number.isFinite(c.lat) && Number.isFinite(c.zoom)) return c;
+      } catch { /* sin almacenamiento */ }
+      return null;
+    },
+    /** Lo guarda cada vez que el mapa se para (y al cargar). */
+    sigue(m, zona) {
+      if (!zona) return;
+      const guarda = () => {
+        try {
+          const c = m.getCenter();
+          sessionStorage.setItem(CAMARA, JSON.stringify({ z: zona, lng: c.lng, lat: c.lat, zoom: m.getZoom(), t: Date.now() }));
+        } catch { /* sin almacenamiento */ }
+      };
+      m.on('moveend', guarda);
+      m.once('load', guarda);
+    },
+  };
+  KA.camara = camara;
+
   /** Arranca el mapa de Planes (`#mapa`, con `#mapaPuntos`). */
   async function mapaPlanes() {
     const caja = document.getElementById('mapa');
@@ -558,11 +591,13 @@
       const mb = window.mapboxgl;
       mb.accessToken = tk;
       const oscuro = matchMedia('(prefers-color-scheme: dark)').matches;
+      const zona = caja.dataset.zona || '';
+      const antes = camara.lee(zona);
       const m = new mb.Map({
         container: caja,
         style: oscuro ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
-        center: puntos.length ? [puntos[0].lng, puntos[0].lat] : [-3.7038, 40.4168],
-        zoom: 12,
+        center: antes ? [antes.lng, antes.lat] : puntos.length ? [puntos[0].lng, puntos[0].lat] : [-3.7038, 40.4168],
+        zoom: antes ? antes.zoom : 12,
         performanceMetricsCollection: false,
         collectResourceTiming: false,
         cooperativeGestures: matchMedia('(pointer: coarse)').matches,
@@ -571,11 +606,12 @@
       // «Esta noche se mueve» (ambiente.js) engancha aquí su capa.
       window.KlendarMapa = m;
       document.dispatchEvent(new CustomEvent('klendar-mapa'));
-      if (puntos.length > 1) {
+      if (puntos.length > 1 && !antes) {
         const b = new mb.LngLatBounds();
         puntos.forEach((p) => b.extend([p.lng, p.lat]));
         m.fitBounds(b, { padding: 48, maxZoom: 15, duration: 0 });
       }
+      camara.sigue(m, zona);
       planes(m, puntos, T);
     } catch { falla(); }
   }

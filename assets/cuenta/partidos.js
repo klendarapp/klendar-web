@@ -221,7 +221,7 @@ function guardaZonaAvisos() {
     // La barra de Explorar: de 1 a 100 km.
     if (Number.isFinite(km)) z.p_radius_m = Math.min(Math.max(km, 1), 100) * 1000;
     const c = a.get('ciudad') || a.get('city');
-    if (!(a.get('lat') && a.get('lng')) && c) z.p_city = c;
+    if (!(a.get('lat') && a.get('lng')) && !a.get('celda') && !a.get('cell') && c) z.p_city = c;
   } catch { /* sin almacenamiento: la de siempre */ }
   // Una base de antes deja como mucho 50 km: entonces, 50.
   return llamar('set_broadcast_area', z)

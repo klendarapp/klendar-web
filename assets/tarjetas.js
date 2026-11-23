@@ -395,14 +395,147 @@
   }
   function distancias(raiz) {
     if (!aqui) return;
-    raiz.querySelectorAll('[data-lat][data-lng]').forEach(function (el) {
+    // El trozo mismo también (una tarjeta nueva del feed es su propia raíz).
+    var l = Array.prototype.slice.call(raiz.querySelectorAll('[data-lat][data-lng]'));
+    if (raiz.matches && raiz.matches('[data-lat][data-lng]')) l.unshift(raiz);
+    l.forEach(function (el) {
+      var m = metros(aqui.lat, aqui.lng, +el.getAttribute('data-lat'), +el.getAttribute('data-lng'));
+      if (lejos(el, m)) { el.remove(); return; }
+      if (isFinite(m)) el.setAttribute('data-m', String(Math.round(m)));
       var hueco = el.querySelector('.tj-dist') || (el.classList.contains('dist') ? el : null);
       if (!hueco || hueco.textContent.trim()) return;
-      var m = metros(aqui.lat, aqui.lng, +el.getAttribute('data-lat'), +el.getAttribute('data-lng'));
       if (!isFinite(m) || m > 300000) return;
-      hueco.textContent = (el.classList.contains('tj-fila') ? ' · ' : '') + fmtDist(m);
+      hueco.textContent = (el.matches('.tj-fila, .sitio-fila') ? ' · ' : '') + fmtDist(m);
       hueco.hidden = false;
     });
+  }
+
+  // ── «Cerca de mí» en su celda: el radio y el orden, exactos ─────────────
+  // La dirección lleva la celda en la que estás (assets/celda.js, unos 5 km)
+  // y la página viene de la caché del borde pintada desde su centro, con el
+  // radio más media diagonal de celda (`klCelda`, functions/_lib/explore.js).
+  // Aquí, con tu punto (que no sale de este navegador): fuera lo que queda
+  // más lejos de lo elegido, «Más cerca» por tu distancia, la lista otra vez
+  // llena con lo de las páginas siguientes y los números del calendario y de
+  // «Ver N resultados». Sin tu punto, o si es de otra celda (un enlace que
+  // te han pasado), la página tal cual.
+  var CELDA = null;
+  try { var ce = document.getElementById('klCelda'); if (ce) CELDA = JSON.parse(ce.textContent || 'null'); } catch (e) { CELDA = null; }
+  var KCe = window.KlendarCelda;
+  var exacta = Boolean(CELDA && aqui && KCe && KCe.de(aqui.lat, aqui.lng) === CELDA.c);
+  var RADIO = exacta ? Number(CELDA.km) * 1000 : Infinity;
+  var RESULTADO = '.tj, .sitio-fila';
+  /** ¿Es un resultado de la lista y queda más lejos de lo elegido? (En el
+   * mapa manda lo que se ve; «Quizá te interese» es de más lejos a propósito.) */
+  function lejos(el, m) {
+    if (!exacta || CELDA.vista === 'map' || !isFinite(m) || m <= RADIO) return false;
+    return el.matches(RESULTADO) && !el.closest('.fin, .vacio, .feed-fin, .seccion-negocios, [data-celda-vacio]');
+  }
+  window.KlendarCeldaExacta = exacta ? {
+    /** Cuántos de [pts] ([[lat, lng], …]) quedan a [km] de tu punto. */
+    cuenta: function (pts, km) { return KCe.cuenta(pts, aqui, km || CELDA.km); },
+    /** Lo de [lista] que queda dentro (lo de fuera se quita). */
+    filtra: function (lista) {
+      return lista.filter(function (el) {
+        if (!el.matches || !el.matches(RESULTADO) || !el.hasAttribute('data-lat')) return true;
+        return !lejos(el, metros(aqui.lat, aqui.lng, +el.getAttribute('data-lat'), +el.getAttribute('data-lng')));
+      });
+    },
+  } : null;
+  // Antes de nada (el feed de Descubre cuenta sus tarjetas al empezar).
+  if (exacta && CELDA.vista !== 'map') distancias(document);
+
+  /** La lista de resultados de la página (no la de «Quizá te interese»). */
+  function cajaResultados(doc) {
+    var l = doc.querySelectorAll('#dia .tj-filas, .sitios-lista, .tjs');
+    for (var i = 0; i < l.length; i++) if (!l[i].closest('.fin, .vacio, [data-celda-vacio]')) return l[i];
+    return null;
+  }
+  function ordena(caja) {
+    if (!caja || CELDA.orden !== 'nearest') return;
+    var l = Array.prototype.slice.call(caja.children).filter(function (el) { return el.matches(RESULTADO); });
+    l.map(function (el, i) { return { el: el, i: i, m: Number(el.getAttribute('data-m')) }; })
+      .sort(function (a, b) { return (isFinite(a.m) ? a.m : 1e12) - (isFinite(b.m) ? b.m : 1e12) || a.i - b.i; })
+      .forEach(function (x) { caja.appendChild(x.el); });
+  }
+  /** Sin nada dentro: la pantalla vacía de siempre (viene oculta). */
+  function vacia(caja) {
+    var v = document.querySelector('[data-celda-vacio]');
+    if (!v) return;
+    v.hidden = false;
+    if (caja) caja.hidden = true;
+    document.querySelectorAll('nav.pager, section.fin, .sitios-fin, .resumen, .resumen-orden, .fin-h').forEach(function (x) {
+      if (!x.closest('[data-celda-vacio]')) x.hidden = true;
+    });
+    document.querySelectorAll('.cal-lista-cab .cal-n').forEach(function (x) { x.hidden = true; });
+  }
+  /** Lo de las páginas siguientes hasta tener una página llena (24), como
+   * si la lista fuera la de tu punto. */
+  function rellena(caja, vueltas) {
+    var pager = document.querySelector('nav.pager');
+    var sig = pager && pager.querySelector('a[rel="next"]');
+    var hay = caja.querySelectorAll(RESULTADO).length;
+    if (!sig || hay >= 24 || vueltas > 6 || document.querySelector('[data-vistos]')) {
+      ordena(caja);
+      if (!hay && !sig) vacia(caja);
+      return;
+    }
+    caja.setAttribute('aria-busy', 'true');
+    fetch(sig.href, { credentials: 'same-origin' }).then(function (r) { return r.text(); }).then(function (txt) {
+      var doc = new DOMParser().parseFromString(txt, 'text/html');
+      var otra = cajaResultados(doc);
+      var nuevos = otra ? Array.prototype.slice.call(otra.children).filter(function (el) { return el.matches(RESULTADO); }) : [];
+      nuevos.forEach(function (el) {
+        var n = document.importNode(el, true);
+        caja.appendChild(n);
+        iniciar(n);
+      });
+      var sigOtra = doc.querySelector('nav.pager a[rel="next"]');
+      if (sigOtra) sig.setAttribute('href', sigOtra.getAttribute('href'));
+      else {
+        sig.remove();
+        // El final de la lista («Has visto todo…»), el de la última página.
+        var fin = doc.querySelector('section.fin, section.sitios-fin');
+        var ya = Array.prototype.some.call(document.querySelectorAll('section.fin, section.sitios-fin'), function (x) { return !x.closest('[data-celda-vacio]'); });
+        if (fin && !ya) pager.insertAdjacentElement('afterend', document.importNode(fin, true));
+      }
+      caja.removeAttribute('aria-busy');
+      rellena(caja, vueltas + 1);
+    }).catch(function () { caja.removeAttribute('aria-busy'); ordena(caja); });
+  }
+  /** El calendario: los puntos y los números de cada día, con tu distancia. */
+  function calendario() {
+    if (!Array.isArray(CELDA.pts)) return;
+    var t = CELDA.t || {};
+    var por = {};
+    CELDA.pts.forEach(function (p) {
+      if (metros(aqui.lat, aqui.lng, p[0], p[1]) > RADIO) return;
+      var d = por[p[2]] || (por[p[2]] = { n: 0, ev: false, fl: false });
+      d.n += 1;
+      if (p[3]) d.fl = true; else d.ev = true;
+    });
+    var plantilla = function (n, cero, uno, varios) { return n === 0 ? cero : n === 1 ? uno : String(varios || '').replace('{n}', n); };
+    document.querySelectorAll('a.cal-dia[data-dia]').forEach(function (a) {
+      if (a.classList.contains('fuera')) return;
+      var d = por[a.getAttribute('data-dia')] || { n: 0 };
+      var puntos = a.querySelector('.cal-puntos');
+      if (puntos) puntos.remove();
+      if (d.n) a.insertAdjacentHTML('beforeend', '<span class="cal-puntos" aria-hidden="true">' + (d.ev ? '<i class="pe"></i>' : '') + (d.fl ? '<i class="pf"></i>' : '') + '</span>');
+      a.setAttribute('aria-label', String(plantilla(d.n, t.lab0, t.lab1, t.labN) || '').replace('{d}', a.getAttribute('data-largo') || ''));
+    });
+    var sel = document.querySelector('a.cal-dia.sel[data-dia]');
+    var cab = document.querySelector('.cal-lista-cab .cal-n');
+    if (sel && cab) {
+      var n = (por[sel.getAttribute('data-dia')] || { n: 0 }).n;
+      cab.textContent = plantilla(n, t.dia0, t.dia1, t.diaN);
+      cab.hidden = !n;
+    }
+  }
+  function afinaCelda() {
+    if (!exacta || CELDA.vista === 'map' || CELDA.vista === 'feed') return;
+    if (CELDA.vista === 'calendar') calendario();
+    var caja = cajaResultados(document);
+    if (caja) rellena(caja, 0);
   }
   // Lo que pone «Cerca de mí» lo recuerda aquí (Explorar y Descubre).
   window.KL_CERCA = function (lat, lng) {
@@ -574,7 +707,13 @@
         window.KL_CERCA(lat, lng);
         // `data-cerca-a`: los atajos de la lupa van a Descubre (no a esta página).
         var u = new URL(b.getAttribute('data-cerca-a') || location.href, location.href);
-        u.searchParams.set('lat', posUrl(lat)); u.searchParams.set('lng', posUrl(lng));
+        // En Explorar y Descubre, la celda (unos 5 km; assets/celda.js): tu
+        // punto se queda aquí. Partidos, grupos y guías siguen con el punto
+        // redondeado (unos 100 m).
+        var conCelda = KCe && /^\/(en\/)?(explorar|explore|descubre|discover)$/.test(u.pathname);
+        ['lat', 'lng', 'celda', 'cell'].forEach(function (k) { u.searchParams.delete(k); });
+        if (conCelda) u.searchParams.set(/^\/en\//.test(u.pathname) ? 'cell' : 'celda', KCe.de(lat, lng));
+        else { u.searchParams.set('lat', posUrl(lat)); u.searchParams.set('lng', posUrl(lng)); }
         ['p', 'ciudad', 'city'].forEach(function (k) { u.searchParams.delete(k); });
         new URLSearchParams(b.getAttribute('data-mas') || '').forEach(function (v, k) { u.searchParams.set(k, v); });
         marcaPropia();
@@ -755,6 +894,8 @@
           .then(function (d) {
             if (este !== pedido) return;
             var n = d && typeof d.total === 'number' ? d.total : null;
+            // Con la celda, lo que queda a esa distancia de tu punto (lo cuenta este navegador).
+            if (n != null && d.pts && window.KlendarCeldaExacta) n = window.KlendarCeldaExacta.cuenta(d.pts, Number(qs.get('km')) || 0);
             var antes = ver.textContent;
             ver.textContent = n == null ? ver.getAttribute('data-sin')
               : n > 100 ? ver.getAttribute('data-muchos')
@@ -1058,6 +1199,8 @@
         var tmp = document.createElement('div');
         tmp.appendChild(trozo);
         var hijos = Array.prototype.slice.call(tmp.children);
+        // Con la celda, fuera lo que desde tu punto queda más lejos.
+        if (window.KlendarCeldaExacta) hijos = window.KlendarCeldaExacta.filtra(hijos);
         caja.replaceWith.apply(caja, hijos);
         hijos.forEach(function (h) { iniciar(h); if (ojo && (h.classList.contains('tj') || h.classList.contains('feed-fin'))) ojo.observe(h); });
         hijos.forEach(function (h) { var m = h.querySelector && h.querySelector('[data-feed-mas]'); if (m) observaMas(m); if (h.matches && h.matches('.feed-mas')) { var mm = h.querySelector('[data-feed-mas]'); if (mm) observaMas(mm); } });
@@ -1158,5 +1301,6 @@
   }
 
   iniciar(document);
+  afinaCelda();
   window.KlendarTarjetas = { iniciar: iniciar };
 })();

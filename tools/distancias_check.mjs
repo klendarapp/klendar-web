@@ -53,9 +53,20 @@ try {
   const g = await pide(web.BASE, '/grupos?ciudad=madrid');
   ok(/En Madrid/.test(g) && !/·\s*\d[\d,]*\s?(m|km)\s*</.test(g), '«Para grupos» en Madrid: «En Madrid», sin «1,2 km»');
 
-  // 2. Con tu posición (Cerca de ti).
-  const c = dists(await pide(web.BASE, '/descubre?cerca=1&lat=40.417&lng=-3.704'));
-  ok(c.length > 3 && c.every(aSecas), 'Cerca de ti: «350 m», «1,2 km»', JSON.stringify(c.slice(0, 6)));
+  // 2. Con «Cerca de ti»: la dirección lleva la celda (assets/celda.js) y la
+  // página no dice ninguna distancia desde su centro (no es la tuya): cada
+  // tarjeta y cada sitio llevan su punto para que el navegador la ponga con
+  // el tuyo (/assets/tarjetas.js, `klendar.cerca`). Un enlace de antes con
+  // `?lat=&lng=` va a su celda con un 301.
+  const r301 = await fetch(`${web.BASE}/descubre?cerca=1&lat=40.417&lng=-3.704`, { redirect: 'manual' });
+  ok(r301.status === 301 && /[?&]celda=ezjmg(&|$)/.test(r301.headers.get('location') || '') && !/lat=|lng=/.test(r301.headers.get('location') || ''),
+    'Cerca de ti, enlace de antes: 301 a su celda, sin el punto', `${r301.status} ${r301.headers.get('location')}`);
+  const hc = await pide(web.BASE, '/descubre?celda=ezjmg');
+  const c = dists(hc);
+  const geos = [...hc.matchAll(/class="tj [^"]*"[^>]*data-lat="[\d.-]+" data-lng="[\d.-]+"/g)].length;
+  ok(!c.length && geos > 3, 'Cerca de ti (celda): sin distancia del servidor y cada tarjeta con su punto', `${JSON.stringify(c.slice(0, 4))} ${geos}`);
+  const hs = await pide(web.BASE, '/explorar?celda=ezjmg&que=sitios');
+  ok(/class="sitio-fila"[^>]*data-lat=/.test(hs) && !filas(hs).some((t) => /\d\s?(m|km)\b/.test(t)), 'Sitios (celda): cada fila con su punto, sin distancia del servidor');
 
   // 4. Todas las ciudades.
   const t = dists(await pide(web.BASE, '/descubre?todas=1'));

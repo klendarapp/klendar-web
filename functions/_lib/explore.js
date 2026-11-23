@@ -18,7 +18,8 @@
 import { enlaceCuenta } from './cuenta.js';
 import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido, jsonEnScript } from './page.js';
 import KZ from '../../assets/zona.js';
-import { zonaDeConexion } from './conexion.js';
+import KCe from '../../assets/celda.js';
+import { celdaDeConexion, zonaDeConexion } from './conexion.js';
 import {
   agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, firstPhoto, historiaBoton, isVideo, kidsBase, ldScript,
   listingLd, negociosPublicos, publicPage, todayBase,
@@ -509,7 +510,7 @@ function cuandoEnMapa(o, lang) {
  * sitio, un marcador con «N planes» que abre su lista; los sitios cercanos,
  * una burbuja con el total que se acerca hasta separarlos. Si Mapbox no carga
  * (sin token, sin red), se dice: debajo está la lista con lo mismo. */
-const mapaHtml = (items, lang, S) => {
+const mapaHtml = (items, lang, S, zona = '') => {
   const en = lang === 'en';
   const puntos = items.filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lng)).map((o) => ({
     id: o.id, t: o.title, b: o.business_name, lat: o.lat, lng: o.lng, k: o.kind === 'flash_offer' ? 'f' : 'e',
@@ -530,12 +531,12 @@ const mapaHtml = (items, lang, S) => {
     ...(o.venue_address ? {} : { n: o.business_id, bu: `${en ? '/en' : ''}/b/${o.business_id}` }),
   }));
   const { hasta, ...textos } = MAPA_T[en ? 'en' : 'es'];
-  return `<div id="mapa" class="mapa-explorar" role="region" aria-label="${esc(S.mapView)}" data-no="${esc(S.mapNo)}" data-textos="${esc(JSON.stringify(textos))}"></div>
+  return `<div id="mapa" class="mapa-explorar" role="region" aria-label="${esc(S.mapView)}" data-no="${esc(S.mapNo)}" data-zona="${esc(zona)}" data-textos="${esc(JSON.stringify(textos))}"></div>
   <p class="ambiente-leyenda" id="ambiente-leyenda" hidden></p>
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${jsonEnScript(puntos)}</script>
   <script src="/assets/iconos-mapa.js?v=2"></script>
-  <script src="/assets/mapa.js?v=9"></script>`;
+  <script src="/assets/mapa.js?v=10"></script>`;
 };
 
 /** La distancia de «Cerca de mí»: una barra de 1 a 100 km (12-11-2026; antes,
@@ -547,6 +548,10 @@ const RADIO_KM = 5;
 const RADIO_COBERTURA_KM = 25;
 /** «Una ciudad»: toda ella, 25 km de su centro (como la app, `cityRadiusM`). */
 const RADIO_CIUDAD_M = 25000;
+/** Cuánto se guardan Descubre y Explorar en la caché del borde (s); luego,
+ * hasta 2 min más servida vieja mientras se pinta la nueva (`_lib/cache.js`):
+ * 5 min como mucho (Iván, 23-11). */
+const BORDE_S = 180;
 
 
 /** «Pedir un local» en «Tu cuenta» (`/cuenta/pedir-local`), con el nombre ya
@@ -730,6 +735,11 @@ const finalHtml = ({ S, en, lang, cerca, km, city, cityName = '', filtros, link,
 
 const portada = (items) => items.map((o) => firstPhoto(o.images) || o.photo).find(Boolean);
 
+/** La zona del mapa (assets/mapa.js, `camara`): con la misma, Planes y Sitios
+ * abren el mapa donde estaba; con otra, en la suya. */
+const zonaDelMapa = (e) => (e.cerca ? (e.aprox ? 'aprox' : `celda:${e.celda}`)
+  : e.city ? `ciudad:${String(e.city).toLowerCase()}` : 'todas');
+
 /** Dónde se mira, para los textos de Sitios: «a 5 km», «en Madrid» o nada. */
 const dondeSitios = (e, S) => (e.cerca ? S.within(e.km) : e.city ? S.inPlace(e.cityName || PRETTY(e.city)) : '');
 
@@ -744,7 +754,7 @@ function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
   const quitaSolo = e.q ? `<p class="chip-solo"><a class="chip on chip-quitar" href="${esc(link({ que: '' }))}" aria-label="${esc(TSi.removeOnlyPlaces)}"><span>${esc(TSi.onlyPlaces)}</span>${ic('x', 16)}</a></p>` : '';
   const zoom = e.cerca ? (e.km <= 1 ? 15 : e.km <= 3 ? 14 : 13) : 13;
   const mapaH = mapa ? mapaSitios({
-    lang, zoom, desde: e.cerca ? [e.lng, e.lat] : null,
+    lang, zoom, desde: e.cerca ? [e.lng, e.lat] : null, zona: zonaDelMapa(e),
     centro: centro && Number.isFinite(Number(centro.lng)) ? [Number(centro.lng), Number(centro.lat)] : null,
     filtros: {
       ...(e.catIds?.length ? { p_categories: e.catIds } : e.cat ? { p_category: e.cat } : {}), ...(e.abierto ? { p_open_now: true } : {}),
@@ -787,13 +797,17 @@ function sitiosFinal({ items, TSi, S, e, link, page, paginas, mapa }) {
 
 /** Todas las de un filtro (para el calendario): la base da 60 por llamada. */
 async function todas(args, max = 240, H = null) {
+  return (await todasConTotal(args, max, H)).items;
+}
+/** Lo mismo y cuántas hay en total (`total`, aunque pase de [max]). */
+async function todasConTotal(args, max = 240, H = null) {
   const primera = await rpc('public_explore', { ...args, p_limit: 60, p_offset: 0 }, H);
   const items = [...(primera?.items || [])];
   const total = Math.min(primera?.total || 0, max);
   const resto = [];
   for (let off = 60; off < total; off += 60) resto.push(rpc('public_explore', { ...args, p_limit: 60, p_offset: off }, H));
   for (const r of await Promise.all(resto)) items.push(...(r?.items || []));
-  return items;
+  return { items, total: Number(primera?.total) || 0 };
 }
 
 const dos = (n) => String(n).padStart(2, '0');
@@ -829,7 +843,7 @@ const sumaMes = (ym, n) => {
 /** La vista Calendario: el mes con los días marcados y, debajo (al lado en
  * el escritorio), lo de ese día. Como la agenda de Explorar en la app. Los
  * días son enlaces: va sin JavaScript y cada día se puede compartir. */
-function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = null, totalDia = null, cuando = null, quitarFiltros = '', orden = '', mesVacio = '' }) {
+function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = null, totalDia = null, cuando = null, quitarFiltros = '', orden = '', mesVacio = '', enCelda = false }) {
   const en = lang === 'en';
   const loc = en ? 'en-GB' : 'es-ES';
   // Cada publicación, en el día de su negocio; lo que empezó antes y sigue en
@@ -869,7 +883,7 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
     const etiqueta = S.dayLabel(largo(iso), lista.length);
     celdas.push(pasado
       ? `<span class="${cls}" aria-hidden="true">${d}</span>`
-      : `<a class="${cls}" href="${esc(link({ dia: iso, mes }))}#dia" aria-label="${esc(etiqueta)}"${iso === dia ? ' aria-current="date"' : ''}>${d}${puntos}</a>`);
+      : `<a class="${cls}" href="${esc(link({ dia: iso, mes }))}#dia" aria-label="${esc(etiqueta)}" data-dia="${iso}" data-largo="${esc(largo(iso))}"${iso === dia ? ' aria-current="date"' : ''}>${d}${puntos}</a>`);
   }
   // Lo del día, por partes (`public_explore` con `day` y `?p=`); sin
   // respuesta, lo que haya de las del mes.
@@ -913,11 +927,13 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
     <section class="cal-lista" id="dia" aria-labelledby="diaTitulo">
       <div class="cal-lista-cab">
         <h2 id="diaTitulo">${esc(rel(dia) ? `${rel(dia)} · ${largo(dia)}` : largo(dia).charAt(0).toUpperCase() + largo(dia).slice(1))}</h2>
-        ${nDia ? `<span class="muted">${esc(S.dayPlans(nDia))}</span>` : ''}
+        <span class="muted cal-n"${nDia ? '' : ' hidden'}>${nDia ? esc(S.dayPlans(nDia)) : ''}</span>
         ${nDia > 1 ? orden : ''}
       </div>
       ${delDia.length
-        ? `<div class="tj-filas">${delDia.map((o) => tarjeta(o, lang, { forma: 'fila' })).join('')}</div>`
+        ? `<div class="tj-filas">${delDia.map((o) => tarjeta(o, lang, { forma: 'fila' })).join('')}</div>${enCelda ? `
+        <div class="vacio cal-vacio" data-celda-vacio hidden><h3>${esc(S.dayNone)}</h3><p>${esc(S.dayNoneBody)}</p>
+        ${quitarFiltros ? `<div class="vacio-botones"><a class="pill" href="${esc(quitarFiltros)}#dia">${esc(S.clearF)}</a></div>` : ''}</div>` : ''}`
         : vacioDia}
     </section>
   </div>`;
@@ -965,9 +981,9 @@ function calendarioHtml({ items, lang, S, link, mes, dia, hoy, delDiaParte = nul
 /** Las claves de la dirección en cada idioma. */
 const CLAVES = {
   es: { city: 'ciudad', cat: 'categoria', kind: 'tipo', price: 'precio', when: 'cuando', discount: 'descuento', open: 'abierto', sort: 'orden', view: 'vista', month: 'mes', day: 'dia', show: 'ver', place: 'sitio', weather: 'tiempo',
-    age: 'edad', vprice: 'precio-local', vprices: 'precios-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento', what: 'que', notastes: 'sin-gustos', search: 'buscar' },
+    age: 'edad', vprice: 'precio-local', vprices: 'precios-local', card: 'descuento-para', solo: 'solo', charity: 'solidario', entity: 'agenda-publica', closing: 'antes-de-cerrar', buzz: 'ambiente', menu: 'menu-del-dia', eat: 'comer-ahora', moment: 'momento', what: 'que', notastes: 'sin-gustos', search: 'buscar', cell: 'celda' },
   en: { city: 'city', cat: 'category', kind: 'type', price: 'price', when: 'when', discount: 'discount', open: 'open', sort: 'sort', view: 'view', month: 'month', day: 'day', show: 'show', place: 'place', weather: 'weather',
-    age: 'age', vprice: 'venue-price', vprices: 'venue-prices', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment', what: 'what', notastes: 'no-tastes', search: 'search' },
+    age: 'age', vprice: 'venue-price', vprices: 'venue-prices', card: 'discount-for', solo: 'solo', charity: 'charity', entity: 'public-listings', closing: 'before-closing', buzz: 'buzz', menu: 'daily-menu', eat: 'food-now', moment: 'moment', what: 'what', notastes: 'no-tastes', search: 'search', cell: 'cell' },
 };
 /** Marcas (tanda A) en la dirección: edades «4-8», carné en cada idioma. */
 const EDAD_URL = { '0-3': '0_3', '4-8': '4_8', '9-12': '9_12', '13-17': '13_17' };
@@ -1002,8 +1018,9 @@ const enIdioma = (v, en) => (en ? v : VALORES_ES[v] || v);
  * escribe en la dirección. */
 const ORDEN_DEFECTO = 'recommended';
 
-/** Posición para la dirección: 3 decimales (unos 100 m), nunca más precisa.
- * La distancia de cada tarjeta la calcula el navegador con la suya. */
+/** Un punto que va a otra parte (el centro de la celda, la zona de la
+ * conexión): 3 decimales. Tu punto exacto no sale del navegador (la
+ * dirección lleva la celda; assets/celda.js). */
 const redondeaPos = (x) => (Number.isFinite(x) ? Math.round(x * 1000) / 1000 : x);
 const posUrl = (x) => redondeaPos(Number(x)).toFixed(3);
 
@@ -1021,11 +1038,20 @@ function leeEstado(qs) {
   const when = norm(de('when', 12));
   const sort = norm(de('sort', 12));
   const vista = norm(de('view', 12));
-  // La posición de «Cerca de mí» va en la dirección con 3 decimales (unos
-  // 100 m); un enlace de antes con más se redondea al leerlo.
-  const lat = redondeaPos(Number.parseFloat(qs.get('lat') || ''));
-  const lng = redondeaPos(Number.parseFloat(qs.get('lng') || ''));
-  const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  // «Cerca de mí» va en la dirección como la celda en la que estás
+  // (`?celda=eysbg`, geohash de 5: unos 5 km; assets/celda.js) y la página
+  // se pinta con su centro: tu punto no sale del navegador, que pone la
+  // distancia y el orden exactos (/assets/tarjetas.js). Un enlace de antes
+  // con `?lat=&lng=` lleva a su celda (`celdaVieja`, un 301).
+  const celdaUrl = String(qs.get(CLAVES.es.cell) || qs.get(CLAVES.en.cell) || '').toLowerCase();
+  const latVieja = Number.parseFloat(qs.get('lat') || '');
+  const lngVieja = Number.parseFloat(qs.get('lng') || '');
+  const celda = KCe.valida(celdaUrl) ? celdaUrl : KCe.de(latVieja, lngVieja);
+  const celdaVieja = !KCe.valida(celdaUrl) && Boolean(celda);
+  const punto = celda ? KCe.centro(celda) : null;
+  const cerca = Boolean(punto);
+  const lat = punto ? punto.lat : NaN;
+  const lng = punto ? punto.lng : NaN;
   // Varios valores (`?sitio=a&sitio=b`) o separados por comas.
   const todos = (k) => [...qs.getAll(CLAVES.es[k]), ...qs.getAll(CLAVES.en[k])];
   const traits = ordenaSitio(todos('place').flatMap((v) => String(v).split(',')).slice(0, 24).map(sitioDeUrl));
@@ -1072,7 +1098,7 @@ function leeEstado(qs) {
     // La hoja «Buscar» abierta (`?buscar=1`): adonde lleva la lupa sin
     // JavaScript.
     buscar: de('search', 2) === '1',
-    cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
+    cerca, lat: cerca ? lat : null, lng: cerca ? lng : null, celda, celdaVieja,
     // Cualquier entero de 1 a 100 (los de antes también); fuera, al extremo.
     km: kmDeUrl(qs.get('km'), RADIO_KM),
     amigos: qs.get('amigos') === '1',
@@ -1162,7 +1188,8 @@ function query(e, lang, { soloCompartido = false } = {}) {
   // La zona aproximada de la conexión nunca va en la dirección (UA1): solo
   // la distancia, si no es la de serie.
   if (e.cerca && !e.aprox) {
-    p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng));
+    // La celda, nunca el punto (assets/celda.js).
+    p.set(K.cell, KCe.valida(e.celda) ? e.celda : KCe.de(e.lat, e.lng));
     if (e.km !== RADIO_KM) p.set('km', String(e.km));
   } else if (e.cerca && e.aprox && e.km !== RADIO_KM) p.set('km', String(e.km));
   if (e.todas && !e.cerca && !e.city) p.set('todas', '1');
@@ -1243,13 +1270,13 @@ var gu=JSON.parse(ls.getItem('klendar.gustos')||'null'),gq=gu&&Array.isArray(gu.
 var conG=function(u){var q=new URL(u,location.href);if(gq)q.searchParams.set('gustos',gq);else q.searchParams.delete('gustos');return q.pathname+q.search+q.hash;};
 var libre=!sin&&n.type!=='back_forward',vx=d.ex?JSON.parse(ls.getItem(X)||'null'):null,ex=d.ex&&libre&&!location.search&&vx&&vx[d.L]?vx[d.L]:'';
 var seis=new Date();if(seis.getHours()<6)seis.setDate(seis.getDate()-1);seis.setHours(6,0,0,0);
-var viejo=function(s,t){var u=new URLSearchParams(s||'');if(!(t>=seis.getTime())){var w=u.get('cuando')||u.get('when');if((w==='ahora'||w==='now')&&u.get('km')==='1'&&/^(cerca|nearest)$/.test(u.get('orden')||u.get('sort')||'')){u.delete('km');u.delete('orden');u.delete('sort');}['cuando','when','abierto','open','comer-ahora','food-now','momento','moment'].forEach(function(k){u.delete(k);});}if(!(Date.now()-t<216e5)){u.delete('lat');u.delete('lng');}return u.toString();};
+var viejo=function(s,t){var u=new URLSearchParams(s||'');if(!(t>=seis.getTime())){var w=u.get('cuando')||u.get('when');if((w==='ahora'||w==='now')&&u.get('km')==='1'&&/^(cerca|nearest)$/.test(u.get('orden')||u.get('sort')||'')){u.delete('km');u.delete('orden');u.delete('sort');}['cuando','when','abierto','open','comer-ahora','food-now','momento','moment'].forEach(function(k){u.delete(k);});}if(!(Date.now()-t<216e5)){['lat','lng','celda','cell'].forEach(function(k){u.delete(k);});}return u.toString();};
 var gq0=g&&g[d.L]?viejo(g[d.L],g.t):'';
 if(d.v&&libre&&gq0){location.replace(conG(d.b+'?'+gq0+(d.r?'&'+d.r:'')+(ex?'&'+ex:'')+location.hash));return;}
 if(ex){location.replace(conG(d.b+'?'+ex+location.hash));return;}
 if(d.x)ls.setItem(X,JSON.stringify(d.x));
 var A=d.A,t=Date.now();
-if(d.vi){var Z=['ciudad','city','lat','lng','km','todas'],o=g||{},vp=Date.now()-(o.t||0)<216e5,f=function(L){var u=new URLSearchParams(A[L]||''),w=new URLSearchParams(o[L]||'');Z.forEach(function(k){u.delete(k);});Z.forEach(function(k){if(!vp&&(k==='lat'||k==='lng'))return;w.getAll(k).forEach(function(v){u.append(k,v);});});return u.toString();};A={es:f('es'),en:f('en')};if(vp&&o.t&&/(^|&)lat=/.test(o[d.L]||''))t=o.t;}
+if(d.vi){var Z=['ciudad','city','lat','lng','celda','cell','km','todas'],P=/^(lat|lng|celda|cell)$/,o=g||{},vp=Date.now()-(o.t||0)<216e5,f=function(L){var u=new URLSearchParams(A[L]||''),w=new URLSearchParams(o[L]||'');Z.forEach(function(k){u.delete(k);});Z.forEach(function(k){if(!vp&&P.test(k))return;w.getAll(k).forEach(function(v){u.append(k,v);});});return u.toString();};A={es:f('es'),en:f('en')};if(vp&&o.t&&/(^|&)(lat|celda|cell)=/.test(o[d.L]||''))t=o.t;}
 ls.setItem(K,JSON.stringify({t:t,es:A.es,en:A.en}));
 if(gq!==d.g)location.replace(conG(location.href));}catch(x){}})(${datos});</script>`;
 }
@@ -1348,6 +1375,13 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // «Sorteos» solo con el interruptor encendido (se pide a la vez que lo demás).
   const conSorteos = sorteosEncendidos().catch(() => false);
   const e = leeEstado(url.searchParams);
+  // Un enlace de antes con tu punto (`?lat=&lng=`): a su celda, para siempre.
+  if (e.celdaVieja) {
+    const q = new URLSearchParams(url.search);
+    q.delete('lat'); q.delete('lng'); q.delete(CLAVES.es.cell); q.delete(CLAVES.en.cell);
+    q.set(CLAVES[en ? 'en' : 'es'].cell, e.celda);
+    return new Response(null, { status: 301, headers: { location: `${url.pathname}?${q}`, 'cache-control': 'public, max-age=3600, s-maxage=3600' } });
+  }
   if (descubre) { e.q = ''; e.vista = ''; e.que = ''; e.buscar = false; }
   // Planes abre en el calendario (como la app); con una búsqueda, en la lista.
   else if (e.que !== 'places' && !e.vista) e.vista = vistaDefecto(e);
@@ -1356,14 +1390,32 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // 5 km» (como la app); sin dato, «Todas las ciudades». Esa página no se
   // guarda en ninguna caché compartida.
   const deLaConexion = !e.cerca && !e.city && !e.todas;
-  const aprox = deLaConexion ? zonaDeConexion(request) : null;
-  if (aprox) { e.lat = aprox.lat; e.lng = aprox.lng; e.cerca = true; e.aprox = true; }
+  // La zona de la conexión, en su celda (assets/celda.js): la página es la
+  // misma para todos los de esa celda y la caché del borde la guarda con la
+  // celda en la clave (`_lib/cache.js`, que la saca de la misma función).
+  const celdaZona = deLaConexion ? celdaDeConexion(request) : '';
+  const aprox = celdaZona ? KCe.centro(celdaZona) : null;
+  if (aprox) { e.lat = aprox.lat; e.lng = aprox.lng; e.cerca = true; e.aprox = true; e.celda = celdaZona; }
   // Sin zona de la conexión (robots, fuera de España, sin dato) sale «Todas
-  // las ciudades», igual para todos: esa sí va a la caché del borde, que no se
-  // la sirve a quien sí tiene zona (`_lib/cache.js`). Con zona, privada.
+  // las ciudades», igual para todos. Con la zona o con la cookie de la edad,
+  // privada para el navegador (y para cualquier caché de por medio), pero la
+  // caché del borde la guarda igual (`x-klendar-borde`) con la celda de la
+  // conexión y la edad en su clave: nada de quien mira, ni su IP, ni su punto.
   const cachePublica = (publica) => (aprox || edad ? 'private, max-age=0' : publica);
-  const variaCon = (res) => { if (aprox) res.headers.set('vary', 'Cookie, CF-Connecting-IP'); return res; };
+  const variaCon = (res) => {
+    if (aprox) res.headers.set('vary', 'Cookie, CF-Connecting-IP');
+    if (aprox || edad) res.headers.set('x-klendar-borde', `s-maxage=${BORDE_S}`);
+    return res;
+  };
   const { q, city, cat, kind, price, when, soloDescuento, abierto, cerca, lat, lng, km, page, traits, tiempoOff, gustos, antesCierre, menuDia, comerAhora } = e;
+  // Con la celda de «Cerca de mí», el radio desde su centro lleva además la
+  // mitad de su diagonal (~3 km): desde cualquier punto de la celda no falta
+  // nada, y el navegador quita lo que desde el tuyo queda más lejos
+  // (/assets/tarjetas.js). Con la zona de la conexión no hay punto exacto
+  // en ninguna parte: el radio de siempre desde el centro.
+  const enCelda = cerca && !e.aprox && KCe.valida(e.celda);
+  const margen = enCelda ? KCe.margenM(e.celda) : 0;
+  const radioM = km * 1000 + margen;
   // Las categorías elegidas (varias, como la app). En Sitios, varias van por
   // sus ids (`public_places` y `map_places`).
   const catsSel = e.cats || [];
@@ -1403,7 +1455,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // 2026-11-03). Si no se sabe su punto, los negocios de ese municipio.
   const argsSitios = (centro) => ({
     p_lat: cerca ? lat : centro?.lat ?? null, p_lng: cerca ? lng : centro?.lng ?? null,
-    p_radius_m: cerca ? km * 1000 : centro ? centro.radius_m || RADIO_CIUDAD_M : null, p_city: cerca || centro ? null : city || null,
+    p_radius_m: cerca ? radioM : centro ? centro.radius_m || RADIO_CIUDAD_M : null, p_city: cerca || centro ? null : city || null,
     // Una categoría por su slug; varias, por sus ids (`public_places` las
     // pide así).
     p_category: catsSel.length === 1 ? cat : null, p_q: q || null, p_open_now: abierto,
@@ -1457,7 +1509,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // «Más cerca» sin saber dónde (ni tu posición ni una ciudad): se pide la
     // ubicación (`sinDondeCerca`) y mientras, por hora.
     sort: ordenBase === 'nearest' && !cerca && !centroCiudad ? 'soonest' : ordenBase,
-    ...(cerca ? { radius_m: km * 1000 } : centroCiudad ? { radius_m: centroCiudad.radius_m || RADIO_CIUDAD_M } : {}),
+    ...(cerca ? { radius_m: radioM } : centroCiudad ? { radius_m: centroCiudad.radius_m || RADIO_CIUDAD_M } : {}),
     // Varias categorías (`cats`, migración 20261246100000); una sola va en
     // `p_category`, como siempre.
     ...(catsSel.length > 1 ? { cats: catsSel } : {}),
@@ -1477,18 +1529,30 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   };
   // «Ver N resultados»: la hoja pregunta cuántas saldrían con lo que lleva
   // marcado (`?contar=1`, /assets/tarjetas.js). Solo el número.
+  // Con la celda, además, dónde está cada una (`pts`, 4 decimales): el
+  // navegador cuenta las que quedan a esa distancia de tu punto (sin
+  // mandarlo). Si no llegan todas, el número de la base.
   if (url.searchParams.get('contar') === '1') {
-    const n = mapa || sitiosMapa ? null
+    const conPuntos = (r) => {
+      const total = typeof r?.total === 'number' ? r.total : null;
+      if (!enCelda || total == null) return { total };
+      const l = (r.items || []).filter((o) => Number.isFinite(Number(o?.lat)) && Number.isFinite(Number(o?.lng)));
+      return l.length === total ? { total, pts: l.map((o) => [Number(Number(o.lat).toFixed(4)), Number(Number(o.lng).toFixed(4))]) } : { total };
+    };
+    const cuerpo = mapa || sitiosMapa ? { total: null }
       : negocios
-        ? await rpc('public_places', { ...argsSitios(centroCiudad), p_limit: 1, p_offset: 0 }, H)
-          .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null)
+        ? await rpc('public_places', { ...argsSitios(centroCiudad), p_limit: enCelda ? 100 : 1, p_offset: 0 }, H)
+          .then(conPuntos).catch(() => ({ total: null }))
         // También en el calendario con ¿Cuándo? (allí la lista va por días,
         // pero el número es el de la app: lo que sale con esos filtros).
-        : await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, ...(when ? { when } : {}) }, p_limit: 1, p_offset: 0 }, H)
-          .then((r) => (typeof r?.total === 'number' ? r.total : null)).catch(() => null);
-    return new Response(JSON.stringify({ total: n }), {
-      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': cachePublica('public, max-age=60, s-maxage=120'), vary: aprox ? 'Cookie, CF-Connecting-IP' : 'Cookie', 'x-robots-tag': 'noindex' },
-    });
+        : enCelda
+          ? await todasConTotal({ ...argsExplore, p_filters: { ...filtros, ...(when ? { when } : {}) } }, 240, H)
+            .then(conPuntos).catch(() => ({ total: null }))
+          : await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, ...(when ? { when } : {}) }, p_limit: 1, p_offset: 0 }, H)
+            .then(conPuntos).catch(() => ({ total: null }));
+    return variaCon(new Response(JSON.stringify(cuerpo), {
+      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': cachePublica('public, max-age=60, s-maxage=120'), vary: 'Cookie', 'x-robots-tag': 'noindex' },
+    }));
   }
 
   // Con una búsqueda, arriba los negocios que encajan (como la búsqueda de la
@@ -1508,7 +1572,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ? rpc('current_guide', {
       // La zona de Descubre: tu punto y su distancia, o la ciudad entera.
       p_lat: cerca ? lat : centroCiudad?.lat ?? null, p_lng: cerca ? lng : centroCiudad?.lng ?? null,
-      p_radius_m: cerca ? km * 1000 : centroCiudad?.radius_m || RADIO_CIUDAD_M,
+      p_radius_m: cerca ? radioM : centroCiudad?.radius_m || RADIO_CIUDAD_M,
       p_city: cerca ? null : city || null,
     }).catch(() => null)
     : Promise.resolve(null);
@@ -1550,7 +1614,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const populares0 = await popularesP;
   const items = res?.items || [];
   // Sin «Cerca de ti» de verdad, ninguna distancia como si fuera desde donde estás (I1).
-  const distSegun = { cerca, aprox: e.aprox, centro: centroCiudad, nombre: e.cityName || (city ? PRETTY(city) : ''), lang };
+  // Con la celda, la distancia desde su centro no es la tuya: la pone el
+  // navegador (como con la zona de la conexión, que no la pone nadie).
+  const distSegun = { cerca, aprox: e.aprox || enCelda, centro: centroCiudad, nombre: e.cityName || (city ? PRETTY(city) : ''), lang };
   ajustaDistancias(items, distSegun);
   ajustaDistancias(sitios?.items, distSegun);
   // Las tarjetas de negocio llevan su rango de precio.
@@ -1631,7 +1697,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // revisión del 5-11-2026).
   const RADIO_MAX = RADIO_COBERTURA_KM;
   const nadaCerca = (vacio || (calendario && items.length === 0)) && cerca && !negocios && !q && !sinKlendar && km < RADIO_MAX
-    ? await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, radius_m: RADIO_MAX * 1000 }, p_limit: 1, p_offset: 0 }, H)
+    ? await rpc('public_explore', { ...argsExplore, p_filters: { ...filtros, radius_m: RADIO_MAX * 1000 + margen }, p_limit: 1, p_offset: 0 }, H)
       .then((r) => !(r?.items || []).length).catch(() => false)
     : false;
   let sugerencias = [];
@@ -1647,7 +1713,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // Son un extra: si no llegan, la página sale igual (sin ellas).
     const fuera = await (cerca
       ? rpcAll('recommended_offers', {
-        p_lat: lat, p_lng: lng, p_min_distance_m: km * 1000, p_limit: kind ? 30 : 8,
+        p_lat: lat, p_lng: lng, p_min_distance_m: radioM, p_limit: kind ? 30 : 8,
         ...(gustos.length ? { p_categories: (todasCats || []).filter((c) => gustos.includes(c.slug)).map((c) => c.id) } : {}),
       })
       : rpc('public_explore', { p_city: null, p_limit: 24, p_filters: {} }).then((r) => (r?.items || [])
@@ -2390,7 +2456,27 @@ document.querySelectorAll('[data-mf] p').forEach(function(p){var l=Array.prototy
   // en el HTML (antes, ocultos hasta que /assets/tarjetas.js los enseñaba, y
   // la fila de atajos y el calendario bajaban 83 px tras cargar) y, sin
   // JavaScript, no se ven.
-  const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}${vistosJs}
+  // «Cerca de mí» con la celda: lo que necesita /assets/tarjetas.js para
+  // poner con tu punto el radio, el orden y los números (assets/celda.js).
+  // En el calendario, cada publicación del mes con su día (si han llegado
+  // todas): los puntos y el «N planes» de cada día.
+  const diaDe = (o) => { const d = KZ.dia(o.starts_at || o.event_at || o.redeem_start_at, KZ.de(o)); return d < hoy ? hoy : d; };
+  const N9 = 99999;
+  const celdaJson = enCelda ? `
+<script type="application/json" id="klCelda">${jsonEnScript({
+    c: e.celda, km,
+    vista: descubre ? 'feed' : negocios ? (sitiosMapa ? 'map' : 'places') : mapa ? 'map' : calendario ? 'calendar' : 'list',
+    orden: (negocios ? sort !== 'rated' : calendario ? sort === 'nearest' : ordenBase === 'nearest') ? 'nearest' : '',
+    ...(calendario && items.length < 240 ? {
+      pts: items.filter((o) => Number.isFinite(Number(o.lat)) && Number.isFinite(Number(o.lng)))
+        .map((o) => [Number(Number(o.lat).toFixed(4)), Number(Number(o.lng).toFixed(4)), diaDe(o), o.kind === 'flash_offer' ? 1 : 0]),
+      t: {
+        lab0: S.dayLabel('{d}', 0), lab1: S.dayLabel('{d}', 1), labN: S.dayLabel('{d}', N9).replace(String(N9), '{n}'),
+        dia0: S.dayPlans(0), dia1: S.dayPlans(1), diaN: S.dayPlans(N9).replace(String(N9), '{n}'),
+      },
+    } : {}),
+  })}</script>` : '';
+  const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}${vistosJs}${celdaJson}
 <noscript><style>[data-cerca],[data-cerca-aviso]{display:none!important}</style></noscript>
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `
 ${PARTIDOS_CSS}
@@ -2441,16 +2527,22 @@ ${GRUPOS_CSS}` : ''}`;
       // Con «Cerca de mí» la dirección lleva tu posición (?lat=&lng=): esa
       // página no pasa por el contador de visitas.
       contador: !cerca,
-    }), 200, cachePublica('public, max-age=120, s-maxage=600'))));
+    }), 200, cachePublica(`public, max-age=60, s-maxage=${BORDE_S}`))));
   }
 
   // ── Resultados de Explorar ──
   let resultados;
+  // Con la celda, por si con tu punto no queda nada a esa distancia: la
+  // pantalla vacía de siempre, oculta (la enseña /assets/tarjetas.js).
+  const vacioCelda = (h) => `<div data-celda-vacio hidden>${h.replace(/finTitulo/g, 'finTituloCelda')}</div>`;
   if (negocios) {
     resultados = sitiosHtml({
       items, lang, S, TSi, e, link, page, paginas, mapa: sitiosMapa, pedirQ,
       centro: cerca ? { lat, lng } : centroDe(klendarCities) || items[0] || null,
     });
+    if (enCelda && !sitiosMapa && items.length) {
+      resultados += vacioCelda(sitiosHtml({ items: [], lang, S, TSi, e: { ...e, q: '' }, link, page, paginas, mapa: false, pedirQ: '', centro: null }));
+    }
   } else if (calendario) {
     // «Quitar filtros» deja el calendario sin lo que quita publicaciones
     // (la zona y la distancia se quedan, como `clearNarrowing` en la app).
@@ -2464,6 +2556,7 @@ ${GRUPOS_CSS}` : ''}`;
       cuando: diasCuando ? { dias: diasCuando, etiqueta: { now: S.now, today: S.today, tonight: S.tonight, tomorrow: S.tomorrow, weekend: S.weekend, next10: S.next10 }[when], quitar: link({ when: '' }) } : null,
       orden: ordenCal,
       quitarFiltros: quitarCal,
+      enCelda,
       // El mes entero vacío: el vacío de Descubre (las mismas salidas, sin
       // «Ver la agenda» ni «Quizá te interese»), como la app.
       mesVacio: finalHtml({
@@ -2472,7 +2565,7 @@ ${GRUPOS_CSS}` : ''}`;
       }),
     });
   } else if (mapa) {
-    resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
+    resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S, zonaDelMapa(e))}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
   } else {
     const negArriba = (sitios?.items || []);
     // El orden de la búsqueda de la app: partidos, artistas, Sitios, Ofertas y
@@ -2485,7 +2578,12 @@ ${GRUPOS_CSS}` : ''}`;
       <div class="nlist">${negArriba.map((b) => bizCard(b, lang, S)).join('')}</div></section>` : ''}
     ${(negArriba.length || seccionPartidos || seccionArtistas) && items.length ? `<h2 class="seccion-t-pub">${esc(S.offersSection)}</h2>` : ''}
     ${vacio ? '' : rejilla(items, lang, { primera: !negArriba.length && !seccionPartidos && !seccionArtistas, galeria: true, vistos: conVistos })}
-    ${vacio ? lineaPedir : ''}`;
+    ${vacio ? lineaPedir : ''}
+    ${enCelda && !vacio && !q ? vacioCelda(finalHtml({
+      S, en, lang, cerca, km, city, cityName: e.cityName || '', filtros: conFiltros, link, page: 1, sugerencias: [], vacio: true, alertaHref, nadaCerca: false,
+      limpiar: hayAlgo ? limpia : '', sinSugiere: true,
+      agendaHref: `${exploreBase(lang)}?${query({ ...e, que: '', q: '', vista: 'calendar', page: 1, mes: '', dia: '' }, lang)}`,
+    })) : ''}`;
   }
 
   // La guía, con la misma zona que Descubre.
@@ -2529,7 +2627,7 @@ ${SITIOS_SCRIPTS}` : ''}`;
     bodyClass: 'pagina-explorar',
     head,
     contador: !cerca,
-  }), 200, cachePublica('public, max-age=120, s-maxage=600'))));
+  }), 200, cachePublica(`public, max-age=60, s-maxage=${BORDE_S}`))));
 }
 
 /**

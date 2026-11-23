@@ -582,11 +582,21 @@
 
     var precio = de('precio', 'price');
     var orden = de('orden', 'sort');
-    // Con 3 decimales (unos 100 m), como la dirección: un enlace de antes con más se redondea.
-    var lat = Math.round(parseFloat(q.get('lat')) * 1000) / 1000;
-    var lng = Math.round(parseFloat(q.get('lng')) * 1000) / 1000;
+    // «Cerca de mí» va como su celda (assets/celda.js): el centro, con el
+    // radio más media diagonal; lo de más lejos de tu punto (si este
+    // navegador lo sabe) se quita aquí, sin mandarlo.
+    var KCe = window.KlendarCelda;
+    var cel = String(q.get('celda') || q.get('cell') || '');
+    var pc = KCe && KCe.valida(cel) ? KCe.centro(cel) : null;
+    var lat = pc ? pc.lat : NaN;
+    var lng = pc ? pc.lng : NaN;
     var cerca = isFinite(lat) && isFinite(lng);
     var km = parseInt(q.get('km'), 10);
+    var aqui = null;
+    try {
+      var gg = JSON.parse(localStorage.getItem('klendar.cerca') || 'null');
+      if (pc && gg && Date.now() - gg.t < 6 * 3600e3 && KCe.de(gg.lat, gg.lng) === cel) aqui = gg;
+    } catch (x) { aqui = null; }
     var v = ventana(de('cuando', 'when'));
     var params = {
       p_kind: /^(ofertas|offers)$/.test(tipo) ? 'flash_offer' : /^(eventos|events)$/.test(tipo) ? 'future_event' : null,
@@ -603,8 +613,9 @@
       params.p_lat = lat; params.p_lng = lng;
       // Sin `km` en la dirección es la de serie, 5 km (como la página); con
       // la barra, de 1 a 100 km.
-      params.p_radius_m = (isFinite(km) ? Math.min(Math.max(km, 1), 100) : 5) * 1000;
+      params.p_radius_m = (isFinite(km) ? Math.min(Math.max(km, 1), 100) : 5) * 1000 + KCe.margenM(cel);
     }
+    var radio = (isFinite(km) ? Math.min(Math.max(km, 1), 100) : 5) * 1000;
     // Las categorías y lo de «El sitio», «Para quién», «Más», ¿Qué? y el
     // momento, tal cual los pide la página (`data-amigos-params`).
     var mf = {};
@@ -623,6 +634,7 @@
       var filas = (r[0].data || []).filter(function (o) {
         if (ciudad && String(o.city || '').toLowerCase() !== ciudad) return false;
         if (busca && sinTildes(o.title + ' ' + (o.business_name || '')).indexOf(sinTildes(busca)) < 0) return false;
+        if (aqui && o.lat != null && o.lng != null && isFinite(o.lat) && isFinite(o.lng) && KCe.metros(aqui.lat, aqui.lng, Number(o.lat), Number(o.lng)) > radio) return false;
         return true;
       });
       var amigos = r[1] && r[1].friends ? r[1].friends.length : -1;

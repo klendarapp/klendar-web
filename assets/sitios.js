@@ -263,11 +263,14 @@
       const mb = window.mapboxgl;
       mb.accessToken = tk;
       const oscuro = matchMedia('(prefers-color-scheme: dark)').matches;
+      // La cámara de Planes si se viene de allí con la misma zona (mapa.js).
+      const cam = globalThis.KlendarAgrupa?.camara;
+      const antes = cam ? cam.lee(d.zona) : null;
       const m = new mb.Map({
         container: caja,
         style: oscuro ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
-        center: d.centro || [-3.7038, 40.4168],
-        zoom: d.zoom || 14,
+        center: antes ? [antes.lng, antes.lat] : d.centro || [-3.7038, 40.4168],
+        zoom: antes ? antes.zoom : d.zoom || 14,
         performanceMetricsCollection: false,
         collectResourceTiming: false,
         cooperativeGestures: matchMedia('(pointer: coarse)').matches,
@@ -275,6 +278,7 @@
       m.addControl(new mb.NavigationControl({ showCompass: false }));
       // Para las pruebas (como `KlendarMapa` en Planes).
       window.KlendarMapaSitios = m;
+      if (cam) cam.sigue(m, d.zona);
       const L = T[d.lang === 'en' ? 'en' : 'es'];
       const KA = globalThis.KlendarAgrupa;
       let pedido = 0;

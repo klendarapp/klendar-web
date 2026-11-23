@@ -76,13 +76,18 @@ const ic = (n, s = 16) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" heig
 export function filaSitio(p, lang, { conDistancia = true } = {}) {
   const en = lang === 'en';
   const cat = (en ? p.names?.en : p.names?.es) || p.names?.es || '';
-  const meta = [cat, p.distance_txt || (conDistancia ? distancia(p.distance_m, en) : '')].filter(Boolean).join(' · ');
+  const dist = p.distance_txt || (conDistancia ? distancia(p.distance_m, en) : '');
+  const meta = [cat, dist].filter(Boolean).join(' · ');
   const precioLocal = KM.simbolo(Number(p.price_level));
-  return `<a class="sitio-fila" href="${esc(bizPath(lang, p.slug || p.id))}">
+  // Sin distancia de la página (con la celda de «Cerca de mí»), la pone el
+  // navegador con tu punto, que no sale de él (/assets/tarjetas.js).
+  const geo = !dist && p.lat != null && p.lng != null && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng))
+    ? ` data-lat="${Number(p.lat).toFixed(5)}" data-lng="${Number(p.lng).toFixed(5)}"` : '';
+  return `<a class="sitio-fila" href="${esc(bizPath(lang, p.slug || p.id))}"${geo}>
     ${p.photo || p.logo ? `<img src="${esc(p.photo || p.logo)}" alt="" width="76" height="76" loading="lazy" decoding="async">` : `<span class="ph iniciales" aria-hidden="true">${esc(KS.iniciales(p.name))}</span>`}
     <span class="sitio-cuerpo">
       <b>${esc(p.name)}</b>
-      ${meta || precioLocal ? `<span class="muted">${esc(meta)}${precioLocal ? `${meta ? ' · ' : ''}<span aria-label="${esc(KM.t(lang).priceA11y + KM.significado(Number(p.price_level), lang))}">${precioLocal}</span>` : ''}</span>` : ''}
+      ${meta || precioLocal || geo ? `<span class="muted">${esc(meta)}${geo ? '<span class="tj-dist" hidden></span>' : ''}${precioLocal ? `${meta ? ' · ' : ''}<span aria-label="${esc(KM.t(lang).priceA11y + KM.significado(Number(p.price_level), lang))}">${precioLocal}</span>` : ''}</span>` : ''}
       ${KS.detallesHtml(p, en ? 'en' : 'es')}
     </span>
     <span class="ncard-ir" aria-hidden="true">${ic('der', 20)}</span>
@@ -90,12 +95,12 @@ export function filaSitio(p, lang, { conDistancia = true } = {}) {
 }
 
 /** El mapa de Sitios: lo pinta /assets/sitios.js con `map_places`. */
-export function mapaSitios({ lang, centro, zoom, filtros, desde = null }) {
+export function mapaSitios({ lang, centro, zoom, filtros, desde = null, zona = '' }) {
   const en = lang === 'en';
   const S = TS(en);
   const sp = supabasePublic();
   const datos = {
-    url: sp.url, key: sp.key, centro, zoom, filtros, desde,
+    url: sp.url, key: sp.key, centro, zoom, filtros, desde, zona,
     no: S.mapNo, ver: S.seePlace, base: en ? '/en/b/' : '/b/', lang: en ? 'en' : 'es',
   };
   return `<div id="mapa-sitios" class="mapa-explorar" role="region" aria-label="${esc(S.onMap)}" data-sitios="${esc(JSON.stringify(datos))}"></div>`;
@@ -104,8 +109,8 @@ export function mapaSitios({ lang, centro, zoom, filtros, desde = null }) {
 /** Los scripts de la página de Sitios (la hora de cada fila y el mapa). */
 export const SITIOS_SCRIPTS = `<script src="/assets/zona.js?v=2" defer></script>
 <script src="/assets/iconos-mapa.js?v=2" defer></script>
-<script src="/assets/mapa.js?v=9" defer></script>
-<script src="/assets/sitios.js?v=11" defer></script>`;
+<script src="/assets/mapa.js?v=10" defer></script>
+<script src="/assets/sitios.js?v=12" defer></script>`;
 
 export const SITIOS_CSS = `<style>
 /* Sin saltos al cambiar entre Planes y Sitios: la barra de desplazamiento

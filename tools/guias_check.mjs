@@ -148,7 +148,7 @@ const ultima = (fn) => pedidas.filter((p) => p.u.endsWith(`/rpc/${fn}`)).pop()?.
   ok('3. «… en {sitio}» en inglés', tituloGuia(g, 'en') === 'Christmas in Málaga');
   const explore = lee('functions/_lib/explore.js');
   ok('3. Descubre la pide con su zona (punto y distancia, o la ciudad entera)', explore.includes("rpc('current_guide'")
-    && explore.includes('p_radius_m: cerca ? km * 1000 : centroCiudad?.radius_m || RADIO_CIUDAD_M')
+    && explore.includes('p_radius_m: cerca ? radioM : centroCiudad?.radius_m || RADIO_CIUDAD_M')
     && /\$\{guiaHtml\}\s*\$\{resultados\}/.test(explore));
 }
 

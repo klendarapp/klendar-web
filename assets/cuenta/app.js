@@ -2272,6 +2272,8 @@ RUTAS.guardar = async ([id], params, crudo) => {
 // «1 oferta activa» / «3 ofertas activas», como en la app.
 const cuantas = (n, es, en) => { const [uno, varios] = EN ? en : es; return n === 1 ? uno : `${n} ${varios}`; };
 
+/** El centro [lat, lng] de una celda de «Cerca de mí» (como assets/celda.js), o null. */
+const centroDeCelda = function(c){var B='0123456789bcdefghjkmnpqrstuvwxyz',la=[-90,90],lo=[-180,180],p=1;if(!/^[0-9b-hjkmnp-z]{5}$/.test(c||''))return null;for(var i=0;i<c.length;i++){var n=B.indexOf(c.charAt(i));for(var b=4;b>=0;b--){var r=p?lo:la,m=(r[0]+r[1])/2;if(n>>b&1)r[0]=m;else r[1]=m;p=!p;}}return[Math.round((la[0]+la[1])*5e4)/1e5,Math.round((lo[0]+lo[1])*5e4)/1e5];};
 /** Dónde se miró por última vez en Descubre o Explorar («Cerca de ti»), si
  * se usó: para la distancia de cada favorito (como la app). Sin eso, nada:
  * aquí no se pide la ubicación. */
@@ -2279,8 +2281,10 @@ function ultimaPosicion() {
   try {
     const g = JSON.parse(localStorage.getItem('klendar.filtros') || 'null');
     const q = new URLSearchParams((g && (g.es || g.en)) || '');
-    const lat = Number.parseFloat(q.get('lat'));
-    const lng = Number.parseFloat(q.get('lng'));
+    // «Cerca de mí» se guarda como su celda (assets/celda.js): su centro.
+    const c = centroDeCelda(q.get('celda') || q.get('cell'));
+    const lat = c ? c[0] : Number.parseFloat(q.get('lat'));
+    const lng = c ? c[1] : Number.parseFloat(q.get('lng'));
     return Number.isFinite(lat) && Number.isFinite(lng) ? { p_lat: lat, p_lng: lng } : {};
   } catch { return {}; }
 }

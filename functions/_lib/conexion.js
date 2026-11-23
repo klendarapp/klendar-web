@@ -4,6 +4,8 @@
 // para no servir a nadie una página pintada con la zona de otro). En su
 // propio fichero para no importarse en círculo.
 
+import KCe from '../../assets/celda.js';
+
 /** Sin posición ni ciudad en la dirección, la ciudad y el punto que
  * Cloudflare deduce de la IP (`request.cf`), redondeado a 0,1° (unos 10 km).
  * Sin pedir permiso, sin guardarlo (ni en la dirección, ni en el navegador,
@@ -21,4 +23,12 @@ export function zonaDeConexion(request) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
   const r = (x) => Math.round(x * 10) / 10;
   return { lat: r(lat), lng: r(lng) };
+}
+
+/** La celda de 5 km de esa zona (assets/celda.js), o '' sin zona. Con ella
+ * se pintan Descubre y Explorar, y la caché del borde la pone en su clave
+ * (`_lib/cache.js`): los dos sacan la misma de aquí. */
+export function celdaDeConexion(request) {
+  const z = zonaDeConexion(request);
+  return z ? KCe.de(z.lat, z.lng) : '';
 }

@@ -150,40 +150,87 @@ const DE_SERIE = 'public, max-age=60, s-maxage=300';
   ok(tiempos('/m/x', new Response('', { headers: { 'cache-control': 'public, max-age=30, s-maxage=30' } }))?.reserva === 120, '4. el QR de mesa (30 s) casi sin reserva');
 }
 
-// 5. Descubre y Explorar con la zona de la conexión: nunca de la caché.
+// 5. Descubre y Explorar con la zona de la conexión: de la caché, con la
+//    celda de esa zona en la clave (Iván, 23-11; RUNBOOK §4zzz-explorar).
 {
   const ES = { country: 'ES', latitude: '36.72', longitude: '-4.42' };
-  const p = html('<p>todas las ciudades</p>', 'public, max-age=120, s-maxage=600', 200, { vary: 'Cookie' });
+  const OTRA = { country: 'ES', latitude: '40.41', longitude: '-3.70' };
+  const p = html('<p>todas las ciudades</p>', 'public, max-age=60, s-maxage=180', 200, { vary: 'Cookie' });
   pintadas = 0;
   await visita('/descubre', { pagina: p });
   const robot = await visita('/descubre', { cabeceras: { 'user-agent': 'Mozilla/5.0 (compatible; Googlebot/2.1)' }, cf: ES, pagina: p });
   ok(robot.estado === 'HIT' && pintadas === 1, '5. un robot (aunque sea desde España): «Todas las ciudades», de la caché', robot.estado);
   const fuera = await visita('/descubre', { cf: { country: 'FR', latitude: '48.8', longitude: '2.3' }, pagina: p });
   ok(fuera.estado === 'HIT', '5. desde fuera de España: de la caché', fuera.estado);
-  const persona = await visita('/descubre', { cf: ES, pagina: html('<p>cerca de ti</p>', 'private, max-age=0', 200, { vary: 'Cookie, CF-Connecting-IP' }) });
-  ok(persona.estado === 'BYPASS' && persona.cuerpo === '<p>cerca de ti</p>', '5. una persona en España sin ciudad: su página, pintada para ella', persona.estado);
+  // La página con zona: privada para el navegador, `x-klendar-borde` para esta caché.
+  const conZona = (txt) => html(txt, 'private, max-age=0', 200, { vary: 'Cookie, CF-Connecting-IP', 'x-klendar-borde': 's-maxage=180' });
+  pintadas = 0;
+  const persona = await visita('/descubre', { cf: ES, pagina: conZona('<p>cerca de ti, Málaga</p>') });
+  const vecina = await visita('/descubre', { cf: ES, pagina: conZona('<p>otra vez</p>') });
+  ok(persona.estado === 'MISS' && vecina.estado === 'HIT' && vecina.cuerpo === '<p>cerca de ti, Málaga</p>' && pintadas === 1,
+    '5. una persona en España sin ciudad: pintada una vez y, para la siguiente de su celda, de la caché', `${persona.estado} ${vecina.estado} ${pintadas}`);
+  ok(vecina.r.headers.get('cache-control') === 'private, max-age=0' && !vecina.r.headers.has('x-klendar-borde'),
+    '5. …y al navegador le sigue diciendo «privada», sin la cabecera interna', `${vecina.r.headers.get('cache-control')} ${vecina.r.headers.get('x-klendar-borde')}`);
+  const lejos = await visita('/descubre', { cf: OTRA, pagina: conZona('<p>cerca de ti, Madrid</p>') });
+  ok(lejos.estado === 'MISS' && lejos.cuerpo === '<p>cerca de ti, Madrid</p>', '5. desde otra celda (Madrid): la suya, no la de Málaga', lejos.estado);
+  const sinBorde = await visita('/agenda/x-zona', { cf: ES, pagina: conZona('<p>a</p>') });
+  const sinBorde2 = await visita('/agenda/x-zona', { cf: ES, pagina: conZona('<p>b</p>') });
+  ok(sinBorde2.estado === 'MISS' && sinBorde2.cuerpo === '<p>b</p>', '5. `x-klendar-borde` solo vale en Descubre y Explorar', `${sinBorde.estado} ${sinBorde2.estado}`);
   await visita('/explorar?ciudad=madrid', { pagina: p });
   const conCiudad = await visita('/explorar?ciudad=madrid', { cf: ES, pagina: p });
   ok(conCiudad.estado === 'HIT', '5. con ciudad en la dirección no depende de la conexión: de la caché', conCiudad.estado);
+  // «Cerca de mí»: la celda en la dirección (nunca el punto) y la misma página para todos los de ella.
+  pintadas = 0;
+  await visita('/explorar?celda=eysbg&vista=lista', { cf: ES, pagina: p });
+  const celda = await visita('/explorar?celda=eysbg&vista=lista', { cf: OTRA, pagina: p });
+  ok(celda.estado === 'HIT' && pintadas === 1, '5. con la celda de «Cerca de mí»: de la caché (la zona de la conexión no cuenta)', celda.estado);
   const guia = await visita('/guia/navidad', { cf: ES, pagina: p });
   ok(guia.estado === 'BYPASS', '5. una guía sin municipio, con zona: su página', guia.estado);
   const guiaMuni = await visita('/guia/navidad/malaga', { cf: ES, pagina: p });
   ok(guiaMuni.estado === 'MISS', '5. una guía de un municipio: a la caché', guiaMuni.estado);
+  // La cookie de la edad en Descubre y Explorar: su respuesta en la clave.
+  pintadas = 0;
+  const conEdad = (txt) => html(txt, 'private, max-age=0', 200, { vary: 'Cookie', 'x-klendar-borde': 's-maxage=180' });
+  const e1 = await visita('/explorar?ciudad=malaga', { cabeceras: { cookie: 'klendar_18=1' }, pagina: conEdad('<p>con +18</p>') });
+  const e2 = await visita('/explorar?ciudad=malaga', { cabeceras: { cookie: '_ga=2; klendar_18=1' }, pagina: conEdad('<p>x</p>') });
+  const e0 = await visita('/explorar?ciudad=malaga', { cabeceras: { cookie: 'klendar_18=0' }, pagina: conEdad('<p>sin +18</p>') });
+  const sinC = await visita('/explorar?ciudad=malaga', { pagina: p });
+  ok(e1.estado === 'MISS' && e2.estado === 'HIT' && e2.cuerpo === '<p>con +18</p>', '5. «18 o más»: de la caché para quien contestó lo mismo', `${e1.estado} ${e2.estado}`);
+  ok(e0.estado === 'MISS' && e0.cuerpo === '<p>sin +18</p>' && sinC.cuerpo !== '<p>con +18</p>', '5. …y nunca a quien contestó otra cosa o nada', `${e0.estado} ${sinC.cuerpo}`);
+  const raro = await visita('/explorar?ciudad=malaga', { cabeceras: { cookie: 'klendar_18=7' }, pagina: conEdad('<p>raro</p>') });
+  ok(raro.estado === 'BYPASS', '5. una cookie de la edad rara: se pinta para ella', raro.estado);
+  // 3 min frescas y 2 más servidas viejas (5 como mucho).
+  pintadas = 0;
+  await visita('/explorar?celda=ezjmg', { pagina: p });
+  ahora += 4 * 60e3;
+  const vieja = await visita('/explorar?celda=ezjmg', { pagina: p });
+  ahora += 2 * 60e3;
+  const nueva = await visita('/explorar?celda=ezjmg', { pagina: p });
+  ok(vieja.estado === 'STALE', '5. Explorar a los 4 min: la guardada, y la nueva por detrás', vieja.estado);
+  ok(tiempos('/explorar', new Response('', { headers: { 'cache-control': 'public, max-age=60, s-maxage=180' } }))?.reserva === 120, '5. Explorar: 3 min frescas + 2 de reserva');
+  ok(['HIT', 'MISS'].includes(nueva.estado), '5. …y nada de más de 5 min', nueva.estado);
 }
 
-// 6. La página de Explorar de verdad: pública sin zona, privada con ella.
+// 6. La página de Explorar de verdad: pública sin zona; con zona o edad,
+//    privada para el navegador y con su `x-klendar-borde`.
 {
   const realFetch = globalThis.fetch;
   globalThis.fetch = async () => new Response('[]', { headers: { 'content-type': 'application/json' } });
   const { explorePage } = await import('../functions/_lib/explore.js');
   const sinZona = await explorePage(new URL('https://klendar.app/descubre'), 'es', 'descubre', new Request('https://klendar.app/descubre'));
-  ok(/public/.test(sinZona.headers.get('cache-control')) && !/connecting-ip/i.test(sinZona.headers.get('vary') || ''), '6. Descubre sin zona (robots): pública y sin Vary por la IP', `${sinZona.headers.get('cache-control')} · ${sinZona.headers.get('vary')}`);
+  ok(/public/.test(sinZona.headers.get('cache-control')) && /s-maxage=180/.test(sinZona.headers.get('cache-control')) && !/connecting-ip/i.test(sinZona.headers.get('vary') || ''),
+    '6. Descubre sin zona (robots): pública, 3 min y sin Vary por la IP', `${sinZona.headers.get('cache-control')} · ${sinZona.headers.get('vary')}`);
   const req = new Request('https://klendar.app/descubre');
   Object.defineProperty(req, 'cf', { value: { country: 'ES', latitude: '40.41', longitude: '-3.70' } });
   const conZona = await explorePage(new URL('https://klendar.app/descubre'), 'es', 'descubre', req);
-  ok(/private/.test(conZona.headers.get('cache-control')) && /connecting-ip/i.test(conZona.headers.get('vary') || ''), '6. con la zona de la conexión: privada', conZona.headers.get('cache-control'));
+  ok(/private/.test(conZona.headers.get('cache-control')) && /connecting-ip/i.test(conZona.headers.get('vary') || '') && conZona.headers.get('x-klendar-borde') === 's-maxage=180',
+    '6. con la zona de la conexión: privada para el navegador y a la caché del borde con su celda', `${conZona.headers.get('cache-control')} ${conZona.headers.get('x-klendar-borde')}`);
   const edad = await explorePage(new URL('https://klendar.app/explorar?ciudad=madrid'), 'es', 'explorar', new Request('https://klendar.app/explorar', { headers: { cookie: 'klendar_18=1' } }));
-  ok(/private/.test(edad.headers.get('cache-control')), '6. con la cookie de la edad: privada', edad.headers.get('cache-control'));
+  ok(/private/.test(edad.headers.get('cache-control')) && edad.headers.get('x-klendar-borde') === 's-maxage=180', '6. con la cookie de la edad: privada y con su `x-klendar-borde`', edad.headers.get('cache-control'));
+  const celda = await explorePage(new URL('https://klendar.app/explorar?celda=ezjmg'), 'es', 'explorar', req);
+  ok(/public/.test(celda.headers.get('cache-control')) && !celda.headers.has('x-klendar-borde'), '6. con la celda en la dirección: pública (la zona de la conexión no cuenta)', celda.headers.get('cache-control'));
+  const vieja = await explorePage(new URL('https://klendar.app/explorar?lat=40.41712&lng=-3.70391&km=3'), 'es', 'explorar', req);
+  ok(vieja.status === 301 && vieja.headers.get('location') === '/explorar?km=3&celda=ezjmg', '6. un enlace de antes con el punto: 301 a su celda', `${vieja.status} ${vieja.headers.get('location')}`);
   globalThis.fetch = realFetch;
 }
 
