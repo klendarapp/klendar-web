@@ -650,8 +650,8 @@ const insecure = location.protocol === 'http:' && !LOCAL;
 for (const a of document.querySelectorAll('#login a.brand[href="/"]')) a.href = WEB;
 if (insecure) {
   document.body.innerHTML = I18N.lang === 'en'
-    ? '<div class="login"><h2>Insecure connection</h2><p class="muted">This panel only works over HTTPS: <a href="https://admin.klendar.app/admin">https://admin.klendar.app/admin</a>.</p></div>'
-    : '<div class="login"><h2>Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS: <a href="https://admin.klendar.app/admin">https://admin.klendar.app/admin</a>.</p></div>';
+    ? '<div class="login"><h2>Insecure connection</h2><p class="muted">This panel only works over HTTPS: <a href="https://admin.klendar.app">https://admin.klendar.app</a>.</p></div>'
+    : '<div class="login"><h2>Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS: <a href="https://admin.klendar.app">https://admin.klendar.app</a>.</p></div>';
   throw new Error('insecure');
 }
 let ME = null;

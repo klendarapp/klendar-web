@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { direccionBuena } from '../functions/_lib/direccion.js';
-import { CSP_PUBLICA, CSP_PUENTE } from '../functions/_lib/csp.js';
+import { CABECERAS_ADMIN, CSP_PUBLICA } from '../functions/_lib/csp.js';
 import { decideHost } from '../functions/_lib/admin.js';
 
 // En las pruebas (SUPABASE_BLOQUEADO, lo pone tools/_supabase_simulado.mjs a
@@ -64,6 +64,14 @@ const cabecerasDe = (ruta) => {
   return h;
 };
 
+// `_routes.json`: lo de `exclude` no pasa por las Functions (ni por el middleware).
+let FUERA = [];
+try {
+  FUERA = JSON.parse(await readFile(join(ROOT, '_routes.json'), 'utf8')).exclude
+    .map((r) => new RegExp(`^${r.split('*').map((t) => t.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`));
+} catch { /* sin _routes.json: todo pasa */ }
+const FUERA_DE_FUNCTIONS = (ruta) => FUERA.some((re) => re.test(ruta));
+
 // Como Cloudflare Pages: `/privacidad` es `privacidad.html` y `/` es `index.html`.
 const aFichero = (ruta) => (ruta === '/captcha/' ? '/captcha.html' : ruta.endsWith('/') ? `${ruta}index.html` : extname(ruta) ? ruta : `${ruta}.html`);
 
@@ -83,20 +91,24 @@ createServer(async (req, res) => {
   // Como functions/_middleware.js: las direcciones van sin barra al final
   // (/privacidad, /cuenta/entrar); lo viejo, con un 301 a la buena.
   const buena = direccionBuena(path);
-  // Como functions/_middleware.js (_lib/admin.js): el admin solo en
-  // admin.localhost; en localhost, `/admin` da la página puente y lo de
-  // dentro, un 301. Lo estático (con extensión, menos .html) se sirve en los
-  // dos, como lo que `_routes.json` deja fuera de las Functions.
-  const estatico = /\.[a-z0-9]+$/i.test(path) && !/\.html$/i.test(path);
-  const host = !estatico && (req.method === 'GET' || req.method === 'HEAD') ? decideHost(url, buena) : null;
+  // Como functions/_middleware.js (_lib/admin.js): el admin en la raíz de
+  // admin.localhost (`/` y `/carta`, reescritos a sus ficheros); `/admin…`, la
+  // 404 normal en los dos hosts. Lo que `_routes.json` deja fuera de las
+  // Functions (assets, config.js…) no pasa por aquí, como en Cloudflare.
+  const host = !FUERA_DE_FUNCTIONS(path) && (req.method === 'GET' || req.method === 'HEAD') ? decideHost(url, buena) : null;
   if (host?.salto) {
     res.writeHead(301, { Location: host.salto });
     res.end();
     return;
   }
-  if (host?.puente) {
-    res.writeHead(200, { 'content-type': TYPES['.html'], 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'content-security-policy': CSP_PUENTE });
-    res.end(req.method === 'HEAD' ? undefined : await readFile(join(ROOT, 'admin', 'puente.html')));
+  if (host?.noExiste) {
+    res.writeHead(404, { ...cabecerasDe('/404.html'), 'content-type': TYPES['.html'] });
+    res.end(req.method === 'HEAD' ? undefined : await readFile(join(ROOT, '404.html')));
+    return;
+  }
+  if (host?.reescribe) {
+    res.writeHead(200, { ...CABECERAS_ADMIN, 'content-type': TYPES['.html'] });
+    res.end(req.method === 'HEAD' ? undefined : await readFile(join(ROOT, aFichero(host.reescribe))));
     return;
   }
   if (buena !== path && (req.method === 'GET' || req.method === 'HEAD')) {

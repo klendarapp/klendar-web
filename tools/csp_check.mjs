@@ -26,7 +26,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CSP_PUBLICA, CSP_PUENTE, CSP_WIDGET, conNonce } from '../functions/_lib/csp.js';
+import { CSP_ADMIN, CSP_PUBLICA, CSP_WIDGET, conNonce } from '../functions/_lib/csp.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const lee = (f) => readFileSync(path.join(RAIZ, f), 'utf8');
@@ -71,7 +71,7 @@ ok('sin report-only en el middleware (salvo para quitarla)', !/'content-security
 for (const d of ["script-src 'self'", 'https://challenges.cloudflare.com', 'https://api.mapbox.com', 'https://static.cloudflareinsights.com', "worker-src 'self' blob:", "base-uri 'self'", "object-src 'none'", "frame-ancestors 'none'"]) {
   ok(`CSP_PUBLICA con ${d}`, CSP_PUBLICA.includes(d));
 }
-const todas = [...cab.matchAll(/^ {2}Content-Security-Policy: (.+)$/gm)].map((m) => m[1]).concat([CSP_PUBLICA, CSP_WIDGET, CSP_PUENTE]);
+const todas = [...cab.matchAll(/^ {2}Content-Security-Policy: (.+)$/gm)].map((m) => m[1]).concat([CSP_PUBLICA, CSP_WIDGET, CSP_ADMIN]);
 for (const c of todas) {
   const s = /(?:^|;)\s*script-src\s([^;]*)/.exec(c)?.[1] || '';
   ok(`sin 'unsafe-inline' ni 'unsafe-eval' en script-src (${c.slice(0, 50)}…)`, !/unsafe-inline|unsafe-eval|\*(?!\.)/.test(s) || !s, s);
@@ -88,7 +88,8 @@ ok('…y la misma en /widget/* de _headers', new RegExp(`^/widget/\\*\\r?\\n(?: 
     const h = { 'content-type': tipo };
     if (csp) h['content-security-policy'] = csp;
     const ctx = {
-      request: new Request(`https://${host}${ruta}`, { method: metodo }), env: {},
+      request: new Request(`https://${host}${ruta}`, { method: metodo }),
+      env: { ASSETS: { fetch: async () => new Response('<!doctype html><p>hola', { status: 200, headers: h }) } },
       next: async () => new Response(metodo === 'HEAD' ? null : '<!doctype html><p>hola', { status: 200, headers: h }),
     };
     return onRequest(ctx);
@@ -105,11 +106,13 @@ ok('…y la misma en /widget/* de _headers', new RegExp(`^/widget/\\*\\r?\\n(?: 
   ok('middleware: página de una Function sin CSP → CSP_PUBLICA + nonce', f.headers.get('content-security-policy') === conNonce(CSP_PUBLICA, nonce(f)) && !!nonce(f), f.headers.get('content-security-policy'));
   const w = await pide('/widget/abc', { csp: CSP_WIDGET });
   ok('middleware: el widget, su CSP + nonce', w.headers.get('content-security-policy') === conNonce(CSP_WIDGET, nonce(w)) && !!nonce(w));
-  for (const z of ['/panel', '/cuenta/codigos', '/admin', '/tv']) {
-    // El admin, en su host (§4zzz-admindom); en klendar.app, `/admin` es la página puente.
-    const r = await pide(z, { csp: "default-src 'self'; script-src 'self'", host: z === '/admin' ? 'admin.klendar.app' : 'klendar.app' });
+  for (const z of ['/panel', '/cuenta/codigos', '/tv']) {
+    const r = await pide(z, { csp: "default-src 'self'; script-src 'self'" });
     ok(`middleware: ${z} sin nonce (zona con sesión, no-transform)`, !nonce(r) && r.headers.get('content-security-policy') === "default-src 'self'; script-src 'self'");
   }
+  // El admin, en la raíz de su host (§4zzz-admindom): su CSP, sin nonce.
+  const ad = await pide('/', { csp: CSP_PUBLICA, host: 'admin.klendar.app' });
+  ok('middleware: el admin (admin.klendar.app/) con CSP_ADMIN y sin nonce', !nonce(ad) && ad.headers.get('content-security-policy') === CSP_ADMIN, ad.headers.get('content-security-policy'));
   const js = await pide('/assets/x.js', { csp: CSP_PUBLICA, tipo: 'text/javascript' });
   ok('middleware: lo que no es HTML, sin nonce', !nonce(js));
   const hd = await pide('/para-negocios', { csp: CSP_PUBLICA, metodo: 'HEAD' });

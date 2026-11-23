@@ -121,9 +121,8 @@ def main() -> int:
                 # Sus propios ficheros (/panel/panel.css, /admin/i18n.js, /panel/i18n/fr.js).
                 if re.match(r'^[\w./-]+\.(js|css|html|png|svg|json|webp|jpg)$', resto) or resto.startswith('i18n/'):
                     continue
-                # Páginas de verdad dentro del admin: la carta y la puente de
-                # klendar.app/admin → admin.klendar.app (§4zzz-admindom).
-                if m[1] == 'admin' and resto in ('puente', 'carta'):
+                # El fichero de la carta imprimible (admin.klendar.app/carta lo sirve por dentro).
+                if m[1] == 'admin' and resto == 'carta':
                     continue
                 malos.append(f'{donde}: «/{m[1]}/{resto}» (el {m[1]} no tiene esa dirección; sus pantallas van con #/)')
             for m in A_CUENTA.finditer(linea):

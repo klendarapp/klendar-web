@@ -64,12 +64,17 @@ export const KEY = (CONFIG.match(/key:\s*'([^']+)'/) || [])[1] || '';
 export const OTRO_REF = REF === PROYECTOS.dev ? PROYECTOS.prod : PROYECTOS.dev;
 // El admin vive en su propio host (admin.klendar.app; en local,
 // admin.localhost con el mismo puerto: tools/serve_dev.mjs, §4zzz-admindom).
-// `${adminDe(BASE)}/admin#/…` lo abre allí sin pasar por la página puente.
+// `${adminDe(BASE)}/#/…` lo abre allí (en la raíz: ya no hay /admin a la vista).
 export const adminDe = (base) => String(base)
   .replace(/^(https?:\/\/)(localhost|127\.0\.0\.1)(?=[:/]|$)/, '$1admin.localhost')
   .replace(/^https:\/\/(www\.)?klendar\.app(?=[:/]|$)/, 'https://admin.klendar.app');
-/** `base + ruta`, en el host del admin si la ruta es del admin. */
-export const enSuHost = (base, ruta) => (/^\/admin(\/|[?#]|$)/.test(ruta) ? adminDe(base) : base) + ruta;
+/** `base + ruta`; las rutas de siempre del admin (`/admin`, `/admin#/x`,
+ *  `/admin/carta.html`), en la raíz de su host: `/`, `/#/x`, `/carta.html`. */
+export const enSuHost = (base, ruta) => {
+  if (!/^\/admin(\/|[?#]|$)/.test(ruta)) return base + ruta;
+  const resto = ruta.slice('/admin'.length);
+  return adminDe(base) + (resto.startsWith('/') ? resto : `/${resto}`);
+};
 /** `fetch` que también llega a `admin.localhost` (los navegadores lo resuelven
  *  solos; Node no): a 127.0.0.1 con su `Host`, siguiendo los saltos entre
  *  localhost y admin.localhost si `redirect` es `follow` (como por defecto). */

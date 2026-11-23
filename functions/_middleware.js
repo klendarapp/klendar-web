@@ -17,7 +17,7 @@
 // en el límite de CPU del plan gratis, 10 ms; ver RUNBOOK §3f).
 import { direccionBuena } from './_lib/direccion.js';
 import { EN_CACHE, desdeLaCache } from './_lib/cache.js';
-import { CSP_PUBLICA, CSP_PUENTE, conNonce, nonceNuevo } from './_lib/csp.js';
+import { CABECERAS_ADMIN, CSP_PUBLICA, conNonce, nonceNuevo } from './_lib/csp.js';
 import { decideHost, esHostAdmin } from './_lib/admin.js';
 
 const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/i;
@@ -67,14 +67,15 @@ export async function onRequest(ctx) {
     });
   }
 
+  let host = null;
   if (ctx.request.method === 'GET' || ctx.request.method === 'HEAD') {
     const url = new URL(ctx.request.url);
     const buena = direccionBuena(url.pathname);
-    // 0-bis. El admin vive en admin.klendar.app (§4zzz-admindom, _lib/admin.js):
-    //   allí solo `/admin…` (y `/` → `/admin`; lo demás, a klendar.app); aquí,
-    //   `/admin` da la página puente (pasa el `#/…` y borra la sesión vieja)
-    //   y lo de dentro, un 301 al subdominio.
-    const host = decideHost(url, buena);
+    // 0-bis. El admin vive en la raíz de admin.klendar.app (§4zzz-admindom,
+    //   _lib/admin.js): allí `/` y `/carta` se reescriben a sus ficheros de
+    //   `/admin/…` (más abajo) y lo demás va a klendar.app; `/admin…`, en los
+    //   dos hosts, da la 404 normal (las direcciones viejas no redirigen).
+    host = decideHost(url, buena);
     if (host?.salto) {
       return new Response(null, {
         status: 301,
@@ -84,24 +85,8 @@ export async function onRequest(ctx) {
         },
       });
     }
-    if (host?.puente) {
-      const pagina = await ctx.env.ASSETS.fetch(new URL('/admin/puente', url));
-      return new Response(ctx.request.method === 'HEAD' ? null : pagina.body, {
-        status: pagina.ok ? 200 : pagina.status,
-        headers: {
-          ...SEGURIDAD,
-          'content-type': 'text/html; charset=utf-8',
-          'cache-control': 'no-store, no-transform',
-          'x-robots-tag': 'noindex, nofollow',
-          'x-frame-options': 'DENY',
-          'referrer-policy': 'no-referrer',
-          'permissions-policy': 'geolocation=(), camera=(), microphone=()',
-          'content-security-policy': CSP_PUENTE,
-        },
-      });
-    }
     const apex = url.hostname === 'www.klendar.app';
-    if (buena !== url.pathname || apex) {
+    if (!host && (buena !== url.pathname || apex)) {
       const destino = (apex ? 'https://klendar.app' : url.origin) + buena + url.search;
       return new Response(null, {
         status: 301,
@@ -111,21 +96,30 @@ export async function onRequest(ctx) {
   }
 
   const head = ctx.request.method === 'HEAD';
-  const res = DIRECCION_VIEJA.test(rutaReal(pathname))
+  // El admin en su host: el fichero de `/admin…`, sin cambiar la dirección.
+  const zonaAdmin = Boolean(host?.reescribe);
+  const res = DIRECCION_VIEJA.test(rutaReal(pathname)) || host?.noExiste
     ? await ctx.env.ASSETS.fetch(new URL('/esta-direccion-no-existe/', ctx.request.url))
-    : (head || ctx.request.method === 'GET') && EN_CACHE.test(pathname)
-      ? await desdeLaCache(ctx, new URL(ctx.request.url), head, () => (head
-        ? ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
-        : ctx.next()))
-      : head
-        ? await ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
-        : await ctx.next();
+    : zonaAdmin
+      ? await ctx.env.ASSETS.fetch(new URL(host.reescribe, ctx.request.url))
+      : (head || ctx.request.method === 'GET') && EN_CACHE.test(pathname)
+        ? await desdeLaCache(ctx, new URL(ctx.request.url), head, () => (head
+          ? ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
+          : ctx.next()))
+        : head
+          ? await ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
+          : await ctx.next();
 
   const cabeceras = new Headers(res.headers);
   for (const [k, v] of Object.entries(SEGURIDAD)) if (!cabeceras.has(k)) cabeceras.set(k, v);
   // La de solo informe ya no se usa (§4zzz-csp): fuera, venga de donde venga.
   cabeceras.delete('content-security-policy-report-only');
-  const conSesion = /^\/(cuenta|panel|admin|tv)(\/|$)/.test(pathname);
+  // El admin (en su host, cabeceras propias aquí: lo reescrito no lleva las de
+  // `_headers` de su ruta), «Tu cuenta», el panel y la tele.
+  if (zonaAdmin) {
+    for (const [k, v] of Object.entries(CABECERAS_ADMIN)) cabeceras.set(k, v);
+  }
+  const conSesion = zonaAdmin || /^\/(cuenta|panel|tv)(\/|$)/.test(pathname);
   // 6. Las páginas públicas (también las estáticas, que pasan por aquí desde
   //    el 23-11 solo para esto) llevan un nonce nuevo en `script-src` en cada
   //    respuesta: Cloudflare se lo pone al <script> en línea que mete él

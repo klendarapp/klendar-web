@@ -7,7 +7,7 @@
  *   filtro por ciudad o zona y buscador; por ciudad y, dentro, por número
  *   («N personas lo piden»). Sin personas: solo cuántas y los nombres con que
  *   lo escriben. Acciones: «Preparar carta» (el mensaje de captación ya
- *   escrito, Copiar y «Carta para imprimir (PDF)», /admin/carta.html),
+ *   escrito, Copiar y «Carta para imprimir (PDF)», /carta en admin.klendar.app: admin/carta.html),
  *   «Enlazar con un negocio…» (al enlazarlo, si el negocio ya sale, se avisa
  *   a quien lo pidió) y en «Más acciones»: unir con otro, renombrar,
  *   descartar o reabrir y quitar el enlace.
@@ -114,7 +114,7 @@ info@klendar.app · klendar.app/para-negocios`;
   return { titulo, texto };
 }
 /** La página imprimible (A4) de la carta: solo el número, el sitio y la zona. */
-const crCartaUrl = (g) => `/admin/carta.html?${new URLSearchParams({ n: String(Number(g.people) || 0), local: g.name || '', zona: crDonde(g) === '—' ? '' : crDonde(g) })}`;
+const crCartaUrl = (g) => `/carta?${new URLSearchParams({ n: String(Number(g.people) || 0), local: g.name || '', zona: crDonde(g) === '—' ? '' : crDonde(g) })}`;
 
 function crPreparaCarta(g) {
   const d = $('#modal');

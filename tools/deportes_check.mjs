@@ -288,7 +288,7 @@ for (const [t, vp] of Object.entries(TAM)) {
     admin_broadcasts: { last_import: { source: 'thesportsdb', mode: 'daily', started_at: new Date().toISOString(), finished_at: new Date().toISOString(), items: 462, calls: 42 }, items: [] },
     admin_set_broadcast_league: { ok: true, removed: 0 },
   });
-  await p.goto(`${ADMIN}/admin#/emisiones`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/#/emisiones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-liga]');
   const v = await p.locator('#view').innerText();
   ok(/Ligas/.test(v) && /LaLiga/.test(v) && /NBA/.test(v) && /Sin temporada en curso/.test(v), `${t} admin: las ligas con lo que traen`);

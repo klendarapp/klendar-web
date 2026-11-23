@@ -106,7 +106,7 @@ async function adminSorteos(nav, nombre, t, vp) {
       : [sorteo(), sorteo({ id: G2, prize: 'Un año de cafés', status: 'removed', removed_at: masDias(-1), removed_reason: 'Premio engañoso', removed_by: 'qa@klendar.app', entries: 30 })] }),
     admin_remove_giveaway: { ok: true, entries: 12 },
   });
-  await p.goto(`${ADMIN}/admin#/sorteos`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/#/sorteos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-sorteo-adm]');
   const v = await p.locator('#view').innerText();
   ok(/Cena para dos/.test(v) && /Abierto/.test(v) && /Bar Sonda/.test(v) && /12 participan/.test(v), `${nombre}/${t} admin sorteos: el abierto con su negocio y participantes`);
@@ -146,13 +146,13 @@ async function adminDenuncias(nav, nombre, t, vp) {
         reporter: { kind: 'account', id: U, email: 'duena@example.com', name: 'Lola' } }] },
     admin_resolve_report_group: { ok: true, reports: 2, taken_down: true },
   });
-  await p.goto(`${ADMIN}/admin#/denuncias`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/#/denuncias`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.den-grupo');
   const v = await p.locator('#view').innerText();
   ok(/petición de grupo/i.test(v) && /Cena de empresa · 10 personas/.test(v) && /«Visitad mi web de apuestas»/.test(v) && /para Bar Sonda, Casa Lola/.test(v), `${nombre}/${t} admin denuncias: la petición de grupo con su tipo, nota y negocios`);
   ok(await p.locator('#type option[value=group_request]').count() === 1, `${nombre}/${t} admin denuncias: filtro «Peticiones de grupo»`);
   await p.screenshot({ path: `${OUT}/web-admin-denuncia-grupo-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${ADMIN}/admin#/denuncias/group_request/${PET}`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/#/denuncias/group_request/${PET}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.den-ficha');
   await p.click('.den-ficha [data-dec=remove]');
   await p.waitForSelector('#modal textarea[name=reason]');

@@ -1,24 +1,28 @@
-// El admin en su propio subdominio, admin.klendar.app (Iván, 23-11; RUNBOOK
-// §4zzz-admindom). Sin navegador (unos 0,5 s) y en Chromium y WebKit con la
-// base simulada (unos 30 s):
+// El admin en la raíz de su propio subdominio, https://admin.klendar.app/
+// (Iván, 23-11; RUNBOOK §4zzz-admindom). Sin navegador (unos 0,5 s) y en
+// Chromium y WebKit con la base simulada (unos 30 s):
 //
 //  1. Qué hace cada host (functions/_lib/admin.js y el middleware de verdad):
-//     klendar.app/admin → página puente; /admin/… → 301 al subdominio; en
-//     admin.klendar.app, `/` → /admin y lo que no es admin → klendar.app.
+//     en admin.klendar.app, `/` y `/carta` se reescriben a sus ficheros sin
+//     cambiar la dirección, sus JS se sirven y lo demás va a klendar.app;
+//     `/admin…`, en los dos hosts, da la 404 normal (sin pistas).
 //  2. Las cabeceras: la CSP del admin, igual o más estricta (sin Mapbox ni
-//     WebSocket, `frame-ancestors 'none'`, `Cross-Origin-Opener-Policy`), y la
-//     de la página puente.
+//     WebSocket, `frame-ancestors 'none'`, `Cross-Origin-Opener-Policy`), la
+//     misma en `_headers` y en el middleware (CSP_ADMIN); robots.txt no nombra
+//     el admin.
 //  3. En el navegador (localhost hace de klendar.app y admin.localhost de
 //     admin.klendar.app, como tools/serve_dev.mjs):
-//     - la puente lleva `?…` y `#/…` al subdominio y borra la sesión vieja del
-//       admin de klendar.app sin tocar la de «Tu cuenta» ni el idioma;
-//     - entrar con contraseña y el segundo factor (código de 6 cifras) en
-//       admin.localhost: la sesión se guarda allí y no en localhost;
+//     - las direcciones viejas dan la 404 normal;
+//     - cualquier página de klendar.app borra en silencio la sesión vieja del
+//       admin (assets/errores.js) sin tocar la de «Tu cuenta» ni el idioma;
+//     - entrar con contraseña y el segundo factor (código de 6 cifras) en la
+//       raíz de admin.localhost: la sesión se guarda allí y no en localhost, y
+//       en la barra nunca sale `/admin`;
 //     - «Confirma que eres tú» (contraseña con sesión aparte y
 //       `confirm_identity`);
 //     - «¿Has olvidado la contraseña?» vuelve por «Tu cuenta» de la web
-//       pública (`/cuenta/nueva-clave?destino=/admin`), que sí está en las
-//       URL de vuelta de Supabase;
+//       pública (`/cuenta/nueva-clave?destino=/admin`) y de ahí a la raíz del
+//       admin;
 //     - el logo de «Entrar» lleva a la web pública; sin violaciones de CSP.
 //
 //   PW=<ruta a playwright> node tools/admin_dominio_check.mjs
@@ -27,7 +31,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decideHost, origenAdmin, origenPublico } from '../functions/_lib/admin.js';
-import { CSP_PUENTE } from '../functions/_lib/csp.js';
+import { CABECERAS_ADMIN, CSP_ADMIN } from '../functions/_lib/csp.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const lee = (f) => readFileSync(path.join(RAIZ, f), 'utf8');
@@ -39,98 +43,125 @@ const ok = (nombre, c, extra = '') => {
 // ── 1. Cada host ────────────────────────────────────────────────────────────
 const d = (u) => decideHost(new URL(u));
 const igual = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const NO = { noExiste: true };
 const CASOS = [
-  ['https://klendar.app/admin', { puente: true }],
-  ['https://www.klendar.app/admin', { puente: true }],
-  ['https://klendar.app/admin?x=1', { puente: true }],
-  ['https://klendar.app/admin/carta?n=3', { salto: 'https://admin.klendar.app/admin/carta?n=3' }],
-  ['https://klendar.app/admin/puente', { salto: 'https://admin.klendar.app/admin' }],
-  ['https://klendar-web.pages.dev/admin/x', { salto: 'https://admin.klendar.app/admin/x' }],
+  ['https://klendar.app/admin', NO],
+  ['https://klendar.app/admin/', NO],
+  ['https://klendar.app/admin?x=1', NO],
+  ['https://klendar.app/admin/carta', NO],
+  ['https://klendar.app/admin/admin.js', NO],
+  ['https://www.klendar.app/admin', NO],
+  ['https://klendar-web.pages.dev/admin/x', NO],
   ['https://klendar.app/administracion', null],
   ['https://klendar.app/privacidad', null],
   ['https://klendar.app/', null],
-  ['https://admin.klendar.app/admin', null],
-  ['https://admin.klendar.app/admin/carta', null],
-  ['https://admin.klendar.app/', { salto: 'https://admin.klendar.app/admin' }],
-  ['https://admin.klendar.app/?inactividad=20', { salto: 'https://admin.klendar.app/admin?inactividad=20' }],
-  ['https://admin.klendar.app/admin/puente', { salto: 'https://admin.klendar.app/admin' }],
+  ['https://admin.klendar.app/', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/?inactividad=20', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/carta', { reescribe: '/admin/carta' }],
+  ['https://admin.klendar.app/admin/admin.js', null],
+  ['https://admin.klendar.app/admin/admin.css', null],
+  ['https://admin.klendar.app/admin', NO],
+  ['https://admin.klendar.app/admin/', NO],
+  ['https://admin.klendar.app/admin/carta', NO],
   ['https://admin.klendar.app/privacidad?x=1', { salto: 'https://klendar.app/privacidad?x=1' }],
   ['https://admin.klendar.app/o/abc', { salto: 'https://klendar.app/o/abc' }],
   ['https://admin.klendar.app/cuenta/nueva-clave?destino=%2Fadmin', { salto: 'https://klendar.app/cuenta/nueva-clave?destino=%2Fadmin' }],
   ['https://admin.klendar.app/panel', { salto: 'https://klendar.app/panel' }],
-  ['http://localhost:8788/admin', { puente: true }],
-  ['http://localhost:8788/admin/carta', { salto: 'http://admin.localhost:8788/admin/carta' }],
+  ['http://localhost:8788/admin', NO],
+  ['http://admin.localhost:8788/', { reescribe: '/admin' }],
   ['http://admin.localhost:8788/privacidad', { salto: 'http://localhost:8788/privacidad' }],
-  ['http://admin.localhost:8788/admin', null],
   // Un host que solo empieza por «admin.» no es el del admin.
-  ['https://admin.klendar.app.evil.example/admin', { puente: true }],
-  ['https://admin.klendar-web.pages.dev/admin/x', { salto: 'https://admin.klendar.app/admin/x' }],
+  ['https://admin.klendar.app.evil.example/', null],
+  ['https://admin.klendar-web.pages.dev/admin/x', NO],
 ];
 for (const [u, esperado] of CASOS) ok(`decideHost ${u}`, igual(d(u), esperado), `${JSON.stringify(d(u))} ≠ ${JSON.stringify(esperado)}`);
+ok('decideHost: /carta.html del admin, a /carta', igual(decideHost(new URL('https://admin.klendar.app/carta.html?n=1'), '/carta'), { salto: 'https://admin.klendar.app/carta?n=1' }));
+ok('decideHost: /admin.html de klendar.app, la 404', igual(decideHost(new URL('https://klendar.app/admin.html'), '/admin'), NO));
 ok('origenAdmin de klendar.app', origenAdmin(new URL('https://klendar.app/x')) === 'https://admin.klendar.app');
-ok('origenPublico de admin.klendar.app', origenPublico(new URL('https://admin.klendar.app/admin')) === 'https://klendar.app');
-ok('origenPublico de admin.localhost', origenPublico(new URL('http://admin.localhost:9/admin')) === 'http://localhost:9');
+ok('origenPublico de admin.klendar.app', origenPublico(new URL('https://admin.klendar.app/')) === 'https://klendar.app');
+ok('origenPublico de admin.localhost', origenPublico(new URL('http://admin.localhost:9/')) === 'http://localhost:9');
 
 // El middleware de verdad.
 {
   const { onRequest } = await import('../functions/_middleware.js');
   const pedidos = [];
+  const PAGINA_404 = '<!doctype html><title>Esta página no existe · Klendar</title>';
   const pide = async (u, metodo = 'GET') => onRequest({
     request: new Request(u, { method: metodo }),
-    env: { ASSETS: { fetch: async (r) => { pedidos.push(new URL(r.url || r).pathname); return new Response('<!doctype html><p>puente', { headers: { 'content-type': 'text/html' } }); } } },
-    next: async () => new Response(metodo === 'HEAD' ? null : '<!doctype html><p>admin', { headers: { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': "default-src 'self'; script-src 'self'" } }),
+    env: {
+      ASSETS: {
+        fetch: async (r) => {
+          const ruta = new URL(r.url || r).pathname;
+          pedidos.push(ruta);
+          return ruta === '/esta-direccion-no-existe/'
+            ? new Response(PAGINA_404, { status: 404, headers: { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': "script-src 'self'" } })
+            : new Response(`<!doctype html><p>fichero ${ruta}`, { headers: { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': "script-src 'self' https://otra.example" } });
+        },
+      },
+    },
+    next: async () => new Response(metodo === 'HEAD' ? null : '<!doctype html><p>siguiente', { headers: { 'content-type': 'text/html; charset=utf-8', 'content-security-policy': "script-src 'self'" } }),
   });
-  const p = await pide('https://klendar.app/admin');
-  ok('middleware: klendar.app/admin → la puente (200)', p.status === 200 && pedidos.at(-1) === '/admin/puente' && /puente/.test(await p.text()));
-  ok('middleware: la puente con su CSP', p.headers.get('content-security-policy') === CSP_PUENTE);
-  ok('middleware: la puente sin caché ni buscadores', /no-store/.test(p.headers.get('cache-control')) && /noindex/.test(p.headers.get('x-robots-tag')));
-  ok('middleware: la puente no se deja enmarcar', p.headers.get('x-frame-options') === 'DENY' && /frame-ancestors 'none'/.test(CSP_PUENTE));
-  ok('middleware: la puente no manda la dirección a nadie', p.headers.get('referrer-policy') === 'no-referrer');
-  const h = await pide('https://klendar.app/admin', 'HEAD');
-  ok('middleware: HEAD de la puente, sin cuerpo', h.status === 200 && h.body === null);
-  for (const [u, a] of [
-    ['https://klendar.app/admin/', 'https://admin.klendar.app/admin'],
-    ['https://klendar.app/admin/carta.html?n=2', 'https://admin.klendar.app/admin/carta?n=2'],
-    ['https://klendar.app/admin.html', 'https://admin.klendar.app/admin'],
-    ['https://www.klendar.app/admin/', 'https://admin.klendar.app/admin'],
-    ['https://admin.klendar.app/', 'https://admin.klendar.app/admin'],
-    ['https://admin.klendar.app/admin/', 'https://admin.klendar.app/admin'],
-    ['https://admin.klendar.app/admin.html', 'https://admin.klendar.app/admin'],
+  for (const u of ['https://klendar.app/admin', 'https://klendar.app/admin/', 'https://klendar.app/admin.html', 'https://klendar.app/admin/admin.js',
+    'https://klendar.app/admin/carta.html?n=2', 'https://www.klendar.app/admin', 'https://admin.klendar.app/admin', 'https://admin.klendar.app/admin/', 'https://admin.klendar.app/admin.html']) {
+    const r = await pide(u);
+    const html = await r.text();
+    ok(`middleware: ${u} → la 404 normal (sin saltos ni pistas)`, r.status === 404 && !r.headers.get('location') && html === PAGINA_404, `${r.status} ${r.headers.get('location') || ''}`);
+    ok(`middleware: …${u} con la CSP de lo público (nonce), no la del admin`, /'nonce-/.test(r.headers.get('content-security-policy') || '') && r.headers.get('content-security-policy') !== CSP_ADMIN);
+  }
+  const a = await pide('https://admin.klendar.app/');
+  ok('middleware: admin.klendar.app/ sirve el admin (fichero /admin, sin saltar)', a.status === 200 && pedidos.at(-1) === '/admin' && !a.headers.get('location') && /fichero \/admin/.test(await a.text()));
+  for (const [k, v] of Object.entries(CABECERAS_ADMIN)) ok(`middleware: el admin con ${k}: ${v.slice(0, 40)}`, a.headers.get(k) === v, a.headers.get(k));
+  ok('middleware: el admin sin nonce', !/'nonce-/.test(a.headers.get('content-security-policy') || ''));
+  const c = await pide('https://admin.klendar.app/carta?n=3');
+  ok('middleware: admin.klendar.app/carta, la carta (fichero /admin/carta)', c.status === 200 && pedidos.at(-1) === '/admin/carta' && c.headers.get('content-security-policy') === CSP_ADMIN);
+  const h = await pide('https://admin.klendar.app/', 'HEAD');
+  ok('middleware: HEAD del admin, sin cuerpo', h.status === 200 && h.body === null);
+  const js = await pide('https://admin.klendar.app/admin/admin.js');
+  ok('middleware: los JS del admin en su host, tal cual', js.status === 200 && /siguiente/.test(await js.text()));
+  for (const [u, l] of [
+    ['https://admin.klendar.app/index.html', 'https://admin.klendar.app/'],
+    ['https://admin.klendar.app/carta.html?n=2', 'https://admin.klendar.app/carta?n=2'],
     ['https://admin.klendar.app/privacidad/', 'https://klendar.app/privacidad'],
     ['https://admin.klendar.app/explorar?que=sitios', 'https://klendar.app/explorar?que=sitios'],
   ]) {
     const r = await pide(u);
-    ok(`middleware: ${u} → 301 ${a}`, r.status === 301 && r.headers.get('location') === a, `${r.status} ${r.headers.get('location')}`);
+    ok(`middleware: ${u} → 301 ${l}`, r.status === 301 && r.headers.get('location') === l, `${r.status} ${r.headers.get('location')}`);
+    ok(`middleware: …${u}, el 301 sin buscadores`, /noindex/.test(r.headers.get('x-robots-tag') || ''));
   }
-  const ad = await pide('https://admin.klendar.app/admin');
-  ok('middleware: admin.klendar.app/admin se sirve tal cual', ad.status === 200 && /admin/.test(await ad.text()));
-  ok('middleware: …con su CSP y sin nonce', ad.headers.get('content-security-policy') === "default-src 'self'; script-src 'self'");
-  ok('middleware: …sin dejarse enmarcar', ad.headers.get('x-frame-options') === 'DENY');
   const pub = await pide('https://klendar.app/privacidad');
-  ok('middleware: lo público en klendar.app, igual que antes', pub.status === 200);
+  ok('middleware: lo público en klendar.app, igual que antes', pub.status === 200 && /siguiente/.test(await pub.text()));
 }
 
-// ── 2. Cabeceras (`_headers`) ───────────────────────────────────────────────
+// ── 2. Cabeceras, rutas y textos ───────────────────────────────────────────
 {
   const cab = lee('_headers');
   for (const z of ['/admin', '/admin/*']) {
     const bloque = new RegExp(`^${z.replace(/[*]/g, '\\*')}\\r?\\n((?: {2}.*\\r?\\n)+)`, 'm').exec(cab)?.[1] || '';
     const csp = /^ {2}Content-Security-Policy: (.+)$/m.exec(bloque)?.[1] || '';
-    ok(`${z}: CSP con frame-ancestors 'none'`, /frame-ancestors 'none'/.test(csp), csp);
-    ok(`${z}: CSP con default-src 'self', object-src 'none', base-uri 'self' y form-action 'self'`, ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"].every((x) => csp.includes(x)));
-    ok(`${z}: script-src solo 'self' y Turnstile`, /script-src 'self' https:\/\/challenges\.cloudflare\.com;/.test(csp), csp);
-    ok(`${z}: sin Mapbox ni WebSocket (el admin no los usa)`, !/mapbox|wss:/.test(csp), csp);
+    ok(`${z}: la CSP de _headers es CSP_ADMIN`, csp === CSP_ADMIN, csp);
     ok(`${z}: Cross-Origin-Opener-Policy: same-origin`, /^ {2}Cross-Origin-Opener-Policy: same-origin$/m.test(bloque));
     ok(`${z}: sin caché ni buscadores`, /no-store/.test(bloque) && /X-Robots-Tag: noindex, nofollow/.test(bloque));
   }
-  ok('CSP_PUENTE: nada por defecto y solo sus scripts', /^default-src 'none'; script-src 'self';/.test(CSP_PUENTE));
+  ok("CSP_ADMIN con frame-ancestors 'none'", /frame-ancestors 'none'/.test(CSP_ADMIN));
+  ok("CSP_ADMIN con default-src 'self', object-src 'none', base-uri 'self' y form-action 'self'", ["default-src 'self'", "object-src 'none'", "base-uri 'self'", "form-action 'self'"].every((x) => CSP_ADMIN.includes(x)));
+  ok("CSP_ADMIN: script-src solo 'self' y Turnstile", /script-src 'self' https:\/\/challenges\.cloudflare\.com;/.test(CSP_ADMIN));
+  ok('CSP_ADMIN: sin Mapbox ni WebSocket (el admin no los usa)', !/mapbox|wss:/.test(CSP_ADMIN));
+  ok('CABECERAS_ADMIN: sin dejarse enmarcar, sin caché, sin buscadores', CABECERAS_ADMIN['x-frame-options'] === 'DENY' && /no-store/.test(CABECERAS_ADMIN['cache-control']) && /noindex/.test(CABECERAS_ADMIN['x-robots-tag']));
   const rutas = JSON.parse(lee('_routes.json'));
-  ok('_routes.json: /admin pasa por el middleware', !rutas.exclude.some((r) => r === '/admin' || r === '/admin/*'));
-  ok('_routes.json: admin/puente.js, estático', rutas.exclude.includes('/admin/puente.js'));
+  ok('_routes.json: nada del admin fuera del middleware (en klendar.app, todo 404)', !rutas.exclude.some((r) => r.startsWith('/admin')));
+  ok('robots.txt no nombra el admin', !/admin/i.test(lee('robots.txt')));
+  ok('sin página puente', !/puente/.test(lee('functions/_middleware.js')) && !/puente/.test(lee('functions/_lib/admin.js')));
   const js = lee('admin/admin.js');
   ok('admin.js: la contraseña nueva, por «Tu cuenta» de la web pública', /redirectTo: `\$\{WEB\}\/cuenta\/nueva-clave\?destino=%2Fadmin`/.test(js) && !/location\.origin\}\/cuenta/.test(js));
-  ok('admin.js: sin klendar.app/admin a mano', !/https:\/\/klendar\.app\/admin/.test(js));
+  ok('admin.js: sin /admin a la vista (ni klendar.app/admin ni admin.klendar.app/admin)', !/klendar\.app\/admin/.test(js));
   ok('admin.js: admin.localhost cuenta como local', /\(admin\\\.\)\?localhost/.test(js));
+  ok('crecer.js: la carta en /carta', /`\/carta\?\$\{/.test(lee('admin/crecer.js')) && !/\/admin\/carta/.test(lee('admin/crecer.js')));
+  const err = lee('assets/errores.js');
+  ok('errores.js: borra la sesión vieja del admin fuera de su host', /VIEJO_ADMIN = \/\^\(sb-\[a-z0-9\]\+-admin-auth-token\|klendar\\\.admin\\\.\|kl_admin_\)\//.test(err) && /if \(!\/\^admin\\\.\/i\.test\(location\.hostname\)\)/.test(err));
+  const v = /ERRORES_V = '([^']+)'/.exec(lee('functions/_lib/page.js'))?.[1];
+  ok('errores.js: versión nueva (la vieja se guardaba un año)', v && v !== '20261112cadena' && lee('build_site.py').includes(`errores.js?v=${v}`), v);
+  const cuenta = lee('assets/cuenta/app.js');
+  ok('«Tu cuenta»: tras la contraseña nueva, destino=/admin va a la raíz de admin.klendar.app', /'https:\/\/admin\.klendar\.app\/'/.test(cuenta));
 }
 
 if (process.argv.includes('--sin-navegador')) {
@@ -201,9 +232,14 @@ try {
   for (const [nombre, tipo] of [['Chromium', pw.chromium], ['WebKit', pw.webkit]]) {
     const nav = await tipo.launch();
     try {
-      // a) La puente: klendar.app/admin?…#/… → admin.klendar.app, y fuera la sesión vieja.
+      // a) Las direcciones viejas: la 404 normal; y la sesión vieja del admin,
+      //    fuera de klendar.app en cuanto se abre cualquier página suya.
       {
         const { ctx, pg, errores } = await abre(nav);
+        for (const u of [`${BASE}/admin#/negocios?status=pending`, `${BASE}/admin/`, `${BASE}/admin/admin.js`, `${ADMIN}/admin#/resumen`, `${ADMIN}/admin/`]) {
+          const r = await pg.goto(u);
+          ok(`${nombre}: ${u} → la 404 normal`, r.status() === 404 && /no existe/i.test(await pg.title()) && new URL(pg.url()).pathname.startsWith('/admin'), `${r.status()} ${pg.url()} «${await pg.title()}»`);
+        }
         await pg.goto(`${BASE}/privacidad`);
         await pg.evaluate(([a, c]) => {
           localStorage.setItem(a, '{"vieja":1}');
@@ -214,24 +250,24 @@ try {
           localStorage.setItem(c, '{"cuenta":1}');
           localStorage.setItem('klendar_lang', 'es');
         }, [CLAVE_ADMIN, CLAVE_CUENTA]);
-        await pg.goto(`${BASE}/admin?inactividad=30#/negocios?status=pending`);
-        await pg.waitForURL((u) => u.host === new URL(ADMIN).host, { timeout: 10000 }).catch(() => {});
-        const u = new URL(pg.url());
-        ok(`${nombre}: la puente lleva al subdominio`, u.origin === ADMIN && u.pathname === '/admin', pg.url());
-        ok(`${nombre}: …con su ?… y su #/…`, u.search === '?inactividad=30' && u.hash === '#/negocios?status=pending', pg.url());
-        await pg.waitForSelector('#login:not([hidden])');
-        ok(`${nombre}: en el subdominio, sin sesión: «Entrar»`, await pg.isVisible('#login'));
-        await pg.goto(`${BASE}/privacidad`);
-        const quedan = await pg.evaluate(() => Object.keys(localStorage).sort());
-        ok(`${nombre}: la puente borra la sesión vieja del admin de klendar.app`, !quedan.some((k) => /admin/.test(k)), quedan.join(', '));
-        ok(`${nombre}: …y no toca «Tu cuenta» ni el idioma`, quedan.includes(CLAVE_CUENTA) && quedan.includes('klendar_lang'), quedan.join(', '));
-        ok(`${nombre}: puente y admin sin errores`, !errores.length, errores.join(' | '));
+        for (const r of ['/', '/explorar', '/para-negocios']) {
+          await pg.goto(`${BASE}${r}`, { waitUntil: 'load' });
+          await pg.waitForFunction(() => window.__klendarErrores === true, null, { timeout: 8000 }).catch(() => {});
+          const quedan = await pg.evaluate(() => [...Object.keys(localStorage), ...Object.keys(sessionStorage)].sort());
+          ok(`${nombre}: ${r} borra la sesión vieja del admin de klendar.app`, !quedan.some((k) => /admin/.test(k)), quedan.join(', '));
+          ok(`${nombre}: …${r} sin tocar «Tu cuenta» ni el idioma`, quedan.includes(CLAVE_CUENTA) && quedan.includes('klendar_lang'), quedan.join(', '));
+          await pg.evaluate(([a]) => { localStorage.setItem(a, '{"vieja":1}'); sessionStorage.setItem('kl_admin_login_nuevo', '1'); }, [CLAVE_ADMIN]);
+        }
+        ok(`${nombre}: sin errores`, !errores.length, errores.join(' | '));
         await ctx.close();
       }
       // b) Entrar con contraseña y segundo factor en el subdominio.
       {
         const { ctx, pg, estado, errores } = await abre(nav);
-        await pg.goto(`${ADMIN}/admin#/negocios`);
+        // Las direcciones por las que pasa la pestaña (la barra).
+        const visitas = [];
+        pg.on('framenavigated', (f) => { if (f === pg.mainFrame() && /admin\.localhost/.test(f.url())) visitas.push(f.url()); });
+        await pg.goto(`${ADMIN}/#/negocios`);
         await pg.waitForSelector('#login:not([hidden])');
         const logo = await pg.getAttribute('#login a.brand', 'href');
         ok(`${nombre}: el logo de «Entrar» lleva a la web pública`, logo === BASE, logo);
@@ -277,7 +313,9 @@ try {
         await pg.goto(`${ADMIN}/privacidad`);
         ok(`${nombre}: admin.localhost/privacidad → localhost/privacidad`, pg.url() === `${BASE}/privacidad`, pg.url());
         await pg.goto(`${ADMIN}/`);
-        ok(`${nombre}: admin.localhost/ → /admin`, pg.url().startsWith(`${ADMIN}/admin`), pg.url());
+        await pg.waitForSelector('#app:not([hidden])');
+        ok(`${nombre}: admin.localhost/ es el admin, en la raíz`, new URL(pg.url()).pathname === '/', pg.url());
+        ok(`${nombre}: en la barra nunca sale /admin`, !visitas.some((u) => new URL(u).pathname.startsWith('/admin')), visitas.join(' '));
         ok(`${nombre}: entrar sin errores`, !errores.length, errores.join(' | '));
         await ctx.close();
       }

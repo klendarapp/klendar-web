@@ -199,7 +199,7 @@ const ADMIN = (x = {}) => ({ is_admin: true, admin_mfa_status: { required: false
 async function admin(nav, n) {
   const fila = { id: BIZ, name: 'Café Sonda', category: 'Cafeterías', city: 'Málaga', address: 'Calle Granada 10', created_at: new Date().toISOString(), owner_email: 'duena@example.com', has_tax_id: true, has_logo: false, offers: 1, rules: 1 };
   const { ctx, p, estado, errores } = await contexto(nav, { clave: `sb-${REF}-admin-auth-token`, rpc: ADMIN({ admin_pending_now: { total: 1, rows: [fila] }, admin_pulso: PULSO, admin_set_verification: null }) });
-  await p.goto(`${WEB_ADMIN}/admin#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${WEB_ADMIN}/#/resumen`, { waitUntil: 'networkidle' });
   // Lo que espera verificación sale en la bandeja «Pendiente de ti» (admin/bandeja.js); aquí, el QR.
   await p.waitForSelector('#bandeja .bj[data-tipo="negocio"]');
   const v = await p.locator('#bandeja .bj[data-tipo="negocio"]').innerText();
@@ -222,7 +222,7 @@ async function admin(nav, n) {
   await ctx.close();
 
   const s = await contexto(nav, { clave: `sb-${REF}-admin-auth-token`, rpc: ADMIN() });
-  await s.p.goto(`${WEB_ADMIN}/admin#/resumen`, { waitUntil: 'networkidle' });
+  await s.p.goto(`${WEB_ADMIN}/#/resumen`, { waitUntil: 'networkidle' });
   await s.p.waitForSelector('#porVerificar');
   ok(await s.p.locator('#pulso').count() === 0 && await s.p.locator('#porVerificar .qr-alta').count() === 1 && !/Por verificar ahora/.test(await s.p.locator('#porVerificar').innerText()), `${n}: sin las migraciones, solo el QR`);
   await s.ctx.close();

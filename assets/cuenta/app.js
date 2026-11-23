@@ -1973,7 +1973,11 @@ RUTAS['nueva-clave'] = async (_p, params) => {
       // Desde el panel de negocios se vuelve al panel; desde el admin, a su
       // pantalla de entrar (tiene su propia sesión: ver admin.js).
       const pedido = new URLSearchParams(location.search).get('destino');
-      const destino = rutaInterna(pedido) || (/^\/admin\/?$/.test(pedido || '') ? '/admin' : '');
+      // El admin vive en la raíz de admin.klendar.app (§4zzz-admindom; en
+      // local, admin.localhost con el mismo puerto): `destino=/admin` va allí.
+      const alAdmin = () => (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+        ? `${location.protocol}//admin.localhost${location.port ? `:${location.port}` : ''}/` : 'https://admin.klendar.app/');
+      const destino = rutaInterna(pedido) || (/^\/admin\/?$/.test(pedido || '') ? alAdmin() : '');
       if (destino) { location.href = destino; return; }
       vuelve(siguiente);
     });

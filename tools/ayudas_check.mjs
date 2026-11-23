@@ -384,7 +384,7 @@ const CUENTA = (x = {}) => ({ my_consents: { terms_accepted_at: '2026-01-01T00:0
     admin_ai_help_set: (b) => { on[b.p_use] = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
     admin_review_notice_set: (b) => { aviso = b.p_on ? '2026-11-05T10:00:00Z' : null; return { ok: true, from: aviso }; },
   } });
-  await p.goto(`${ADMIN}/admin#/automatico`);
+  await p.goto(`${ADMIN}/#/automatico`);
   await p.waitForSelector('[data-uso=suggest_category]');
   const caja = p.locator('[data-uso=suggest_category]').locator('xpath=ancestor::div[contains(@class,"card")]');
   const txt = await caja.innerText();

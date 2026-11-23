@@ -29,6 +29,12 @@
 #   /assets/fonts/): ni jsDelivr ni Google Fonts están en la CSP. Fuera de
 #   klendar.app solo quedan Mapbox (mapa del panel y «Avísame si…»),
 #   Turnstile y Supabase.
+# El admin, desde el 23-11 en la raíz de admin.klendar.app (RUNBOOK §4zzz-admindom,
+# functions/_lib/admin.js): sus páginas (`/`, `/carta`) las reescribe el middleware
+# a `/admin…` por dentro y les pone CABECERAS_ADMIN (functions/_lib/csp.js; su CSP
+# es esta misma, tools/admin_dominio_check.mjs lo mira); estas reglas valen para
+# sus JS y su CSS. Más estricta que la del panel: sin Mapbox (no tiene mapas) ni
+# WebSocket de Supabase (no usa tiempo real), y con Cross-Origin-Opener-Policy.
 /admin
   ! Content-Security-Policy
   X-Robots-Tag: noindex, nofollow

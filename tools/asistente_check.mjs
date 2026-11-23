@@ -356,7 +356,7 @@ for (const [nombre, r, texto] of [
     admin_assistant_overview: () => resumen(),
     admin_assistant_set: (b) => { encendido = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
   } });
-  await p.goto(`${ADMIN}/admin#/automatico`);
+  await p.goto(`${ADMIN}/#/automatico`);
   await p.waitForSelector('[data-asistente-on]');
   const caja = p.locator('[data-asistente-on]').locator('xpath=ancestor::div[contains(@class,"card")]');
   const txt = await caja.innerText();

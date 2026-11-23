@@ -259,7 +259,7 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].f
         admin_save_follow_item: { ok: true, id: 'a0000000-0000-4000-8000-000000000009' },
         admin_hide_follow_item: { ok: true },
       });
-      await p.goto(`${ADMIN}/admin#/emisiones?tab=seguir`, { waitUntil: 'networkidle' });
+      await p.goto(`${ADMIN}/#/emisiones?tab=seguir`, { waitUntil: 'networkidle' });
       await p.waitForSelector('[data-sg-editar]');
       const v = await p.locator('#view').innerText();
       ok(/Fernando Alonso/.test(v) && /Todas las de su campeonato/.test(v) && /Las que lo nombran/.test(v) && /apagado/.test(v), `${motor} ${t} admin: el catálogo con su regla y lo apagado`);

@@ -123,7 +123,8 @@ for (const [motor, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     ok(/no vale o ha caducado/.test(await p.textContent(`${DIALOGO} .err`)), `${motor} recuperar: un código malo lo dice`);
     ok(estado.put.length === 0, `${motor} recuperar: un código malo no guarda`);
     await escribeCodigo(p, CODIGO);
-    await p.waitForFunction(() => location.pathname === '/admin');
+    // Al admin, en la raíz de su host (admin.localhost; §4zzz-admindom).
+    await p.waitForFunction(() => /^admin\./.test(location.hostname) && location.pathname === '/');
     const put = estado.put.at(-1);
     ok(put?.aal === 'aal2' && put?.body.password === 'clave-nueva-123', `${motor} recuperar: guarda con aal2 y vuelve al admin`, JSON.stringify(put));
     ok(errores.length === 0, `${motor} recuperar: sin errores`, errores.join(' | '));

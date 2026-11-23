@@ -599,7 +599,7 @@ async function admin(nav, nombre, t, vp) {
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  await p.goto(`${ADMIN}/admin#/planes?tab=stripe`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/#/planes?tab=stripe`, { waitUntil: 'networkidle' });
   await p.waitForSelector('text=Bloqueados y en pausa');
   const v = await p.locator('#view').innerText();
   ok(/Cafetería Prueba Q/.test(v) && /bloqueado/.test(v) && /fin de la prueba/.test(v) && /Fiestas Lunares QA/.test(v) && /en pausa/.test(v), `${nombre}/${t} admin: bloqueados y en pausa con el motivo`);

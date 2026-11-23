@@ -34,9 +34,22 @@ export const CSP_PUBLICA = "script-src 'self' https://challenges.cloudflare.com 
  * cualquier web (es para eso). */
 export const CSP_WIDGET = "script-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors *";
 
-/** La de la página puente (`klendar.app/admin` → admin.klendar.app, §4zzz-admindom):
- * solo su script de klendar.app y su `<style>`; nada más, ni enmarcarla. */
-export const CSP_PUENTE = "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'";
+/** La del admin (admin.klendar.app, §4zzz-admindom): la misma que `/admin` y
+ * `/admin/*` en `_headers` (tools/admin_dominio_check.mjs lo mira). Sin
+ * Mapbox ni WebSocket (no los usa), nada en línea, sin dejarse enmarcar. */
+export const CSP_ADMIN = "default-src 'self'; script-src 'self' https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'";
+
+/** Las cabeceras de las páginas del admin en su host (`/` y `/carta`), que el
+ * middleware reescribe a `/admin…` por dentro: las de `_headers` van por ruta
+ * y no les llegan. */
+export const CABECERAS_ADMIN = {
+  'content-security-policy': CSP_ADMIN,
+  'cache-control': 'no-store, no-transform',
+  'x-robots-tag': 'noindex, nofollow',
+  'x-frame-options': 'DENY',
+  'cross-origin-opener-policy': 'same-origin',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+};
 
 /** Un nonce nuevo: 16 bytes al azar en base64. */
 export function nonceNuevo() {

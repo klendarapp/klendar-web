@@ -64,7 +64,7 @@ const titulo = (html) => (/<title>([^<]*)<\/title>/.exec(html)?.[1] || '')
 const og = (html) => /property="og:title" content="([^"]*)"/.exec(html)?.[1]?.replace(/&amp;/g, '&').replace(/&#0?39;|&apos;/g, "'");
 
 for (const ruta of RUTAS) {
-  const r = await fetchLocal(BASE + ruta, { redirect: 'follow' });
+  const r = await fetchLocal(enSuHost(BASE, ruta), { redirect: 'follow' });
   const html = await r.text();
   if (!/text\/html/.test(r.headers.get('content-type') || '')) { console.log(`-- ${ruta}: ${r.status} ${r.headers.get('content-type')}`); continue; }
   const t = titulo(html);
@@ -103,7 +103,9 @@ for (const [lang, [cuenta, panel, admin]] of Object.entries(IDIOMAS)) {
   for (const [ruta, esperado] of [['/cuenta', cuenta], ['/panel', panel], ['/admin', admin]]) {
     await p.goto(enSuHost(BASE, ruta), { waitUntil: 'load' });
     await p.waitForTimeout(800);
-    const t = await p.evaluate((r) => sessionStorage.getItem(`__titulo ${r}`) || (location.pathname === r ? document.title : ''), ruta);
+    // El admin, en la raíz de admin.localhost (§4zzz-admindom).
+    const camino = new URL(enSuHost(BASE, ruta)).pathname;
+    const t = await p.evaluate((r) => sessionStorage.getItem(`__titulo ${r}`) || (location.pathname === r ? document.title : ''), camino);
     ok(t === `${esperado} · Klendar`, `[${lang}] ${ruta}: «${t}»`);
   }
   await ctx.close();

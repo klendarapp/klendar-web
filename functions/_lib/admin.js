@@ -1,22 +1,24 @@
-// El admin en su propio subdominio, `admin.klendar.app` (Iván, 23-11; RUNBOOK
-// §4zzz-admindom). Otro origen: su sesión (`localStorage`) ya no la comparte
-// con las páginas públicas, «Tu cuenta» ni el panel.
+// El admin en su propio subdominio, en la raíz: `https://admin.klendar.app/`
+// (Iván, 23-11; RUNBOOK §4zzz-admindom). Otro origen: su sesión
+// (`localStorage`) ya no la comparte con las páginas públicas, «Tu cuenta» ni
+// el panel. Y sin `/admin` a la vista en ningún sitio.
 //
-// - En admin.klendar.app: `/admin…` se sirve; `/` va a `/admin`; lo demás,
-//   a la misma dirección en klendar.app (301). Lo estático que no pasa por las
-//   Functions (`/assets/…`, `/config.js`, `/admin/*.js`, iconos) se sirve
-//   igual en los dos (es lo que carga la página del admin).
-// - En klendar.app (y www, y *.pages.dev): `/admin` exacto da la página
-//   puente (`admin/puente.html`): borra lo que dejó aquí la sesión vieja del
-//   admin y salta a admin.klendar.app con la misma ruta, `?…` y `#…` (el `#`
-//   no llega al servidor). Lo de dentro (`/admin/…`), 301 directo (el
-//   navegador conserva el `#` en un 301 si el destino no trae uno).
+// - En admin.klendar.app: `/` es el admin (por dentro, el fichero `admin.html`,
+//   `/admin`) y `/carta` la carta imprimible (`admin/carta.html`): se
+//   reescriben sin cambiar la dirección. Sus JS y su CSS (`/admin/<x>.js|css`)
+//   se sirven tal cual. `/admin…` da la 404 normal. Lo demás, a la misma
+//   dirección en klendar.app (301).
+// - En klendar.app (y www, y *.pages.dev): `/admin…` (también `/admin.html` y
+//   los JS del admin) da la 404 normal de la web, sin pistas de que exista ni
+//   de dónde está (Iván, 23-11: las direcciones viejas no redirigen). La
+//   sesión vieja del admin que quedara en klendar.app la borra en silencio
+//   `assets/errores.js`, que cargan todas sus páginas.
 // - En local (tools/serve_dev.mjs): `localhost:<puerto>` hace de klendar.app y
 //   `admin.localhost:<puerto>` de admin.klendar.app (Chromium y WebKit
 //   resuelven `*.localhost` solos y lo tratan como contexto seguro).
 //
 // El host del admin no está en config.js (no se toca): se deriva de aquí y,
-// en el navegador, de `location` (admin/admin.js, admin/puente.js).
+// en el navegador, de `location` (admin/admin.js, assets/cuenta/app.js).
 
 export const HOST_ADMIN = 'admin.klendar.app';
 export const WEB_ADMIN = `https://${HOST_ADMIN}`;
@@ -27,8 +29,14 @@ const LOCAL = /^(localhost|127\.0\.0\.1)$/i;
 /** ¿Es el host del admin? (`admin.klendar.app` o, en local, `admin.localhost`). */
 export const esHostAdmin = (hostname) => /^admin\.(klendar\.app|localhost)$/i.test(hostname || '');
 
-/** ¿Es una dirección del admin? (`/admin` y lo de dentro). */
+/** ¿Es una dirección vieja del admin? (`/admin` y lo de dentro). */
 export const esRutaAdmin = (ruta) => /^\/admin(\/|$)/.test(ruta || '');
+
+/** Las páginas del admin en su host → el fichero que las sirve por dentro. */
+export const PAGINAS_ADMIN = { '/': '/admin', '/carta': '/admin/carta' };
+
+/** Sus JS y su CSS (los pide admin.html): se sirven tal cual en su host. */
+const FICHERO_ADMIN = /^\/admin\/[\w.-]+\.(js|css)$/;
 
 const puerto = (url) => (url.port ? `:${url.port}` : '');
 
@@ -48,20 +56,19 @@ export function origenPublico(url) {
 /**
  * Qué hacer con una petición según el host:
  * - `{ salto: <dirección> }`: un 301;
- * - `{ puente: true }`: la página puente (`/admin` en la web pública);
+ * - `{ reescribe: <ruta> }`: servir ese fichero sin cambiar la dirección (el admin);
+ * - `{ noExiste: true }`: la 404 normal de la web;
  * - `null`: seguir como siempre.
- * `buena` es la dirección sin barra al final (`direccionBuena`), para que
- * `/admin/` vaya de un solo salto.
+ * `buena` es la dirección sin barra al final (`direccionBuena`).
  */
 export function decideHost(url, buena = url.pathname) {
+  const ruta = url.pathname;
   if (esHostAdmin(url.hostname)) {
-    // La página puente no pinta nada en el admin (y no debe borrar su sesión).
-    if (buena === '/admin/puente') return { salto: `${url.origin}/admin${url.search}` };
-    if (esRutaAdmin(buena)) return buena === url.pathname ? null : { salto: url.origin + buena + url.search };
-    if (buena === '/') return { salto: `${url.origin}/admin${url.search}` };
+    if (FICHERO_ADMIN.test(ruta)) return null;
+    if (esRutaAdmin(buena)) return { noExiste: true };
+    const fichero = PAGINAS_ADMIN[buena];
+    if (fichero) return buena === ruta ? { reescribe: fichero } : { salto: url.origin + buena + url.search };
     return { salto: origenPublico(url) + buena + url.search };
   }
-  if (!esRutaAdmin(buena)) return null;
-  if (url.pathname === '/admin') return { puente: true };
-  return { salto: origenAdmin(url) + (buena === '/admin/puente' ? '/admin' : buena) + url.search };
+  return esRutaAdmin(buena) ? { noExiste: true } : null;
 }

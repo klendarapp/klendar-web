@@ -9,7 +9,7 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8873 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8873 PW=<ruta a playwright> node tools/cuenta_rutas_check.mjs
-import { adminDe, playwright, realtimeMudo, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
+import { adminDe, fetchLocal, playwright, realtimeMudo, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8873';
@@ -337,13 +337,14 @@ async function pruebaAcceso(nav, motor) {
     await ctx.close();
   }
   // Recuperar pedido desde el panel y desde el admin: vuelve a su sitio.
-  for (const [q, dest, nombre] of [['%2Fadmin%2F', '/admin', 'admin'], ['%2Fpanel%2F', '/panel', 'panel']]) {
+  // El admin, en la raíz de su host (admin.localhost; §4zzz-admindom).
+  for (const [q, dest, nombre] of [['%2Fadmin%2F', 'admin./', 'admin'], ['%2Fadmin', 'admin./', 'admin (sin barra)'], ['%2Fpanel%2F', '/panel', 'panel']]) {
     const { ctx, p } = await abre(nav);
     await p.goto(`${BASE}/cuenta/nueva-clave?destino=${q}&token_hash=${TOKEN_HASH}&type=recovery`);
     await p.waitForSelector('[name=p1]');
     await p.fill('[name=p1]', 'clave-nueva-123');
     await p.click('#f button[type=submit]');
-    await p.waitForFunction((d) => location.pathname === d, dest);
+    await p.waitForFunction((d) => (d === 'admin./' ? /^admin\./.test(location.hostname) && location.pathname === '/' : location.pathname === d), dest);
     ok(true, `${motor} nueva contraseña con ?destino=${dest}: vuelve a ${nombre}`);
     await ctx.close();
   }
@@ -457,9 +458,9 @@ async function pruebaFuera(nav, motor) {
   await p.waitForFunction(() => location.pathname === '/cuenta/registro');
   ok(new URL(p.url()).searchParams.get('para') === 'negocio', `${motor} klendar.app/alta: a crear la cuenta de negocio`, dir(p));
   // El admin: su formulario de recuperar pide la vuelta a /cuenta/nueva-clave?destino=/admin/.
-  await p.goto(`${ADMIN}/admin`);
+  await p.goto(`${ADMIN}/`);
   await p.waitForLoadState('domcontentloaded');
-  const adminJs = await (await p.request.get(`${BASE}/admin/admin.js`)).text();
+  const adminJs = await (await fetchLocal(`${ADMIN}/admin/admin.js`)).text();
   ok(/\/cuenta\/nueva-clave\?destino=%2Fadmin(?!%2F)/.test(adminJs) && !/\/app\//.test(adminJs), `${motor} admin: la vuelta es /cuenta/nueva-clave?destino=/admin`);
   void estado;
   // «Dar en el momento» por el QR, con puntos en la ruta.

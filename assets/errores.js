@@ -38,6 +38,22 @@
   if (window.__klendarErrores) return;
   window.__klendarErrores = true;
 
+  // El admin vive en admin.klendar.app desde el 23-11 (RUNBOOK §4zzz-admindom
+  // de la app): lo que dejó aquí su sesión de antes (`sb-<ref>-admin-auth-token`
+  // y lo suyo, `klendar.admin.*`, `kl_admin_*`) se borra en silencio, para que
+  // no quede un token de administración al alcance de la web pública. Ni la
+  // sesión de «Tu cuenta» y el panel (`sb-<ref>-auth-token`) ni el idioma se
+  // tocan. En el propio admin, nada.
+  if (!/^admin\./i.test(location.hostname)) {
+    var VIEJO_ADMIN = /^(sb-[a-z0-9]+-admin-auth-token|klendar\.admin\.|kl_admin_)/;
+    [function () { return window.localStorage; }, function () { return window.sessionStorage; }].forEach(function (cual) {
+      try {
+        var s = cual();
+        for (var i = s.length - 1; i >= 0; i--) { var k = s.key(i); if (k && VIEJO_ADMIN.test(k)) s.removeItem(k); }
+      } catch (e) { /* sin almacenamiento */ }
+    });
+  }
+
   // Rastreadores y navegadores automáticos: no se apunta nada. (Cubot es una
   // marca de móviles: «CUBOT P30» no es un robot.)
   function esRobot() {
@@ -70,7 +86,7 @@
   }
 
   function area(ruta) {
-    if (/^\/admin(\/|$)/.test(ruta)) return 'admin';
+    if (/^admin\./i.test(location.hostname) || /^\/admin(\/|$)/.test(ruta)) return 'admin';
     if (/^\/panel(\/|$)/.test(ruta)) return 'panel';
     if (/^\/cuenta(\/|$)/.test(ruta)) return 'cuenta';
     return 'publica';

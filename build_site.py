@@ -254,7 +254,7 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 # sin frenar el primer pintado (Lighthouse lo daba como bloqueante, ~0,4 s).
 # (cuenta.html, panel.html y admin.html lo llevan SIN `async`, a mano: con
 # sus 40 scripts tiene que estar escuchando antes de que falle el primero.)
-ERRORES = '<script src="/assets/errores.js?v=20261112cadena" async></script>'
+ERRORES = '<script src="/assets/errores.js?v=20261123admin" async></script>'
 
 # Solo la portada trae contenido en vivo; los documentos no lo necesitan.
 LIVE_SCRIPTS = (
@@ -524,7 +524,6 @@ def robots():
     return nl.join([
         'User-agent: *',
         'Allow: /',
-        'Disallow: /admin',
         'Disallow: /r/',
         # El QR de cliente de los bonos: un enlace de un solo uso.
         'Disallow: /c/',
