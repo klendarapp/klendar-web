@@ -5,6 +5,8 @@
 const I18N = makeI18N({
   // La barra de arriba del panel (§4zzz-tabletojo, 23-11-2026)
   "Volver a Klendar": "Back to Klendar",
+  // La campana y el idioma en el menú lateral (§4zzz-sinfoto, 24-11-2026)
+  "Idioma": "Language",
   // «Imprimir cartel» y la pegatina de escaparate (§4zzz-cartel, 23-11-2026)
   "Imprimir cartel": "Print poster",
   "Una exclusiva no tiene cartel: solo la ven tus favoritos o tus clientes. Avísales con «Avisar a mis clientes».": "An exclusive has no poster: only your favourites or customers can see it. Tell them with “Message my customers”.",

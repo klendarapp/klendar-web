@@ -1088,6 +1088,53 @@ function cabeceraDePanel() {
       + `<span>${esc(en ? 'Back to Klendar' : I18N.t('Volver a Klendar'))}</span>`;
     wrap.prepend(a);
   }
+  menuConCabecera();
+}
+
+/** En el escritorio y la tablet tumbada (con menú lateral, desde 901 px), sin
+ * barra de arriba (§4zzz-sinfoto, Iván 24-11): la campana va arriba del menú,
+ * junto al logo, y «← Volver a Klendar» y el idioma abajo, encima de la
+ * sesión. En el móvil y la tablet en vertical (barra de abajo de 4) vuelven a
+ * la cabecera mínima de siempre. Se mueven los mismos elementos (no copias):
+ * la campana sigue con su cifra (/assets/cabecera.js) y el idioma con su
+ * menú, y el lector y el teclado los encuentran donde se ven. */
+function menuConCabecera() {
+  const wrap = document.querySelector('header.top .wrap');
+  const side = $('#side');
+  if (!wrap || !side || side.querySelector('.side-pie')) return;
+  const piezas = [wrap.querySelector('.panel-volver'), wrap.querySelector('.top-campana'), wrap.querySelector('details.idioma')].filter(Boolean);
+  // Dónde estaba cada una, para devolverla al estrechar la ventana.
+  const sitio = new Map(piezas.map((el) => {
+    const marca = document.createComment('');
+    el.before(marca);
+    return [el, marca];
+  }));
+  const [volver, campana, idioma] = ['.panel-volver', '.top-campana', 'details.idioma'].map((s) => piezas.find((el) => el.matches(s)) || null);
+  // La palabra «Idioma» al lado del código (en la cabecera solo se ve «ES»).
+  const palabra = idioma?.querySelector('summary.idioma-b');
+  if (palabra && !palabra.querySelector('.idioma-palabra')) {
+    const t = document.createElement('span');
+    t.className = 'idioma-palabra';
+    t.textContent = I18N.t('Idioma');
+    palabra.querySelector('[data-idioma-cod]')?.before(t);
+  }
+  const pie = document.createElement('div');
+  pie.className = 'side-pie';
+  side.querySelector('.me')?.before(pie);
+  const arriba = side.querySelector('.side-cab');
+  const ancho = matchMedia('(min-width: 901px)');
+  const coloca = () => {
+    if (ancho.matches) {
+      if (campana) arriba.append(campana);
+      for (const el of [volver, idioma]) if (el) pie.append(el);
+    } else {
+      idioma?.removeAttribute('open');
+      for (const el of piezas) sitio.get(el).after(el);
+    }
+    document.body.classList.toggle('panel-sin-barra', ancho.matches);
+  };
+  coloca();
+  ancho.addEventListener('change', coloca);
 }
 
 async function boot() {
