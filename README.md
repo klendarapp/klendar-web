@@ -87,25 +87,32 @@ Cloudflare (Cache API, `functions/_lib/cache.js`):
   `/m/` y los sitemaps (`EN_CACHE`), en los dos idiomas. Solo lo que la página
   declara `public` con `s-maxage`.
 - **Cuánto**: fresco durante su `s-maxage` (de serie 5 min; Explorar y
-  Descubre 10; agenda y colecciones 15; las fichas de oferta, como mucho 5) y luego, mientras se
-  pinta la nueva por detrás, aún se sirve la vieja: 10 min las ofertas y los
-  sorteos, 30 Explorar, Descubre y partidos, 1 h lo demás, 1 día los sitemaps.
+  Descubre 3; agenda y colecciones 15; las fichas de oferta, como mucho 5) y luego, mientras se
+  pinta la nueva por detrás, aún se sirve la vieja: 2 min Explorar y Descubre
+  (5 en total), 10 las ofertas y los sorteos, 30 partidos, 1 h lo demás, 1 día
+  los sitemaps.
   Los 404 (ids o direcciones que no existen) 2 min; los 301 públicos, 1 h. El
   navegador recibe su `Cache-Control` de siempre.
 - **Nunca**: lo privado o `no-store`, con `Set-Cookie`, errores (5xx), 302,
   POST; ni lo pedido con sesión (`Authorization`, `x-klendar-sesion`) o con la
-  cookie de la edad (`klendar_18`); ni Descubre, Explorar o una guía pintados
-  con la zona aproximada de la conexión de una persona en España (los robots
-  y quien no tiene zona ven «Todas las ciudades», que sí se guarda). `/cuenta`,
-  `/panel` y `/admin` ni pasan por aquí.
+  cookie de la edad (`klendar_18`); ni una guía pintada con la zona
+  aproximada de la conexión. `/cuenta`, `/panel` y `/admin` ni pasan por aquí.
+- **Explorar y Descubre** (§4zzz-explorar del RUNBOOK): «Cerca de mí» va en la
+  dirección como la celda de 5 km (`?celda=`, `assets/celda.js`), nunca el
+  punto, así que es una clave más. Con la zona de la conexión o la cookie de
+  la edad la página dice `private` al navegador y `x-klendar-borde:
+  s-maxage=180` a la caché, que la guarda con la celda de esa zona
+  (`__zona=`) y la respuesta a la edad (`__18=0|1`) en la clave.
 - **Comprobarlo**: la cabecera `x-klendar-cache` (HIT, STALE, MISS o BYPASS):
   `curl -sI https://klendar.app/agenda/madrid | grep -i x-klendar-cache` dos
   veces (MISS y luego HIT; la caché es de cada centro de datos) y con
-  `-H 'Cookie: klendar_18=1'`, siempre BYPASS. Las pruebas:
-  `node tools/cache_borde_check.mjs` (va en el pre-push).
+  `-H 'Cookie: klendar_18=1'`, siempre BYPASS (salvo en Explorar y
+  Descubre). Las pruebas: `node tools/cache_borde_check.mjs` y
+  `node tools/celda_check.mjs` (van en el pre-push); la medida, `node
+  tools/celda_mide.mjs [otra copia de la web]`.
 - **Purgar**: Cloudflare → `klendar.app` → **Caching** → **Configuration** →
   *Purge Everything* (o *Custom Purge* por dirección: la clave lleva detrás
-  `?__borde=v2`, o `&__borde=v2` si ya tenía consulta), o cambiar `VERSION` en
+  `?__borde=v3`, o `&__borde=v3` si ya tenía consulta), o cambiar `VERSION` en
   `functions/_lib/cache.js` y subir (lo guardado antes deja de valer).
 
 Además, las listas que piden casi todas las páginas (ciudades, categorías,

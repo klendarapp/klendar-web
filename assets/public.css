@@ -862,6 +862,17 @@ details.hoja-bloque[open] > summary .ic { transform: rotate(180deg); }
 /* ¿Dónde?, una hoja como las demás (título, ✕ y velo), más estrecha en el
    escritorio: son pocas opciones y todas enlaces (sin pie). */
 .hoja.zona .hoja-cuerpo { width: min(440px, calc(100vw - 32px)); }
+/* En el móvil, de lado a lado como las otras hojas (el ancho de arriba la
+   dejaba 32 px corta por la derecha). */
+@media (max-width: 640px) { .hoja.zona .hoja-cuerpo { width: auto; } }
+/* En tablet y escritorio, anclada bajo su botón (Iván, 23-11): se ve de
+   dónde sale y no tapa la fila ni lo de al lado; el velo, más suave. Nunca
+   más alta que lo que queda de pantalla (dentro se desplaza). */
+@media (min-width: 641px) {
+  .hoja.zona .hoja-cuerpo { position: absolute; left: 0; top: calc(100% + 8px); transform: none;
+    max-height: min(560px, calc(100vh - 230px)); max-height: min(560px, calc(100dvh - 230px)); }
+  details.hoja.zona[open] > summary::after { background: rgba(0,0,0,.2); }
+}
 .hoja-donde { padding-bottom: calc(16px + env(safe-area-inset-bottom)); }
 .hoja-donde .donde-modos { margin: 4px 0 10px; }
 /* Un atajo encendido: chip con × para quitarlo. */

@@ -79,7 +79,11 @@ const BASE = web.BASE;
 // en klendar.app (revisión del 3-11-2026, 5.4).
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
-const AQUI = 'lat=40.417&lng=-3.704';
+// «Cerca de mí»: la dirección lleva la celda (assets/celda.js) y la distancia
+// la pone el navegador con tu punto (`klendar.cerca`, como al pulsar «Usar mi
+// ubicación»).
+const AQUI = 'celda=ezjmg';
+const PUNTO = { lat: 40.417, lng: -3.704 };
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLA:', m); } else console.log('ok:', m); };
 
@@ -87,6 +91,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [forma, vp] of [['movil', { width: 375, height: 812 }], ['escritorio', { width: 1280, height: 900 }]]) {
     const ctx = await nav.newContext({ viewport: vp, locale: 'es-ES' });
+    await ctx.addInitScript((q) => { try { localStorage.setItem('klendar.cerca', JSON.stringify({ ...q, t: Date.now() })); } catch { /* nada */ } }, PUNTO);
     const page = await ctx.newPage();
     const errores = [];
     // Lo de Mapbox (teselas, fuentes que WebKit sin GPU no deja cargar) no es

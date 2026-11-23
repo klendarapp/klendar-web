@@ -1670,6 +1670,9 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     }, H).catch(() => null)
     : null;
   if (diaParte) paginas = Math.max(1, Math.min(50, Math.ceil((Number(diaParte.total) || 0) / POR_PAGINA)));
+  // La lista del día, con la misma regla de distancias que lo demás (con la
+  // celda o la zona de la conexión, la del servidor no es la tuya).
+  if (diaParte?.items) ajustaDistancias(diaParte.items, distSegun);
 
   // Última página de la lista: el final, con «Quizá te interese» de fuera de
   // lo que se está mirando (más lejos que la distancia o en otras ciudades).
