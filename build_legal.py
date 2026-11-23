@@ -457,7 +457,11 @@ ACTUALIZADO = {
     # en VERSIONES_NEGOCIOS y en la base (ya avisada en prod el 4-11), con la
     # nota de NOTA_VERSION; su resumen en la base, al día con la migración
     # 20261276100100 (supabase/pendientes del repo de la app).
-    'negocios': {'es': '12 de noviembre de 2026', 'en': '12 November 2026'},
+    # 2026-11-23 (§4zzz-gratisES, aprobado por Iván el 23-11): el «Gratis de
+    # lanzamiento» ya no va solo por provincia (a todos o a algunas zonas).
+    # Solo favorece al negocio: se aplica al publicarse, sin aviso de 15 días
+    # y sin versión nueva (como el 12-11).
+    'negocios': {'es': '23 de noviembre de 2026', 'en': '23 November 2026'},
 }
 
 
@@ -865,6 +869,10 @@ CAMBIOS = {
          'Automatic moderation of text is explained (section 4). Your rights and obligations don\'t change, so there\'s no need to accept them again.'),
         _INICIO],
     'negocios': [
+        ('23 de noviembre de 2026',
+         'El «Gratis de lanzamiento» (apartado 4) ya no es solo para los negocios de la provincia donde Klendar arranca: podemos darlo a todos los negocios o solo a los de algunas zonas.',
+         '23 November 2026',
+         '“Launch, free” (section 4) is no longer only for businesses in the province where Klendar is starting: we may give it to all businesses or only to those in some areas.'),
         ('12 de noviembre de 2026',
          'Se retira «Conecta tu agenda» (apartado 3 bis), que se publicó el 4 de noviembre de 2026 para aplicarse desde el 19 de noviembre: no llega a aplicarse y las entidades no tienen las obligaciones que traía. En «Cómo se ordena lo que se ve» (apartado 2 bis) se quita el punto de los eventos importados de la agenda pública de los ayuntamientos, que ya no hay: todo lo que se ve lo publica un negocio o una entidad con su propio perfil. Los dos cambios solo te favorecen, así que se aplican al publicarse, sin los 15 días de aviso.',
          '12 November 2026',
@@ -2200,7 +2208,7 @@ def textos(D, resaltar=False):
 <h2>4. Prueba gratuita, precio y facturación</h2>
 <ul>
   <li><strong>Prueba gratis.</strong> Al darse de alta, el Negocio tiene un <strong>periodo de prueba gratuito de 30 días</strong> con todas las funciones, sin tarjeta y sin renovación automática. Puede elegir cómo pagar antes de que acabe: no se cobra nada hasta el día siguiente al último de la prueba. <strong>Si al acabar la prueba no ha elegido cómo pagar, el Negocio queda bloqueado</strong> (apartado 4 bis). Le avisamos 7 días y 1 día antes.</li>
-  <li><strong>Gratis de lanzamiento.</strong> Mientras Klendar arranca en una provincia, podemos dar a los negocios de esa provincia más tiempo gratis («Gratis de lanzamiento»). Le decimos con <strong>al menos un mes de antelación</strong> el día en que termina (por correo, con un aviso en la app y en «Mi negocio») y se lo recordamos 7 días y 1 día antes; desde el día siguiente, como al acabar la prueba, hay que elegir cómo pagar o el Negocio queda bloqueado (apartado 4 bis). Mientras no tenga fecha de fin, no termina.</li>
+  <li><strong>Gratis de lanzamiento.</strong> Mientras Klendar arranca, podemos dar a los negocios más tiempo gratis («Gratis de lanzamiento»), a todos o solo a los de algunas zonas. Le decimos con <strong>al menos un mes de antelación</strong> el día en que termina (por correo, con un aviso en la app y en «Mi negocio») y se lo recordamos 7 días y 1 día antes; desde el día siguiente, como al acabar la prueba, hay que elegir cómo pagar o el Negocio queda bloqueado (apartado 4 bis). Mientras no tenga fecha de fin, no termina.</li>
   <li><strong>Precio.</strong> Después, el servicio se presta con un <strong>plan único</strong>: una <strong>cuota fija de 19,90 € al mes por local</strong> (o 199 € al año), sin límite de publicaciones ni de canjes. Con varios locales, el primero paga la cuota entera y, a partir del segundo, la de cada local es menor, según la tabla de <a href="/precios">klendar.app/precios</a>. Los precios son <strong>sin IVA</strong>: se suma el IVA que corresponda (hoy, el 21 %). Si el local que paga está en <strong>Canarias, Ceuta o Melilla</strong> (lo decimos por el código postal de su dirección en Klendar), la operación <strong>no está sujeta al IVA español</strong> y la factura lo indica; si la dirección de facturación que dé no cuadra con la del local, lo revisamos con el Negocio. Klendar <strong>no cobra comisión</strong> por los canjes ni por las ventas del Negocio.</li>
   <li>Klendar avisará al Negocio con al menos <strong>un mes de antelación</strong> antes de cualquier cambio de precio. Si no está de acuerdo, puede darse de baja antes de que se aplique, sin penalización.</li>
   <li>Hoy el pago se hace por <strong>transferencia bancaria</strong>: el Negocio lo solicita en <a href="mailto:{E}">{E}</a> y Klendar le indica los datos. Si más adelante se ofrecen otros medios (tarjeta o domiciliación), se comunicarán antes. Klendar emite factura de cada cobro.</li>
@@ -2382,7 +2390,7 @@ def textos(D, resaltar=False):
 <h2>4. Free trial, pricing and invoicing</h2>
 <ul>
   <li><strong>Free trial.</strong> On registration, the Business gets a <strong>30-day free trial</strong> with every feature, with no card and no automatic renewal. It can choose how to pay before it ends: nothing is charged until the day after the last day of the trial. <strong>If, when the trial ends, it hasn't chosen how to pay, the Business is blocked</strong> (section 4a). We remind it 7 days and 1 day before.</li>
-  <li><strong>Launch, free.</strong> While Klendar is starting in a province, we may give businesses in that province more free time (“Launch, free”). We tell the Business the day it ends <strong>at least one month in advance</strong> (by email, with a notice in the app and in “My business”) and remind it 7 days and 1 day before; from the following day, as when the trial ends, it needs to choose how to pay or the Business is blocked (section 4a). As long as it has no end date, it doesn't end.</li>
+  <li><strong>Launch, free.</strong> While Klendar is starting, we may give businesses more free time (“Launch, free”), all of them or only those in some areas. We tell the Business the day it ends <strong>at least one month in advance</strong> (by email, with a notice in the app and in “My business”) and remind it 7 days and 1 day before; from the following day, as when the trial ends, it needs to choose how to pay or the Business is blocked (section 4a). As long as it has no end date, it doesn't end.</li>
   <li><strong>Price.</strong> After that, the service is provided under a <strong>single plan</strong>: a <strong>flat fee of €19.90 a month per venue</strong> (or €199 a year), with no limit on publications or redemptions. With several venues, the first one pays the full fee and, from the second one on, the fee for each venue is lower, according to the table at <a href="/en/pricing">klendar.app/en/pricing</a>. Prices are <strong>excluding VAT</strong>: the applicable VAT is added (currently 21%). If the paying venue is in the <strong>Canary Islands, Ceuta or Melilla</strong> (we go by the postcode of its address on Klendar), the transaction is <strong>not subject to Spanish VAT</strong> and the invoice says so; if the billing address the Business gives doesn't match the venue's, we check it with the Business. Klendar <strong>charges no commission</strong> on redemptions or on the Business's sales.</li>
   <li>Klendar will notify the Business at least <strong>one month in advance</strong> before any price change. If the Business does not agree, it may cancel before the change applies, without penalty.</li>
   <li>Payment is currently made by <strong>bank transfer</strong>: the Business requests it at <a href="mailto:{E}">{E}</a> and Klendar sends the details. If other methods (card or direct debit) are offered later, they will be announced beforehand. Klendar issues an invoice for each payment.</li>
