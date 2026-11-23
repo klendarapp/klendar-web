@@ -31,6 +31,8 @@ if [ -n "$PW" ]; then
   PW="$PW" node tools/seguir_optimista_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/seguir_optimista_check.mjs; no se sube."; exit 1; }
   # Turnstile junto a su formulario y quitado al dejarlo; el admin, tras entrar, al Resumen (Iván, 18-11).
   PW="$PW" node tools/captcha_sitio_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/captcha_sitio_check.mjs; no se sube."; exit 1; }
+  # El panel con las cuatro secciones de la app (§4zzz-panelapp): menú o barra según el tamaño, papeles, entidad, direcciones viejas (unos 25 s).
+  PW="$PW" node tools/panel_app_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/panel_app_check.mjs (node tools/panel_app_check.mjs para ver qué); no se sube."; exit 1; }
   # Accesibilidad (axe-core, foco con el teclado, reflujo a 320 px; unos 95 s): con axe-core instalado (npm install -g axe-core).
   if [ -n "${AXE:-}" ] || [ -f "${APPDATA:-}/npm/node_modules/axe-core/axe.min.js" ]; then
     PW="$PW" node tools/a11y_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/a11y_check.mjs (accesibilidad; node tools/a11y_check.mjs para ver qué); no se sube."; exit 1; }
