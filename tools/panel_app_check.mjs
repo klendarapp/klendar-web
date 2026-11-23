@@ -13,7 +13,8 @@
 //     último validado» y nada de lo que se ha ido a otra sección.
 //  4. Publicar: «¿Qué quieres publicar?» (cuatro y «Más formas de publicar»)
 //     y «Publicaciones» con sus chips, sin «Nueva oferta» arriba.
-//  5. Negocio: los grupos y sus baldosas en el orden de la app;
+//  5. Negocio: los grupos y sus baldosas en el orden de la app (la
+//     pegatina de escaparate junto al cartel del local, §4zzz-cartel);
 //     `#/negocio/<grupo>` baja a ese grupo; una pantalla de dentro marca su
 //     sección y su grupo.
 //  6. El personal: tres secciones (sin Publicar), sin importes ni lo de
@@ -181,6 +182,16 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(await p.$eval('#pubsT', (e) => e.textContent.trim()) === 'Publicaciones', 'Publicar: «Publicaciones» debajo');
   ok(!(await p.$('.page-head a[href="#/publicaciones/nueva-flash"]')), 'Publicar: sin «Nueva oferta» arriba (un solo camino)');
   ok((await p.$$eval('#filtroArch button', (es) => es.map((b) => b.textContent))).every((x) => !/^Tod[ao]s?\b/.test(x)), 'Publicar: chips sin «Todas»');
+  // «Imprimir cartel» (§4zzz-cartel): a la página de la web, en otra pestaña;
+  // una exclusiva o una +18, sin enlace (el botón dice por qué).
+  const acc = await p.evaluate(() => {
+    const base = { id: '0ff00000-0000-4000-8000-0000000c0a01', kind: 'flash_offer', status: 'active', moderation_status: 'approved', audience: 'all',
+      redeem_start_at: new Date(Date.now() - 36e5).toISOString(), redeem_end_at: new Date(Date.now() + 36e5).toISOString() };
+    return [accionesPub(base), accionesPub({ ...base, audience: 'favorites' }), accionesPub({ ...base, adults_only: true }), accionesPub({ ...base, audience: 'promoters' })];
+  });
+  ok(/<a href="\/cartel\/0ff00000-0000-4000-8000-0000000c0a01" target="_blank"[^>]*>Imprimir cartel/.test(acc[0]) && !/Cartel para imprimir/.test(acc[0]), 'Publicar: «Imprimir cartel» lleva al cartel de la web');
+  ok(/data-act="cartel-no"[^>]*>Imprimir cartel/.test(acc[1]) && /data-act="cartel-no"/.test(acc[2]), 'Publicar: exclusiva y +18, el botón sin enlace (dice por qué)');
+  ok(!/Imprimir cartel/.test(acc[3]), 'Publicar: una de RRPP, sin cartel');
   await ctx.close();
 }
 
@@ -197,6 +208,10 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(await p.$eval('#g-tu-ficha [data-neg="viewPublic"]', (a) => a.target === '_blank' && /otra pestaña/.test(a.getAttribute('aria-label'))), 'Negocio: «Cómo se ve» dice que se abre en otra pestaña');
   ok(!!(await p.$('[data-neg="tv"]')) && !!(await p.$('[data-neg="broadcasts"]')) && !!(await p.$('[data-neg="dailyMenu"]')), 'Negocio: tele, partidos y menú del día en «En el local»');
   ok(!(await p.$('[data-neg="loyalty"]')), 'Negocio: quien gestiona no tiene «Fidelizar» entero (cada herramienta a un toque)');
+  // La pegatina de escaparate, junto al cartel del local (§4zzz-cartel).
+  const local = await p.$$eval('#g-en-el-local [data-neg]', (es) => es.map((e) => e.dataset.neg));
+  ok(local.indexOf('sticker') === local.indexOf('poster') + 1, `Negocio: «Pegatina» justo después de «Cartel» (${local.join(', ')})`);
+  ok(await p.$eval('[data-neg="sticker"]', (a, id) => a.target === '_blank' && new URL(a.href).pathname === `/cartel/pegatina/${id}` && /Pegatina de escaparate/.test(a.getAttribute('aria-label')), BIZ), 'Negocio: «Pegatina» abre la de su local en otra pestaña');
   await p.click('[data-neg="webWidget"]');
   ok(await p.$eval('#modal', (d) => d.open && /widget\.js/.test(d.textContent)), 'Negocio: «En tu web» abre la línea para pegar');
   await p.keyboard.press('Escape');
@@ -218,7 +233,7 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   await p.waitForSelector('.neg-tiles');
   await p.waitForTimeout(500);
   const claves = await p.$$eval('[data-neg]', (es) => es.map((e) => e.dataset.neg));
-  ok(!claves.some((k) => ['profileEdit', 'team', 'plan', 'tv', 'promoters', 'thanks', 'message'].includes(k)), 'Personal: Negocio sin lo de gestión');
+  ok(!claves.some((k) => ['profileEdit', 'team', 'plan', 'tv', 'promoters', 'thanks', 'message', 'poster', 'sticker'].includes(k)), 'Personal: Negocio sin lo de gestión');
   ok(claves.includes('loyalty') && claves.includes('door'), 'Personal: «Fidelizar» entero y «Listas»');
   ok(await p.$$eval('.neg-grupo > h2', (es) => es.some((e) => e.textContent.trim() === 'Cifras y ayuda')), 'Personal: «Cifras y ayuda» (sin plan)');
   ok(!!(await p.$('#salir-equipo')) && await visible(p, '.neg-sesion'), 'Personal: «Salir del equipo» y, en el móvil, «Cerrar sesión»');
@@ -243,6 +258,7 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   const grupos = await textos(p, '.neg-grupo > h2');
   ok(!grupos.includes('Que vuelvan') && grupos.includes('Pantallas y gente') && grupos.includes('Cifras y ayuda'), `Entidad: sus grupos (${grupos.join(' · ')})`);
   ok(await p.$eval('#view', (e) => /Dar de baja la entidad/.test(e.innerText)), 'Entidad: «Dar de baja la entidad»');
+  ok(!(await p.$('[data-neg="sticker"]')) && !!(await p.$('[data-neg="poster"]')), 'Entidad: su cartel, sin pegatina de escaparate (no tiene local)');
   await ctx.close();
 }
 

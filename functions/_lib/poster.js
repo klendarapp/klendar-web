@@ -1,7 +1,8 @@
-// El cartel para imprimir de una publicación: un folio con el título, el
-// precio o el descuento y un QR que lleva a su ficha.
+// Los carteles para imprimir: el de una publicación (abajo, «Imprimir
+// cartel»), el del local, los de mesa, el de la cola y el de «Te aviso
+// cuando esté listo». La pegatina de escaparate está en `pegatina.js`.
 //
-// Es público porque la publicación ya lo es: así lo abre igual el negocio
+// El de una publicación es público porque la publicación ya lo es: así lo abre igual el negocio
 // desde la app, desde el panel o desde cualquier ordenador con impresora,
 // sin tener que entrar. El QR se dibuja en el navegador.
 //
@@ -12,13 +13,18 @@
 
 import { textoCarta, tipoCartaDe } from './carta.js';
 import { erroresScript, esc, html, isUuid, rpc, jsonEnScript } from './page.js';
-import { benefit, fmtDay, fmtEnd, fmtTime, zonaDe } from './public.js';
+import { zonaDe } from './public.js';
 import { notFound } from './views.js';
+import { NOMBRE_IDIOMA, TP, diaCorto, diaLargo, dinero, hora, idiomaCartel, webDe } from './cartel_idiomas.js';
 import KR from '../../assets/rrpp-enlace.js';
+import KZ from '../../assets/zona.js';
+
+/** La versión de /assets/cartel.js (el QR y «Imprimir» de los carteles). */
+export const CARTEL_JS_V = '20261123a';
 
 // Sora y Manrope, las de toda la web (assets/site.css), servidas desde
 // klendar.app: el cartel no pide nada a Google Fonts.
-const FUENTES = `@font-face { font-family: Manrope; font-style: normal; font-weight: 400 800; font-display: swap;
+export const FUENTES = `@font-face { font-family: Manrope; font-style: normal; font-weight: 400 800; font-display: swap;
   src: url(/assets/fonts/manrope-latin.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
 @font-face { font-family: Manrope; font-style: normal; font-weight: 400 800; font-display: swap;
   src: url(/assets/fonts/manrope-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
@@ -27,38 +33,159 @@ const FUENTES = `@font-face { font-family: Manrope; font-style: normal; font-wei
 @font-face { font-family: Sora; font-style: normal; font-weight: 600 800; font-display: swap;
   src: url(/assets/fonts/sora-latin-ext.woff2) format('woff2'); unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }`;
 
-const T = {
-  es: {
-    lang: 'es', path: '', title: 'Cartel', scan: 'Apunta con la cámara del móvil', print: 'Imprimir',
-    help: 'Un folio para la puerta, la barra o el escaparate. Se imprime igual en blanco y negro.',
-  },
-  en: {
-    lang: 'en', path: '/en', title: 'Poster', scan: 'Point your phone camera here', print: 'Print',
-    help: 'One sheet for the door, the bar or the window. It prints fine in black and white.',
-  },
-};
+// ── El cartel de una publicación («Imprimir cartel», §4zzz-cartel) ──────────
+// Un A4 (o A3) sobrio: la marca, el local, el título, el beneficio en coral
+// (lo único de color), cuándo, un QR grande a su ficha y una línea de qué
+// hacer («Escanea y consigue tu código» / «… y reserva tu plaza»). Todo en
+// unidades del folio (`cqw`): en pantalla se ve la miniatura y al imprimir
+// sale a su tamaño, en una sola hoja. En blanco y negro se lee igual: tinta
+// sobre blanco y el coral pasa a un gris medio con el texto en tinta.
+//
+// Sin cartel (la página lo dice): una exclusiva (para favoritos o clientes:
+// para todo el mundo no tiene sentido) y lo que ya no se ve (terminada,
+// borrador, +18 sin entrar…: `offer_detail` no la da y sale «Esta
+// publicación ya no está»). La app y el panel tampoco ofrecen el botón ahí.
 
-export async function posterPage(id, lang, rpRaw = '') {
-  const S = T[lang === 'en' ? 'en' : 'es'];
+const TAMANOS = { a4: { w: 210, h: 297, nombre: 'A4' }, a3: { w: 297, h: 420, nombre: 'A3' } };
+
+/** El símbolo «Pulso» en su cuadrado de tinta (anillo coral, aguja blanca):
+ * el de la app y el kit (`docs/kit/kit.py`, `simbolo(caja=True)`). */
+export const SIMBOLO = '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><rect width="64" height="64" rx="16" fill="#0A0A0A"/><path d="M32 14A18 18 0 1 1 14.88 26.44" fill="none" stroke="#FF4D6D" stroke-width="6" stroke-linecap="round"/><path d="M32 32V23" stroke="#fff" stroke-width="4" stroke-linecap="round"/><circle cx="32" cy="32" r="4" fill="#fff"/></svg>';
+/** Sin cuadrado: el anillo coral y la aguja del color del texto (sobre tinta, blanca). */
+export const SIMBOLO_SUELTO = '<svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><path d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg>';
+const IC_CAL = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5.5 5h13a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM3.5 10h17M8.5 3v4M15.5 3v4"/></svg>';
+const IC_SITIO = '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4" fill="none" stroke="currentColor" stroke-width="2"/></svg>';
+
+/** La barra de arriba (solo en pantalla) y lo común de las páginas de
+ * imprimir: tamaño, idioma e «Imprimir». La comparte la pegatina. */
+export const CSS_BARRA = `
+  :root { color-scheme: light dark; --fondo: #F2F2F2; --txt: #0A0A0A; --txt2: #545454; --chip: #FFFFFF; --borde: #D4D4D4; }
+  @media (prefers-color-scheme: dark) { :root { --fondo: #0F0F0F; --txt: #F5F5F5; --txt2: #BDBDBD; --chip: #1E1E1E; --borde: #3A3A3A; } }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; background: var(--fondo); font-family: Manrope, system-ui, sans-serif; color: var(--txt); }
+  .barra { max-width: 760px; margin: 0 auto; padding: 16px 16px 12px; display: grid; gap: 12px; }
+  .barra h1 { font-family: Sora, Manrope, sans-serif; font-size: 20px; line-height: 1.2; margin: 0; letter-spacing: -.01em; }
+  .barra p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--txt2); }
+  .ops { display: flex; flex-wrap: wrap; gap: 10px 12px; align-items: center; }
+  .grupo { display: inline-flex; flex-wrap: wrap; gap: 4px; background: var(--chip); border: 1px solid var(--borde); border-radius: 22px; padding: 3px; }
+  .grupo a { font-weight: 700; font-size: 14px; color: var(--txt); text-decoration: none; padding: 9px 14px; border-radius: 999px; min-height: 40px; display: inline-flex; align-items: center; }
+  .grupo a[aria-current] { background: var(--txt); color: var(--fondo); }
+  .idioma { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 14px; font-weight: 600; }
+  .idioma select, .idioma button { font: inherit; font-weight: 700; color: var(--txt); background: var(--chip); border: 1px solid var(--borde); border-radius: 999px; padding: 9px 12px; min-height: 40px; }
+  .imprimir { font: inherit; font-weight: 800; border: 0; border-radius: 999px; padding: 12px 24px; min-height: 44px;
+    background: #FF4D6D; color: #0A0A0A; cursor: pointer; margin-left: auto; }
+  :focus-visible { outline: 3px solid #FF4D6D; outline-offset: 2px; }
+  .grupo a:focus-visible, .imprimir:focus-visible, .idioma select:focus-visible { outline-color: var(--txt); }
+  .js .solo-sin-js { display: none; }
+  .vista { padding: 4px 16px 40px; display: grid; justify-items: center; gap: 18px; }
+  .aviso { max-width: 520px; margin: 48px auto; padding: 24px; background: var(--chip); border: 1px solid var(--borde); border-radius: 18px; }
+  .aviso h1 { font-family: Sora, Manrope, sans-serif; font-size: 22px; margin: 0 0 8px; }
+  .aviso p { margin: 0 0 14px; line-height: 1.5; color: var(--txt2); }
+  .aviso a { color: var(--txt); font-weight: 700; }
+  @media (max-width: 520px) { .imprimir { width: 100%; margin-left: 0; } }
+  @media print { body { background: #fff; } .barra { display: none !important; } .vista { padding: 0; display: block; } }`;
+
+/** El selector de idioma: un formulario normal (sin JS, con «Cambiar»;
+ * con JS, cambia al elegir). Conserva lo demás de la dirección. */
+export function selectorIdioma(S, lang, nombres, ocultos = {}) {
+  const campos = Object.entries(ocultos).filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${esc(k)}" value="${esc(v)}">`).join('');
+  return `<form class="idioma" method="get" data-cambia>${campos}
+    <label for="lang">${esc(S.language)}</label>
+    <select id="lang" name="lang">${Object.entries(nombres).map(([k, n]) => `<option value="${k}" lang="${k}"${k === lang ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+    <button type="submit" class="solo-sin-js">${esc(S.change)}</button></form>`;
+}
+
+/** «Sábado, 28 de noviembre · 18:00 – 20:00» (en la hora del negocio). */
+function cuandoDe(o, lang) {
+  const tz = zonaDe(o);
+  const flash = o.kind === 'flash_offer';
+  const ini = flash ? o.redeem_start_at : o.event_at;
+  const fin = flash ? o.redeem_end_at : o.event_end_at;
+  if (!ini) return '';
+  const desde = `${diaLargo(ini, lang, tz)} · ${hora(ini, lang, tz)}`;
+  if (!fin) return desde;
+  return KZ.dia(ini, tz) === KZ.dia(fin, tz)
+    ? `${desde} – ${hora(fin, lang, tz)}`
+    : `${desde} – ${diaCorto(fin, lang, tz)} ${hora(fin, lang, tz)}`;
+}
+
+/** El beneficio grande («−20 %», «2x1», «Gratis», «12 €») y, si hay rebaja
+ * anunciada, el precio de antes (obligatorio enseñarlo). */
+function beneficioDe(o, S, lang) {
+  const d = o.discount || null;
+  let tag = '';
+  if (d?.type === 'percent' && d.value) tag = `−${d.value} %`;
+  else if (d?.type === 'fixed' && d.value) tag = `−${dinero(Math.round(Number(d.value) * 100), d.currency || o.currency, lang)}`;
+  else if (d?.type === '2x1') tag = '2x1';
+  else if (d?.type === 'free') tag = S.free;
+  else if (d?.type === 'other' && d.value) tag = String(d.value);
+  else if (o.price_cents != null) tag = o.price_cents === 0 ? S.free : dinero(o.price_cents, o.currency, lang);
+  const antes = d?.compare_at_cents ? dinero(d.compare_at_cents, d.currency || o.currency || 'EUR', lang) : '';
+  return { tag, antes };
+}
+
+/** Qué hacer al escanear. */
+function accionDe(o, S) {
+  if (o.kind === 'flash_offer') return S.code;
+  if (o.reservations_enabled) return S.seat;
+  if (o.external_url) return S.ticket;
+  return S.info;
+}
+
+/** El título más grande cuanto más corto (cabe en tres o cuatro líneas). */
+const claseTitulo = (t) => { const n = [...String(t || '')].length; return n <= 18 ? 't1' : n <= 34 ? 't2' : n <= 56 ? 't3' : 't4'; };
+
+/** Una página sin cartel, que dice por qué. */
+export const avisoCartel = (lang, titulo, texto, volver) => html(`<!doctype html>
+<html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex"><title>${esc(titulo)} · Klendar</title>
+<link rel="icon" href="/favicon.ico" sizes="48x48"><style>${FUENTES}</style><style>${CSS_BARRA}</style></head>
+<body><main class="aviso"><h1>${esc(titulo)}</h1><p>${esc(texto)}</p>${volver ? `<p><a href="${esc(volver)}">${esc(volver.replace(/^https:\/\//, ''))}</a></p>` : ''}</main></body></html>`, 200, 'no-store');
+
+/**
+ * El cartel de la publicación [id]. [ruta]: 'es' o 'en' (de la dirección);
+ * [q]: los parámetros (`lang`, `tam` = a4 | a3).
+ */
+export async function posterPage(id, ruta, rpRaw = '', q = new URLSearchParams()) {
+  const lang = idiomaCartel(q.get('lang'), ruta);
+  const S = TP[lang];
+  const web = webDe(lang);
+  const tam = TAMANOS[q.get('tam') === 'a3' ? 'a3' : 'a4'];
   const rp = KR.codigoValido(rpRaw);
   const o = isUuid(id) ? await rpc('offer_detail', { p_id: id, p_rp: rp || null }) : null;
   const prom = o && rp && o.promoter && o.promoter.code ? o.promoter : null;
+  const aqui = `${ruta === 'en' ? '/en/poster' : '/cartel'}/${id}`;
   // Si ya no existe (o es de RRPP y no hay enlace), la misma página que su
   // ficha: con cabecera y algo que hacer.
-  if (!o || !o.title || (o.audience === 'promoters' && !prom)) {
-    return notFound(S.lang, `${S.path}/${S.lang === 'en' ? 'poster' : 'cartel'}/${id}`, 'o');
-  }
+  if (!o || (o.audience === 'promoters' && !prom)) return notFound(web, aqui, 'o');
+  const ficha = `https://klendar.app${web === 'en' ? '/en' : ''}/o/${o.id}`;
+  if (o.audience === 'favorites' || o.audience === 'customers') return avisoCartel(lang, S.noTitle, S.noExclusive, ficha);
+  if (!o.title) return notFound(web, aqui, 'o');
+
   const rpQ = prom ? `?rp=${encodeURIComponent(prom.code)}` : '';
-  const url = `https://klendar.app${S.path}/o/${o.id}${rpQ}`;
-  const tag = benefit(o.discount, o.price_cents, o.currency, S.lang);
-  // Cuándo: en un cartel pegado en la puerta es lo primero que se pregunta.
-  const tz = zonaDe(o);
-  const ini = o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at;
-  const cuando = !ini ? '' : o.kind === 'flash_offer' && o.redeem_end_at
-    ? `${fmtDay(ini, S.lang, tz)} · ${fmtTime(ini, S.lang, tz)} – ${fmtEnd(ini, o.redeem_end_at, S.lang, tz)}`
-    : `${fmtDay(ini, S.lang, tz)} · ${fmtTime(ini, S.lang, tz)}`;
+  const url = `${ficha}${rpQ}`;
+  const { tag, antes } = beneficioDe(o, S, lang);
+  const cuando = cuandoDe(o, lang);
+  const sitio = o.venue_name
+    ? [o.venue_name, direccionCorta(o.venue_address, '')].filter(Boolean).join(' · ')
+    : direccionCorta(o.business_address, o.business_city);
+  const base = `${ruta === 'en' ? '/en/poster' : '/cartel'}/${encodeURIComponent(o.id)}`;
+  const enlace = (t) => {
+    const p = new URLSearchParams();
+    if (prom) p.set('rp', prom.code);
+    if (lang !== ruta) p.set('lang', lang);
+    if (t !== 'a4') p.set('tam', t);
+    const s = p.toString();
+    return `${base}${s ? `?${s}` : ''}`;
+  };
+  const tamanos = `<nav class="grupo" aria-label="${esc(S.size)}">${Object.entries(TAMANOS).map(([k, t]) =>
+    `<a href="${esc(enlace(k))}"${t === tam ? ' aria-current="page"' : ''}>${t.nombre}</a>`).join('')}</nav>`;
+  const tipo = o.kind === 'flash_offer' ? S.offer : S.event;
+  const logo = o.business_logo ? `<img class="logo" src="${esc(o.business_logo)}" alt="" width="64" height="64">` : '';
+
   const res = html(`<!doctype html>
-<html lang="${S.lang}">
+<html lang="${lang}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -67,51 +194,71 @@ ${rpQ ? '<meta name="robots" content="noindex, nofollow">\n<meta name="referrer"
 <title>${esc(S.title)} · ${esc(o.title)} · Klendar</title>
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <style>${FUENTES}</style>
-<style>
-  :root { color-scheme: light; }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: #F5F5F5; font-family: Manrope, system-ui, sans-serif; color: #0A0A0A; }
-  .barra { max-width: 640px; margin: 0 auto; padding: 16px; display: flex; gap: 12px; align-items: center; }
-  .barra p { margin: 0; flex: 1; font-size: 14px; color: #636363; }
-  .barra button { font: inherit; font-weight: 700; border: 0; border-radius: 999px; padding: 12px 22px;
-    background: #FF4D6D; color: #0A0A0A; cursor: pointer; }
-  .folio { background: #fff; max-width: 640px; margin: 0 auto 32px; padding: 48px 32px; text-align: center;
-    border-radius: 18px; box-shadow: 0 20px 60px -30px rgba(10,10,10,.35); }
-  .marca { font-family: Sora, sans-serif; font-weight: 800; letter-spacing: .18em; font-size: 14px; color: #0A0A0A; }
-  h1 { font-family: Sora, sans-serif; font-size: clamp(28px, 7vw, 44px); line-height: 1.1; margin: 18px 0 10px; }
-  .precio { display: inline-block; background: #FF4D6D; font-family: Sora, sans-serif; font-weight: 800;
-    font-size: 26px; padding: 8px 20px; border-radius: 999px; margin: 4px 0 24px; }
-  .negocio { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
-  .cuando { font-size: 16px; color: #0A0A0A; margin: 0 0 22px; }
-  #qr { width: min(300px, 70vw); margin: 0 auto; }
-  #qr svg { width: 100%; height: auto; display: block; }
-  .pie { font-size: 18px; font-weight: 700; margin: 22px 0 4px; }
-  .url { font-size: 12px; color: #636363; word-break: break-all; margin: 0; }
-  @page { size: A4; margin: 12mm; }
+<style>${CSS_BARRA}
+  .folio { background: #fff; color: #0A0A0A; width: min(640px, calc(100vw - 32px)); aspect-ratio: ${tam.w} / ${tam.h};
+    border-radius: 14px; box-shadow: 0 24px 60px -30px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.06); overflow: hidden;
+    container-type: inline-size; }
+  /* Dentro (las medidas en cqw son del folio: en el propio contenedor serían de la ventana). */
+  .pliego { height: 100%; display: flex; flex-direction: column; padding: 7cqw 8cqw 5.4cqw; }
+  .pliego > *, .qrb > * { flex-shrink: 0; }
+  .cab { display: flex; align-items: center; justify-content: space-between; gap: 3cqw; }
+  .marca { display: inline-flex; align-items: center; gap: 1.6cqw; font-family: Sora, sans-serif; font-weight: 800; font-size: 3.6cqw; letter-spacing: -.035em; }
+  .marca svg { width: 5.4cqw; height: 5.4cqw; display: block; }
+  .tipo { font-weight: 800; font-size: 2.2cqw; letter-spacing: .14em; text-transform: uppercase; color: #404040;
+    border: .28cqw solid #D4D4D4; border-radius: 999px; padding: .9cqw 2.4cqw; }
+  .local { display: flex; align-items: center; gap: 2cqw; margin: 4.4cqw 0 2cqw; font-weight: 700; font-size: 3.4cqw; line-height: 1.2; color: #404040; }
+  .local .logo { width: 5.6cqw; height: 5.6cqw; border-radius: 50%; object-fit: cover; background: #F0F0F0; flex: none; }
+  .titulo { font-family: Sora, sans-serif; font-weight: 800; line-height: 1.04; letter-spacing: -.035em; margin: 0;
+    text-wrap: balance; overflow-wrap: anywhere; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden; }
+  .t1 { font-size: 10.4cqw; } .t2 { font-size: 8.2cqw; } .t3 { font-size: 6.6cqw; } .t4 { font-size: 5.3cqw; }
+  .ben { display: flex; align-items: center; flex-wrap: wrap; gap: 1.2cqw 3cqw; margin: 3.4cqw 0 0; }
+  .precio { font-family: Sora, sans-serif; font-weight: 800; font-size: 6.8cqw; line-height: 1; letter-spacing: -.02em;
+    background: #FF4D6D; color: #0A0A0A; border-radius: 999px; padding: 1.7cqw 4.4cqw 1.9cqw; }
+  .antes { font-size: 3.2cqw; font-weight: 600; color: #404040; }
+  .antes s { text-decoration-thickness: .3cqw; }
+  .cuando, .sitio { display: flex; align-items: flex-start; gap: 1.8cqw; margin: 3.4cqw 0 0; font-weight: 700; font-size: 3.5cqw; line-height: 1.3; }
+  .sitio { margin-top: 1.4cqw; font-weight: 600; font-size: 3cqw; color: #404040; }
+  .cuando svg, .sitio svg { width: 1.2em; height: 1.2em; flex: none; margin-top: .02em; }
+  /* El QR, lo más grande que quepa (40 % del ancho, unos 84 mm en A4): si el título es muy largo, encoge (nunca por debajo de 28). */
+  .qrb { flex: 1 1 auto; min-height: 0; padding-top: 3cqw; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; text-align: center; }
+  .qrb > .qr { width: 40cqw; flex: 0 1 40cqw; min-height: 28cqw; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .accion { font-family: Sora, sans-serif; font-weight: 800; font-size: 4.6cqw; line-height: 1.15; letter-spacing: -.02em; margin: 3cqw 0 1cqw; max-width: 78cqw; text-wrap: balance; }
+  .apunta { font-weight: 600; font-size: 2.7cqw; color: #5C5C5C; margin: 0; }
+  .pie { display: flex; justify-content: center; align-items: center; gap: 1.2cqw; margin: 3.2cqw 0 0; padding-top: 2.6cqw; border-top: .25cqw solid #E4E4E4;
+    font-family: Sora, sans-serif; font-weight: 700; font-size: 2.5cqw; color: #0A0A0A; }
+  .pie svg { width: 3.2cqw; height: 3.2cqw; }
+  @page { size: ${tam.nombre}; margin: 0; }
   @media print {
-    body { background: #fff; }
-    .barra { display: none; }
-    .folio { box-shadow: none; border-radius: 0; max-width: none; margin: 0; padding: 30mm 12mm; }
+    .folio { width: ${tam.w}mm; height: ${tam.h}mm; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
   }
 </style>
 </head>
 <body>
-<div class="barra"><p>${esc(S.help)}</p><button onclick="print()">${esc(S.print)}</button></div>
-<main class="folio">
-  <div class="marca">KLENDAR</div>
-  <h1>${esc(o.title)}</h1>
-  ${tag ? `<div class="precio">${esc(tag)}</div>` : ''}
-  ${o.business_name ? `<p class="negocio">${esc(o.business_name)}</p>` : ''}
-  ${cuando ? `<p class="cuando">${esc(cuando)}</p>` : ''}
-  <div id="qr" role="img" aria-label="QR ${esc(url)}"></div>
-  <p class="pie">${esc(S.scan)}</p>
-  <p class="url">${esc(url)}</p>
-</main>
-<script src="/assets/vendor/qrcode.js?v=1"></script>
-<script>
-  var q = qrcode(0, 'M'); q.addData(${jsonEnScript(url)}); q.make();
-  document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
-</script>
+<header class="barra">
+  <h1>${esc(S.title)} · ${tam.nombre}</h1>
+  <p>${esc(S.help)} ${esc(S.hint.replace('{size}', tam.nombre))}</p>
+  <div class="ops">${tamanos}${selectorIdioma(S, lang, NOMBRE_IDIOMA, { tam: tam === TAMANOS.a3 ? 'a3' : '', rp: prom ? prom.code : '' })}
+    <button type="button" class="imprimir" data-imprimir>${esc(S.print)}</button></div>
+</header>
+<div class="vista">
+<main class="folio" lang="${lang}"><div class="pliego">
+  <div class="cab"><span class="marca">${SIMBOLO}<span>Klendar</span></span><span class="tipo">${esc(tipo)}</span></div>
+  ${o.business_name ? `<p class="local">${logo}<span>${esc(o.business_name)}</span></p>` : ''}
+  <h2 class="titulo ${claseTitulo(o.title)}">${esc(o.title)}</h2>
+  ${tag ? `<p class="ben"><span class="precio">${esc(tag)}</span>${antes ? `<span class="antes">${esc(S.before)} <s>${esc(antes)}</s></span>` : ''}</p>` : ''}
+  ${cuando ? `<p class="cuando">${IC_CAL}<span>${esc(cuando)}</span></p>` : ''}
+  ${sitio ? `<p class="sitio">${IC_SITIO}<span>${esc(sitio)}</span></p>` : ''}
+  <div class="qrb">
+    <div class="qr" role="img" aria-label="QR: ${esc(url)}" data-qr="${esc(url)}" data-nivel="M"></div>
+    <p class="accion">${esc(accionDe(o, S))}</p>
+    <p class="apunta">${esc(S.point)}</p>
+  </div>
+  <p class="pie">${SIMBOLO}<span>klendar.app</span></p>
+</div></main>
+</div>
+<script src="/assets/vendor/qrcode.js?v=1" defer></script>
+<script src="/assets/cartel.js?v=${CARTEL_JS_V}" defer></script>
 </body>
 </html>`, 200, rpQ ? 'private, no-store' : undefined);
   if (rpQ) res.headers.set('x-robots-tag', 'noindex, nofollow');

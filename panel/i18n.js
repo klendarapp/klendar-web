@@ -3,6 +3,10 @@
 'use strict';
 
 const I18N = makeI18N({
+  // «Imprimir cartel» y la pegatina de escaparate (§4zzz-cartel, 23-11-2026)
+  "Imprimir cartel": "Print poster",
+  "Una exclusiva no tiene cartel: solo la ven tus favoritos o tus clientes. Avísales con «Avisar a mis clientes».": "An exclusive has no poster: only your favourites or customers can see it. Tell them with “Message my customers”.",
+  "Una publicación +18 no tiene cartel: quien la escanee tendría que entrar y decir su edad para verla.": "An 18+ publication has no poster: anyone scanning it would have to sign in and confirm their age to see it.",
   // Entidades (§4zzz-propent, 20-11-2026)
   "Poner mi fecha de nacimiento": "Add my date of birth",
   "Tu entidad": "Your organisation",

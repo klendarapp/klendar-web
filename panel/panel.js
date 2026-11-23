@@ -1268,6 +1268,8 @@ const SVG = {
   der: 'M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z',
   salir: 'M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z',
   cerrar: 'M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z',
+  // La pegatina de escaparate (el escaparate: «window» de Material).
+  escaparate: 'M3 3v18h18V3H3zm8 16H5v-6h6v6zm0-8H5V5h6v6zm8 8h-6v-6h6v6zm0-8h-6V5h6v6z',
   vista: 'M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z',
   rejilla: 'M3 3h8v8H3V3zm2 2v4h4V5H5zm8-2h8v8h-8V3zm2 2v4h4V5h-4zM3 13h8v8H3v-8zm2 2v4h4v-4H5zm8-2h8v8h-8v-8zm2 2v4h4v-4h-4z',
   lista: 'M3 5h2v2H3V5zm4 0h14v2H7V5zM3 11h2v2H3v-2zm4 0h14v2H7v-2zm-4 6h2v2H3v-2zm4 0h14v2H7v-2z',
@@ -2430,6 +2432,10 @@ PAGES.publicar = async (v) => {
             await localesDialogo(id);
             return;
           }
+          if (b.dataset.act === 'cartel-no') {
+            toast(cartelNoMotivo(offers.find((x) => x.id === id)));
+            return;
+          }
           if (b.dataset.act === 'delete') {
             // Con canjes validados la base no la borra: la archiva (los canjes
             // son del negocio y cuentan en el Informe). Se dice antes.
@@ -2622,13 +2628,21 @@ function cifrasRapidas(o) {
   }
   return `<p class="pub-cifras" translate="no">${partes.join('<span aria-hidden="true"> · </span>')}</p>`;
 }
+/** «Imprimir cartel» de una publicación (§4zzz-cartel): la página de la web,
+ * en el idioma del panel (los ocho; la ficha del QR, en español o inglés). */
+const cartelPubUrl = (id) => `${I18N.pub === 'en' ? '/en/poster/' : '/cartel/'}${encodeURIComponent(id)}${['es', 'en'].includes(I18N.lang) ? '' : `?lang=${encodeURIComponent(I18N.lang)}`}`;
+/** Por qué una publicación no tiene cartel ('' si lo tiene): una exclusiva
+ * (solo la ven favoritos o clientes) o una +18 (la ficha pide entrar). */
+const cartelNoMotivo = (o) => (!o ? ''
+  : o.audience === 'favorites' || o.audience === 'customers' ? I18N.t('Una exclusiva no tiene cartel: solo la ven tus favoritos o tus clientes. Avísales con «Avisar a mis clientes».')
+    : o.adults_only ? I18N.t('Una publicación +18 no tiene cartel: quien la escanee tendría que entrar y decir su edad para verla.') : '');
 /** Las acciones de una publicación (las mismas en las tarjetas y en la lista). */
 function accionesPub(o) {
   // Las mismas opciones y en el mismo orden que el ⋮ de la app (paridad
   // 2026-10-22): Editar · Cifras · Asistentes · Pausar/Activar y, en «Más»,
   // Crear a partir de esta · Repetir mañana / Repetir · Ampliar 1 h · Repetir
   // cada semana… · Serie… · Publicar en otros locales… · Compartir en
-  // historias · Cartel para imprimir · Borrar.
+  // historias · Imprimir cartel · Borrar.
   const crear = `#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}`;
   const asistentes = o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : '';
   const cifras = `<button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>`;
@@ -2639,9 +2653,12 @@ function accionesPub(o) {
   // Solo se comparte lo que se ve: activa o agotada (una programada, un
   // borrador o una terminada daban «Ya no está»); una oferta de RRPP tampoco
   // (su QR no la abre sin el enlace de un RRPP).
+  // «Imprimir cartel» (§4zzz-cartel): una exclusiva o una +18 no tienen
+  // (su QR no la enseñaría a quien pasa): el botón sigue y dice por qué.
   const difundir = seComparte(o) && o.audience !== 'promoters'
     ? `<a href="${I18N.pub === 'en' ? '/en/story/o/' : '/historia/o/'}${esc(o.id)}" target="_blank" rel="noopener">Compartir en historias</a>
-      <a href="${I18N.pub === 'en' ? '/en/poster/' : '/cartel/'}${esc(o.id)}" target="_blank" rel="noopener">Cartel para imprimir</a>` : '';
+      ${cartelNoMotivo(o) ? `<button type="button" data-act="cartel-no" data-id="${esc(o.id)}">Imprimir cartel</button>`
+    : `<a href="${esc(cartelPubUrl(o.id))}" target="_blank" rel="noopener">Imprimir cartel<span class="sr-only"> (${esc(bi('se abre en otra pestaña', 'opens in a new tab'))})</span></a>`}` : '';
   // El personal ve cifras, asistentes y lo que se comparte.
   if (!gestiona()) {
     return `<div class="actions">${cifras}${asistentes}${difundir ? `<details class="mas"><summary class="btn sm ghost">Más</summary><div class="mas-menu">${difundir}</div></details>` : ''}</div>`;
@@ -6627,32 +6644,18 @@ PAGES.carta = async (v) => {
   pinta();
 };
 
+// `#/cartel/<id>` (direcciones viejas): el cartel de una publicación ya no
+// se pinta dentro del panel, va a «Imprimir cartel» de la web, que es el
+// mismo de la app (A4 o A3, ocho idiomas; §4zzz-cartel). Sin dejar la vieja
+// en el historial.
 PAGES.cartel = async (v, offerId) => {
   const o = await miPublicacion(offerId);
   // Una oferta de RRPP no tiene cartel: sin el enlace de un RRPP, su QR no
   // la abriría (cada RRPP tiene el suyo en «RRPP»).
   if (!o || o.audience === 'promoters') { location.hash = o ? '#/rrpp' : '#/publicar'; return; }
-  const url = `https://klendar.app/o/${o.id}`;
-
-  v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicar">← Publicaciones</a>
-      <span class="spacer"></span><button class="btn sm primary" id="print">Imprimir</button></div>
-    ${helpBox('¿Para qué sirve?', '<p>Un folio para la puerta, la barra o el escaparate. Quien pase, apunta con la cámara del móvil y le sale tu publicación; si no tiene la app, la ve igual en la web.</p><p>Imprímelo en blanco y negro si quieres: el código se lee igual.</p>')}
-    <div class="cartel" id="cartel">
-      <div class="cartel-top">KLENDAR</div>
-      <h2>${esc(o.title)}</h2>
-      ${o.discount || o.price_cents != null ? `<p class="cartel-precio">${esc(o.discount ? etiquetaDescuento(o.discount) : fmtMoney(o.price_cents))}</p>` : ''}
-      <div id="qr" class="cartel-qr"></div>
-      <p class="cartel-pie"><b>${esc(BIZ.name)}</b><br>Apunta con la cámara del móvil</p>
-      <p class="cartel-url">${esc(url)}</p>
-    </div>`;
-
-  // El QR se dibuja aquí mismo, sin mandar la dirección a ningún sitio.
-  const qr = window.qrcode(0, 'M');
-  qr.addData(url);
-  qr.make();
-  $('#qr', v).innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
-  $('#print', v).onclick = () => window.print();
+  const motivo = cartelNoMotivo(o);
+  if (motivo) { toast(motivo); location.replace('#/publicar'); return; }
+  location.replace(cartelPubUrl(o.id));
 };
 
 // ── El cartel del local ─────────────────────────────────────────────────────

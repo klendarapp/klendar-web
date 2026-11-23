@@ -143,19 +143,6 @@
 .thumbs .thumb { width: 140px; display: grid; gap: 6px; }
 .thumbs .thumb img { width: 140px; height: 180px; object-fit: cover; border-radius: 12px; }
 
-/* El cartel para la puerta. En pantalla es una tarjeta; al imprimir, el
-   folio entero y sin el panel alrededor. */
-.cartel { background: #fff; color: #0A0A0A; border-radius: 18px; padding: 32px;
-  text-align: center; max-width: 520px; margin: 0 auto; }
-.cartel-top { font-weight: 800; letter-spacing: .18em; font-size: .8125rem; color: #C81E42; }
-.cartel h2 { font-size: 1.875rem; line-height: 1.15; margin: 14px 0 6px; }
-.cartel-precio { display: inline-block; background: #FF4D6D; color: #0A0A0A;
-  font-weight: 800; font-size: 1.375rem; padding: 6px 16px; border-radius: 999px; margin: 0 0 18px; }
-.cartel-qr { width: 260px; margin: 0 auto; }
-.cartel-qr svg { width: 100%; height: auto; display: block; }
-.cartel-pie { margin: 18px 0 0; font-size: 1rem; }
-.cartel-url { margin: 6px 0 0; font-size: .75rem; color: #636363; word-break: break-all; }
-
 /* El cartel del local: el QR (sobre blanco, que es lo que lee cualquier
    cámara) y al lado qué da y cómo imprimirlo. En el móvil, uno encima de otro. */
 .cartel-local { display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: start; }
@@ -182,13 +169,6 @@
 @media (max-width: 640px) {
   .tele { flex-wrap: wrap; }
   .tele .actions { flex-basis: 100%; }
-}
-
-@media print {
-  body * { visibility: hidden; }
-  .cartel, .cartel * { visibility: visible; }
-  .cartel { position: absolute; inset: 0; margin: 0; width: 100%; max-width: none;
-    border-radius: 0; padding: 48px; }
 }
 
 /* Mapa del alta y de la ficha. */

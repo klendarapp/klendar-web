@@ -98,6 +98,9 @@ function negHerramientas(c) {
     // Una entidad, el de su agenda («Sigue nuestra agenda»; §4zzz-propent).
     ['poster', 'en-el-local', 'qr_code_2', bi('Cartel', 'Poster'), c.ent ? bi('Cartel «Sigue nuestra agenda»', '“Follow our events” poster') : bi('Cartel del local', 'Venue poster'),
       '#/cartel-local', c.edit && (c.venue || c.ent)],
+    // La pegatina de escaparate «Encuéntranos en Klendar» (§4zzz-cartel): la
+    // página de la web, con el QR a su ficha. Solo con local (va en el cristal).
+    ['sticker', 'en-el-local', 'escaparate', bi('Pegatina', 'Sticker'), bi('Pegatina de escaparate', 'Window sticker'), pegatinaUrl(), c.edit && c.venue],
     ['tv', 'en-el-local', 'tv', bi('Tele', 'TV'), bi('Poner en la tele', 'Show on TV'), '#/tele', c.edit],
     ['broadcasts', 'en-el-local', 'live_tv', bi('Partidos', 'Matches'), bi('Partidos que pones', "Matches you're showing"), '#/partidos', c.venue && herrSi(c.o, 'broadcasts', 'suggested')],
     ['groups', 'en-el-local', 'groups', bi('Grupos', 'Groups'), bi('Grupos y empresas', 'Groups and companies'), '#/grupos',
@@ -119,6 +122,9 @@ function negHerramientas(c) {
     ['help', 'cifras', 'help_outline', bi('Ayuda', 'Help'), bi('Preguntas frecuentes', 'Frequently asked questions'), '#/ayuda', true],
   ];
 }
+
+/** La pegatina de escaparate de este negocio (en el idioma del panel). */
+const pegatinaUrl = () => new URL(`${I18N.pub === 'en' ? '/en/poster/sticker/' : '/cartel/pegatina/'}${encodeURIComponent(BIZ.id)}${['es', 'en'].includes(I18N.lang) ? '' : `?lang=${encodeURIComponent(I18N.lang)}`}`, location.href).href;
 
 /** El título de un grupo (los de la app). */
 function negTitulo(g, lista, c) {

@@ -106,6 +106,9 @@ createServer(async (req, res) => {
     else if ((m = rest.match(en ? /^\/(ready)\/([^/]+)\/?$/ : /^\/(listo)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'ready' : 'listo'}/[code].js`); params = { code: m[2] }; }
     // La cola virtual (el QR del cartel): /cola/<código> y /en/queue/<código>.
     else if ((m = rest.match(en ? /^\/(queue)\/([^/]+)\/?$/ : /^\/(cola)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'queue' : 'cola'}/[code].js`); params = { code: m[2] }; }
+    // La pegatina de escaparate: /cartel/pegatina[/<id>] y /en/poster/sticker[/<id>] (sin id, la genérica).
+    else if ((m = rest.match(/^\/(cartel\/pegatina|poster\/sticker)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/sticker' : 'cartel/pegatina'}/index.js`); params = {}; }
+    else if ((m = rest.match(/^\/(cartel\/pegatina|poster\/sticker)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster/sticker' : 'cartel/pegatina'}/[id].js`); params = { id: m[2] }; }
     else if ((m = rest.match(/^\/(cartel|poster)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'poster' : 'cartel'}/[id].js`); params = { id: m[2] }; }
     // «Compartir en historias»: /historia/<o|b|c|s>/<…> y /en/story/<o|b|c|s>/<…>.
     else if ((m = rest.match(/^\/(historia|story)\/([obcs])\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'story' : 'historia'}/[kind]/[id].js`); params = { kind: m[2], id: m[3] }; }
