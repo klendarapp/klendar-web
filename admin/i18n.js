@@ -1782,6 +1782,7 @@ const I18N = makeI18N({
   "Foto o vídeo rechazado": "Photo or video rejected",
   "Fotos aprobadas en bloque": "Photos approved in bulk",
   "Gratis de lanzamiento de una provincia": "Launch offer for a province",
+  "Gratis de lanzamiento para todos": "Launch offer for everyone",
   "Aviso de una respuesta de la IA revisado": "AI response report reviewed",
   "Ayuda con IA cambiada": "AI help changed",
   "Asistente cambiado": "Assistant changed",

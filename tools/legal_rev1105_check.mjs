@@ -37,22 +37,23 @@ await servidorSeguro(BASE);
 let fallos = 0;
 const ok = (c, m) => { if (!c) { fallos++; console.log('FALLO:', m); } else console.log('ok:', m); };
 
-const MALAGA_ES = /En la provincia de Málaga: gratis hasta el 31 de marzo de 2027 \(te avisamos 7 días y 1 día antes\)\./;
-const MALAGA_EN = /In the province of Málaga: free until 31 March 2027 \(we remind you 7 days and 1 day before\)\./;
+// Desde el 23-11-2026 (§4zzz-gratisES), para todos, sin nombrar el lugar.
+const MALAGA_ES = /(?<!Málaga: )Gratis hasta el 31 de marzo de 2027 \(te avisamos 7 días y 1 día antes\)\./;
+const MALAGA_EN = /(?<!Málaga: )Free until 31 March 2027 \(we remind you 7 days and 1 day before\)\./;
 
 // [ruta, fecha, lo que tiene que decir, lo que ya no, enlaces que tiene que haber]
 const PAGINAS = [
   ['/', '', [
     // Con los precios apagados (PRECIOS, 11-11), sin «gratis hasta…».
-    segunPrecios(/Sin comisiones por venta\. En la provincia de Málaga, gratis hasta el 31 de marzo de 2027\./,
+    segunPrecios(/Sin comisiones por venta\. Gratis hasta el 31 de marzo de 2027\./,
       /Sin comisiones por venta y sin permanencia\./),
     /¿En qué ciudades está\?\s*Klendar funciona en toda España; empezamos por Málaga\./,
-  ], [/primeras semanas/, /Empezamos ciudad a ciudad/], []],
+  ], [/primeras semanas/, /Empezamos ciudad a ciudad/, /provincia de Málaga, gratis/], []],
   ['/en', '', [
-    segunPrecios(/No sales commission\. In the province of Málaga, free until 31 March 2027\./,
+    segunPrecios(/No sales commission\. Free until 31 March 2027\./,
       /No sales commission and no lock-in\./),
     /Which cities\?\s*Klendar works all over Spain; we're starting with Málaga\./,
-  ], [/first weeks/, /starting city by city/], []],
+  ], [/first weeks/, /starting city by city/, /province of Málaga, free/], []],
   ['/para-negocios', '', segunPrecios([MALAGA_ES], []), segunPrecios([], NUNCA_PRECIO), []],
   ['/en/for-business', '', segunPrecios([MALAGA_EN], []), segunPrecios([], NUNCA_PRECIO), []],
   ...segunPrecios([

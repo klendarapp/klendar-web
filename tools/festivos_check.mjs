@@ -16,6 +16,8 @@
 //     2027 · 12 negocios · 0 en prueba», «Sin provincia», encender con fecha
 //     (mínimo mañana), «Otra provincia…», «Cambiar la fecha…» y «Quitar el
 //     gratis…» (`admin_set_province_launch_free`).
+//  5. «Gratis de lanzamiento para todos» (20261289000000): la fecha de todos,
+//     cambiarla y quitarla (`admin_set_launch_free_all`); sin la migración, lo dice.
 //
 // Chromium y WebKit, móvil y escritorio. Capturas en OUT.
 //
@@ -462,6 +464,63 @@ async function gratis(nav, nombre, t, vp) {
   await ctx.close();
 }
 
+/** «Gratis de lanzamiento para todos» (migración 20261289000000 de la app,
+ * 23-11-2026): la fecha de todos, cambiarla y quitarla; sin la migración
+ * (la lista sin `all_until`), lo dice y no hay botones. */
+async function gratisTodos(nav, nombre, t, vp) {
+  const lista = (todos) => ({
+    ...(todos === undefined ? {} : { all_until: todos }),
+    provinces: [
+      { code: '29', name: 'Málaga', region: 'AN', region_name: 'Andalucía', launch_free_until: '2027-03-31', signups_free: true, businesses: 12, free_launch: 12, free_open: 0, trials: 0 },
+    ],
+    unknown: { businesses: 1, trials: 0, list: [{ id: SIN_PROV, name: 'Bar Sonda Lisboa', city: 'Lisboa', plan: 'free', status: 'active', period_end: '2027-03-31' }] },
+    all: [{ code: '28', name: 'Madrid' }, { code: '29', name: 'Málaga' }],
+  });
+  const { ctx, p, estado, errores } = await contexto(nav, vp, {
+    ...BASE_RPC,
+    admin_city_waitlist: [],
+    admin_klendar_cities: [],
+    admin_launch_free_provinces: lista('2027-03-31'),
+    admin_set_launch_free_all: (b) => ({ until: b.p_until, was: '2027-03-31', converted: 2, moved: 13, businesses: 15 }),
+  });
+  await p.goto(`${BASE}/admin#/crecer`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#crTodos #crTodosFecha');
+  const v = (await p.locator('#crTodos').innerText()).replace(/\s+/g, ' ');
+  ok(/Gratis hasta el 31 mar 2027/.test(v) && /estén donde estén/.test(v) && await p.locator('#crTodosQuita').count() === 1,
+    `${nombre}/${t} todos: «Gratis hasta el 31 mar 2027», para todos, con «Cambiar la fecha…» y «Quitar…»`);
+  const sin = (await p.locator('#crProvincias').innerText()).replace(/\s+/g, ' ');
+  ok(/también entran gratis hasta esa fecha/.test(sin), `${nombre}/${t} todos: «Sin provincia» dice que también entran gratis`);
+  await p.screenshot({ path: `${OUT}/web-admin-crecer-todos-${nombre}-${t}.png`, fullPage: true });
+  await p.click('#crTodosFecha');
+  await p.waitForSelector('#modal input[name=until]');
+  const actual = await p.locator('#modal input[name=until]').inputValue();
+  ok(actual === '2027-03-31' && /estén donde estén/.test(await p.locator('#modal').innerText()),
+    `${nombre}/${t} todos: «Cambiar la fecha…» parte de la que hay (${actual})`);
+  await p.locator('#modal input[name=until]').fill('2027-06-30');
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  const cam = estado.llamadas.find(([fn, a]) => fn === 'admin_set_launch_free_all' && a.p_until);
+  ok(cam && cam[1].p_until === '2027-06-30', `${nombre}/${t} todos: manda la fecha nueva ${JSON.stringify(cam?.[1])}`);
+  await p.waitForSelector('#crTodosQuita');
+  await p.click('#crTodosQuita');
+  await p.waitForSelector('#modal[open] button[type=submit]');
+  ok(/31 mar 2027/.test(await p.locator('#modal').innerText()), `${nombre}/${t} todos: «Quitar» dice hasta cuándo lo conservan`);
+  await p.click('#modal button[type=submit]');
+  await p.waitForTimeout(400);
+  ok(estado.llamadas.some(([fn, a]) => fn === 'admin_set_launch_free_all' && a.p_until === null),
+    `${nombre}/${t} todos: «Quitar el gratis para todos» manda la fecha vacía`);
+  ok(errores.length === 0, `${nombre}/${t} todos sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+  // Sin la migración: lo dice, sin botones.
+  const b = await contexto(nav, vp, { ...BASE_RPC, admin_city_waitlist: [], admin_klendar_cities: [], admin_launch_free_provinces: lista(undefined) });
+  await b.p.goto(`${BASE}/admin#/crecer`, { waitUntil: 'networkidle' });
+  await b.p.waitForSelector('#crTodos p');
+  ok(/Falta la migración 20261289000000/.test(await b.p.locator('#crTodos').innerText()) && await b.p.locator('#crTodosFecha').count() === 0,
+    `${nombre}/${t} todos: sin la migración, lo dice y no hay botones`);
+  ok(b.errores.length === 0, `${nombre}/${t} todos (sin migración) sin errores JS ${b.errores.join(' | ')}`);
+  await b.ctx.close();
+}
+
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {
@@ -471,6 +530,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await resumen(nav, nombre, t, vp);
     await crecer(nav, nombre, t, vp);
     await gratis(nav, nombre, t, vp);
+    await gratisTodos(nav, nombre, t, vp);
   }
   await nav.close();
 }

@@ -16,10 +16,11 @@
  * - «Dónde crecer» (#/crecer): el ranking de zonas donde esperan a Klendar
  *   (`admin_city_waitlist`) con «Activar ciudad…» y «Avisar ahora» (los dos
  *   avisan a gente: no tienen vuelta atrás, se confirman), el «Gratis de
- *   lanzamiento por provincia» (migración 20261260100003 de la app: las
- *   provincias con el gratis puesto o con negocios, «Sin provincia» y un
- *   selector para encender cualquier otra) y debajo las ciudades de Klendar
- *   con Encender / Apagar.
+ *   lanzamiento»: arriba, «Gratis para todos» (migración 20261289000000 de
+ *   la app: una fecha para todos los negocios, estén donde estén); debajo,
+ *   por provincia (20261260100003: las provincias con el gratis puesto o con
+ *   negocios, «Sin provincia» y un selector para encender cualquier otra) y
+ *   las ciudades de Klendar con Encender / Apagar.
  *
  * Va después de admin.js y artistas.js y usa lo suyo (`PAGES`, `rpc`, `$`,
  * `$$`, `esc`, `ms`, `modal`, `confirmDlg`, `table`, `toast`, `esperando`,
@@ -440,6 +441,10 @@ PAGES.crecer = async (v) => {
   const G = gratis || {};
   const P = G.provinces || [];
   const SIN = G.unknown || { businesses: 0, trials: 0, list: [] };
+  // La fecha para todos (20261289000000). Sin la migración, la lista no trae
+  // `all_until` y el bloque lo dice en vez de enseñar botones que fallarían.
+  const CON_TODOS = Object.prototype.hasOwnProperty.call(G, 'all_until');
+  const TODOS = G.all_until || null;
   // Para el selector: las provincias que no están ya en la lista.
   const OTRAS = (G.all || []).filter((x) => !P.some((p) => p.code === x.code));
   v.innerHTML = `
@@ -453,10 +458,12 @@ PAGES.crecer = async (v) => {
        <p><b>Privacy</b>: nobody's position is stored, only the rounded area (about 10 km) and its name; no emails or people show here, only how many.</p>`))}
     <div class="card"><h2>${esc(bi('Dónde esperan a Klendar', 'Where people are waiting for Klendar'))}</h2>
       <div id="crZonas"></div></div>
+    <div class="card"><h2>${esc(bi('Gratis de lanzamiento para todos', 'Free launch for everyone'))}</h2>
+      <div id="crTodos"></div></div>
     <div class="card"><h2>${esc(bi('Gratis de lanzamiento por provincia', 'Free launch by province'))}</h2>
       <p class="muted small" style="margin:0 0 8px">${esc(bi(
-        `Un negocio que se da de alta en una provincia con el gratis puesto entra gratis hasta esa fecha, en vez de la prueba de 30 días. Su provincia sale del código postal de su dirección o, si no lo tiene, de su punto en el mapa. ${crGratisReglaAlta()} Aquí salen las provincias con el gratis puesto o con negocios.`,
-        `A business that signs up in a province with free launch on is free until that date instead of getting the 30-day trial. Its province comes from the postcode in its address or, without one, from its point on the map. ${crGratisReglaAlta(true)} Listed here: provinces with free launch on or with businesses.`))}</p>
+        `Con el «Gratis para todos» puesto, cada alta entra gratis hasta la fecha más tardía de las dos (la de todos o la de su provincia). Un negocio que se da de alta en una provincia con el gratis puesto entra gratis hasta esa fecha, en vez de la prueba de 30 días. Su provincia sale del código postal de su dirección o, si no lo tiene, de su punto en el mapa. ${crGratisReglaAlta()} Aquí salen las provincias con el gratis puesto o con negocios.`,
+        `A business that signs up in a province with free launch on is free until that date instead of getting the 30-day trial. Its province comes from the postcode in its address or, without one, from its point on the map. ${crGratisReglaAlta(true)} Listed here: provinces with free launch on or with businesses. With “Free for everyone” on, each sign-up is free until the later of the two dates (everyone’s or its province’s).`))}</p>
       <div class="toolbar"><select id="crProvOtra" aria-label="${esc(bi('Otra provincia', 'Another province'))}"><option value="">${esc(bi('Otra provincia…', 'Another province…'))}</option>${OTRAS.map((x) => `<option value="${esc(x.code)}">${esc(x.name)}</option>`).join('')}</select>
         <button type="button" class="btn sm" id="crProvOtraBtn" disabled>${esc(bi('Gratis de lanzamiento…', 'Free launch…'))}</button></div>
       <div id="crProvincias"></div></div>
@@ -494,7 +501,9 @@ PAGES.crecer = async (v) => {
   // prueba); se arreglan en su ficha con «Cambiar plan…».
   const sinProvincia = Number(SIN.businesses) > 0
     ? `<div class="cr-sinprov"><p style="margin:12px 0 4px"><b>${esc(bi('Sin provincia', 'No province'))}</b> · ${esc(crNegocios(SIN.businesses))} · ${esc(bi(`${fmtNum(SIN.trials || 0)} en prueba`, `${fmtNum(SIN.trials || 0)} on trial`))}</p>
-       <p class="muted small" style="margin:0 0 6px">${esc(bi('Ni código postal en la dirección ni un punto dentro de España: entran en la prueba de 30 días. Si alguno debería tener el gratis, ábrelo y usa «Cambiar plan…».', 'No postcode in the address and no point inside Spain: they get the 30-day trial. If one should be free, open it and use “Change plan…”.'))}</p>
+       <p class="muted small" style="margin:0 0 6px">${esc(TODOS
+         ? bi('Ni código postal en la dirección ni un punto dentro de España. Con el «Gratis para todos» puesto, también entran gratis hasta esa fecha.', 'No postcode in the address and no point inside Spain. With “Free for everyone” on, they are also free until that date.')
+         : bi('Ni código postal en la dirección ni un punto dentro de España: entran en la prueba de 30 días. Si alguno debería tener el gratis, ábrelo y usa «Cambiar plan…».', 'No postcode in the address and no point inside Spain: they get the 30-day trial. If one should be free, open it and use “Change plan…”.'))}</p>
        <ul class="cr-lista">${(SIN.list || []).map((b) => `<li><span><a class="link" href="#/negocios/${esc(b.id)}">${esc(b.name)}</a>${b.city ? `<span class="sub">${esc(b.city)}</span>` : ''}</span></li>`).join('')}</ul></div>`
     : '';
   const accionesGratis = (p, i) => `<div class="cr-acciones">${p.launch_free_until
@@ -503,6 +512,57 @@ PAGES.crecer = async (v) => {
   $('#crProvincias').innerHTML = (P.length
     ? `<ul class="cr-lista cr-prov">${P.map((p, i) => `<li><span>${crGratisProvincia(p)}</span>${accionesGratis(p, i)}</li>`).join('')}</ul>`
     : `<p class="muted">${esc(bi('Ninguna provincia tiene el gratis puesto ni negocios todavía.', 'No province has free launch on or any businesses yet.'))}</p>`) + sinProvincia;
+
+  // «Gratis de lanzamiento para todos» (20261289000000 de la app): una fecha
+  // para todos los negocios, estén donde estén (también fuera de España).
+  $('#crTodos').innerHTML = !CON_TODOS
+    ? `<p class="muted">${esc(bi('Falta la migración 20261289000000 de la app en esta base: hasta entonces, solo por provincia (abajo).', 'This database is missing app migration 20261289000000: until then, by province only (below).'))}</p>`
+    : `<p style="margin:0 0 6px">${TODOS
+      ? `<b>${esc(bi(`Gratis hasta el ${crDiaLargo(TODOS)}`, `Free until ${crDiaLargo(TODOS)}`))}</b>${TODOS < KZ.hoy('Europe/Madrid') ? ` · ${esc(bi('ya terminó', 'already ended'))}` : ''}`
+      : `<b>${esc(bi('Sin gratis para todos', 'No free launch for everyone'))}</b> · ${esc(bi('cada provincia, con lo suyo (abajo)', 'each province on its own (below)'))}`}</p>
+       <p class="muted small" style="margin:0 0 8px">${esc(bi(
+        `Todos los negocios que se den de alta, estén donde estén (también fuera de España), entran gratis hasta ese día en vez de la prueba de 30 días; las pruebas que acaben antes pasan también a gratis. Si su provincia tiene una fecha más tardía, la suya. ${crGratisReglaAlta()} Para volver a limitarlo por provincias: quítalo aquí y deja o pon la fecha en las provincias que quieras.`,
+        `Every business that signs up, wherever it is (also outside Spain), is free until that day instead of getting the 30-day trial; trials ending earlier also become free. If its province has a later date, that one. ${crGratisReglaAlta(true)} To limit it by province again: switch it off here and keep or set the date in the provinces you want.`))}</p>
+       <div class="cr-acciones">${TODOS
+        ? `<button type="button" class="btn sm" id="crTodosFecha">${esc(bi('Cambiar la fecha…', 'Change the date…'))}</button><button type="button" class="btn sm" id="crTodosQuita">${esc(bi('Quitar el gratis para todos…', 'Stop free for everyone…'))}</button>`
+        : `<button type="button" class="btn sm" id="crTodosFecha">${esc(bi('Gratis para todos…', 'Free for everyone…'))}</button>`}</div>`;
+  const todosFecha = $('#crTodosFecha', v);
+  if (todosFecha) {
+    todosFecha.onclick = () => esperando(todosFecha, async () => {
+      const manana = KZ.hoy('Europe/Madrid', 1);
+      const r = await modal({
+        title: TODOS ? bi('Cambiar la fecha para todos', 'Change the date for everyone') : bi('Gratis de lanzamiento para todos', 'Free launch for everyone'),
+        intro: esc(bi(`Para todos los negocios, estén donde estén. Las pruebas sin tarjeta que acaben antes de la fecha y los que tienen la fecha de antes pasan a gratis hasta ese día. Alargar se puede siempre; adelantarla, solo con un mes de aviso (como pronto dentro de 30 días). ${crGratisReglaAlta()}`,
+          `For every business, wherever it is. Trials without a card that end before the date, and those on the previous date, become free until that day. Extending is always possible; bringing it forward only with a month’s notice (30 days away at the earliest). ${crGratisReglaAlta(true)}`)),
+        warn: esc(bi('Un mes antes del fin, cada negocio recibe una notificación y un correo, y otra vez 7 días y 1 día antes. Después, para seguir, el plan tiene que estar al día.',
+          'A month before the end, each business gets a notification and an email, and again 7 days and 1 day before. After that, the plan has to be paid to keep going.')),
+        fields: [{ name: 'until', label: bi('Gratis hasta el (incluido)', 'Free until (inclusive)'), type: 'date', value: TODOS && TODOS >= manana ? TODOS : '', min: manana, required: true }],
+        submit: TODOS ? bi('Cambiar la fecha', 'Change the date') : bi('Encender', 'Switch on'),
+      });
+      if (!r) return;
+      try {
+        const x = await rpc('admin_set_launch_free_all', { p_until: r.until });
+        toast(bi(`Hecho: gratis para todos hasta el ${crDiaLargo(r.until)}. Cambiados ahora: ${fmtNum(x?.businesses || 0)}.`,
+          `Done: free for everyone until ${crDiaLargo(r.until)}. Changed now: ${fmtNum(x?.businesses || 0)}.`));
+        route();
+      } catch (e) { toast(crError(e), true); }
+    });
+  }
+  const todosQuita = $('#crTodosQuita', v);
+  if (todosQuita) {
+    todosQuita.onclick = () => esperando(todosQuita, async () => {
+      const hasta = crDiaLargo(TODOS);
+      if (!await confirmDlg(bi('¿Quitar el gratis para todos?', 'Stop free for everyone?'), esc(
+        bi(`Las altas nuevas vuelven a la prueba de 30 días, salvo en las provincias que tengan su fecha (abajo). Los negocios que ya tienen el gratis lo conservan hasta el ${hasta}.`,
+          `New sign-ups go back to the 30-day trial, except in provinces with their own date (below). Businesses that already have it keep it until ${hasta}.`)),
+      { submit: bi('Quitar', 'Stop') })) return;
+      try {
+        await rpc('admin_set_launch_free_all', { p_until: null });
+        toast(bi('Quitado para las altas nuevas.', 'Stopped for new sign-ups.'));
+        route();
+      } catch (e) { toast(crError(e), true); }
+    });
+  }
 
   /** Activar (o volver a encender) una ciudad: datos y luego confirmar. */
   const activa = async (pre, zona) => {

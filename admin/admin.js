@@ -2727,7 +2727,7 @@ const ACTIONS = {
   'business.merge': 'Fichas fusionadas', 'business.not_duplicate': 'Marcado como no duplicado', 'business.withdraw_live': 'Publicaciones vivas retiradas', 'business.payment': 'Pago registrado',
   'collection_item_remove': 'Quitado de una colección', 'content.approve': 'Texto aprobado', 'content.reject': 'Texto rechazado',
   'media.approve': 'Foto o vídeo aprobado', 'media.reject': 'Foto o vídeo rechazado', 'media.approve_bulk': 'Fotos aprobadas en bloque',
-  'province.launch_free': 'Gratis de lanzamiento de una provincia', 'ai_help.review_notice': 'Aviso de una respuesta de la IA revisado', 'ai_help.set': 'Ayuda con IA cambiada', 'assistant.set': 'Asistente cambiado',
+  'province.launch_free': 'Gratis de lanzamiento de una provincia', 'launch_free.all': 'Gratis de lanzamiento para todos', 'ai_help.review_notice': 'Aviso de una respuesta de la IA revisado', 'ai_help.set': 'Ayuda con IA cambiada', 'assistant.set': 'Asistente cambiado',
   'city.holiday_info': 'Festivos de una ciudad', city_activate: 'Ciudad activada', city_deactivate: 'Ciudad desactivada', city_waitlist_notify: 'Aviso a la lista de espera de una ciudad',
   'entity.approve': 'Entidad aprobada', 'entity.reject': 'Entidad rechazada', set_entity: 'Cuenta de entidad cambiada', guide_save: 'Guía guardada',
   'holiday.city': 'Festivo local guardado', 'holiday.confirm': 'Festivo confirmado', 'holiday.delete': 'Festivo borrado', 'holiday.save': 'Festivo guardado',

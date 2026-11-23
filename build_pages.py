@@ -53,7 +53,7 @@ PAGINAS['para-negocios'] = (
 
 <h2>Lo que cuesta</h2>
 <p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios">Ver precios</a>.</p>
-<p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>
+<p class="callout"><strong>Gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>
 
 <h2>Echa la cuenta</h2>
 <p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
@@ -123,7 +123,7 @@ PAGINAS['para-negocios'] = (
 
 <h2>What it costs</h2>
 <p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing">See pricing</a>.</p>
-<p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>
+<p class="callout"><strong>Free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>
 
 <h2>Do the maths</h2>
 <p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
@@ -319,8 +319,8 @@ PAGINAS['precios'] = (
     'No commission per redemption and no lock-in.',
     f'''
 <p class="lead">Un solo plan con todo incluido, sin límites y sin comisiones por canje. Lo que cobras en tu local es tuyo entero.</p>
-<p class="callout"><strong>Gratis de lanzamiento.</strong> Mientras Klendar arranca en una provincia, podemos dar a los negocios de esa provincia más tiempo gratis: un mapa vacío no le sirve ni a los negocios ni a la gente. El día en que termina te lo decimos con al menos un mes de antelación, y te lo recordamos 7 días y 1 día antes.</p>
-<p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>
+<p class="callout"><strong>Gratis de lanzamiento.</strong> Mientras Klendar arranca, podemos dar más tiempo gratis a los negocios: un mapa vacío no le sirve ni a los negocios ni a la gente. El día en que termina te lo decimos con al menos un mes de antelación, y te lo recordamos 7 días y 1 día antes.</p>
+<p class="callout"><strong>Gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>
 {tabla_planes('es')}
 <p class="note">Precio por local, IVA no incluido: 19,90 € + 21 % de IVA son 24,08 € al mes.</p>
 <p>¿Ayuntamiento, asociación u ONG? <a href="/para-entidades">Gratis para siempre</a>.</p>
@@ -347,8 +347,8 @@ PAGINAS['precios'] = (
 ''',
     f'''
 <p class="lead">One plan with everything included, no limits and no commission per redemption. What you charge at your venue is yours.</p>
-<p class="callout"><strong>Launch, free.</strong> While Klendar is starting in a province, we may give businesses in that province more free time: an empty map is no use to businesses or to people. We tell you the day it ends at least a month in advance, and remind you 7 days and 1 day before.</p>
-<p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>
+<p class="callout"><strong>Launch, free.</strong> While Klendar is starting, we may give businesses more free time: an empty map is no use to businesses or to people. We tell you the day it ends at least a month in advance, and remind you 7 days and 1 day before.</p>
+<p class="callout"><strong>Free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>
 {tabla_planes('en')}
 <p class="note">Price per venue, VAT not included: €19.90 + 21% VAT comes to €24.08 a month.</p>
 <p>Council, association or NGO? <a href="/en/for-organisations">Free, for good</a>.</p>
@@ -791,7 +791,7 @@ SIN_PRECIOS = {
             ('Pruébalo gratis, sin comisiones por canje y sin permanencia.',
              'Sin comisiones por canje y sin permanencia.'),
             ('<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios">Ver precios</a>.</p>\n'
-             '<p class="callout"><strong>En la provincia de Málaga: gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>',
+             '<p class="callout"><strong>Gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>',
              f'<p class="callout"><strong>Te lo explicamos en persona, sin compromiso</strong>: escríbenos a <a href="mailto:info@klendar.app?subject={ASUNTO_ES}">info@klendar.app</a> y lo vemos con tu caso. Sin permanencia y sin comisión por canje.</p>'),
             ("    var plan = 19.9;\n"
              "    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;\n"
@@ -809,7 +809,7 @@ SIN_PRECIOS = {
             ('Try it free, no commission per redemption, no lock-in.',
              'No commission per redemption and no lock-in.'),
             ('<p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing">See pricing</a>.</p>\n'
-             '<p class="callout"><strong>In the province of Málaga: free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>',
+             '<p class="callout"><strong>Free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>',
              f'<p class="callout"><strong>We\'ll explain it in person, with no obligation</strong>: email us at <a href="mailto:info@klendar.app?subject={ASUNTO_EN}">info@klendar.app</a> and we\'ll look at your case. No lock-in and no commission per redemption.</p>'),
             ("    var plan = 19.9;\n"
              "    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;\n"
