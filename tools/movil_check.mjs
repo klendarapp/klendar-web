@@ -117,7 +117,7 @@ async function desliza(p) {
 
 async function pruebaMenu(nav, nombre, zona) {
   const { ctx, p, errores } = await contexto(nav, nombre, { conSesion: true });
-  await p.goto(`${BASE}/${zona}#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(enSuHost(BASE, `/${zona}#/resumen`), { waitUntil: 'networkidle' });
   await p.waitForSelector('#nav a.nav', { state: 'attached' });
   await espera(p);
   // En el admin, «Menú» arriba; en el panel, «Más» en la barra de abajo.
