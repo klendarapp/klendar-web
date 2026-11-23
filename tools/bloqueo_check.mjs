@@ -41,7 +41,7 @@
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
 
@@ -61,6 +61,8 @@ async function serveDev(puerto, entorno = {}) {
 // Supabase cortado basta (el navegador lo contesta supabaseFalso, abajo).
 const servidorPanel = process.env.BASE ? null : await serveDev(Number(process.env.PANEL_PORT || 8795));
 const BASE = process.env.BASE || `http://localhost:${Number(process.env.PANEL_PORT || 8795)}`;
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 // La web local no puede llegar a Supabase (ver _supabase_simulado).
 await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
@@ -597,7 +599,7 @@ async function admin(nav, nombre, t, vp) {
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  await p.goto(`${BASE}/admin#/planes?tab=stripe`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/planes?tab=stripe`, { waitUntil: 'networkidle' });
   await p.waitForSelector('text=Bloqueados y en pausa');
   const v = await p.locator('#view').innerText();
   ok(/Cafetería Prueba Q/.test(v) && /bloqueado/.test(v) && /fin de la prueba/.test(v) && /Fiestas Lunares QA/.test(v) && /en pausa/.test(v), `${nombre}/${t} admin: bloqueados y en pausa con el motivo`);

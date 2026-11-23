@@ -11,10 +11,12 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8788 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> node tools/embudo_check.mjs
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8788';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -96,7 +98,7 @@ for (const [t, vp] of [['escritorio', { width: 1280, height: 900 }], ['movil', {
   // 1. Cifras con la migración.
   {
     const { ctx, pg, errores } = await contexto(nav, vp);
-    await pg.goto(`${BASE}/admin#/cifras`, { waitUntil: 'networkidle' });
+    await pg.goto(`${ADMIN}/admin#/cifras`, { waitUntil: 'networkidle' });
     await pg.waitForSelector('#cfAlta');
     const v = await pg.locator('#view').innerText();
     ok(/Alta de negocios/.test(v) && /De los 10 negocios que se dieron de alta/.test(v), `${t}: «Alta de negocios» con el total`);
@@ -116,7 +118,7 @@ for (const [t, vp] of [['escritorio', { width: 1280, height: 900 }], ['movil', {
   // 2. Sin la migración.
   {
     const { ctx, pg, errores } = await contexto(nav, vp, { sinMigracion: true });
-    await pg.goto(`${BASE}/admin#/cifras`, { waitUntil: 'networkidle' });
+    await pg.goto(`${ADMIN}/admin#/cifras`, { waitUntil: 'networkidle' });
     await pg.waitForSelector('#cfAlta');
     const v = await pg.locator('#view').innerText();
     ok(/falta la migración 20261281700000/.test(v) && /Activación/.test(v) && /Sacan su primer código/.test(v), `${t}: sin migración, Cifras sale y avisa`);
@@ -127,7 +129,7 @@ for (const [t, vp] of [['escritorio', { width: 1280, height: 900 }], ['movil', {
   // 3. La lista de Negocios filtrada.
   {
     const { ctx, pg, llamadas, errores } = await contexto(nav, vp);
-    await pg.goto(`${BASE}/admin#/negocios?stuck=no_publication`, { waitUntil: 'networkidle' });
+    await pg.goto(`${ADMIN}/admin#/negocios?stuck=no_publication`, { waitUntil: 'networkidle' });
     await pg.waitForSelector('#quitaAtasco');
     const pide = llamadas.filter(([fn]) => fn === 'admin_businesses_page');
     ok(pide.length && pide.at(-1)[1].p_stuck === 'no_publication' && pide.at(-1)[1].p_status === 'all', `${t}: manda p_stuck ${JSON.stringify(pide.at(-1))}`);

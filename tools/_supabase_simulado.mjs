@@ -45,6 +45,7 @@
 //   await servidorSeguro(BASE);
 //   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
 import { appendFileSync, readFileSync, rmSync } from 'node:fs';
+import { request as pideHttp } from 'node:http';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -61,6 +62,40 @@ export const SUPA = `https://${REF}.supabase.co`;
 export const KEY = (CONFIG.match(/key:\s*'([^']+)'/) || [])[1] || '';
 /** El otro proyecto (para probar que la sesión de otro no cuenta). */
 export const OTRO_REF = REF === PROYECTOS.dev ? PROYECTOS.prod : PROYECTOS.dev;
+// El admin vive en su propio host (admin.klendar.app; en local,
+// admin.localhost con el mismo puerto: tools/serve_dev.mjs, §4zzz-admindom).
+// `${adminDe(BASE)}/admin#/…` lo abre allí sin pasar por la página puente.
+export const adminDe = (base) => String(base)
+  .replace(/^(https?:\/\/)(localhost|127\.0\.0\.1)(?=[:/]|$)/, '$1admin.localhost')
+  .replace(/^https:\/\/(www\.)?klendar\.app(?=[:/]|$)/, 'https://admin.klendar.app');
+/** `base + ruta`, en el host del admin si la ruta es del admin. */
+export const enSuHost = (base, ruta) => (/^\/admin(\/|[?#]|$)/.test(ruta) ? adminDe(base) : base) + ruta;
+/** `fetch` que también llega a `admin.localhost` (los navegadores lo resuelven
+ *  solos; Node no): a 127.0.0.1 con su `Host`, siguiendo los saltos entre
+ *  localhost y admin.localhost si `redirect` es `follow` (como por defecto). */
+export function fetchLocal(url, opciones = {}) {
+  const { redirect = 'follow', method = 'GET', headers = {} } = opciones;
+  const u = new URL(url);
+  if (u.protocol !== 'http:' || !/(^|\.)localhost$/i.test(u.hostname)) return fetch(url, opciones);
+  return new Promise((bien, mal) => {
+    const q = pideHttp({ host: '127.0.0.1', port: u.port || 80, path: u.pathname + u.search, method, headers: { ...headers, host: u.host } }, (res) => {
+      const trozos = [];
+      res.on('data', (d) => trozos.push(d));
+      res.on('end', () => {
+        const h = new Headers();
+        for (const [k, v] of Object.entries(res.headers)) h.set(k, Array.isArray(v) ? v.join(', ') : String(v));
+        const a = h.get('location');
+        if (redirect === 'follow' && res.statusCode >= 300 && res.statusCode < 400 && a) { bien(fetchLocal(new URL(a, u).href, opciones)); return; }
+        const sinCuerpo = method === 'HEAD' || [204, 304].includes(res.statusCode);
+        const r = new Response(sinCuerpo ? null : Buffer.concat(trozos), { status: res.statusCode, headers: h });
+        Object.defineProperty(r, 'url', { value: u.href });
+        bien(r);
+      });
+    });
+    q.on('error', mal);
+    q.end();
+  });
+}
 /** La clave de la sesión de supabase-js: `sb-<ref>-auth-token` (o `sb-<ref>-admin-auth-token`). */
 export const claveSesion = (tipo = '', ref = REF) => `sb-${ref}-${tipo ? `${tipo}-` : ''}auth-token`;
 
@@ -152,7 +187,7 @@ export async function protegeContexto(ctx) {
   // localhost no vale (y su iframe llena la consola de errores): en las
   // pruebas, sin Turnstile, como dev. Las que prueban Turnstile enrutan
   // config.js ellas mismas (después, y por eso mandan).
-  await ctx.route(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\/config\.js(\?|$)/, async (route) => {
+  await ctx.route(/^http:\/\/((admin\.)?localhost|127\.0\.0\.1)(:\d+)?\/config\.js(\?|$)/, async (route) => {
     try {
       const r = await route.fetch();
       route.fulfill({ response: r, body: (await r.text()).replace(/turnstile:\s*'[^']*'/, "turnstile: ''") });

@@ -7,7 +7,8 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { direccionBuena } from '../functions/_lib/direccion.js';
-import { CSP_PUBLICA } from '../functions/_lib/csp.js';
+import { CSP_PUBLICA, CSP_PUENTE } from '../functions/_lib/csp.js';
+import { decideHost } from '../functions/_lib/admin.js';
 
 // En las pruebas (SUPABASE_BLOQUEADO, lo pone tools/_supabase_simulado.mjs a
 // los serve_dev que lanza; a mano, SUPABASE_BLOQUEADO=1): lo que las Functions
@@ -69,7 +70,9 @@ const aFichero = (ruta) => (ruta === '/captcha/' ? '/captcha.html' : ruta.endsWi
 const load = (p) => import(`file://${join(ROOT, p).replace(/\\/g, '/')}`);
 
 createServer(async (req, res) => {
-  const url = new URL(req.url, `http://localhost:${PORT}`);
+  // El host de verdad: `admin.localhost:<puerto>` hace de admin.klendar.app
+  // (§4zzz-admindom; Chromium y WebKit resuelven `*.localhost` solos).
+  const url = new URL(req.url, `http://${req.headers.host || `localhost:${PORT}`}`);
   const path = url.pathname;
   // Para las pruebas (servidorSeguro de _supabase_simulado): ¿corta Supabase y dónde lo apunta?
   if (path === '/__supabase_bloqueado') {
@@ -80,6 +83,22 @@ createServer(async (req, res) => {
   // Como functions/_middleware.js: las direcciones van sin barra al final
   // (/privacidad, /cuenta/entrar); lo viejo, con un 301 a la buena.
   const buena = direccionBuena(path);
+  // Como functions/_middleware.js (_lib/admin.js): el admin solo en
+  // admin.localhost; en localhost, `/admin` da la página puente y lo de
+  // dentro, un 301. Lo estático (con extensión, menos .html) se sirve en los
+  // dos, como lo que `_routes.json` deja fuera de las Functions.
+  const estatico = /\.[a-z0-9]+$/i.test(path) && !/\.html$/i.test(path);
+  const host = !estatico && (req.method === 'GET' || req.method === 'HEAD') ? decideHost(url, buena) : null;
+  if (host?.salto) {
+    res.writeHead(301, { Location: host.salto });
+    res.end();
+    return;
+  }
+  if (host?.puente) {
+    res.writeHead(200, { 'content-type': TYPES['.html'], 'cache-control': 'no-store', 'x-robots-tag': 'noindex, nofollow', 'content-security-policy': CSP_PUENTE });
+    res.end(req.method === 'HEAD' ? undefined : await readFile(join(ROOT, 'admin', 'puente.html')));
+    return;
+  }
   if (buena !== path && (req.method === 'GET' || req.method === 'HEAD')) {
     res.writeHead(301, { Location: `${buena}${url.search}` });
     res.end();

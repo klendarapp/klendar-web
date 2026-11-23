@@ -6,10 +6,12 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8896 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8896 PW=<ruta a playwright> OUT=<carpeta> node tools/filtro_medios_check.mjs
-import { playwright, REF, SUPA, realtimeMudo, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, realtimeMudo, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8896';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -136,7 +138,7 @@ const nav = await chromium.launch();
 // ── La cola del admin ──────────────────────────────────────────────────────
 {
   const { ctx, page, estado, errores } = await abre(nav, { claveAdmin: true });
-  await page.goto(`${BASE}/admin#/medios`);
+  await page.goto(`${ADMIN}/admin#/medios`);
   await page.waitForSelector('.med-fila', { timeout: 15000 }).catch(() => {});
   const texto = await page.locator('main, body').first().innerText();
   ok(await page.locator('.med-fila').count() === 3, 'la cola enseña lo retenido', texto.slice(0, 300));
@@ -177,7 +179,7 @@ const nav = await chromium.launch();
 // ── El Resumen ─────────────────────────────────────────────────────────────
 {
   const { ctx, page, errores } = await abre(nav, { claveAdmin: true });
-  await page.goto(`${BASE}/admin#/resumen`);
+  await page.goto(`${ADMIN}/admin#/resumen`);
   await page.waitForSelector('#limitesGratis', { timeout: 15000 }).catch(() => {});
   const texto = await page.locator('body').innerText();
   ok(/Límites gratis/.test(texto), 'el Resumen enseña los límites gratis');

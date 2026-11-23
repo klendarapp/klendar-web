@@ -6,10 +6,12 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8874 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8874 PW=<ruta a playwright> OUT=<carpeta> node tools/asistente_check.mjs
-import { claveSesion, playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, claveSesion, playwright, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8874';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -354,7 +356,7 @@ for (const [nombre, r, texto] of [
     admin_assistant_overview: () => resumen(),
     admin_assistant_set: (b) => { encendido = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
   } });
-  await p.goto(`${BASE}/admin#/automatico`);
+  await p.goto(`${ADMIN}/admin#/automatico`);
   await p.waitForSelector('[data-asistente-on]');
   const caja = p.locator('[data-asistente-on]').locator('xpath=ancestor::div[contains(@class,"card")]');
   const txt = await caja.innerText();

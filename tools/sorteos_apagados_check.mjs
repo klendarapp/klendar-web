@@ -25,11 +25,13 @@
 import { createServer } from 'node:http';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8821';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 // La web local no puede llegar a Supabase (ver _supabase_simulado).
 await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
@@ -211,7 +213,7 @@ async function admin(nav, nombre, t, vp) {
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
   p.setDefaultTimeout(15000);
-  await p.goto(`${BASE}/admin#/configuracion`);
+  await p.goto(`${ADMIN}/admin#/configuracion`);
   await p.waitForSelector('#gwf');
   const card = p.locator('.card', { has: p.locator('#gwf') });
   const txt = await card.innerText();

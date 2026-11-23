@@ -20,7 +20,7 @@
 //   TABLET_SOLO=/panel,/admin …   solo esas (en Git Bash, con MSYS_NO_PATHCONV=1)
 //   OUT=<carpeta> …         capturas de cada página y tamaño (tools/out/tablet)
 import { mkdirSync } from 'node:fs';
-import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { enSuHost, playwright, REF, SUPA } from './_supabase_simulado.mjs';
 import { webConDatos, NEGOCIOS, PLANES } from './_web_con_datos.mjs';
 import { mira } from './_mira.mjs';
 import { contesta, estadoInicial } from './_bandeja_datos.mjs';
@@ -204,7 +204,7 @@ try {
         p.on('console', (m) => { if (m.type() === 'error' && /Content Security Policy|Refused to (execute|load|apply)/i.test(m.text())) errores.push(`CSP: ${m.text().slice(0, 160)}`); });
         for (const [ruta, zona] of rutas) {
           errores.length = 0;
-          await p.goto(web.BASE + ruta, { waitUntil: 'networkidle' }).catch(() => {});
+          await p.goto(enSuHost(web.BASE, ruta), { waitUntil: 'networkidle' }).catch(() => {});
           if (zona === 'panel' || zona === 'admin') await p.waitForSelector('#view h1, main h1', { timeout: 10000 }).catch(() => {});
           await p.waitForTimeout(zona ? 700 : 300);
           vistas += 1;

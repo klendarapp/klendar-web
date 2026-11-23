@@ -15,6 +15,13 @@ if (!SUPABASE_URL || !SUPABASE_KEY) {
   throw new Error('sin configuración');
 }
 const APP_URL = 'https://klendar.app';
+// El admin vive en su propio origen, admin.klendar.app (§4zzz-admindom del
+// RUNBOOK; functions/_lib/admin.js): su sesión no la ve ninguna página
+// pública. `WEB` es la web pública vista desde aquí (klendar.app; en local,
+// admin.localhost:<puerto> → localhost:<puerto>), para lo que se hace allí:
+// la contraseña nueva va por «Tu cuenta». Sin tocar config.js.
+const WEB = location.origin.replace(/^(https?:\/\/)admin\./i, '$1');
+const LOCAL = /^((admin\.)?localhost|127\.0\.0\.1)$/i.test(location.hostname);
 // Sesión PROPIA del admin, guardada aparte de la de «Tu cuenta» y el panel
 // (`sb-<ref>-admin-auth-token`): entrar aquí no abre sesión en el resto de la
 // web, y cerrarla (a mano, por inactividad o a las 12 h) no saca a nadie de su
@@ -638,11 +645,13 @@ const notaBusqueda = (n, de) => `<p class="muted small" style="margin:0 0 10px">
   : `Buscando entre los ${fmtNum(de)} más recientes: ${n === 1 ? '1 coincide' : `${fmtNum(n)} coinciden`}.`}</p>`;
 
 // ── Sesión ──────────────────────────────────────────────────────────────────
-const insecure = location.protocol === 'http:' && !/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+const insecure = location.protocol === 'http:' && !LOCAL;
+// El logo de «Entrar» lleva a la web pública (en admin.klendar.app, `/` es el admin).
+for (const a of document.querySelectorAll('#login a.brand[href="/"]')) a.href = `${WEB}/`;
 if (insecure) {
   document.body.innerHTML = I18N.lang === 'en'
-    ? '<div class="login"><h2>Insecure connection</h2><p class="muted">This panel only works over HTTPS: <a href="https://klendar.app/admin">https://klendar.app/admin</a>.</p></div>'
-    : '<div class="login"><h2>Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS: <a href="https://klendar.app/admin">https://klendar.app/admin</a>.</p></div>';
+    ? '<div class="login"><h2>Insecure connection</h2><p class="muted">This panel only works over HTTPS: <a href="https://admin.klendar.app/admin">https://admin.klendar.app/admin</a>.</p></div>'
+    : '<div class="login"><h2>Conexión no segura</h2><p class="muted">Este panel solo funciona por HTTPS: <a href="https://admin.klendar.app/admin">https://admin.klendar.app/admin</a>.</p></div>';
   throw new Error('insecure');
 }
 let ME = null;
@@ -703,7 +712,7 @@ $('#doReset').onclick = () => {
     let captchaToken;
     try { captchaToken = await window.KL_CAPTCHA?.(); } catch (e) { $('#loginErr').textContent = errAuth(e); return; }
     const { error } = await sb.auth.resetPasswordForEmail($('#email').value.trim(),
-      { redirectTo: `${location.origin}/cuenta/nueva-clave?destino=%2Fadmin`, captchaToken });
+      { redirectTo: `${WEB}/cuenta/nueva-clave?destino=%2Fadmin`, captchaToken });
     if (error) { $('#loginErr').textContent = errAuth(error); return; }
     toast(I18N.lang === 'en'
       ? `If ${$('#email').value.trim()} has an account, it'll get an email in a few seconds. Check spam too.`
@@ -726,7 +735,7 @@ sb.auth.onAuthStateChange((ev, s) => {
     }, 0);
   }
   if (ev === 'SIGNED_OUT') showLogin();
-  if (ev === 'PASSWORD_RECOVERY') location.href = '/cuenta/nueva-clave?destino=%2Fadmin';
+  if (ev === 'PASSWORD_RECOVERY') location.href = `${WEB}/cuenta/nueva-clave?destino=%2Fadmin`;
 });
 // El menú lateral en el móvil: un cajón (assets/cajon.js) que se cierra con
 // su X, tocando fuera, con Escape, al elegir una opción o deslizándolo a la
@@ -797,7 +806,7 @@ function pantallaMfa(html) {
   // quedaba abajo de la página en la del código de 6 cifras).
   window.KL_CAPTCHA?.quita?.();
   const box = $('#mfa');
-  box.innerHTML = `<a class="brand" href="/"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar <small class="muted">· admin</small></a>
+  box.innerHTML = `<a class="brand" href="${WEB}/"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar <small class="muted">· admin</small></a>
     ${html}
     <button class="btn sm ghost" id="mfaSalir" type="button">Cerrar sesión</button>
     <span class="lang" id="langMfa" aria-label="Idioma / Language"></span>`;
@@ -841,7 +850,7 @@ function alPanel() {
 const INACTIVIDAD = { total: 30 * 60e3, aviso: 60e3 };
 // Solo en local y solo para acortarlo, para probarlo sin esperar media hora:
 // /admin?inactividad=20 (segundos).
-if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) {
+if (LOCAL) {
   const seg = Number(new URLSearchParams(location.search).get('inactividad'));
   if (seg >= 10 && seg * 1000 < INACTIVIDAD.total) {
     INACTIVIDAD.total = seg * 1000;
@@ -2848,7 +2857,7 @@ PAGES.publicaciones = async (v, id) => {
   v.innerHTML = `
     <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span><button class="btn sm ghost" id="csv">Exportar todo</button></div>
     ${avisoTodoRevisado('publicaciones')}
-    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Offers and events from every business. The ones <b>pending moderation</b> come from businesses that haven't been verified yet or have been flagged for review: if they meet the <a class="link" href="/en/community-guidelines" target="_blank">Community guidelines</a> (nothing misleading, their own photos, no alcohol aimed at minors…) press <b>Approve</b>; if not, <b>Take down</b> with a reason, which the business receives along with how to appeal (required by the DSA). The system automatically puts under review the ones that mention <b>tobacco/vaping</b> (advertising is banned: take it down), <b>gambling</b> or <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats), even if they also mention alcohol; you'll see a tag with the reason. The ones that only mention <b>alcohol</b> don't wait: they go live straight away, marked 18+ (only adults see them), with their tag.</p>` : '<p>Ofertas y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="/normas" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>tabaco/vapeo</b> (publicidad prohibida: retirar), <b>apuestas</b> o <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas), también si además hablan de alcohol; verás la etiqueta del motivo. Las que solo mencionan <b>alcohol</b> no esperan: salen al momento y marcadas +18 (solo las ven mayores), con su etiqueta.</p>')}
+    ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p>Offers and events from every business. The ones <b>pending moderation</b> come from businesses that haven't been verified yet or have been flagged for review: if they meet the <a class="link" href="${APP_URL}/en/community-guidelines" target="_blank">Community guidelines</a> (nothing misleading, their own photos, no alcohol aimed at minors…) press <b>Approve</b>; if not, <b>Take down</b> with a reason, which the business receives along with how to appeal (required by the DSA). The system automatically puts under review the ones that mention <b>tobacco/vaping</b> (advertising is banned: take it down), <b>gambling</b> or <b>offensive language</b> (insults, swear words, explicit sexual content, hate or threats), even if they also mention alcohol; you'll see a tag with the reason. The ones that only mention <b>alcohol</b> don't wait: they go live straight away, marked 18+ (only adults see them), with their tag.</p>` : '<p>Ofertas y eventos de todos los negocios. Las <b>pendientes de moderar</b> son de negocios que aún no han sido verificados o que han sido marcadas para revisión: si cumplen las <a class="link" href="${APP_URL}/normas" target="_blank">Normas de la comunidad</a> (sin contenido engañoso, fotos propias, sin alcohol a menores…) pulsa <b>Aprobar</b>; si no, <b>Retirar</b> con un motivo, que el negocio recibe junto con la vía de recurso (obligatorio por el DSA). El sistema pone en revisión automáticamente las que mencionan <b>tabaco/vapeo</b> (publicidad prohibida: retirar), <b>apuestas</b> o <b>lenguaje ofensivo</b> (insultos, palabras malsonantes, contenido sexual explícito, odio o amenazas), también si además hablan de alcohol; verás la etiqueta del motivo. Las que solo mencionan <b>alcohol</b> no esperan: salen al momento y marcadas +18 (solo las ven mayores), con su etiqueta.</p>')}
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por título, negocio o id…" value="${esc(s.q || '')}">
       <select id="moderation">${[['all', 'Toda moderación'], ['pending', 'Por moderar'], ['approved', 'Aprobadas'], ['rejected', 'Retiradas']].map((o) => `<option value="${o[0]}" ${s.moderation === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
@@ -5189,7 +5198,7 @@ PAGES.ayuda = async (v) => {
     <div class="grid2">
       <div class="card">${I18N.lang === 'en' ? `<h2>Daily routine (5 minutes)</h2><ol style="margin:0;padding-left:18px"><li><b>Overview</b>: check “Waiting for you”.</li><li><b>Pending businesses</b>: check that they exist (website, phone, Google Maps) and verify or reject them with a reason.</li><li><b>Publications to moderate</b>: approve or take down with a reason.</li><li><b>Open reports</b>: review and resolve them (always with a reason if you take something down).</li><li><b>Failed push</b>: if there are many, something is wrong with Firebase.</li></ol>` : `<h2>Rutina diaria (5 minutos)</h2><ol style="margin:0;padding-left:18px"><li><b>Resumen</b>: mira «Pendiente de ti».</li><li><b>Negocios pendientes</b>: comprueba que existen (web, teléfono, Google Maps) y verifica o rechaza con motivo.</li><li><b>Publicaciones por moderar</b>: aprueba o retira con motivo.</li><li><b>Denuncias abiertas</b>: revisa y resuelve (siempre con motivo si retiras algo).</li><li><b>Push fallidos</b>: si hay muchos, algo pasa con Firebase.</li></ol>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Weekly routine</h2><ul style="margin:0;padding-left:18px"><li><b>Plans and payments</b>: subscriptions expiring in 7 days → contact the business; record the bank transfers received.</li><li><b>Users</b>: handle access or erasure requests received by email (info@klendar.app).</li><li><b>Feedback</b>: read what has come in, set the status and reply to whatever deserves a reply.</li><li><b>Activity log</b>: check that everything that was done makes sense.</li></ul>` : `<h2>Rutina semanal</h2><ul style="margin:0;padding-left:18px"><li><b>Planes y pagos</b>: suscripciones que vencen en 7 días → contacta con el negocio; registra las transferencias recibidas.</li><li><b>Usuarios</b>: atiende peticiones de acceso o supresión recibidas por email (info@klendar.app).</li><li><b>Sugerencias</b>: lee lo que ha entrado, marca estado y responde lo que merezca respuesta.</li><li><b>Registro de actividad</b>: repasa que todo lo hecho tenga sentido.</li></ul>`}</div>
-      <div class="card">${I18N.lang === 'en' ? `<h2>Moderation criteria</h2><ul style="margin:0;padding-left:18px"><li>The venue's or product's own photos; no third-party images without permission.</li><li>A clear offer that can be honoured: price, conditions, places, opening hours. Nothing misleading.</li><li>Alcohol: always 18+ (it's marked automatically and doesn't wait), without encouraging drinking (Law 34/1988).</li><li>No third parties' personal data, insults, discrimination or sexual content.</li><li>If in doubt, mark it “under review” and ask the business for more information with “Send notification”.</li></ul><p class="muted small" style="margin:8px 0 0">Reference: <a class="link" href="/en/community-guidelines" target="_blank">Community guidelines</a> · <a class="link" href="/en/business-terms" target="_blank">Business terms</a>.</p>` : `<h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: siempre +18 (se marca solo y sale sin esperar), sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar notificación».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="/normas" target="_blank">Normas de la comunidad</a> · <a class="link" href="/negocios" target="_blank">Condiciones para negocios</a>.</p>`}</div>
+      <div class="card">${I18N.lang === 'en' ? `<h2>Moderation criteria</h2><ul style="margin:0;padding-left:18px"><li>The venue's or product's own photos; no third-party images without permission.</li><li>A clear offer that can be honoured: price, conditions, places, opening hours. Nothing misleading.</li><li>Alcohol: always 18+ (it's marked automatically and doesn't wait), without encouraging drinking (Law 34/1988).</li><li>No third parties' personal data, insults, discrimination or sexual content.</li><li>If in doubt, mark it “under review” and ask the business for more information with “Send notification”.</li></ul><p class="muted small" style="margin:8px 0 0">Reference: <a class="link" href="${APP_URL}/en/community-guidelines" target="_blank">Community guidelines</a> · <a class="link" href="${APP_URL}/en/business-terms" target="_blank">Business terms</a>.</p>` : `<h2>Criterios de moderación</h2><ul style="margin:0;padding-left:18px"><li>Fotos propias del local o del producto; nada de imágenes de terceros sin permiso.</li><li>Oferta clara y cumplible: precio, condiciones, aforo, horario. Nada engañoso.</li><li>Alcohol: siempre +18 (se marca solo y sale sin esperar), sin incitar al consumo (Ley 34/1988).</li><li>Sin datos personales de terceros, insultos, discriminación ni contenido sexual.</li><li>Ante la duda, marca «en revisión» y pide más información al negocio con «Enviar notificación».</li></ul><p class="muted small" style="margin:8px 0 0">Referencia: <a class="link" href="${APP_URL}/normas" target="_blank">Normas de la comunidad</a> · <a class="link" href="${APP_URL}/negocios" target="_blank">Condiciones para negocios</a>.</p>`}</div>
       <div class="card">${I18N.lang === 'en' ? `<h2>Legal duties this panel covers</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Digital Services Act): every content takedown comes with a reason and a way to appeal (6 months, info@klendar.app); reports are handled diligently.</li><li><b>GDPR</b>: consents visible on the user's page; erasure with “Delete account…”; access with “Export all”.</li><li><b>Log</b>: every administrative action is logged with its author and date.</li></ul>` : `<h2>Obligaciones legales que cubre el panel</h2><ul style="margin:0;padding-left:18px"><li><b>DSA</b> (Reglamento de Servicios Digitales): toda retirada de contenido lleva motivo y vía de recurso (6 meses, info@klendar.app); las denuncias se gestionan con diligencia.</li><li><b>RGPD</b>: consentimientos visibles en la ficha del usuario; supresión con «Eliminar cuenta…»; acceso con «Exportar todo».</li><li><b>Registro</b>: cada acción administrativa queda registrada con autor y fecha.</li></ul>`}</div>
     </div>
     <div class="card"><h2>Atajos</h2><p class="muted" style="margin:0">${I18N.lang === 'en' ? `<code>/</code> jumps to the page's search box · Click a row (or Tab to it and press Enter) to open its details · “Export all” downloads every row with the filters applied, not just this page.` : `<code>/</code> salta al buscador de la página · Pulsa en una fila (o llega con Tab y pulsa Intro) para abrir su ficha · «Exportar todo» descarga todas las filas con los filtros aplicados, no solo esta página.`}</p></div>

@@ -6,10 +6,12 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8793 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> BASE=http://localhost:8793 node tools/entidad_quitar_check.mjs
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8793';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -68,7 +70,7 @@ async function prueba(nav, kindAntes, elige, motivo) {
   const errores = [];
   pg.on('pageerror', (e) => errores.push(e.message));
   pg.setDefaultTimeout(15000);
-  await pg.goto(`${BASE}/admin#/negocios/${BIZ}`, { waitUntil: 'networkidle' });
+  await pg.goto(`${ADMIN}/admin#/negocios/${BIZ}`, { waitUntil: 'networkidle' });
   await pg.waitForSelector('[data-a="entity"]', { state: 'attached' }).catch(async (e) => {
     const v = await pg.locator('#view').innerText().catch(() => '');
     throw new Error(`no sale «Cuenta de entidad…»: ${v.replace(/\s+/g, ' ').slice(0, 400)} ${errores.join(' | ')} ${e.message}`);

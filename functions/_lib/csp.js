@@ -34,6 +34,10 @@ export const CSP_PUBLICA = "script-src 'self' https://challenges.cloudflare.com 
  * cualquier web (es para eso). */
 export const CSP_WIDGET = "script-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors *";
 
+/** La de la página puente (`klendar.app/admin` → admin.klendar.app, §4zzz-admindom):
+ * solo su script de klendar.app y su `<style>`; nada más, ni enmarcarla. */
+export const CSP_PUENTE = "default-src 'none'; script-src 'self'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-ancestors 'none'";
+
 /** Un nonce nuevo: 16 bytes al azar en base64. */
 export function nonceNuevo() {
   const b = new Uint8Array(16);

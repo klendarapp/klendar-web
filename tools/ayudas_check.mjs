@@ -6,10 +6,12 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8873 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8873 PW=<ruta a playwright> OUT=<carpeta> node tools/ayudas_check.mjs
-import { claveSesion, playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, claveSesion, playwright, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8873';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -382,7 +384,7 @@ const CUENTA = (x = {}) => ({ my_consents: { terms_accepted_at: '2026-01-01T00:0
     admin_ai_help_set: (b) => { on[b.p_use] = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
     admin_review_notice_set: (b) => { aviso = b.p_on ? '2026-11-05T10:00:00Z' : null; return { ok: true, from: aviso }; },
   } });
-  await p.goto(`${BASE}/admin#/automatico`);
+  await p.goto(`${ADMIN}/admin#/automatico`);
   await p.waitForSelector('[data-uso=suggest_category]');
   const caja = p.locator('[data-uso=suggest_category]').locator('xpath=ancestor::div[contains(@class,"card")]');
   const txt = await caja.innerText();

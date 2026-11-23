@@ -24,11 +24,13 @@
 //   SUPABASE_BLOQUEADO=1 PORT=8843 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> BASE=http://localhost:8843 node tools/festivos_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8843';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 // La web local no puede llegar a Supabase (ver _supabase_simulado).
 await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
@@ -143,7 +145,7 @@ async function festivos(nav, nombre, t, vp) {
     admin_confirm_holidays: (b) => ({ ok: true, confirmed: (b.p_ids || []).length }),
     admin_save_city_holidays: { ok: true, saved: 2 },
   });
-  await p.goto(`${BASE}/admin#/festivos/2028`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/festivos/2028`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.fest-estado').catch(async (e) => { console.log('VISTA:', await p.evaluate(() => [typeof PAGES.festivos, location.hash, document.querySelector('#view').innerText.slice(0, 200)]), errores); throw e; });
   const v = await p.locator('#view').innerText();
   ok(/2028: nacionales propuestos sin confirmar · locales 1 de 3 ciudades/.test(v), `${nombre}/${t} festivos: arriba, cómo va el año`);
@@ -228,7 +230,7 @@ async function municipio(nav, nombre, t, vp, lang = 'es') {
     admin_confirm_holidays: (b) => ({ ok: true, confirmed: (b.p_ids || []).length }),
     admin_delete_holiday: { ok: true },
   }, lang);
-  await p.goto(`${BASE}/admin#/festivos/2028`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/festivos/2028`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#festMuniQ');
   const card = async () => (await p.locator('.fest-muni').innerText()).replace(/\s+/g, ' ');
   let c = await card();
@@ -318,7 +320,7 @@ async function municipio(nav, nombre, t, vp, lang = 'es') {
     `${nombre}/${t}/${lang} municipio: guarda los de Girona con su código`);
 
   // Un municipio que no existe.
-  await p.goto(`${BASE}/admin#/festivos/2028?m=atlantida`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/festivos/2028?m=atlantida`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.fest-lugar');
   ok((en ? /isn’t in the official list/ : /no está en la lista oficial/).test(await p.locator('.fest-lugar').innerText()), `${nombre}/${t}/${lang} municipio: uno que no existe lo dice`);
   ok(errores.length === 0, `${nombre}/${t}/${lang} municipio sin errores JS ${errores.join(' | ')}`);
@@ -330,7 +332,7 @@ async function resumen(nav, nombre, t, vp) {
     ...BASE_RPC,
     admin_holiday_alert: { year: 2028, count: 2, text: 'Festivos: faltan los locales de 2028 en Zaragoza y Valladolid', summary: '2028: nacionales confirmados · locales 16 de 18 ciudades' },
   });
-  await p.goto(`${BASE}/admin#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/resumen`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#bandeja');
   const fila = p.locator('#bandeja .bj[data-k="festivo:aviso"]');
   ok(await fila.count() === 1 && /faltan los locales de 2028 en Zaragoza y Valladolid/.test(await fila.innerText())
@@ -351,7 +353,7 @@ async function crecer(nav, nombre, t, vp) {
     admin_activate_city: { id: 'teruel', notified: 0 },
     admin_set_city_holiday_info: { ok: true, holidays: { city: 'teruel', missing_years: [2026, 2027], bulletin: BOA } },
   });
-  await p.goto(`${BASE}/admin#/crecer`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/crecer`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-enciende]');
   const v = await p.locator('#view').innerText();
   ok(/sin comunidad/.test(v) && /Aragón/.test(v), `${nombre}/${t} crecer: la columna «Comunidad»`);
@@ -398,7 +400,7 @@ async function gratis(nav, nombre, t, vp) {
     },
     admin_set_province_launch_free: (b) => ({ code: b.p_province, until: b.p_until, converted: 4, moved: 0, businesses: 4 }),
   });
-  await p.goto(`${BASE}/admin#/crecer`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/crecer`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#crProvincias [data-gratis]');
   const v = (await p.locator('#crProvincias').innerText()).replace(/\s+/g, ' ');
   ok(/Málaga · gratis hasta el 31 mar 2027 · 12 negocios · 0 en prueba/.test(v), `${nombre}/${t} gratis: «Málaga · gratis hasta el 31 mar 2027 · 12 negocios · 0 en prueba»`);
@@ -483,7 +485,7 @@ async function gratisTodos(nav, nombre, t, vp) {
     admin_launch_free_provinces: lista('2027-03-31'),
     admin_set_launch_free_all: (b) => ({ until: b.p_until, was: '2027-03-31', converted: 2, moved: 13, businesses: 15 }),
   });
-  await p.goto(`${BASE}/admin#/crecer`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/crecer`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#crTodos #crTodosFecha');
   const v = (await p.locator('#crTodos').innerText()).replace(/\s+/g, ' ');
   ok(/Gratis hasta el 31 mar 2027/.test(v) && /estén donde estén/.test(v) && await p.locator('#crTodosQuita').count() === 1,
@@ -513,7 +515,7 @@ async function gratisTodos(nav, nombre, t, vp) {
   await ctx.close();
   // Sin la migración: lo dice, sin botones.
   const b = await contexto(nav, vp, { ...BASE_RPC, admin_city_waitlist: [], admin_klendar_cities: [], admin_launch_free_provinces: lista(undefined) });
-  await b.p.goto(`${BASE}/admin#/crecer`, { waitUntil: 'networkidle' });
+  await b.p.goto(`${ADMIN}/admin#/crecer`, { waitUntil: 'networkidle' });
   await b.p.waitForSelector('#crTodos p');
   ok(/Falta la migración 20261289000000/.test(await b.p.locator('#crTodos').innerText()) && await b.p.locator('#crTodosFecha').count() === 0,
     `${nombre}/${t} todos: sin la migración, lo dice y no hay botones`);

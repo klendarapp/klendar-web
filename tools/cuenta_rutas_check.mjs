@@ -9,10 +9,12 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8873 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8873 PW=<ruta a playwright> node tools/cuenta_rutas_check.mjs
-import { playwright, REF, SUPA, realtimeMudo, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, realtimeMudo, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8873';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 
 const U = '0e7717e0-0000-4000-8000-0000000097d4';
@@ -455,9 +457,9 @@ async function pruebaFuera(nav, motor) {
   await p.waitForFunction(() => location.pathname === '/cuenta/registro');
   ok(new URL(p.url()).searchParams.get('para') === 'negocio', `${motor} klendar.app/alta: a crear la cuenta de negocio`, dir(p));
   // El admin: su formulario de recuperar pide la vuelta a /cuenta/nueva-clave?destino=/admin/.
-  await p.goto(`${BASE}/admin`);
+  await p.goto(`${ADMIN}/admin`);
   await p.waitForLoadState('domcontentloaded');
-  const adminJs = await (await p.request.get(`${BASE}/admin/admin.js`)).text();
+  const adminJs = await (await p.request.get(`${ADMIN}/admin/admin.js`)).text();
   ok(/\/cuenta\/nueva-clave\?destino=%2Fadmin(?!%2F)/.test(adminJs) && !/\/app\//.test(adminJs), `${motor} admin: la vuelta es /cuenta/nueva-clave?destino=/admin`);
   void estado;
   // «Dar en el momento» por el QR, con puntos en la ruta.

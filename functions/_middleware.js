@@ -17,7 +17,8 @@
 // en el límite de CPU del plan gratis, 10 ms; ver RUNBOOK §3f).
 import { direccionBuena } from './_lib/direccion.js';
 import { EN_CACHE, desdeLaCache } from './_lib/cache.js';
-import { CSP_PUBLICA, conNonce, nonceNuevo } from './_lib/csp.js';
+import { CSP_PUBLICA, CSP_PUENTE, conNonce, nonceNuevo } from './_lib/csp.js';
+import { decideHost, esHostAdmin } from './_lib/admin.js';
 
 const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/i;
 
@@ -69,6 +70,36 @@ export async function onRequest(ctx) {
   if (ctx.request.method === 'GET' || ctx.request.method === 'HEAD') {
     const url = new URL(ctx.request.url);
     const buena = direccionBuena(url.pathname);
+    // 0-bis. El admin vive en admin.klendar.app (§4zzz-admindom, _lib/admin.js):
+    //   allí solo `/admin…` (y `/` → `/admin`; lo demás, a klendar.app); aquí,
+    //   `/admin` da la página puente (pasa el `#/…` y borra la sesión vieja)
+    //   y lo de dentro, un 301 al subdominio.
+    const host = decideHost(url, buena);
+    if (host?.salto) {
+      return new Response(null, {
+        status: 301,
+        headers: {
+          location: host.salto, 'cache-control': 'public, max-age=86400', ...SEGURIDAD,
+          ...(esHostAdmin(url.hostname) ? { 'x-robots-tag': 'noindex, nofollow' } : {}),
+        },
+      });
+    }
+    if (host?.puente) {
+      const pagina = await ctx.env.ASSETS.fetch(new URL('/admin/puente', url));
+      return new Response(ctx.request.method === 'HEAD' ? null : pagina.body, {
+        status: pagina.ok ? 200 : pagina.status,
+        headers: {
+          ...SEGURIDAD,
+          'content-type': 'text/html; charset=utf-8',
+          'cache-control': 'no-store, no-transform',
+          'x-robots-tag': 'noindex, nofollow',
+          'x-frame-options': 'DENY',
+          'referrer-policy': 'no-referrer',
+          'permissions-policy': 'geolocation=(), camera=(), microphone=()',
+          'content-security-policy': CSP_PUENTE,
+        },
+      });
+    }
     const apex = url.hostname === 'www.klendar.app';
     if (buena !== url.pathname || apex) {
       const destino = (apex ? 'https://klendar.app' : url.origin) + buena + url.search;

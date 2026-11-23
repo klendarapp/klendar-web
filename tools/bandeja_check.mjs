@@ -5,11 +5,13 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8897 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8897 PW=<ruta a playwright> OUT=<carpeta> node tools/bandeja_check.mjs
-import { playwright, REF, SUPA, realtimeMudo, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, realtimeMudo, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 import { contesta, estadoInicial, IDS } from './_bandeja_datos.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8897';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -74,7 +76,7 @@ const nav = await chromium.launch();
 console.log('Escritorio');
 {
   const { ctx, page, estado, errs } = await abre(nav);
-  await page.goto(`${BASE}/admin#/resumen`, { waitUntil: 'load' });
+  await page.goto(`${ADMIN}/admin#/resumen`, { waitUntil: 'load' });
   await page.waitForSelector('#bandeja .bj', { timeout: 15000 });
   const n0 = await cuantas(page);
   ok(n0 >= 18, 'una tarjeta por caso, de todos los tipos', n0);
@@ -170,7 +172,7 @@ console.log('Escritorio');
 for (const [nombre, ancho, alto] of [['iPhone (390)', 390, 844], ['móvil estrecho (320)', 320, 640]]) {
   console.log(`Móvil · ${nombre}`);
   const { ctx, page, errs } = await abre(nav, { ancho, alto, movil: true });
-  await page.goto(`${BASE}/admin#/resumen`, { waitUntil: 'load' });
+  await page.goto(`${ADMIN}/admin#/resumen`, { waitUntil: 'load' });
   await page.waitForSelector('#bandeja .bj', { timeout: 15000 });
   const lateral = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   ok(lateral <= 0, 'sin desplazamiento lateral', lateral);
@@ -203,7 +205,7 @@ for (const [nombre, ancho, alto] of [['iPhone (390)', 390, 844], ['móvil estrec
 console.log('Una parte que falla');
 {
   const { ctx, page, errs } = await abre(nav, { falla: ['admin_report_groups', 'admin_media_queue'] });
-  await page.goto(`${BASE}/admin#/resumen`, { waitUntil: 'load' });
+  await page.goto(`${ADMIN}/admin#/resumen`, { waitUntil: 'load' });
   await page.waitForSelector('#bandeja', { timeout: 15000 });
   const t = await page.textContent('#bandeja');
   ok(await page.isVisible('#bandeja [data-bandeja-reintentar]'), 'dice que una parte no se ha podido cargar, con «Reintentar»');
@@ -216,7 +218,7 @@ console.log('Una parte que falla');
   const todas = ['admin_pending_now', 'admin_entity_applications', 'admin_business_claims', 'admin_report_groups', 'admin_media_queue', 'admin_content_queue',
     'admin_offers_page', 'admin_text_reviews', 'admin_business_messages', 'admin_duplicate_alerts', 'admin_feedback', 'admin_ai_reports', 'admin_inbox_extra'];
   const { ctx, page } = await abre(nav, { falla: todas });
-  await page.goto(`${BASE}/admin#/resumen`, { waitUntil: 'load' });
+  await page.goto(`${ADMIN}/admin#/resumen`, { waitUntil: 'load' });
   await page.waitForSelector('#bandeja', { timeout: 15000 });
   ok(await page.isHidden('#bandejaVacia'), 'si falla todo, nunca «Todo al día»');
   await ctx.close();
@@ -225,7 +227,7 @@ console.log('Una parte que falla');
 console.log('En inglés');
 {
   const { ctx, page, errs } = await abre(nav, { lang: 'en' });
-  await page.goto(`${BASE}/admin#/resumen`, { waitUntil: 'load' });
+  await page.goto(`${ADMIN}/admin#/resumen`, { waitUntil: 'load' });
   await page.waitForSelector('#bandeja .bj', { timeout: 15000 });
   const t = await page.textContent('#bandeja');
   ok(t.includes('Waiting for you') && t.includes('Approve all that check out') && t.includes('Everything checks out'), 'los textos en inglés', t.slice(0, 200));

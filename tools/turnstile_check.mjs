@@ -21,7 +21,7 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8797 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8797 PW=<ruta a playwright> node tools/turnstile_check.mjs
-import { playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { enSuHost, playwright, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 
@@ -129,7 +129,7 @@ try {
       const ctx = await contexto(nav, clave, estado);
       const p = await ctx.newPage();
       try {
-        await p.goto(BASE + f.ruta, { waitUntil: 'networkidle' });
+        await p.goto(enSuHost(BASE, f.ruta), { waitUntil: 'networkidle' });
         // Lo que se tarda en escribir (con las claves de prueba, Turnstile contesta enseguida).
         if (modo === 'pasa') await p.waitForTimeout(1500);
         const pulsa = Date.now();
@@ -164,7 +164,7 @@ try {
     const ctx = await contexto(nav, '1x00000000000000000000AA', estado);
     const p = await ctx.newPage();
     const f = FORMULARIOS[0];
-    await p.goto(BASE + f.ruta, { waitUntil: 'networkidle' });
+    await p.goto(enSuHost(BASE, f.ruta), { waitUntil: 'networkidle' });
     await f.rellena(p);
     await p.waitForFunction((sel) => (document.querySelector(sel)?.textContent || '').trim().length > 0, f.err, { timeout: 15000 }).catch(() => {});
     await p.evaluate((sel) => { document.querySelector(sel).textContent = ''; }, f.err);
@@ -182,7 +182,7 @@ try {
     const ctx = await contexto(nav, '1x00000000000000000000AA', estado, { cloudflare: 'mudo' });
     const p = await ctx.newPage();
     const f = FORMULARIOS[0];
-    await p.goto(BASE + f.ruta, { waitUntil: 'domcontentloaded' });
+    await p.goto(enSuHost(BASE, f.ruta), { waitUntil: 'domcontentloaded' });
     await p.waitForSelector('#f');
     const t0 = Date.now();
     await f.rellena(p);

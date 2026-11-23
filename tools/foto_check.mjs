@@ -5,10 +5,12 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8872 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8872 PW=<ruta a playwright> OUT=<carpeta> node tools/foto_check.mjs
-import { claveSesion, playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, claveSesion, playwright, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8872';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -381,7 +383,7 @@ for (const [why, frase] of [['nothing', /No vemos ningún cartel/], ['cap', /Est
     admin_photo_fill_overview: () => ({ ...resumen, enabled: estado2.on }),
     admin_photo_fill_set: (b) => { estado2.on = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
   } });
-  await p.goto(`${BASE}/admin#/automatico`);
+  await p.goto(`${ADMIN}/admin#/automatico`);
   await p.waitForSelector('#fotoInterruptor');
   const txt = await p.locator('#fotoInterruptor').locator('xpath=ancestor::div[contains(@class,"card")]').innerText();
   ok(/Rellenar desde una foto/.test(txt) && /apagado/.test(txt), 'admin: apagado');

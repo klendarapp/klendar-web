@@ -21,7 +21,7 @@
 //
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/seguir_todo_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, SUPA } from './_supabase_simulado.mjs';
 import { webConDatos } from './_web_con_datos.mjs';
 
 const uid = (n) => `d0000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -49,6 +49,8 @@ const web = await webConDatos({
   },
 });
 const BASE = web.BASE;
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 
 const pw = playwright();
 const OUT = process.env.OUT || 'tools/out';
@@ -257,7 +259,7 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].f
         admin_save_follow_item: { ok: true, id: 'a0000000-0000-4000-8000-000000000009' },
         admin_hide_follow_item: { ok: true },
       });
-      await p.goto(`${BASE}/admin#/emisiones?tab=seguir`, { waitUntil: 'networkidle' });
+      await p.goto(`${ADMIN}/admin#/emisiones?tab=seguir`, { waitUntil: 'networkidle' });
       await p.waitForSelector('[data-sg-editar]');
       const v = await p.locator('#view').innerText();
       ok(/Fernando Alonso/.test(v) && /Todas las de su campeonato/.test(v) && /Las que lo nombran/.test(v) && /apagado/.test(v), `${motor} ${t} admin: el catálogo con su regla y lo apagado`);

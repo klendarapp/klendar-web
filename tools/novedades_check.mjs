@@ -13,11 +13,13 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8788 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/novedades_check.mjs
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8788';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -126,7 +128,7 @@ async function admin(nav, nombre, t, vp) {
   };
   rpc.admin_config = (b, json) => json(cfg);
   const { ctx, p, estado, errores } = await contexto(nav, vp, { clave: `sb-${REF}-admin-auth-token`, rpc });
-  await p.goto(`${BASE}/admin#/configuracion`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/configuracion`, { waitUntil: 'networkidle' });
   const form = p.locator('#lvf');
   await form.waitFor();
   const tarjeta = await form.locator('xpath=..').innerText();
@@ -150,7 +152,7 @@ async function admin(nav, nombre, t, vp) {
   ok(l && l[1].p_value.android === '0.1.9' && l[1].p_value.ios === null, `${nombre}/${t} admin: guarda {android: 0.1.9, ios: null} ${JSON.stringify(l)}`);
 
   conMigracion = false;
-  await p.goto(`${BASE}/admin#/configuracion`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/configuracion`, { waitUntil: 'networkidle' });
   await form.waitFor();
   await guardar('0.1.9', '0.1.9');
   ok(/falta aplicar la migración 20261277600000/.test(await toasts()), `${nombre}/${t} admin: sin la migración, lo explica`);

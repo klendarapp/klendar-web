@@ -19,12 +19,14 @@
 //
 //   PW=<ruta a playwright> node tools/captcha_sitio_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, SUPA } from './_supabase_simulado.mjs';
 import { webConDatos } from './_web_con_datos.mjs';
 
 const { chromium } = playwright();
 const web = await webConDatos({ puerto: Number(process.env.PORT || 9014) });
 const BASE = web.BASE;
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
 let fallos = 0;
@@ -147,7 +149,7 @@ for (const [t, vp] of [['movil', { width: 360, height: 740 }], ['escritorio', { 
     const n = `${t}/${esquema}`;
     {
       const { ctx, pg, errores } = await abre(nav, { vp, esquema, modo: 'mirar' });
-      await pg.goto(`${BASE}/admin#/condiciones`);
+      await pg.goto(`${ADMIN}/admin#/condiciones`);
       await pg.waitForSelector('#login .kl-captcha-sitio .ts-falso:has-text("humano")');
       const m = await mide(pg, '#login', '#doLogin');
       ok(m.dentro && !m.fija, `${n} admin: el recuadro va dentro del acceso, no fijo abajo`, JSON.stringify(m));
@@ -217,7 +219,7 @@ for (const [t, vp] of [['movil', { width: 360, height: 740 }], ['escritorio', { 
 // ── 4. Admin: del acceso al código (se quita) y, tras entrar, al Resumen.
 {
   const { ctx, pg, estado, errores } = await abre(nav, { modo: 'mirar' });
-  await pg.goto(`${BASE}/admin#/condiciones`);
+  await pg.goto(`${ADMIN}/admin#/condiciones`);
   await pg.waitForSelector('#login .ts-falso:has-text("humano")');
   await pg.evaluate(() => window.turnstile.marca());  // la persona lo marca
   ok(await pg.evaluate(() => document.querySelector('#login .kl-captcha-sitio').style.position === 'absolute'), 'admin: marcado, el hueco deja de ocupar sitio');
@@ -249,7 +251,7 @@ for (const [t, vp] of [['movil', { width: 360, height: 740 }], ['escritorio', { 
 {
   // Sin 2FA («Ahora no» en esta pestaña): también al Resumen.
   const { ctx, pg } = await abre(nav, { modo: 'pasa', con2fa: false, luego: true });
-  await pg.goto(`${BASE}/admin#/condiciones`);
+  await pg.goto(`${ADMIN}/admin#/condiciones`);
   await pg.waitForSelector('#login:not([hidden]) #kl-captcha', { state: 'attached' });
   await pg.fill('#email', 'captcha@example.com');
   await pg.fill('#password', 'Prueba-Captcha-2026');

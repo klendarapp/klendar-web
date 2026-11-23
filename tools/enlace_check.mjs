@@ -6,10 +6,12 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8872 node tools/serve_dev.mjs &
 //   BASE=http://localhost:8872 PW=<ruta a playwright> OUT=<carpeta> node tools/enlace_check.mjs
-import { claveSesion, playwright, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, claveSesion, playwright, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8872';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 await servidorSeguro(BASE);
 const OUT = process.env.OUT || 'tools/out';
 (await import('node:fs')).mkdirSync(OUT, { recursive: true });
@@ -301,7 +303,7 @@ for (const [why, frase] of [['bad_link', /tiene que empezar por https/], ['nothi
     admin_link_fill_overview: () => ({ ...resumen, enabled: on.v }),
     admin_link_fill_set: (b) => { on.v = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
   } });
-  await p.goto(`${BASE}/admin#/automatico`);
+  await p.goto(`${ADMIN}/admin#/automatico`);
   await p.waitForSelector('#enlaceInterruptor');
   const txt = await p.locator('#enlaceInterruptor').locator('xpath=ancestor::div[contains(@class,"card")]').innerText();
   ok(/Rellenar desde un enlace o un texto/.test(txt) && /apagado/.test(txt), 'admin: apagado');

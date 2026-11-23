@@ -32,7 +32,7 @@ import { existsSync, mkdirSync, readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { webConDatos, NEGOCIOS, PLANES } from './_web_con_datos.mjs';
-import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { enSuHost, playwright, REF, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium } = playwright();
 const OUT = process.env.OUT || 'tools/out/a11y';
@@ -321,7 +321,7 @@ try {
       p.on('pageerror', (e) => errores.push(e.message));
       for (const ruta of rutas) {
         if (solo.length && !solo.includes(ruta)) continue;
-        await p.goto(web.BASE + ruta, { waitUntil: 'networkidle' }).catch(() => {});
+        await p.goto(enSuHost(web.BASE, ruta), { waitUntil: 'networkidle' }).catch(() => {});
         await p.waitForTimeout(400);
         const donde = `${ruta} · ${grupo} · ${tema}`;
         const lineas = [];

@@ -34,6 +34,7 @@
     "/admin/i18n.js",
     "/admin/medios.js",
     "/admin/piloto.js",
+    "/admin/puente.js",
     "/admin/sorteos.js",
     "/admin/traduccion.js"
   ]

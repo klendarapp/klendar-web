@@ -16,11 +16,13 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8795 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/alta_entidades_check.mjs
-import { playwright, REF, SUPA, servidorSeguro } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, servidorSeguro, SUPA } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
 
 const BASE = process.env.BASE || 'http://localhost:8795';
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 // La web local no puede llegar a Supabase (ver _supabase_simulado).
 await servidorSeguro(BASE);
 // Las capturas, en tools/out/ (git las ignora): en la raíz se publicaban
@@ -222,7 +224,7 @@ async function admin(nav, nombre, t, vp) {
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  await p.goto(`${BASE}/admin#/entidades`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/entidades`, { waitUntil: 'networkidle' });
   // En el móvil el menú cerrado no se ve (assets/cajon.js): el título, en la pantalla.
   await p.waitForSelector('#view >> text=Entidades por verificar');
   await p.waitForSelector('[data-aprobar]');

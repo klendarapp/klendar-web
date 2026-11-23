@@ -26,7 +26,7 @@
 //
 //   SUPABASE_BLOQUEADO=1 PORT=8871 node tools/serve_dev.mjs &
 //   PW=<ruta a playwright> BASE=http://localhost:8871 node tools/movil_check.mjs
-import { playwright, REF, SUPA, servidorSeguro, supabaseVacio } from './_supabase_simulado.mjs';
+import { enSuHost, playwright, REF, servidorSeguro, SUPA, supabaseVacio } from './_supabase_simulado.mjs';
 
 const { chromium, webkit } = playwright();
 const BASE = process.env.BASE || 'http://localhost:8871';
@@ -218,7 +218,7 @@ async function pruebaPaginas(nav, nombre) {
       for (const [ruta, s] of PAGINAS.filter((x) => x[1] === conSesion)) {
         // Una página nueva cada vez (WebKit se cae a veces tras muchas seguidas).
         const { ctx, p } = await contexto(nav, nombre, { ancho, conSesion });
-        await p.goto(BASE + ruta, { waitUntil: 'networkidle' }).catch(() => {});
+        await p.goto(enSuHost(BASE, ruta), { waitUntil: 'networkidle' }).catch(() => {});
         await p.waitForTimeout(500);
         const m = await p.evaluate(mide);
         await ctx.close();

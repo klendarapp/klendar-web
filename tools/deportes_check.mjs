@@ -22,7 +22,7 @@
 //
 //   PW=<ruta a playwright> OUT=<carpeta> node tools/deportes_check.mjs
 import { mkdirSync } from 'node:fs';
-import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
+import { adminDe, playwright, REF, SUPA } from './_supabase_simulado.mjs';
 import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 const { chromium } = playwright();
@@ -113,6 +113,8 @@ const web = await webConDatos({
   },
 });
 const BASE = web.BASE;
+// El admin, en su host (admin.localhost; §4zzz-admindom).
+const ADMIN = adminDe(BASE);
 const OUT = process.env.OUT || 'tools/out';
 mkdirSync(OUT, { recursive: true });
 const U = '0e7717e0-0000-4000-8000-00000000de01';
@@ -286,7 +288,7 @@ for (const [t, vp] of Object.entries(TAM)) {
     admin_broadcasts: { last_import: { source: 'thesportsdb', mode: 'daily', started_at: new Date().toISOString(), finished_at: new Date().toISOString(), items: 462, calls: 42 }, items: [] },
     admin_set_broadcast_league: { ok: true, removed: 0 },
   });
-  await p.goto(`${BASE}/admin#/emisiones`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/admin#/emisiones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-liga]');
   const v = await p.locator('#view').innerText();
   ok(/Ligas/.test(v) && /LaLiga/.test(v) && /NBA/.test(v) && /Sin temporada en curso/.test(v), `${t} admin: las ligas con lo que traen`);
