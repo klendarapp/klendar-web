@@ -1325,3 +1325,8 @@ a.hoy-linea:hover .title { text-decoration: underline; }
 /* Las secciones de Hoy, Publicar y Negocio, sin el aire de las de las
    páginas públicas (site.css). */
 #view section.hoy-cifras, #view section.hoy-bloque, #view section.neg-grupo, #view section.crear { padding: 0; }
+/* Pantallas muy anchas (§4zzz-tablet): a partir de 1.500 px el contenido
+   del panel no se estira de lado a lado (con 1.920 las filas de Hoy medían
+   1.600 px); se queda en 1.180 y centrado en lo que deja el menú. En la
+   tablet y el portátil no cambia nada. */
+@media (min-width: 1500px) { main#view.content { width: 100%; max-width: 1180px; justify-self: center; } }
