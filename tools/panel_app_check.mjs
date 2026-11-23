@@ -148,7 +148,21 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(!(await visible(p, 'header.top .pestanas')) && !(await visible(p, 'header.top .top-negocios')) && !(await visible(p, 'header.top .top-entrar')),
     `${nombre}: sin la barra de cliente de la web`);
   ok(await visible(p, '.panel-volver') && await p.$eval('.panel-volver', (a) => a.getAttribute('href')) === '/descubre', `${nombre}: «Volver a Klendar» a Descubre`);
-  ok(await visible(p, 'header.top details.idioma'), `${nombre}: el idioma, a la vista`);
+  // Con menú lateral (§4zzz-sinfoto), sin barra de arriba: la campana junto
+  // al logo, y «Volver a Klendar» y el idioma abajo, en el menú; sin él, en
+  // la cabecera mínima.
+  ok(await visible(p, lateral ? '#side .side-pie details.idioma' : 'header.top details.idioma'), `${nombre}: el idioma, a la vista${lateral ? ' en el menú lateral' : ''}`);
+  ok(await p.$(lateral ? '#side .side-pie .panel-volver' : 'header.top .panel-volver') !== null, `${nombre}: «Volver a Klendar» ${lateral ? 'en el menú lateral' : 'arriba'}`);
+  ok(await p.$(lateral ? '#side .side-cab .top-campana' : 'header.top .top-campana') !== null, `${nombre}: la campana ${lateral ? 'junto al logo' : 'arriba'}`);
+  ok(await visible(p, 'header.top') === !lateral, `${nombre}: barra de arriba ${lateral ? 'quitada' : 'mínima'}`);
+  if (lateral) {
+    // El idioma se abre dentro del menú, entero y con el ratón y el teclado.
+    await p.click('#side .side-pie summary.idioma-b');
+    const menu = await p.$eval('#side .idioma-menu', (m) => { const r = m.getBoundingClientRect(); const s = document.querySelector('#side').getBoundingClientRect(); return r.width > 0 && r.left >= s.left && r.right <= s.right + 1; });
+    ok(menu, `${nombre}: el menú de idiomas se abre dentro del menú lateral`);
+    await p.keyboard.press('Escape');
+    ok(!(await p.$('#side details.idioma[open]')), `${nombre}: Escape cierra el menú de idiomas`);
+  }
   if (lateral) {
     // El menú lateral sigue el tema: claro en modo claro.
     const fondo = await p.$eval('#side', (e) => getComputedStyle(e).backgroundColor);
