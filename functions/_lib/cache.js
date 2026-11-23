@@ -43,7 +43,9 @@
 import { dependeDeLaConexion } from './explore.js';
 import { celdaDeConexion, zonaDeConexion } from './conexion.js';
 
-export const VERSION = 'v3';
+// v4 (23-11, §4zzz-csp): lo guardado antes llevaba <script> en línea, que la
+// CSP nueva ya no deja correr; con la clave nueva no se sirve.
+export const VERSION = 'v4';
 
 // Las páginas públicas que pasan por aquí.
 export const EN_CACHE = /^\/(en\/)?(o|b|a|agenda|whats-on|hoy|today|con-ninos|kids|ofertas|deals|provincia|province|coleccion|collection|explorar|explore|descubre|discover|guia|guide|partidos|matches|grupos|groups|sorteos|giveaways|sorteo|giveaway|cartel|poster|historia|story|widget|m)(\/|$)|^\/sitemap-[a-z]+\.xml$/;
