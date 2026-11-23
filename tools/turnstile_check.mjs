@@ -92,12 +92,14 @@ async function contexto(nav, clave, estado, { cloudflare = 'normal' } = {}) {
   // Cloudflare caído ('caido': no se puede conectar) o que no contesta ('mudo').
   if (cloudflare === 'caido') await ctx.route('https://challenges.cloudflare.com/**', (route) => route.abort());
   if (cloudflare === 'mudo') await ctx.route('https://challenges.cloudflare.com/**', () => { /* nunca contesta */ });
-  await ctx.route(`${BASE}/config.js*`, async (route) => {
-    const r = await route.fetch();
+  // localhost y admin.localhost (el admin, en su host: §4zzz-admindom).
+  await ctx.route(/^http:\/\/(admin\.)?localhost(:\d+)?\/config\.js(\?|$)/, async (route) => {
+    // Node no resuelve admin.localhost: config.js es el mismo en los dos hosts.
+    const r = await route.fetch({ url: route.request().url().replace('//admin.localhost', '//localhost') });
     route.fulfill({ response: r, body: (await r.text()).replace(/turnstile:\s*'[^']*'/, `turnstile: '${clave}'`) });
   });
   // Lo que pasaría por las Functions locales (que sí hablan con Supabase): fuera.
-  await ctx.route(`${BASE}/api/**`, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await ctx.route(/^http:\/\/(admin\.)?localhost(:\d+)?\/api\//, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
   ctx.on('request', (req) => { if (req.url().startsWith('https://challenges.cloudflare.com/')) estado.cloudflare++; });
   await ctx.route(`${SUPA}/**`, async (route) => {
     const req = route.request();

@@ -189,7 +189,8 @@ export async function protegeContexto(ctx) {
   // config.js ellas mismas (después, y por eso mandan).
   await ctx.route(/^http:\/\/((admin\.)?localhost|127\.0\.0\.1)(:\d+)?\/config\.js(\?|$)/, async (route) => {
     try {
-      const r = await route.fetch();
+      // Node no resuelve admin.localhost: config.js es el mismo en los dos hosts.
+      const r = await route.fetch({ url: route.request().url().replace('//admin.localhost', '//localhost') });
       route.fulfill({ response: r, body: (await r.text()).replace(/turnstile:\s*'[^']*'/, "turnstile: ''") });
     } catch { route.continue().catch(() => {}); }
   });
