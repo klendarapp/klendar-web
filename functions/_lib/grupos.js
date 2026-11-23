@@ -43,13 +43,16 @@ function leeEstado(qs) {
   const lat = redondea(Number.parseFloat(qs.get('lat') || ''));
   const lng = redondea(Number.parseFloat(qs.get('lng') || ''));
   const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-  const kind = de('kind', 30);
+  // Los tipos, de varios a la vez (§4zzz-chips): `?tipo=afterwork&tipo=…`
+  // (o con comas), en el orden de `KG.KINDS`. Ninguno o todos = todos.
+  const pedidos = [...qs.getAll(CLAVES.es.kind), ...qs.getAll(CLAVES.en.kind)].flatMap((v) => String(v).split(','));
+  const kinds = KG.KINDS.filter((k) => pedidos.includes(k));
   const people = Number.parseInt(de('people', 4), 10);
   const km = Number.parseInt(qs.get('km') || '', 10);
   return {
     city: cerca ? '' : de('city', 60),
     cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
-    kind: KG.KINDS.includes(kind) ? kind : '',
+    kinds,
     people: Number.isInteger(people) && people >= 2 && people <= 500 ? people : null,
     km: RADIOS.includes(km) ? km : 10,
   };
@@ -60,11 +63,18 @@ function query(e, lang) {
   const p = new URLSearchParams();
   if (e.cerca) { p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng)); } else if (e.city) p.set(K.city, e.city);
   if (e.km && e.km !== 10) p.set('km', String(e.km));
-  if (e.kind) p.set(K.kind, e.kind);
+  for (const k of KG.KINDS.filter((x) => (e.kinds || []).includes(x))) p.append(K.kind, k);
   if (e.people) p.set(K.people, String(e.people));
   return p.toString();
 }
 const conQs = (path, qs) => (qs ? `${path}?${qs}` : path);
+/** Varias listas en una: sin repetir y por cercanía (sin distancia, detrás). */
+const juntaSinRepetir = (listas) => {
+  const vistos = new Set();
+  const todos = listas.flat().filter((b) => b && !vistos.has(b.id) && vistos.add(b.id));
+  const d = (b) => (Number.isFinite(b.distance_m) ? b.distance_m : Infinity);
+  return todos.sort((a, b) => d(a) - d(b));
+};
 
 /** La lista. */
 export async function gruposPage(url, lang) {
@@ -85,11 +95,17 @@ export async function gruposPage(url, lang) {
     const c = (ciudadesK || []).find((x) => x.id === plano(e.city) || plano(x.name) === plano(e.city));
     if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) { origen = { lat: c.lat, lng: c.lng }; ciudadK = c; }
   }
-  const lista = await rpcAll('group_venues', {
+  // La base filtra por un tipo: con uno, ese; con varios (no todos), uno
+  // por tipo y juntos (sin repetir, por cercanía); ninguno o todos, todo.
+  const args = (kind) => ({
     p_lat: origen ? origen.lat : null, p_lng: origen ? origen.lng : null, p_radius_m: e.km * 1000,
-    p_kind: e.kind || null, p_people: e.people, p_categories: null,
+    p_kind: kind, p_people: e.people, p_categories: null,
     p_city: !origen && e.city ? e.city : null, p_limit: 60,
   });
+  const filtraTipos = e.kinds.length > 0 && e.kinds.length < KG.KINDS.length;
+  const lista = !filtraTipos || e.kinds.length === 1
+    ? await rpcAll('group_venues', args(filtraTipos ? e.kinds[0] : null))
+    : juntaSinRepetir(await Promise.all(e.kinds.map((k) => rpcAll('group_venues', args(k))))).slice(0, 60);
   // Con una ciudad, desde su punto: «En Málaga» o «A 30 km de Málaga», no «12 km» como si fuera desde aquí (I1).
   ajustaDistancias(lista, { cerca: e.cerca, aprox: false, centro: ciudadK ? {} : null, nombre: ciudadK?.name || '', lang });
   const nombreCat = new Map((cats || []).map((c) => [c.id, (c.names && (c.names[en ? 'en' : 'es'] || c.names.es)) || c.slug || '']));
@@ -99,15 +115,18 @@ export async function gruposPage(url, lang) {
     if (b.cerca === false) { b.lat = null; b.lng = null; }
     return conQs(`${base}`, query(b, lang));
   };
-  const chip = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${esc(label)}</a>`;
+  // Un tipo se pulsa y se suelta, junto con otros (el lector dice «pulsado»).
+  const chipTipo = (k) => {
+    const on = e.kinds.includes(k);
+    return `<a class="chip${on ? ' on' : ''}" href="${esc(link({ kinds: on ? e.kinds.filter((x) => x !== k) : [...e.kinds, k] }))}" role="button" aria-pressed="${on}">${esc(KG.plural(k, lang))}</a>`;
+  };
   const K = CLAVES[en ? 'en' : 'es'];
   const ocultos = [[K.city, e.cerca ? '' : e.city], ['lat', e.cerca ? posUrl(e.lat) : ''], ['lng', e.cerca ? posUrl(e.lng) : ''],
-    ['km', e.km !== 10 ? String(e.km) : ''], [K.kind, e.kind]]
+    ['km', e.km !== 10 ? String(e.km) : ''], ...KG.KINDS.filter((k) => e.kinds.includes(k)).map((k) => [K.kind, k])]
     .filter(([, v]) => v).map(([k, v]) => `<input type="hidden" name="${k}" value="${esc(v)}">`).join('');
   const barra = `<div class="barra-filtros grupos-barra">
     ${zonaMenu({ ...e, km: e.km }, lang, ciudades, link)}
-    ${chip(link({ kind: '' }), S.all, !e.kind)}
-    ${KG.KINDS.map((k) => chip(link({ kind: k }), KG.plural(k, lang), e.kind === k)).join('')}
+    ${KG.KINDS.map(chipTipo).join('')}
   </div>
   <form class="grupos-personas" method="get" action="${base}">
     ${ocultos}
@@ -134,7 +153,7 @@ export async function gruposPage(url, lang) {
     </article>`;
   };
 
-  const conFiltros = Boolean(e.kind || e.people);
+  const conFiltros = Boolean(e.kinds.length || e.people);
   let cuerpo;
   if (lista.length) {
     cuerpo = `<form class="grupos-lista" id="grupos-lista" data-pedir="${esc(`${cuentaBase(lang, 'grupos/pedir?b=')}`)}"
@@ -147,7 +166,7 @@ export async function gruposPage(url, lang) {
     <p class="aviso-error" id="grupos-aviso" role="status" aria-live="polite" hidden></p>`;
   } else {
     const ampliar = origen && e.km < 25 ? `<a class="pill accent" href="${esc(link({ km: 25 }))}">${esc(S.widen)}</a>` : '';
-    const quitar = conFiltros ? `<a class="pill${ampliar ? '' : ' accent'}" href="${esc(link({ kind: '', people: null }))}">${esc(S.clear)}</a>` : '';
+    const quitar = conFiltros ? `<a class="pill${ampliar ? '' : ' accent'}" href="${esc(link({ kinds: [], people: null }))}">${esc(S.clear)}</a>` : '';
     const todas = !ampliar && !quitar && (e.city || e.cerca)
       ? `<a class="pill accent" href="${esc(link({ city: '', cerca: false, km: 10 }))}">${esc(en ? 'See every city' : 'Ver todas las ciudades')}</a>` : '';
     cuerpo = `<section class="vacio">
@@ -167,7 +186,7 @@ export async function gruposPage(url, lang) {
   ${cuerpo}
   <script src="/assets/grupos.js?v=20261111sinbarra" defer></script>`;
 
-  const filtrada = Boolean(e.city || e.cerca || e.kind || e.people || e.km !== 10);
+  const filtrada = Boolean(e.city || e.cerca || e.kinds.length || e.people || e.km !== 10);
   const migas = [['Klendar', en ? '/en' : '/'], [S.title, `${base}`]];
   return html(publicPage({
     lang,

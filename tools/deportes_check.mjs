@@ -189,6 +189,13 @@ for (const [t, vp] of Object.entries(TAM)) {
   const metas = await p.locator('a.partido small').allInnerTexts();
   ok(metas.length > 0 && metas.every((m) => /Champions League/.test(m)), `${t} Champions: solo la Champions (${metas.length})`);
   ok(await p.locator('.partidos-comps a.chip.on').innerText() === 'Champions League', `${t} Champions: el chip marcado`);
+  ok(await p.locator('.partidos-comps a.chip[aria-pressed="true"]').count() === 1 && !/(^|\n)(Todo|Todas)(\n|$)/.test(await p.locator('main').innerText()), `${t} Champions: pulsado, sin «Todo» ni «Todas»`);
+  // Varios a la vez (§4zzz-chips): fútbol solo la Champions y el baloncesto entero.
+  await p.goto(`${BASE}/partidos?deporte=basketball&deporte=football&competicion=champions`, { waitUntil: 'networkidle' });
+  const metas2 = await p.locator('a.partido small').allInnerTexts();
+  ok(metas2.some((m) => /Champions League/.test(m)) && metas2.some((m) => /Liga Endesa|NBA/.test(m)) && !metas2.some((m) => /LaLiga|Premier/.test(m)),
+    `${t} fútbol (Champions) y baloncesto: los dos, sin el resto del fútbol (${metas2.length})`);
+  ok(await p.locator('.partidos-barra a.chip[aria-pressed="true"]').count() >= 2, `${t} los dos deportes pulsados`);
   await p.screenshot({ path: `${OUT}/web-donde-verlo-champions-${t}.png`, fullPage: false });
 
   const href = await p.locator('a.partido').first().getAttribute('href');
@@ -232,8 +239,16 @@ for (const [t, vp] of Object.entries(TAM)) {
   ok(/Datos deportivos: TheSportsDB/.test(v), `${t} panel: la cita`);
   await p.screenshot({ path: `${OUT}/web-panel-partidos-${t}.png`, fullPage: false });
   // Fútbol → sus competiciones.
-  await p.locator('#ptDeportes label', { hasText: 'Fútbol' }).click().catch(() => {});
-  const comps = await p.locator('#ptComps label').count();
+  ok(!/^Todo$/m.test(await p.locator('#ptDeportes').innerText()), `${t} panel: los deportes sin «Todo»`);
+  await p.locator('#ptDeportes button', { hasText: 'Fútbol' }).click().catch(() => {});
+  const comps = await p.locator('#ptComps button').count();
+  // Una competición se pulsa y se suelta (aria-pressed), varias a la vez.
+  await p.locator('#ptComps button').nth(0).click();
+  await p.locator('#ptComps button').nth(1).click();
+  ok(await p.locator('#ptComps button[aria-pressed="true"]').count() === 2, `${t} panel: dos competiciones pulsadas a la vez`);
+  await p.locator('#ptComps button').nth(0).click();
+  await p.locator('#ptComps button').nth(1).click();
+  ok(await p.locator('#ptComps button[aria-pressed="true"]').count() === 0, `${t} panel: y sueltas`);
   ok(comps > 2, `${t} panel: competiciones del fútbol (${comps})`);
   // «⋯» → «Poner siempre los de …».
   const mas = p.locator('.pt-mas summary').first();

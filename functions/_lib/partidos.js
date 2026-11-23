@@ -114,15 +114,19 @@ function leeEstado(qs) {
   const lat = redondea(Number.parseFloat(qs.get('lat') || ''));
   const lng = redondea(Number.parseFloat(qs.get('lng') || ''));
   const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-  const sport = de('sport', 20);
-  const comp = de('comp', 70).replace(/[^a-z0-9_:\- ]/gi, '');
+  // Deportes y competiciones, de varios a la vez (§4zzz-chips): en el orden
+  // de `KE.DEPORTES` y en el de la dirección (sin repetir). Ninguno o todos
+  // = todo; el «Todo» de antes (`?deporte=`) no cuenta.
+  const todos = (k) => [...qs.getAll(CLAVES.es[k]), ...qs.getAll(CLAVES.en[k])].flatMap((v) => String(v).split(','));
+  const sports = KE.DEPORTES.filter((x) => todos('sport').includes(x));
+  const comps = [...new Set(todos('comp').map((x) => x.trim().slice(0, 70).replace(/[^a-z0-9_:\- ]/gi, '')).filter(Boolean))].slice(0, 12);
   // La distancia de los filtros (la de Explorar, `?km=`), solo con «Cerca de
   // mí»; sin ella, la de siempre (5 km).
   return {
     q: (qs.get('q') || '').trim().slice(0, 60),
     city: cerca ? '' : de('city', 60),
-    sport: KE.DEPORTES.includes(sport) ? sport : '',
-    comp: KE.DEPORTES.includes(sport) ? comp : '',
+    sports,
+    comps: sports.length ? comps : [],
     cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
     // La barra de Explorar: de 1 a 100 km (los de antes también).
     km: cerca ? kmDeUrl(qs.get('km'), RADIO_KM) : RADIO_KM,
@@ -150,13 +154,22 @@ function query(e, lang, { sinQ = false, sinDeporte = false } = {}) {
     p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng));
     if (e.km && e.km !== RADIO_KM) p.set('km', String(e.km));
   } else if (e.city) p.set(K.city, e.city);
-  if (!sinDeporte && e.sport) p.set(K.sport, e.sport);
-  if (!sinDeporte && e.sport && e.comp) p.set(K.comp, e.comp);
+  if (!sinDeporte) for (const x of KE.DEPORTES.filter((d) => (e.sports || []).includes(d))) p.append(K.sport, x);
+  if (!sinDeporte && (e.sports || []).length) for (const c of e.comps || []) p.append(K.comp, c);
   return p.toString();
 }
 /** Solo la zona (para los enlaces al detalle y a la lista). */
 const zonaQs = (e, lang) => query({ city: e.city, cerca: e.cerca, lat: e.lat, lng: e.lng, km: e.km }, lang);
 const conQs = (path, qs) => (qs ? `${path}?${qs}` : path);
+/** Varias listas de partidos en una: sin repetir, primero lo que ponen bares
+ * (como la base) y por hora. */
+const juntaPartidos = (listas) => {
+  const vistos = new Set();
+  const bares = (b) => (Number(b.bars) > 0 ? 0 : 1);
+  return listas.flat().filter((b) => b && !vistos.has(b.id) && vistos.add(b.id))
+    .sort((a, b) => bares(a) - bares(b) || String(a.starts_at || '').localeCompare(String(b.starts_at || '')))
+    .slice(0, 120);
+};
 
 /** El punto desde el que se cuentan los bares: tu posición o el centro de la
  * ciudad (`cities`); sin zona, ninguno (cuenta los de todas partes). */
@@ -270,15 +283,23 @@ export async function partidosPage(url, lang) {
   const conTexto = e.q.length >= 2;
   // Todo lo que viene (primero lo que ponen bares) y las competiciones con
   // algo (de ahí salen los chips de deportes y de competiciones).
-  const [lista, comps] = await Promise.all([
-    rpcAll('where_to_watch', {
-      p_q: conTexto ? e.q : null, p_sport: e.sport || null, p_competition: e.comp || null,
-      ...zonaRpc(e), p_lang: lang, p_limit: 120, p_all: true,
-    }),
-    rpcAll('broadcast_competitions', { p_sport: null, p_lang: lang }).catch(() => []),
-  ]);
-  const deportes = KE.DEPORTES.filter((s) => comps.some((c) => c.sport === s) || lista.some((b) => b.sport === s));
-  const compsDeporte = e.sport ? comps.filter((c) => c.sport === e.sport) : [];
+  const comps = await rpcAll('broadcast_competitions', { p_sport: null, p_lang: lang }).catch(() => []);
+  // Lo que se pide: la base filtra por un deporte y una competición. Cada
+  // deporte pulsado va con sus competiciones pulsadas (si no, entero); con
+  // varios, una petición por cada uno y juntas (sin repetir; primero lo que
+  // ponen bares y por hora). Ninguno pulsado, todo.
+  const compsDe = (sp) => comps.filter((c) => c.sport === sp && e.comps.includes(c.key)).map((c) => c.key);
+  const pares = e.sports.flatMap((sp) => (compsDe(sp).length ? compsDe(sp).map((c) => [sp, c]) : [[sp, null]]));
+  const pide = ([sp, c]) => rpcAll('where_to_watch', {
+    p_q: conTexto ? e.q : null, p_sport: sp, p_competition: c,
+    ...zonaRpc(e), p_lang: lang, p_limit: 120, p_all: true,
+  });
+  const lista = pares.length <= 1
+    ? await pide(pares[0] || [null, null])
+    : juntaPartidos(await Promise.all(pares.slice(0, 12).map(pide)));
+  const deportes = KE.DEPORTES.filter((s) => comps.some((c) => c.sport === s) || lista.some((b) => b.sport === s) || e.sports.includes(s));
+  // Con algún deporte pulsado, las competiciones de esos deportes.
+  const compsDeporte = e.sports.length ? comps.filter((c) => e.sports.includes(c.sport)) : [];
 
   const link = (cambios) => {
     const b = { ...e, ...cambios };
@@ -299,14 +320,22 @@ export async function partidosPage(url, lang) {
   </form>`;
 
   // La fila de filtros: la zona y los deportes que hay (si hay más de uno).
-  const chip = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}"${on ? ' aria-current="true"' : ''}>${esc(label)}</a>`;
-  const chips = deportes.length > 1 || e.sport
-    ? [chip(link({ sport: '', comp: '' }), S.all, !e.sport), ...deportes.map((s) => chip(link({ sport: s, comp: '' }), KE.deporte(s, lang), e.sport === s))].join('')
+  // Se pulsan y se sueltan, varios a la vez (el lector dice «pulsado»); sin
+  // «Todo»: ninguno pulsado es todo.
+  const pulsable = (href, label, on) => `<a class="chip${on ? ' on' : ''}" href="${esc(href)}" role="button" aria-pressed="${on}">${esc(label)}</a>`;
+  const alterna = (lista, x) => (lista.includes(x) ? lista.filter((y) => y !== x) : [...lista, x]);
+  const chips = deportes.length > 1 || e.sports.length
+    ? deportes.map((s) => {
+      const sports = alterna(e.sports, s);
+      // Al soltar un deporte, fuera sus competiciones.
+      const compsQuedan = e.comps.filter((k) => comps.some((c) => c.key === k && sports.includes(c.sport)));
+      return pulsable(link({ sports, comps: compsQuedan }), KE.deporte(s, lang), e.sports.includes(s));
+    }).join('')
     : '';
   // Con un deporte elegido, sus competiciones («LaLiga», «Champions…»).
   const chipsComp = compsDeporte.length > 1
     ? `<div class="barra-filtros partidos-barra partidos-comps" role="group" aria-label="${esc(S.competition)}">
-        ${[chip(link({ comp: '' }), S.compAll, !e.comp), ...compsDeporte.map((c) => chip(link({ comp: c.key }), c.name, e.comp === c.key))].join('')}
+        ${compsDeporte.map((c) => pulsable(link({ comps: alterna(e.comps, c.key) }), c.name, e.comps.includes(c.key))).join('')}
       </div>`
     : '';
   const barra = `<div class="barra-filtros partidos-barra">
@@ -334,13 +363,13 @@ export async function partidosPage(url, lang) {
       <p>${esc(S.notFoundText)}</p>
       <div class="vacio-botones">
         <a class="pill accent" href="${esc(`${cuentaBase(lang, 'equipos')}`)}">${esc(S.followTeam)}</a>
-        <a class="pill" href="${esc(link({ q: '', sport: '' }))}">${esc(S.seeAll)}</a>
+        <a class="pill" href="${esc(link({ q: '', sports: [], comps: [] }))}">${esc(S.seeAll)}</a>
       </div>
     </section>`;
   } else {
     // Ningún bar cerca pone nada: centrada, con «Seguir» (y, con
     // una zona, mirar en todas las ciudades).
-    const todas = e.city || e.cerca ? `<a class="pill" href="${esc(link({ city: '', cerca: false, sport: '' }))}">${esc(en ? 'See every city' : 'Ver todas las ciudades')}</a>` : '';
+    const todas = e.city || e.cerca ? `<a class="pill" href="${esc(link({ city: '', cerca: false, sports: [], comps: [] }))}">${esc(en ? 'See every city' : 'Ver todas las ciudades')}</a>` : '';
     cuerpo = `<section class="vacio">
       <span class="vacio-ic" aria-hidden="true">${ic('balon', 30)}</span>
       <h2>${esc(S.emptyTitle)}</h2>
@@ -362,7 +391,7 @@ export async function partidosPage(url, lang) {
 
   // Una búsqueda, una zona o un deporte concretos no aportan nada al índice
   // de Google; la página limpia sí.
-  const filtrada = Boolean(e.q || e.city || e.cerca || e.sport || e.comp);
+  const filtrada = Boolean(e.q || e.city || e.cerca || e.sports.length || e.comps.length);
   const migas = [['Klendar', en ? '/en' : '/'], [S.title, `${base}`]];
   return html(publicPage({
     lang,

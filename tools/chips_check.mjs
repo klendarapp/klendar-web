@@ -11,8 +11,11 @@
 //  2. «Descuentos para»: casillas por carné (sin «Todos»), varios a la vez
 //     (`card_student` y `card_senior` a la base, en orden fijo); el
 //     `?descuento-para=estudiantes` de antes vale igual.
-//  3. Guías, Grupos, Dónde ver el partido y las reseñas de la ficha: sin
-//     chip «Todo», de varios a la vez, con `aria-pressed` o casillas.
+//  3. Grupos y empresas: los tipos sin «Todos», varios a la vez (uno por tipo
+//     a la base y juntos; todos o ninguno, todo).
+//  4. Dónde verlo: deportes y competiciones sin «Todo»/«Todas», varios a la
+//     vez (cada deporte con sus competiciones pulsadas, o entero).
+// (Las guías, en tools/guias_check.mjs.)
 //
 //   node tools/chips_check.mjs
 import { webConDatos } from './_web_con_datos.mjs';
@@ -20,7 +23,31 @@ import { webConDatos } from './_web_con_datos.mjs';
 let fallos = 0;
 const ok = (c, m, extra = '') => { if (c) console.log(`ok: ${m}`); else { fallos += 1; console.log(`FALLO: ${m} ${extra}`); } };
 
-const web = await webConDatos({ puerto: Number(process.env.PORT || 8951) });
+// Grupos: cuatro sitios, cada uno de un tipo; la base filtra por uno.
+const GRUPOS = [
+  { id: 'g1', name: 'Asador Uno', kinds: ['company_dinner'], distance_m: 400, max_people: 40 },
+  { id: 'g2', name: 'Bar Dos', kinds: ['afterwork'], distance_m: 100, max_people: 20 },
+  { id: 'g3', name: 'Escape Tres', kinds: ['team_activity'], distance_m: 900, max_people: 12 },
+  { id: 'g4', name: 'Salón Cuatro', kinds: ['celebration', 'company_dinner'], distance_m: 200, max_people: 80 },
+];
+// Dónde verlo: fútbol (LaLiga y Champions) y baloncesto (NBA).
+const enHoras = (h) => new Date(Date.now() + h * 36e5).toISOString();
+const PARTIDOS = [
+  { id: 'p1', sport: 'football', competition_code: 'laliga', competition: 'LaLiga', title: 'Betis – Sevilla', starts_at: enHoras(5), bars: 1 },
+  { id: 'p2', sport: 'football', competition_code: 'champions', competition: 'Champions League', title: 'Madrid – Milan', starts_at: enHoras(6), bars: 0 },
+  { id: 'p3', sport: 'basketball', competition_code: 'nba', competition: 'NBA', title: 'Lakers – Celtics', starts_at: enHoras(7), bars: 0 },
+];
+const web = await webConDatos({
+  puerto: Number(process.env.PORT || 8951),
+  rpc: {
+    group_venues: (a) => GRUPOS.filter((g) => !a.p_kind || g.kinds.includes(a.p_kind)),
+    where_to_watch: (a) => PARTIDOS.filter((x) => (!a.p_sport || x.sport === a.p_sport) && (!a.p_competition || x.competition_code === a.p_competition)),
+    broadcast_competitions: () => [
+      { key: 'laliga', name: 'LaLiga', sport: 'football' }, { key: 'champions', name: 'Champions League', sport: 'football' },
+      { key: 'nba', name: 'NBA', sport: 'basketball' }, { key: 'acb', name: 'Liga Endesa', sport: 'basketball' },
+    ],
+  },
+});
 const ultima = (fn) => [...web.llamadas].reverse().find((l) => l.fn === fn)?.args;
 const pagina = async (ruta) => {
   web.llamadas.length = 0;
@@ -79,6 +106,34 @@ try {
     ok(JSON.stringify(ultima('public_explore')?.p_filters?.traits) === JSON.stringify(['card_youth']), 'Descuentos para: el de antes (uno) vale igual');
     ({ h } = await pagina('/explorar?vista=lista&descuento-para=estudiantes,jovenes'));
     ok((ultima('public_explore')?.p_filters?.traits || []).length === 2, 'Descuentos para: también con comas');
+  }
+
+  // ── 3. Grupos y empresas ───────────────────────────────────────────────
+  {
+    let { h } = await pagina('/grupos');
+    ok(!/>Todos<\/a>/.test(h) && (h.match(/role="button" aria-pressed="false"/g) || []).length === 4, 'Grupos: cuatro tipos sin «Todos», con aria-pressed');
+    ({ h } = await pagina('/grupos?tipo=afterwork'));
+    ok(ultima('group_venues')?.p_kind === 'afterwork' && h.includes('Bar Dos') && !h.includes('Asador Uno'), 'Grupos: con uno, ese');
+    ({ h } = await pagina('/grupos?tipo=celebration&tipo=afterwork'));
+    const pedidos = web.llamadas.filter((l) => l.fn === 'group_venues').map((l) => l.args.p_kind);
+    ok(JSON.stringify(pedidos) === JSON.stringify(['afterwork', 'celebration']) && h.includes('Bar Dos') && h.includes('Salón Cuatro') && !h.includes('Escape Tres'),
+      'Grupos: con dos, uno por tipo y juntos', JSON.stringify(pedidos));
+    ok(h.indexOf('Bar Dos') < h.indexOf('Salón Cuatro'), 'Grupos: juntos, por cercanía');
+    ok(/tipo=afterwork&amp;tipo=celebration/.test(h) && (h.match(/aria-pressed="true"/g) || []).length === 2, 'Grupos: los dos pulsados y en orden fijo en los enlaces');
+    ({ h } = await pagina('/grupos?tipo=company_dinner&tipo=afterwork&tipo=team_activity&tipo=celebration'));
+    ok(ultima('group_venues')?.p_kind === null && ['Asador Uno', 'Bar Dos', 'Escape Tres', 'Salón Cuatro'].every((n) => h.includes(n)), 'Grupos: con todos, todo (una petición)');
+    ({ h } = await pagina('/grupos?tipo=todos'));
+    ok(ultima('group_venues')?.p_kind === null && !/aria-pressed="true"/.test(h), 'Grupos: el ?tipo=todos de antes = todo');
+  }
+
+  // ── 4. Dónde verlo ─────────────────────────────────────────────────────
+  {
+    let { h } = await pagina('/partidos');
+    ok(!/>Todo<\/a>/.test(h) && /role="button" aria-pressed="false">Fútbol</.test(h), 'Dónde verlo: deportes sin «Todo», con aria-pressed');
+    ({ h } = await pagina('/partidos?deporte=basketball&deporte=football&competicion=champions'));
+    ok(h.includes('Madrid – Milan') && h.includes('Lakers – Celtics') && !h.includes('Betis – Sevilla'), 'Dónde verlo: fútbol solo la Champions y el baloncesto entero');
+    ok(!/>Todas<\/a>/.test(h) && /aria-pressed="true">Champions League</.test(h) && /aria-pressed="false">Liga Endesa</.test(h), 'Dónde verlo: competiciones de los dos deportes, sin «Todas»');
+    ok(/deporte=football&amp;deporte=basketball/.test(h), 'Dónde verlo: deportes en orden fijo en los enlaces');
   }
 } finally {
   await web.cierra();
