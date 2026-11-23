@@ -51,7 +51,7 @@ const ahora = Date.now();
 const iso = (h) => new Date(ahora + h * 3600e3).toISOString();
 const oferta = (n, titulo, extra = {}) => ({
   id: `0ff00000-0000-4000-8000-00000000a99${n}`, business_id: BIZ, title: titulo, kind: 'flash_offer', status: 'active', panel_state: 'activa',
-  redeem_start_at: iso(-1), redeem_end_at: iso(4), views: 120, redemptions_count: 4, audience: 'all', price_cents: 250, ...extra,
+  redeem_start_at: iso(-1), redeem_end_at: iso(4), views: 120, redemptions_count: 4, audience: 'all', price_cents: 250, moderation_status: 'approved', ...extra,
 });
 const OFERTAS = [oferta(1, 'Café + tostada'), oferta(2, 'Concierto acústico', { kind: 'future_event', event_at: iso(5), event_end_at: iso(7), reservations_enabled: true, max_redemptions: 40, seats_taken: 22 })];
 const TOOLS = {
@@ -192,6 +192,12 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(/<a href="\/cartel\/0ff00000-0000-4000-8000-0000000c0a01" target="_blank"[^>]*>Imprimir cartel/.test(acc[0]) && !/Cartel para imprimir/.test(acc[0]), 'Publicar: «Imprimir cartel» lleva al cartel de la web');
   ok(/data-act="cartel-no"[^>]*>Imprimir cartel/.test(acc[1]) && /data-act="cartel-no"/.test(acc[2]), 'Publicar: exclusiva y +18, el botón sin enlace (dice por qué)');
   ok(!/Imprimir cartel/.test(acc[3]), 'Publicar: una de RRPP, sin cartel');
+  // En la lista de verdad: «Más ▾» de la primera, con «Imprimir cartel».
+  const mas = p.locator('details.mas').first();
+  await mas.locator('summary').click();
+  ok(await mas.locator('a', { hasText: 'Imprimir cartel' }).isVisible(), 'Publicar: «Más ▾» enseña «Imprimir cartel»');
+  await mas.screenshot({ path: `${OUT}/panelapp_imprimir_cartel.png` }).catch(() => {});
+  await p.screenshot({ path: `${OUT}/panelapp_publicar_mas.png` });
   await ctx.close();
 }
 
@@ -211,6 +217,7 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   // La pegatina de escaparate, junto al cartel del local (§4zzz-cartel).
   const local = await p.$$eval('#g-en-el-local [data-neg]', (es) => es.map((e) => e.dataset.neg));
   ok(local.indexOf('sticker') === local.indexOf('poster') + 1, `Negocio: «Pegatina» justo después de «Cartel» (${local.join(', ')})`);
+  await p.locator('#g-en-el-local').screenshot({ path: `${OUT}/panelapp_en_el_local.png` });
   ok(await p.$eval('[data-neg="sticker"]', (a, id) => a.target === '_blank' && new URL(a.href).pathname === `/cartel/pegatina/${id}` && /Pegatina de escaparate/.test(a.getAttribute('aria-label')), BIZ), 'Negocio: «Pegatina» abre la de su local en otra pestaña');
   await p.click('[data-neg="webWidget"]');
   ok(await p.$eval('#modal', (d) => d.open && /widget\.js/.test(d.textContent)), 'Negocio: «En tu web» abre la línea para pegar');
