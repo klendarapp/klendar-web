@@ -52,7 +52,7 @@
       opensOutside: 'Se abre fuera de Klendar',
       fPriceLevel: 'Precio del local', fUpTo: (s) => `Hasta ${s}`,
       fPriceHint: 'Lo que marca cada local: € económico, €⁠€ precio medio, €⁠€⁠€ caro o más. Marca uno o varios.',
-      fCards: 'Descuentos para', fCardsAny: 'Todos', fAny: 'Cualquiera',
+      fCards: 'Descuentos para', fAny: 'Cualquiera',
       fKidAges: 'Edad de los niños', fKidAgesHint: 'Planes para todas las edades que marques.',
     },
     en: {
@@ -86,7 +86,7 @@
       opensOutside: 'Opens outside Klendar',
       fPriceLevel: 'Venue price', fUpTo: (s) => `Up to ${s}`,
       fPriceHint: 'As each venue sets it: € inexpensive, €⁠€ moderate, €⁠€⁠€ expensive or more. Pick one or more.',
-      fCards: 'Discounts for', fCardsAny: 'Everyone', fAny: 'Any',
+      fCards: 'Discounts for', fAny: 'Any',
       fKidAges: 'Children’s age', fKidAgesHint: 'Plans that suit every age you tick.',
     },
   };

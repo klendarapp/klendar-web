@@ -382,7 +382,7 @@ ${siteHeader(lang, esc(es + (consultas ? consultas.es : consulta)), esc(enPath +
 <main class="pub wrap" id="contenido">${body}</main>
 ${siteFooter(lang)}
 ${conTarjetas || conAmigos ? `<script src="/assets/celda.js?v=1" defer></script>
-` : ''}${conAmigos ? `<script src="/assets/amigos.js?v=20261123celda" defer data-lang="${en ? 'en' : 'es'}"></script>
+` : ''}${conAmigos ? `<script src="/assets/amigos.js?v=20261123chips" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261028rp" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261123celda" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>

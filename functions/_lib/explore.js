@@ -998,7 +998,7 @@ const preciosTraits = (e) => (e.preciosLocal || []).map((l) => `price_is_${l}`);
 const traitsMarcas = (e) => [
   ...((e.traits || []).includes('kids') ? (e.edades || []).map((a) => `age_${a}`) : []),
   ...preciosTraits(e),
-  ...(e.carne ? [`card_${e.carne}`] : []),
+  ...(e.carnes || []).map((c) => `card_${c}`),
   ...(e.solo ? ['solo'] : []),
   ...(e.solidario ? ['charity'] : []),
   // «Agenda pública»: lo de entidades (migración 20261130100000).
@@ -1012,6 +1012,14 @@ const VALORES_ES = {
 };
 const NORMAL = { ...Object.fromEntries(Object.entries(VALORES_ES).map(([k, v]) => [v, k])), sitios: 'places' };
 const norm = (v) => NORMAL[v] || v;
+/** Los tipos de ¿Qué? › Tipo, en el orden en que van en la dirección. */
+const TIPOS = ['offers', 'events'];
+/** El tipo que se pide a la base: uno solo pulsado, ese; ninguno o los dos, ''. */
+const tipoDe = (kinds) => (kinds && kinds.length === 1 ? kinds[0] : '');
+/** Los tipos de un estado: la lista (`kinds`) si cuadra con `kind`; si
+ * alguien solo cambió `kind` (un enlace de la página), ese. `kind: ''` con
+ * `kinds: []` los quita. */
+const tiposDe = (e) => (Array.isArray(e.kinds) && tipoDe(e.kinds) === (e.kind || '') ? TIPOS.filter((k) => e.kinds.includes(k)) : e.kind ? [e.kind] : []);
 const enIdioma = (v, en) => (en ? v : VALORES_ES[v] || v);
 /** Orden de la app por defecto: «Recomendado» (`FeedFilters.defaultSort`):
  * lo de hoy según el tiempo y tus gustos encima de lo más nuevo. No se
@@ -1027,13 +1035,18 @@ const posUrl = (x) => redondeaPos(Number(x)).toFixed(3);
 /** Lee el estado de la dirección (con las claves de cualquiera de los dos idiomas). */
 function leeEstado(qs) {
   const de = (k, max) => (qs.get(CLAVES.es[k]) || qs.get(CLAVES.en[k]) || '').slice(0, max);
-  let kind = norm(de('kind', 20));
+  // Varios valores (`?sitio=a&sitio=b`) o separados por comas.
+  const todos = (k) => [...qs.getAll(CLAVES.es[k]), ...qs.getAll(CLAVES.en[k])];
+  // El tipo, de varios a la vez (§4zzz-chips): `?tipo=ofertas&tipo=eventos`
+  // (o con comas). Ninguno o los dos = todo; lo que no es un tipo (el
+  // `?tipo=todos` de antes) no cuenta.
+  const tiposDir = todos('kind').flatMap((v) => String(v).split(',')).map((v) => norm(v.trim().slice(0, 20)));
   // Qué se busca: Planes (de serie) o Sitios (`?que=sitios`, `?what=places`).
   // «Negocios» era un tipo más; los enlaces de antes (`?tipo=negocios`,
   // `?ver=negocios`) llevan ahora a Sitios.
   let que = norm(de('what', 20)) === 'places' ? 'places' : '';
-  if (kind === 'places' || /^(places|negocios)$/.test(de('show', 20))) { kind = ''; que = 'places'; }
-  if (!['offers', 'events'].includes(kind)) kind = '';
+  if (tiposDir.includes('places') || /^(places|negocios)$/.test(de('show', 20))) que = 'places';
+  const kinds = TIPOS.filter((k) => tiposDir.includes(k));
   const price = norm(de('price', 10));
   const when = norm(de('when', 12));
   const sort = norm(de('sort', 12));
@@ -1052,8 +1065,6 @@ function leeEstado(qs) {
   const cerca = Boolean(punto);
   const lat = punto ? punto.lat : NaN;
   const lng = punto ? punto.lng : NaN;
-  // Varios valores (`?sitio=a&sitio=b`) o separados por comas.
-  const todos = (k) => [...qs.getAll(CLAVES.es[k]), ...qs.getAll(CLAVES.en[k])];
   const traits = ordenaSitio(todos('place').flatMap((v) => String(v).split(',')).slice(0, 24).map(sitioDeUrl));
   const tiempo = todos('weather');
   // Marcas: edad (con «Con niños»), precio del local, carné, solo, solidario.
@@ -1081,7 +1092,10 @@ function leeEstado(qs) {
     // es la primera (lo que piden las páginas de una sola).
     cats,
     cat: cats[0] || '',
-    kind,
+    // Los tipos pulsados (en orden fijo: ofertas, eventos) y el que se pide
+    // a la base: uno solo, o '' (ninguno o los dos = todo).
+    kinds,
+    kind: tipoDe(kinds),
     // «Gratis» (`free`, también `0`) o hasta N € (1 a 100); los de antes valen.
     price: precioDeUrl(price),
     when: ['now', 'today', 'tomorrow', 'next10', 'tonight', 'weekend'].includes(when) ? when : '',
@@ -1105,7 +1119,10 @@ function leeEstado(qs) {
     traits,
     edades: traits.includes('kids') ? edades : [],
     preciosLocal,
-    carne: CARNE_URL[de('card', 20)] || '',
+    // «Descuentos para», de varios a la vez (§4zzz-chips, con «o»; migración
+    // 20261289200000): `?descuento-para=estudiantes&descuento-para=mayores`
+    // (o con comas), en el orden de `KM.CARDS`. El de antes (uno) vale igual.
+    carnes: KM.CARDS.filter((c) => todos('card').flatMap((v) => String(v).split(',')).some((v) => CARNE_URL[v.trim()] === c)),
     solo: de('solo', 2) === '1',
     solidario: de('charity', 2) === '1',
     entidad: de('entity', 2) === '1',
@@ -1175,7 +1192,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
   // guarda (`guardaFiltros`).
   if (!soloCompartido && enVisita(e)) p.set(en ? 'visit' : 'visita', '1');
   for (const c of catsDe(e)) p.append(K.cat, c);
-  if (e.kind) p.set(K.kind, enIdioma(e.kind, en));
+  for (const k of tiposDe(e)) p.append(K.kind, enIdioma(k, en));
   if (e.abierto) p.set(K.open, '1');
   if (e.price) p.set(K.price, enIdioma(e.price, en));
   if (e.when) p.set(K.when, enIdioma(e.when, en));
@@ -1197,7 +1214,7 @@ function query(e, lang, { soloCompartido = false } = {}) {
   for (const t of e.traits || []) p.append(K.place, sitioAUrl(t, en));
   if ((e.traits || []).includes('kids')) for (const a of e.edades || []) p.append(K.age, edadAUrl(a));
   for (const l of e.preciosLocal || []) p.append(K.vprices, String(l));
-  if (e.carne) p.set(K.card, carneAUrl(e.carne, en));
+  for (const c of e.carnes || []) p.append(K.card, carneAUrl(c, en));
   if (e.solo) p.set(K.solo, '1');
   if (e.solidario) p.set(K.charity, '1');
   if (e.entidad) p.set(K.entity, '1');
@@ -1302,7 +1319,7 @@ function resumenFiltros(e, S) {
     partes.push(edades.length ? `${S.withKids} (${edades.join(', ')})` : S.withKids);
   }
   if (!sitios && e.solo) partes.push(marca('solo'));
-  if (!sitios && e.carne) partes.push(marca(`card_${e.carne}`));
+  if (!sitios) for (const c of e.carnes || []) partes.push(marca(`card_${c}`));
   if (!sitios && e.amigos) partes.push(S.friends);
   // Cómo es el sitio y alérgenos.
   if (e.preciosLocal?.length) partes.push(e.preciosLocal.map((l) => '€'.repeat(l)).join(', '));
@@ -1520,7 +1537,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     // caché); lo filtra /assets/amigos.js en el navegador.
   };
   const pKind = esOfertas ? 'flash_offer' : esEventos ? 'future_event' : null;
-  const filtrado = Boolean(e.que || q || city || cat || kind || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vistaEnUrl({ ...e, vista }) || e.buscar || e.amigos || e.sinGustos
+  const filtrado = Boolean(e.que || q || city || cat || kind || (e.kinds || []).length || page > 1 || price || when || soloDescuento || abierto || sort || cerca || vistaEnUrl({ ...e, vista }) || e.buscar || e.amigos || e.sinGustos
     || traits.length || traitsMarcas(e).length || antesCierre || menuDia || comerAhora || e.momento || tiempoOff || gustos.length);
 
   const argsExplore = {
@@ -1997,7 +2014,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const porSlug = new Map(catsHoja.map((c) => [c.slug, c]));
   const nombreCat = (slug) => { const c = porSlug.get(slug) || (cats || []).find((x) => x.slug === slug); return c ? catName(c, en) : slug; };
   const partesQue = [
-    !negocios && esOfertas ? S.offers : '', !negocios && esEventos ? S.events : '',
+    ...(negocios ? [] : (e.kinds || []).map((k) => (k === 'offers' ? S.offers : S.events))),
     e.menuDia ? S.dailyMenu : '', !negocios && antesCierre ? S.beforeClosing : '',
     ...catsSel.map(nombreCat),
   ].filter(Boolean);
@@ -2031,12 +2048,12 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     summary: chipHoja('tipo', partesQue.join(', ') || S.all, partesQue.length > 0,
       `${S.whatQ}: ${partesQue.join(', ') || S.all}`, '', primeroMas(partesQue)),
     titulo: S.whatTitle, resetTxt: S.clearQ,
-    reset: link({ kind: '', menuDia: false, antesCierre: false, cat: '', cats: [] }),
+    reset: link({ kind: '', kinds: [], menuDia: false, antesCierre: false, cat: '', cats: [] }),
     ocultos: ocultosMenos(new Set([K.kind, K.menu, K.closing, K.cat])),
-    cuerpo: `${negocios ? '' : `<fieldset><legend>${esc(S.type)}</legend><div class="ops">
-        ${radio(K.kind, '', S.all, !kind)}
-        ${radio(K.kind, enIdioma('offers', en), S.offers, esOfertas)}
-        ${radio(K.kind, enIdioma('events', en), S.events, esEventos)}
+    // El tipo, de varios a la vez y sin «Todo» (§4zzz-chips): ninguno o los
+    // dos, todo. Casillas (el lector dice «marcada»).
+    cuerpo: `${negocios ? '' : `<fieldset class="hoja-casillas"><legend>${esc(S.type)}</legend><div class="ops">
+        ${TIPOS.map((k) => `<label class="op-r"><input type="checkbox" name="${K.kind}" value="${esc(enIdioma(k, en))}"${(e.kinds || []).includes(k) ? ' checked' : ''}><span>${esc(k === 'offers' ? S.offers : S.events)}</span></label>`).join('')}
       </div><p class="hoja-nota hoja-nota-bajo">${esc(S.whatHint)}</p></fieldset>`}
       <fieldset class="hoja-casillas"><legend>${esc(S.forEating)}</legend><div class="ops">
         ${casilla(K.menu, S.dailyMenu, e.menuDia)}
@@ -2054,7 +2071,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   const atributos = sitioSinNinos(e).filter((t) => !esDieta(t));
   const dietas = sitioSinNinos(e).filter((t) => esDieta(t));
   const nPrecio = !negocios && price ? 1 : 0;
-  const nParaQuien = negocios ? 0 : [ninosOn, e.solo, e.carne, e.amigos].filter(Boolean).length;
+  const nParaQuien = negocios ? 0 : [ninosOn, e.solo, (e.carnes || []).length > 0, e.amigos].filter(Boolean).length;
   const nComo = (e.preciosLocal?.length ? 1 : 0) + atributos.length;
   const nDietas = dietas.length;
   const nMas = negocios ? 0 : [e.solidario, e.entidad, soloDescuento].filter(Boolean).length;
@@ -2099,9 +2116,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
         ${casilla(K.solo, M.solo, e.solo)}
         <span data-amigos-hoja hidden></span>
       </div></fieldset>
-      <fieldset><legend>${esc(M.fCards)}</legend><div class="ops">
-        ${radio(K.card, '', M.fCardsAny, !e.carne)}
-        ${KM.CARDS.map((c) => radio(K.card, carneAUrl(c, en), M.cardFor[c], e.carne === c)).join('')}
+      <fieldset class="hoja-casillas"><legend>${esc(M.fCards)}</legend><div class="ops">
+        ${KM.CARDS.map((c) => `<label class="op-r"><input type="checkbox" name="${K.card}" value="${esc(carneAUrl(c, en))}" data-cuenta-uno${(e.carnes || []).includes(c) ? ' checked' : ''}><span>${esc(M.cardFor[c])}</span></label>`).join('')}
       </div></fieldset>`);
   // Una casilla de «Cómo es el sitio» o de «Alérgenos y dietas» (con su icono).
   const opSitio = (x) => `<label class="op-r op-sitio"><input type="checkbox" name="${K.place}" value="${esc(sitioAUrl(x.id, en))}"${traits.includes(x.id) ? ' checked' : ''}><span>${icSitio(x.id, 18)}${esc(en ? x.en : x.es)}</span></label>`;
@@ -2131,7 +2147,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // de Planes) también se queda.
   const ninosUrl = sitioAUrl('kids', en);
   const restablecer = link({ price: negocios ? price : '', soloDescuento: negocios ? soloDescuento : false, traits: negocios && ninosOn ? ['kids'] : [], edades: negocios ? e.edades : [],
-    preciosLocal: [], carne: negocios ? e.carne : '', solo: negocios ? e.solo : false, solidario: negocios ? e.solidario : false,
+    preciosLocal: [], carnes: negocios ? e.carnes : [], solo: negocios ? e.solo : false, solidario: negocios ? e.solidario : false,
     entidad: negocios ? e.entidad : false, amigos: negocios ? e.amigos : false, ...(conOrden ? { sort: '' } : {}) });
   const propiasFiltros = negocios ? new Set([K.vprice, K.place]) : new Set([K.price, K.age, K.card, K.solo, 'amigos', K.vprice, K.place, K.charity, K.entity, K.discount,
     ...(conOrden ? [K.sort, K.weather, K.notastes] : [])]);
@@ -2550,8 +2566,8 @@ ${GRUPOS_CSS}` : ''}`;
     // «Quitar filtros» deja el calendario sin lo que quita publicaciones
     // (la zona y la distancia se quedan, como `clearNarrowing` en la app).
     const quitarCal = conFiltros ? link({
-      q: '', cat: '', cats: [], kind: '', price: '', when: '', soloDescuento: false, abierto: false, amigos: false, traits: [], edades: [],
-      preciosLocal: [], carne: '', solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '',
+      q: '', cat: '', cats: [], kind: '', kinds: [], price: '', when: '', soloDescuento: false, abierto: false, amigos: false, traits: [], edades: [],
+      preciosLocal: [], carnes: [], solo: false, solidario: false, entidad: false, antesCierre: false, menuDia: false, comerAhora: false, momento: '',
     }) : '';
     resultados = calendarioHtml({
       items, lang, S, link, mes, dia, hoy,

@@ -510,7 +510,12 @@
   function filtroAmigos(sb) {
     var q = new URLSearchParams(location.search);
     var de = function () { for (var i = 0; i < arguments.length; i++) { var v = q.get(arguments[i]); if (v) return v; } return ''; };
-    var tipo = de('tipo', 'type');
+    // El tipo, de varios a la vez (§4zzz-chips): uno solo, ese; los dos o
+    // ninguno, todo.
+    var tipos = q.getAll('tipo').concat(q.getAll('type')).join(',').split(',');
+    var conOf = tipos.some(function (x) { return /^(ofertas|offers)$/.test(x); });
+    var conEv = tipos.some(function (x) { return /^(eventos|events)$/.test(x); });
+    var tipo = tipos.some(function (x) { return /^(negocios|places)$/.test(x); }) ? 'negocios' : conOf !== conEv ? (conOf ? 'ofertas' : 'eventos') : '';
     if (/^(mapa|map|calendario|calendar)$/.test(de('vista', 'view')) || /^(negocios|places)$/.test(tipo) ||
         /^(negocios|places)$/.test(de('ver', 'show'))) return;
     var on = q.get('amigos') === '1';
