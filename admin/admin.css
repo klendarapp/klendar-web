@@ -613,3 +613,9 @@ a.kpi:hover, a.kpi:focus-visible { border-color: var(--accent-text); }
 /* Modo mantenimiento encendido: que se vea de lejos. */
 .card.mant.encendido { border-color: #b3261e; }
 .detail-head a.tag { text-decoration: none; color: inherit; } .detail-head a.tag:hover { text-decoration: underline; }
+/* Pantallas anchas (§4zzz-tablet): las notas de los apartados no pasan de
+   unas 90 letras por renglón (en un portátil de 1.366 iban de 1.000 px), y
+   desde 1.700 px el contenido se queda en 1.400 y centrado en lo que deja el
+   menú (las tablas siguen teniendo sitio de sobra). */
+main.content p.muted { max-width: 90ch; }
+@media (min-width: 1700px) { main#view.content { width: 100%; max-width: 1400px; justify-self: center; } }
