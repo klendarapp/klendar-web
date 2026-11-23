@@ -18,7 +18,7 @@
 // (Las guías, en tools/guias_check.mjs.)
 //
 //   node tools/chips_check.mjs
-import { webConDatos } from './_web_con_datos.mjs';
+import { DATOS, webConDatos } from './_web_con_datos.mjs';
 
 let fallos = 0;
 const ok = (c, m, extra = '') => { if (c) console.log(`ok: ${m}`); else { fallos += 1; console.log(`FALLO: ${m} ${extra}`); } };
@@ -42,6 +42,8 @@ const web = await webConDatos({
   rpc: {
     group_venues: (a) => GRUPOS.filter((g) => !a.p_kind || g.kinds.includes(a.p_kind)),
     where_to_watch: (a) => PARTIDOS.filter((x) => (!a.p_sport || x.sport === a.p_sport) && (!a.p_competition || x.competition_code === a.p_competition)),
+    business_verified_review_count: () => 2,
+    business_reviews: (a) => [{ id: 'r1', rating: 5, comment: a.p_verified_only ? 'Reseña verificada' : 'Reseña cualquiera', created_at: enHoras(-30), verified: Boolean(a.p_verified_only) }],
     broadcast_competitions: () => [
       { key: 'laliga', name: 'LaLiga', sport: 'football' }, { key: 'champions', name: 'Champions League', sport: 'football' },
       { key: 'nba', name: 'NBA', sport: 'basketball' }, { key: 'acb', name: 'Liga Endesa', sport: 'basketball' },
@@ -134,6 +136,17 @@ try {
     ok(h.includes('Madrid – Milan') && h.includes('Lakers – Celtics') && !h.includes('Betis – Sevilla'), 'Dónde verlo: fútbol solo la Champions y el baloncesto entero');
     ok(!/>Todas<\/a>/.test(h) && /aria-pressed="true">Champions League</.test(h) && /aria-pressed="false">Liga Endesa</.test(h), 'Dónde verlo: competiciones de los dos deportes, sin «Todas»');
     ok(/deporte=football&amp;deporte=basketball/.test(h), 'Dónde verlo: deportes en orden fijo en los enlaces');
+  }
+
+  // ── 5. Reseñas de la ficha: un chip «Verificadas», sin «Todas» ─────────
+  {
+    const ficha = `/b/${DATOS.NEGOCIOS[0].slug}`;
+    let { h } = await pagina(`${ficha}?ver=resenas`);
+    const nav = (/<nav class="filtro-resenas"[^]*?<\/nav>/.exec(h) || [''])[0];
+    ok(nav && !/>Todas</.test(nav) && /role="button" aria-pressed="false"/.test(nav) && /resenas=verificadas/.test(nav), 'Reseñas: un chip sin «Todas», sin pulsar', nav.slice(0, 200));
+    ({ h } = await pagina(`${ficha}?ver=resenas&resenas=verificadas`));
+    const nav2 = (/<nav class="filtro-resenas"[^]*?<\/nav>/.exec(h) || [''])[0];
+    ok(ultima('business_reviews')?.p_verified_only === true && /aria-pressed="true"/.test(nav2) && !/resenas=verificadas/.test(nav2), 'Reseñas: pulsado, solo verificadas; al soltarlo, todas');
   }
 } finally {
   await web.cierra();

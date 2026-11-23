@@ -1098,7 +1098,7 @@ export async function businessPage(param, lang, search = '') {
         user: 'Klendar user', report: 'Report', reportShort: 'Report', editBiz: 'Edit page', myBiz: 'Go to the dashboard', block: 'Block', reportBiz: 'Report this business', menuPhotos: 'Photos of the menu',
         verifiedCustomer: 'Verified customer',
         verifiedWhat: "They've redeemed something at this business with Klendar: an offer, an event, a stamp reward, a birthday gift or something the business gave them with “Give on the spot”. We check it against what the business itself validated or gave at the venue.",
-        howReviews: 'How reviews work', allReviews: 'All',
+        howReviews: 'How reviews work',
         verifiedReviews: (n) => `Verified customers (${n})`, noVerified: 'No reviews from verified customers yet.',
         claim: 'Is this your business?', contact: 'Contact',
         replyFrom: (n) => `Reply from ${n}`,
@@ -1151,7 +1151,7 @@ export async function businessPage(param, lang, search = '') {
         user: 'Usuario de Klendar', report: 'Denunciar', reportShort: 'Denunciar', editBiz: 'Editar ficha', myBiz: 'Ir al panel', block: 'Bloquear', reportBiz: 'Denunciar este negocio', menuPhotos: 'Fotos de la carta',
         verifiedCustomer: 'Cliente verificado',
         verifiedWhat: 'Ha canjeado algo en este negocio con Klendar: una oferta, un evento, un premio de sellos, un regalo de cumpleaños o algo que el negocio le dio con «Dar en el momento». Lo comprobamos con lo que el propio negocio ha validado o dado en el local.',
-        howReviews: 'Cómo funcionan las reseñas', allReviews: 'Todas',
+        howReviews: 'Cómo funcionan las reseñas',
         verifiedReviews: (n) => `Clientes verificados (${n})`, noVerified: 'Aún no hay reseñas de clientes verificados.',
         claim: '¿Es tu negocio?', contact: 'Contacto',
         replyFrom: (n) => `Respuesta de ${n}`,
@@ -1469,8 +1469,7 @@ ${traducir(lang, `business:${b.id}`, carta.length ? `menu:${b.id}` : '')}${cuent
     ${ver === 'resenas' ? `<p><a class="pill" data-opinar="${esc(b.id)}" href="${cuenta(lang, `opinar/${encodeURIComponent(b.id)}`)}">${icono('resena', 16)} <span>${S.write}</span></a></p>` : ''}
     ${ver === 'preguntas' ? `<div data-preguntas-mias hidden></div>${preguntarHtml}` : ''}
     ${ver === 'resenas' && (nVerificadas > 0 || soloVerificadas) ? `<nav class="filtro-resenas" aria-label="${esc(S.reviews)}">
-      <a class="pill${soloVerificadas ? '' : ' on'}" href="${path}?ver=resenas"${soloVerificadas ? '' : ' aria-current="true"'}>${S.allReviews}</a>
-      <a class="pill${soloVerificadas ? ' on' : ''}" href="${path}?ver=resenas&amp;resenas=verificadas" rel="nofollow"${soloVerificadas ? ' aria-current="true"' : ''}>${esc(S.verifiedReviews(nVerificadas))}</a>
+      <a class="pill${soloVerificadas ? ' on' : ''}" href="${path}?ver=resenas${soloVerificadas ? '' : '&amp;resenas=verificadas'}" rel="nofollow" role="button" aria-pressed="${soloVerificadas}">${esc(S.verifiedReviews(nVerificadas))}</a>
     </nav>` : ''}
     ${lista.length
       ? (ver === 'novedades' ? `<div class="novedades">${lista.map(novedadHtml).join('')}</div>`
