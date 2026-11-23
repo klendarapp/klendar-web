@@ -459,7 +459,7 @@ async function pruebaFuera(nav, motor) {
   // El admin: su formulario de recuperar pide la vuelta a /cuenta/nueva-clave?destino=/admin/.
   await p.goto(`${ADMIN}/admin`);
   await p.waitForLoadState('domcontentloaded');
-  const adminJs = await (await p.request.get(`${ADMIN}/admin/admin.js`)).text();
+  const adminJs = await (await p.request.get(`${BASE}/admin/admin.js`)).text();
   ok(/\/cuenta\/nueva-clave\?destino=%2Fadmin(?!%2F)/.test(adminJs) && !/\/app\//.test(adminJs), `${motor} admin: la vuelta es /cuenta/nueva-clave?destino=/admin`);
   void estado;
   // «Dar en el momento» por el QR, con puntos en la ruta.
