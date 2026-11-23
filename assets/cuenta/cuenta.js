@@ -524,8 +524,8 @@ RUTAS.alerta = async ([id], params, crudo) => {
       <div class="campo-cat"><p class="etq" aria-hidden="true">${esc(t('¿De qué?'))} <small>${esc(t('Sin elegir ninguna, de todo.'))}</small></p>
         <div id="cats-aviso"></div></div>
       <fieldset class="chips"><legend>${esc(t('¿Ofertas o eventos?'))}</legend>
-        ${[['', t('Todo')], ['flash_offer', t('Ofertas')], ['future_event', t('Eventos')]].map(([v, l]) =>
-          `<label><input type="radio" name="kind" value="${v}"${(a.kind || '') === v ? ' checked' : ''}> ${esc(l)}</label>`).join('')}
+        ${[['flash_offer', t('Ofertas')], ['future_event', t('Eventos')]].map(([v, l]) =>
+          `<label><input type="checkbox" name="kind" value="${v}"${a.kind === v ? ' checked' : ''}> ${esc(l)}</label>`).join('')}
       </fieldset>
       <label>${esc(t('¿A cuánta distancia?'))} <output id="radio-txt">${esc(distancia(a.radius_m))}</output>
         <input type="range" name="radius" min="500" max="${maxRadio}" step="500" value="${esc(a.radius_m)}"></label>
@@ -579,7 +579,9 @@ RUTAS.alerta = async ([id], params, crudo) => {
         id: a.id,
         label: f.label.value.trim(),
         categories: $$('input[name=cat]', f).map((x) => x.value),
-        kind: f.kind.value || null,
+        // Sin «Todo» y de varios a la vez (§4zzz-chips): una sola marcada,
+        // esa; ninguna o las dos, todo.
+        kind: ((k) => (k.length === 1 ? k[0] : null))($$('input[name=kind]:checked', f).map((x) => x.value)),
         max_price_cents: precio == null ? null : Math.round(precio * 100),
         discount_only: f.descuento.checked,
         radius_m: Number(f.radius.value),
