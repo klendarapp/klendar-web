@@ -1133,6 +1133,12 @@ function menuConCabecera() {
     }
     document.body.classList.toggle('panel-sin-barra', ancho.matches);
   };
+  // Abierto en el menú lateral (abajo del todo), que se vea entero.
+  idioma?.addEventListener('toggle', () => {
+    if (!idioma.open || !idioma.closest('#side')) return;
+    const quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    idioma.querySelector('.idioma-menu')?.scrollIntoView({ block: 'nearest', behavior: quieto ? 'auto' : 'smooth' });
+  });
   coloca();
   ancho.addEventListener('change', coloca);
 }
