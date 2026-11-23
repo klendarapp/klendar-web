@@ -3818,6 +3818,7 @@ KL_DIC('ca', {
   "Volver a abrir": "Torna a obrir",
   "Volver a activar": "Torna a activar",
   "Volver a Hoy": "Torna a Avui",
+  "Volver a Klendar": "Torna a Klendar",
   "Volver a pedirlo": "Torna-ho a demanar",
   "Volver a seguirla": "Torna a seguir-la",
   "Volver a vender": "Torna a vendre'l",

@@ -3818,6 +3818,7 @@ KL_DIC('gl', {
   "Volver a abrir": "Abrir de novo",
   "Volver a activar": "Activar de novo",
   "Volver a Hoy": "Volver a Hoxe",
+  "Volver a Klendar": "Volver a Klendar",
   "Volver a pedirlo": "Pedilo de novo",
   "Volver a seguirla": "Seguila de novo",
   "Volver a vender": "Vender de novo",

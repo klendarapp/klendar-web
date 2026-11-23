@@ -8,25 +8,29 @@ body.admin-body { background: var(--surface); }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
 
 /* ── Barra lateral ──────────────────────────────────────────────────────── */
-.side { background: var(--ink); color: var(--surface); padding: 18px 14px; position: sticky; top: 0; height: 100dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
-@media (prefers-color-scheme: dark) { .side { background: #050505; color: #FAFAFA; border-right: 1px solid rgba(255,255,255,.08); } }
+/* Sigue el tema, como la barra lateral de la app en tablet (Iván, 23-11):
+   clara en modo claro y oscura en oscuro, con una línea fina a la derecha.
+   Lo elegido, en tinta y negrita sobre una píldora neutra (--nav-on). */
+:root { --nav-on: rgba(10,10,10,.09); --nav-hover: rgba(10,10,10,.05); }
+@media (prefers-color-scheme: dark) { :root { --nav-on: rgba(255,255,255,.14); --nav-hover: rgba(255,255,255,.07); } }
+.side { background: var(--surface); color: var(--ink); border-right: 1px solid var(--glass-border); padding: 18px 14px; position: sticky; top: 0; height: 100dvh; overflow-y: auto; display: flex; flex-direction: column; gap: 6px; }
 .side .brand { color: inherit; margin: 4px 8px 18px; }
 .side .brand .simbolo { width: 30px; height: 30px; }
 .side .brand small { font-family: Manrope, sans-serif; font-weight: 600; opacity: .6; font-size: .75rem; margin-left: 4px; }
 .side a.nav { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 12px; color: inherit; opacity: .78; font-weight: 600; font-size: .875rem; }
-.side a.nav:hover { opacity: 1; text-decoration: none; background: rgba(255,255,255,.06); }
-.side a.nav.on { opacity: 1; background: rgba(255,255,255,.12); color: #fff; }
+.side a.nav:hover { opacity: 1; text-decoration: none; background: var(--nav-hover); }
+.side a.nav.on { opacity: 1; background: var(--nav-on); color: var(--ink); font-weight: 800; }
 .side a.nav .ic { width: 20px; text-align: center; opacity: .9; }
 .side a.nav .badge { margin-left: auto; background: var(--accent); color: var(--on-accent); font-size: .6875rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; }
 .side .group { font-size: .6875rem; letter-spacing: .1em; text-transform: uppercase; opacity: .7; margin: 14px 12px 4px; font-weight: 700; }
-.side .me { margin-top: auto; padding: 12px; border-top: 1px solid rgba(255,255,255,.1); font-size: .8125rem; opacity: .85; display: grid; gap: 6px; }
+.side .me { margin-top: auto; padding: 12px; border-top: 1px solid var(--glass-border); font-size: .8125rem; opacity: .85; display: grid; gap: 6px; }
 .side .me b { display: block; word-break: break-all; }
 .side .me a { color: inherit; opacity: .8; }
 .topbar { display: none; }
 /* La cabecera del menú: el logo y, en el móvil, la X para cerrarlo. */
 .side-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .side-cab .brand { margin-bottom: 18px; }
-.side .menu-cerrar { display: none; color: inherit; border-color: rgba(255,255,255,.2); margin: 0 4px 18px 0; }
+.side .menu-cerrar { display: none; color: inherit; border-color: var(--glass-border); margin: 0 4px 18px 0; }
 .side-velo { display: none; }
 @media (max-width: 900px) {
   /* Un cajón: fuera de la pantalla hasta que se abre (assets/cajon.js). */
@@ -231,12 +235,11 @@ a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-u
 .topbar .lang a.on, .login .lang a.on, .me .lang a.on { background: var(--ink); color: var(--surface); }
 .me .lang { margin-top: 8px; }
 .login .lang { margin: 0 auto; }
-/* La barra lateral es oscura también en modo claro: sus grises no pueden ser
-   los de la página (el --ink-2 claro sobre negro no se leía). */
-.side .me .lang { border-color: rgba(255,255,255,.18); }
-.side .me .lang a { color: rgba(255,255,255,.72); opacity: 1; }
-.side .me .lang a.on { background: #fff; color: #0A0A0A; }
-.side .bizpick-mas { color: rgba(255,255,255,.66); }
+/* La barra lateral sigue el tema: sus grises, los de la página. */
+.side .me .lang { border-color: var(--glass-border); }
+.side .me .lang a { color: var(--ink-2); opacity: 1; }
+.side .me .lang a.on { background: var(--ink); color: var(--surface); }
+.side .bizpick-mas { color: var(--ink-2); }
 
 /* Sube o baja respecto a la semana anterior. */
 /* Verde y rojo oscuros en claro (el vivo no llegaba a 3:1 sobre blanco). */
@@ -387,13 +390,13 @@ details.grupo[open] > summary { margin-bottom: 8px; }
 /* Menú lateral: «Sistema» se pliega. */
 .side .group-toggle { display: flex; align-items: center; gap: 6px; width: calc(100% - 0px); background: none; border: 0; color: inherit; font: inherit;
   font-size: .6875rem; letter-spacing: .1em; text-transform: uppercase; font-weight: 700; opacity: .7; margin: 14px 0 4px; padding: 4px 12px; border-radius: 8px; cursor: pointer; text-align: left; }
-.side .group-toggle:hover { opacity: .9; background: rgba(255,255,255,.06); }
-.side .group-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 0; }
+.side .group-toggle:hover { opacity: .9; background: var(--nav-hover); }
+.side .group-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: 0; }
 .side .group-toggle .ms { margin-left: auto; font-size: 1.125rem; transition: transform .15s ease; }
 .side .group-toggle[aria-expanded="true"] .ms { transform: rotate(180deg); }
 .side .group-toggle .badge { margin-left: 6px; background: var(--accent); color: var(--on-accent); font-size: .6875rem; font-weight: 800; padding: 1px 6px; border-radius: 999px; letter-spacing: 0; }
 .side .nav-plegable { display: flex; flex-direction: column; gap: 6px; }
-.side a.nav:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+.side a.nav:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
 /* Las cifras principales del Resumen: en filas iguales, ninguna sola y estirada. */
 .kpis.principales { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
 @media (max-width: 560px) { .kpis.principales { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

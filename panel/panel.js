@@ -1070,6 +1070,26 @@ function olvidaColas() {
   } catch { /* sin permisos */ }
 }
 
+/** Dentro del panel, solo el menú del negocio, como el modo negocio de la
+ * app (Iván, 23-11; RUNBOOK §4zzz-tabletojo): de la barra de la web se
+ * quedan la campana y el idioma, y en lugar del logo, «← Volver a Klendar»
+ * (Descubre, como «Volver al modo cliente» de la app). Las pestañas de
+ * cliente, «Para negocios», tu cuenta y ☰ se esconden (panel.css,
+ * `body.en-panel`). */
+function cabeceraDePanel() {
+  document.body.classList.add('en-panel');
+  for (const wrap of document.querySelectorAll('header.top .wrap')) {
+    if (wrap.querySelector('.panel-volver')) continue;
+    const en = !!wrap.closest('[data-only="en"]');
+    const a = document.createElement('a');
+    a.className = 'panel-volver';
+    a.href = en ? '/en/discover' : '/descubre';
+    a.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>'
+      + `<span>${esc(en ? 'Back to Klendar' : I18N.t('Volver a Klendar'))}</span>`;
+    wrap.prepend(a);
+  }
+}
+
 async function boot() {
   await window.KL_ENLACE(sb);
   const { data: { session } } = await sb.auth.getSession();
@@ -1099,6 +1119,7 @@ async function boot() {
     }
   } catch { /* sin red: no se bloquea */ }
   $('#who').textContent = ME.email || ME.phone || '';
+  cabeceraDePanel();
   $('#app').hidden = false;
   // Mientras llegan tus negocios: la aguja, no la zona en blanco.
   if (!$('#view').childElementCount) $('#view').innerHTML = '<div class="loading">Cargando…</div>';

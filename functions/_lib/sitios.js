@@ -161,4 +161,17 @@ export const SITIOS_CSS = `<style>
 .sitios-fin { text-align: center; margin: 18px 0 8px; }
 .sitios-fin h2 { font-size: 17px; margin: 0 0 12px; }
 .chip-solo { display: inline-flex; align-items: center; gap: 6px; margin: 0 0 8px; }
+/* En una tablet o un ordenador, tarjetas con la foto arriba en una rejilla de
+   dos o tres columnas, como en la app (Iván, 23-11): las filas iban de lado a
+   lado (1.200 px) con la flecha en la otra punta y vacías por dentro. Sin
+   foto ni logo, las iniciales grandes sobre el neutro. */
+@media (min-width: 700px) {
+  .sitios-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .pub .sitio-fila { flex-direction: column; align-items: stretch; gap: 0; padding: 0; overflow: hidden; }
+  .sitio-fila img, .sitio-fila .ph { width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 0; }
+  .sitio-fila .ph.iniciales { font-size: 34px; letter-spacing: .06em; }
+  .sitio-cuerpo { padding: 12px 14px 14px; }
+  .sitio-fila .ncard-ir { display: none; }
+}
+@media (min-width: 1000px) { .sitios-lista { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 </style>`;

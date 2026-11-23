@@ -5,9 +5,9 @@
 .bizpick { margin: 0 8px 12px; }
 .bizpick select {
   width: 100%;
-  background: rgba(255, 255, 255, .08);
+  background: var(--elevated);
   color: inherit;
-  border-color: rgba(255, 255, 255, .18);
+  border-color: var(--field-border);
   font-weight: 700;
 }
 
@@ -435,7 +435,7 @@ main.content:focus { outline: none; }
 /* El menú lateral: grupos con su título, como las secciones de la app. */
 .side-cab { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .side-cab .brand { margin-bottom: 18px; }
-.menu-cerrar { display: none; color: inherit; border-color: rgba(255,255,255,.2); margin: 0 4px 18px 0; }
+.menu-cerrar { display: none; color: inherit; border-color: var(--glass-border); margin: 0 4px 18px 0; }
 .nav-grupo { display: grid; gap: 2px; }
 .nav-grupo + .nav-grupo { margin-top: 6px; }
 /* Más contraste que el del admin (el 45 % no llegaba a 4,5:1 sobre negro). */
@@ -1233,8 +1233,8 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
   color: inherit; opacity: .72; font-weight: 600; font-size: .8125rem; }
 .nav-sub a::before { content: ''; position: absolute; left: 6px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%;
   background: currentColor; opacity: .35; transition: transform var(--mov-rapido) var(--mov-entra), opacity var(--mov-rapido) var(--mov-entra); }
-.nav-sub a:hover { opacity: 1; text-decoration: none; background: rgba(255,255,255,.06); }
-.nav-sub a.on { opacity: 1; color: #fff; background: rgba(255,255,255,.08); }
+.nav-sub a:hover { opacity: 1; text-decoration: none; background: var(--nav-hover); }
+.nav-sub a.on { opacity: 1; color: var(--ink); font-weight: 800; background: var(--nav-on); }
 .nav-sub a.on::before { opacity: 1; transform: scale(1.35); }
 .nav-sub a:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
 @media (prefers-reduced-motion: reduce) { .nav-sub a::before { transition: none; } }
@@ -1330,3 +1330,25 @@ a.hoy-linea:hover .title { text-decoration: underline; }
    1.600 px); se queda en 1.180 y centrado en lo que deja el menú. En la
    tablet y el portátil no cambia nada. */
 @media (min-width: 1500px) { main#view.content { width: 100%; max-width: 1180px; justify-self: center; } }
+
+/* ── Dentro del panel, solo el menú del negocio (§4zzz-tabletojo) ──────────
+   Como el modo negocio de la app: sin las pestañas de cliente (Descubre,
+   Explorar, Planes, Cuenta), «Para negocios», tu cuenta ni ☰. De la barra de
+   la web quedan la campana y el idioma (también en el móvil, donde iba
+   dentro de ☰) y, a la izquierda, «← Volver a Klendar» (panel.js,
+   `cabeceraDePanel`). La barra va a lo ancho, alineada con el menú lateral. */
+body.en-panel header.top .brand,
+body.en-panel header.top .pestanas,
+body.en-panel header.top #menu,
+body.en-panel header.top nav.main,
+body.en-panel header.top .menu-toggle,
+body.en-panel header.top .top-negocios,
+body.en-panel header.top .top-entrar,
+body.en-panel header.top .top-iconos > a:not(.top-campana) { display: none !important; }
+body.en-panel header.top .wrap { max-width: none; padding: 0 16px 0 14px; gap: 8px; }
+body.en-panel header.top .idioma { display: block; }
+.panel-volver { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 14px 0 10px; margin-left: -2px; border-radius: 999px;
+  color: var(--ink-2); font-weight: 700; font-size: .875rem; white-space: nowrap; }
+.panel-volver:hover { color: var(--ink); background: var(--soft); text-decoration: none; }
+.panel-volver:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.panel-volver svg { flex: none; }

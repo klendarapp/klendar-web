@@ -3818,6 +3818,7 @@ KL_DIC('de', {
   "Volver a abrir": "Wieder öffnen",
   "Volver a activar": "Wieder aktivieren",
   "Volver a Hoy": "Zurück zu Heute",
+  "Volver a Klendar": "Zurück zu Klendar",
   "Volver a pedirlo": "Erneut beantragen",
   "Volver a seguirla": "Wieder folgen",
   "Volver a vender": "Wieder verkaufen",

@@ -3818,6 +3818,7 @@ KL_DIC('eu', {
   "Volver a abrir": "Ireki berriro",
   "Volver a activar": "Aktibatu berriro",
   "Volver a Hoy": "Itzuli Gaur atalera",
+  "Volver a Klendar": "Itzuli Klendar-era",
   "Volver a pedirlo": "Eskatu berriro",
   "Volver a seguirla": "Jarraitu berriro",
   "Volver a vender": "Saldu berriro",
