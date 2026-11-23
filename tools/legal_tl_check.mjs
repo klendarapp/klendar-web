@@ -204,17 +204,16 @@ function rpcPanel({ available }) {
 async function tarjeta(nav, nombre, t, vp) {
   for (const available of [false, true]) {
     const { ctx, p, errores } = await contexto(nav, vp, rpcPanel({ available }));
-    await p.goto(`${BASE}/panel#/herramientas`);
-    await p.waitForSelector('.fiel-card');
-    const card = p.locator('.fiel-card', { hasText: 'Te aviso cuando esté listo' });
-    const txt = await card.innerText();
+    // Negocio › En el local (antes, la tarjeta de «Más herramientas";
+    // §4zzz-panelapp): como la app, sin baldosa hasta que se pueda activar.
+    await p.goto(`${BASE}/panel#/negocio`);
+    await p.waitForSelector('.neg-tiles');
+    const baldosa = p.locator('[data-neg="orders"]');
     if (!available) {
-      ok(/Disponible desde el 4 de noviembre/.test(txt) && await card.locator('a, button').count() === 0,
-        `${nombre}/${t} herramientas hasta el 4-11: «Disponible desde el 4 de noviembre», sin botón`);
-      await card.screenshot({ path: `${OUT}/panel-tarjeta-listo-hasta-4-nov-${nombre}-${t}.png` });
+      ok(await baldosa.count() === 0, `${nombre}/${t} Negocio hasta el 4-11: sin la baldosa «Pedido listo»`);
     } else {
-      ok(/Apagado/.test(txt) && await card.locator('a[href="#/pedidos"]').count() === 1,
-        `${nombre}/${t} herramientas pasado el 4-11: «Apagado» y el botón de activar`);
+      ok(await p.locator('[data-neg="orders"][href="#/pedidos"]').count() === 1,
+        `${nombre}/${t} Negocio pasado el 4-11: la baldosa «Pedido listo» lleva a activarlo`);
     }
     await p.goto(`${BASE}/panel#/pedidos`);
     await p.waitForSelector('.listo-apagado');

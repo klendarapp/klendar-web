@@ -9,7 +9,7 @@
 //  2. Panel › apagado: el propietario lo activa (`set_orders_enabled`); un
 //     empleado ve «El avisador de pedidos está apagado» y no ve los botones de
 //     gestión.
-//  3. Panel › «Más herramientas» (la tarjeta), el resumen (la fila «Pedidos de
+//  3. Panel › Negocio (la baldosa), Hoy (la fila «Pedidos de
 //     hoy · 3 preparando»), «Validar códigos» (el botón) y «Cifras» (el
 //     plegable).
 //  4. «Tu cuenta» › /cuenta/listo/<código>: «Avísame cuando esté listo» →
@@ -230,11 +230,12 @@ async function apagado(nav, nombre, t, vp) {
 
 async function resto(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contextoPanel(nav, vp);
-  await p.goto(`${BASE}/panel#/herramientas`);
-  await p.waitForSelector('.fiel-card');
+  // Negocio › En el local: la baldosa (antes, la tarjeta de «Más herramientas»).
+  await p.goto(`${BASE}/panel#/negocio`);
+  await p.waitForSelector('.neg-tiles');
   let txt = await vista(p);
-  ok(/Te aviso cuando esté listo/.test(txt) && /Para cafeterías y comida para llevar/.test(txt) && /Activado · 3 preparando/.test(txt), `${nombre}/${t} herramientas: la tarjeta`);
-  ok(await p.locator('.fiel-card a[href="#/pedidos"]').count() === 1, `${nombre}/${t} herramientas: «Abrir» lleva a #/pedidos`);
+  ok(/Pedido listo/.test(txt) && await p.locator('[data-neg="orders"][href="#/pedidos"]').count() === 1, `${nombre}/${t} Negocio: la baldosa «Pedido listo» lleva a #/pedidos`);
+  ok(/Te aviso cuando esté listo/.test(await p.locator('[data-neg="orders"]').getAttribute('aria-label')), `${nombre}/${t} Negocio: el lector oye «Te aviso cuando esté listo»`);
   await p.goto(`${BASE}/panel#/resumen`);
   await p.waitForSelector('#listoCaja .fila-inicio');
   ok(/Pedidos de hoy · 3 preparando/.test(await p.locator('#listoCaja').innerText()), `${nombre}/${t} resumen: «Pedidos de hoy · 3 preparando»`);

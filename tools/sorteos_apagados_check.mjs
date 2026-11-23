@@ -169,7 +169,7 @@ async function panel(nav, nombre, t, vp) {
   let { ctx, p, estado, errores } = await contexto(nav, vp, OFF, PANEL);
   await p.goto(`${BASE}/panel#/sorteos`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
-  ok(/Lo demás de Fidelizar funciona como siempre/.test(await vista(p)) && await p.locator('#view a[href="#/resumen"]').count() === 1, `${nombre}/${t} panel apagado: #/sorteos con «Volver al resumen»`);
+  ok(/Lo demás de Fidelizar funciona como siempre/.test(await vista(p)) && await p.locator('#view a[href="#/hoy"]').count() === 1, `${nombre}/${t} panel apagado: #/sorteos con «Volver al resumen»`);
   ok(!estado.llamadas.some(([f]) => f === 'business_giveaways'), `${nombre}/${t} panel apagado: no pide los sorteos`);
   ok(await sinScroll(p), `${nombre}/${t} panel apagado: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/panel-sorteos-apagados-${nombre}-${t}.png`, fullPage: true });

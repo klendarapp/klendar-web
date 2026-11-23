@@ -88,7 +88,7 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})/i))) return `${pre}/b/${m[1]}`;
   // «Tu oferta termina en 1 h»: al panel, con la pregunta de ampliarla hecha.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?extend=([0-9a-f-]{36})/i))) {
-    return `/panel#/publicaciones?biz=${m[1]}&extend=${m[2]}`;
+    return `/panel#/publicar?biz=${m[1]}&extend=${m[2]}`;
   }
   // «Tu mensaje ya se ha enviado» / «…no se ha enviado»: a «Avisar a mis
   // clientes» de ese negocio en el panel.
@@ -2878,7 +2878,7 @@ RUTAS.invitaciones = async () => {
           : t('Esta invitación ha caducado.'), true);
       } else if (acepta) {
         toast(EN ? `You’re now the owner of ${r.business_name}.` : `Ahora eres propietario de ${r.business_name}.`);
-        location.href = `/panel#/resumen?biz=${r.business_id}`;
+        location.href = `/panel#/hoy?biz=${r.business_id}`;
         return;
       } else {
         toast(t('Traspaso rechazado.'));

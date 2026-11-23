@@ -2,8 +2,8 @@
 // admin no se cerraba y entrar en el admin ampliaba la página al tocar el
 // correo. Con una sesión de mentira y Supabase simulado (no sale nada):
 //
-//  1. El menú del admin y el del panel (assets/cajon.js), a 390 px: se abre
-//     con «Menú» (y «Más» en el panel) y se cierra con la X, tocando el fondo
+//  1. El menú del admin (assets/cajon.js), a 390 px: se abre con «Menú» y
+//     se cierra con la X, tocando el fondo
 //     oscurecido, con Escape, al elegir una opción (también la pantalla en la
 //     que ya se está) y deslizándolo a la izquierda (Chromium). Cada vez: el
 //     foco vuelve al botón que lo abrió, la página no se queda bloqueada
@@ -17,8 +17,10 @@
 //  3. Nada se sale por la derecha a 360, 390 y 430 px (lo ancho se desplaza
 //     dentro de su caja).
 //  4. «Más» (☰) de la cabecera de toda la web se cierra tocando fuera.
-//  5. Como la app: pestaña elegida rellena, «Tu cuenta» sin sesión y el
-//     orden y los iconos del menú del panel.
+//  5. Como la app: pestaña elegida rellena, «Tu cuenta» sin sesión y, en el
+//     panel, las cuatro secciones de la app en la barra de abajo, sin cajón
+//     ni «Más» (desde el 23-11, §4zzz-panelapp; tools/panel_app_check.mjs
+//     mira el resto).
 //
 // Chromium (como un móvil) y WebKit.
 //
@@ -274,11 +276,13 @@ async function pruebaComoLaApp(nav, nombre) {
   const orden = await p.evaluate(() => ({
     menu: [...document.querySelectorAll('#nav a.nav')].map((a) => a.getAttribute('href').slice(2)).join(' '),
     barra: [...document.querySelectorAll('#tabbar a')].map((a) => a.getAttribute('href').slice(2)).join(' '),
-    iconos: ['informe', 'rrpp', 'preguntas', 'ayuda'].map((k) => document.querySelector(`#nav a[href="#/${k}"] .ms`)?.textContent).join(' '),
+    iconos: [...document.querySelectorAll('#tabbar a .ms')].map((e) => e.textContent).join(' '),
+    cajon: !!document.querySelector('#masBtn, #menuBtn, #menuCerrar, #sideVelo'),
   }));
-  ok(/^resumen calendario validar publicaciones ficha fidelizar informe rrpp herramientas equipo resenas preguntas cerrados ayuda plan$/.test(orden.menu.replace(/ ?agenda/, '')), `${nombre}: el menú del panel en el orden de la app (${orden.menu})`);
-  ok(orden.barra === 'resumen calendario validar publicaciones', `${nombre}: la barra de abajo, en el mismo orden (${orden.barra})`);
-  ok(orden.iconos === 'insights badge contact_support help_outline', `${nombre}: los iconos de Cifras, RRPP, Preguntas y Preguntas frecuentes (${orden.iconos})`);
+  ok(orden.menu === 'hoy validar publicar negocio', `${nombre}: el menú del panel, las cuatro de la app (${orden.menu})`);
+  ok(orden.barra === 'hoy validar publicar negocio', `${nombre}: la barra de abajo, en el mismo orden (${orden.barra})`);
+  ok(orden.iconos === 'today qr_code_scanner add_box storefront', `${nombre}: los iconos de la app (${orden.iconos})`);
+  ok(!orden.cajon, `${nombre}: sin cajón, «Más» ni «Menú» en el panel`);
   await ctx.close();
 }
 
@@ -287,7 +291,6 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   await pruebaComoLaApp(nav, nombre);
   await pruebaMas(nav, nombre);
   await pruebaMenu(nav, nombre, 'admin');
-  await pruebaMenu(nav, nombre, 'panel');
   await pruebaPaginas(nav, nombre);
   await nav.close();
 }

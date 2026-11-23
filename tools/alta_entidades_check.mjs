@@ -174,16 +174,16 @@ async function panel(nav, nombre, t, vp) {
     && a.p_website === 'comerciantes-prueba.es' && a.p_city === 'Getafe' && a.p_area === 'Barrio de Prueba'
     && a.p_contact_name === 'Ana Prueba' && a.p_contact_role === 'Presidenta' && a.p_proof_path === estado.subidas[0]
     && Math.abs(a.p_lat - 40.305) < 1e-6 && a.p_declaration === true, `${nombre}/${t} register_entity con todo (también la declaración) ${JSON.stringify(a)}`);
-  const menu = await p.locator('#nav').textContent();
-  ok(!/Fidelizar|RRPP|Días cerrados/.test(menu) && /Equipo/.test(menu), `${nombre}/${t} el menú de una entidad`);
-  const resumen = await p.locator('#view').innerText();
-  ok(!/Fidelizar|Tu plan/.test(resumen) && /Series y repeticiones/.test(resumen), `${nombre}/${t} el resumen de una entidad`);
-  // Sus palabras y lo que no tiene (§4zzz-propent).
-  // Con lo escondido en el móvil (el «Evento o novedad» de «Crear»).
-  const resumenTodo = await p.locator('#view').textContent();
-  ok(/Tu entidad/.test(resumenTodo) && !/Tu negocio/.test(resumenTodo) && /Evento o novedad/.test(resumenTodo)
-    && !/Cerrar por hoy|Oferta, evento o novedad/.test(resumenTodo), `${nombre}/${t} el resumen con palabras de entidad, sin «Cerrar por hoy» ${JSON.stringify((resumenTodo.match(/Tu (negocio|entidad)|Evento o novedad|Cerrar por hoy|Oferta, evento o novedad/g) || []))}`);
-  ok(/Tu entidad/.test(menu) && !/Tu negocio/.test(menu), `${nombre}/${t} el menú: «Tu entidad»`);
+  // Las cuatro secciones, con «Entidad» (§4zzz-panelapp): en el móvil, la
+  // barra; en el ordenador, el menú con sus grupos.
+  const menu = `${await p.locator('#nav').textContent()} ${await p.locator('#tabbar').textContent()}`;
+  ok(!/Fidelizar|RRPP|Días cerrados|Que vuelvan|Negocio/.test(menu) && /Entidad/.test(menu), `${nombre}/${t} el menú de una entidad: «Entidad», sin Fidelizar ni RRPP`);
+  const hoy = await p.locator('#view').textContent();
+  ok(!/Fidelizar|Tu plan|Cerrar por hoy/.test(hoy), `${nombre}/${t} Hoy de una entidad, sin Fidelizar, plan ni «Cerrar por hoy»`);
+  await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.neg-tiles');
+  const negocio = await p.locator('#view').textContent();
+  ok(/Agenda y equipo/.test(negocio) && /Series/.test(negocio) && !/Que vuelvan|Tu plan/.test(negocio), `${nombre}/${t} Entidad: sus grupos, sin «Que vuelvan» ni plan`);
   // Su cartel: «Sigue nuestra agenda», que se imprime con ?agenda=1.
   estado.rpc.business_visit_qr = { ok: true, token: 'AbCdEfGhIjKlMnOp', can_change: true, visit_cards: [], visit_stamps_30d: 0 };
   await p.goto(`${BASE}/panel#/cartel-local`, { waitUntil: 'networkidle' });
@@ -192,11 +192,12 @@ async function panel(nav, nombre, t, vp) {
   ok(!/sello/i.test(cartel) && await p.locator('a[href*="agenda=1"]').count() === 2
     && await p.locator('#cambiar').count() === 0, `${nombre}/${t} el cartel de la agenda, sin sellos`);
   await foto('panel-entidad-cartel');
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('[data-go=crear]');
+  await p.goto(`${BASE}/panel#/hoy`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#view h1');
   await foto('panel-entidad-pendiente');
-  await p.click('[data-go=crear]');
-  ok(await p.locator('text=Podrás publicar cuando verifiquemos la entidad.').count() > 0, `${nombre}/${t} «Crear» no publica hasta verificarla`);
+  await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#view h1');
+  ok(await p.locator('text=Podrás publicar cuando verifiquemos la entidad.').count() > 0 && await p.locator('.crear-op').count() === 0, `${nombre}/${t} Publicar no publica hasta verificarla`);
   ok(errores.length === 0, `${nombre}/${t} panel sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }

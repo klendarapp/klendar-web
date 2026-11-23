@@ -9,7 +9,7 @@
 //     «Poner a 0» con su pregunta.
 //  2. Panel › #/aforo/ajustes: validación (sin mandar) y `set_capacity_settings`.
 //     Un empleado ve la puerta sin ajustes.
-//  3. Panel › «Más herramientas», el resumen (fila de acceso rápido y «¿Hay
+//  3. Panel › Negocio (la baldosa), Hoy (fila de acceso rápido y «¿Hay
 //     sitio ahora?» con «Marcado a mano · vuelve al contador…» y «Volver al
 //     contador») y «Cifras» (el plegable «Aforo»).
 //  4. «Tu cuenta» › Notificaciones: «Cuando haya sitio» → `notify_room`.
@@ -280,22 +280,23 @@ async function ajustes(nav, nombre, t, vp) {
   await p.goto(`${BASE}/panel#/aforo/ajustes`);
   await p.waitForSelector('.afd-btn');
   ok(/#\/aforo$/.test(p.url()) && await p.locator('a[href="#/aforo/ajustes"]').count() === 0, `${nombre}/${t} empleado: ve la puerta sin ajustes`);
-  await p.goto(`${BASE}/panel#/herramientas`);
-  await p.waitForSelector('.fiel-card');
-  ok(/Aforo en directo/.test(await vista(p)), `${nombre}/${t} empleado: la herramienta en «Más herramientas»`);
+  await p.goto(`${BASE}/panel#/negocio`);
+  await p.waitForSelector('.neg-tiles');
+  ok(await p.locator('[data-neg="capacity"][href="#/aforo"]').count() === 1, `${nombre}/${t} empleado: la baldosa «Aforo» en Negocio › En el local`);
   ok(errores.length === 0, `${nombre}/${t} empleado: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 }
 
 async function resumenYCifras(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
-  await p.goto(`${BASE}/panel#/herramientas`);
-  await p.waitForSelector('.fiel-card');
+  // Negocio › En el local: la baldosa «Aforo» (antes, la tarjeta de «Más
+  // herramientas»; §4zzz-panelapp). «¿Hay sitio ahora?» no es baldosa: va
+  // dentro de «Tu local», como la app.
+  await p.goto(`${BASE}/panel#/negocio`);
+  await p.waitForSelector('.neg-tiles');
   let txt = await vista(p);
-  ok(/Aforo en directo/.test(txt) && /Cuenta en la puerta con \+1 y −1, y «¿Hay sitio ahora\?» se pone solo\./.test(txt) && /84 \/ 120 ahora/.test(txt),
-    `${nombre}/${t} herramientas: «Aforo en directo · 84 / 120 ahora»`);
-  ok(/Para decir con un toque cómo está el local: Hay sitio, Casi lleno o Lleno/.test(txt) && !/tranquilo|animado/i.test(txt), `${nombre}/${t} herramientas: niveles con su nombre nuevo`);
-  ok(await p.locator('.fiel-card a[href="#/aforo"]').count() === 1, `${nombre}/${t} herramientas: «Abrir» lleva a la puerta`);
+  ok(await p.locator('#g-en-el-local [data-neg="capacity"][href="#/aforo"]').count() === 1 && /Aforo/.test(txt), `${nombre}/${t} Negocio: la baldosa «Aforo» lleva a la puerta`);
+  ok(await p.locator('[data-neg="venueInfo"][href="#/ficha/local"]').count() === 1 && !/tranquilo|animado/i.test(txt), `${nombre}/${t} Negocio: «Tu local» (con «¿Hay sitio ahora?» dentro)`);
   await p.goto(`${BASE}/panel#/resumen`);
   await p.waitForSelector('.fila-inicio');
   await p.waitForTimeout(500);

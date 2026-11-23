@@ -1955,7 +1955,9 @@ PAGES.hoy = async (v) => {
   if (sub) SUB = sinCobroEntidad(sub);
   // Se acaba de bloquear (o de pausar desde otro sitio): a lo que se puede hacer.
   if (bloqueado()) { renderNav('hoy'); return pintaParado(v); }
-  const d = hoy && !hoy.error && typeof hoy === 'object' && !Array.isArray(hoy) ? hoy : null;
+  // Sin respuesta (una base sin `business_today`), como un día sin nada; un
+  // fallo, con su aviso y «Reintentar».
+  const d = hoy?.error ? null : hoy && typeof hoy === 'object' && !Array.isArray(hoy) ? hoy : {};
   if (conFicha && ficha.category_id !== undefined) BIZ.category_id = ficha.category_id ?? null;
   // Sin nada publicado o recién dado de alta con la ficha a medias: lo dice
   // «Primeros pasos» (en Negocio) y aquí no se repite el aviso de la ficha.
@@ -2238,6 +2240,9 @@ PAGES.publicar = async (v) => {
     pubsElegidas(pulsados()),
     rpc('my_publishable_businesses', { p_except: BIZ.id }).catch(() => []),
     portadaNegocio(),
+    // Qué publicar depende de su tipo (menú del día, antes de cerrar…): si
+    // no está guardado de antes, se pide.
+    gestiona() && !herrAhora() ? herrEstado() : null,
   ]);
   const cuentas = cuentasRaw || {};
   // «¿Qué quieres publicar?»: a quien gestiona. Una entidad aún sin
@@ -2540,7 +2545,7 @@ const tarjetaPanel = (o, opts = {}) => KT.tarjeta(conNegocio(o), I18N.lang, { tz
  * con sus enlaces, o se queda en Publicaciones. */
 const hrefPub = (o) => (gestiona() && o.status !== 'archived' ? `#/publicaciones/${o.id}`
   : o.audience !== 'promoters' ? `/o/${o.id}`
-    : gestiona() ? '#/rrpp' : '#/publicaciones');
+    : gestiona() ? '#/rrpp' : '#/publicar');
 /** Los vídeos de las tarjetas: el primer fotograma (o la portada) y, si
  * `mover`, en marcha y en silencio (nunca con «reducir movimiento»). */
 function activaVideos(caja, mover = false) {
@@ -2891,7 +2896,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     // Un enlace viejo o de otro de tus negocios: a la lista, como el cartel
     // y los asistentes (antes salía «Editar» con el formulario en blanco).
     const mia = await miPublicacion(id);
-    if (!mia) { location.replace('#/publicaciones'); return; }
+    if (!mia) { location.replace('#/publicar'); return; }
     o = mia;
   } else if (!desde?.from) {
     // Como la app: una oferta empieza ya y dura 3 h; un evento, mañana
@@ -3101,7 +3106,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           </div>
         </fieldset>`;
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1 id="pubTitulo">${esc(titulo())}</h1><span class="spacer"></span>
+    <div class="page-head"><a class="btn sm ghost" href="#/publicar">← Volver</a><h1 id="pubTitulo">${esc(titulo())}</h1><span class="spacer"></span>
       <details class="mas tpl-menu"><summary class="btn sm ghost">Tus plantillas</summary>
         <div class="mas-menu" role="menu">
           <button type="button" role="menuitem" id="usarTpl">Usar una plantilla…</button>
@@ -3954,7 +3959,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     renderPhotos(); pintaTipo(); syncKind(); syncDiscount(); pintaEstilo();
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Idea aplicada: repasa precio y hora'); }; });
-  sugActiva(v, sugForm, () => { GUARDA = null; location.hash = '#/publicaciones'; });
+  sugActiva(v, sugForm, () => { GUARDA = null; location.hash = '#/publicar'; });
   // Ayudas de IA (panel/ayudas.js): la idea que ha tocado el dueño y la categoría y etiquetas propuestas.
   const ideaIA = !id && !desde && window.KAyudas ? KAyudas.tomaIdea() : null;
   if (ideaIA) {
@@ -4414,7 +4419,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       // Guardado: ya no hay nada que perder al salir.
       GUARDA = null;
       // Varios eventos de un enlace o un texto (panel/enlace.js): el siguiente, ya relleno.
-      location.hash = partido?.id ? '#/partidos' : (window.KEnlaceRellena?.siguiente() || '#/publicaciones');
+      location.hash = partido?.id ? '#/partidos' : (window.KEnlaceRellena?.siguiente() || '#/publicar');
     } catch (err) {
       // El aforo no baja de lo ya reservado o usado: la base dice cuánto es.
       const msg = String(err.message || '');
@@ -4760,7 +4765,7 @@ PAGES['antes-de-cerrar'] = async (v) => {
         return;
       }
       toast(bi('Publicada: ya sale en Descubre con el sello «Antes de cerrar».', 'Posted: it’s on Discover now with the “Before closing” badge.'));
-      location.hash = '#/publicaciones';
+      location.hash = '#/publicar';
     } catch (err) {
       toast(friendly(err.message), true);
     } finally { b.disabled = false; }
@@ -5502,7 +5507,7 @@ function botonesContacto(c, nombre) {
 // ── Asistentes de un evento ─────────────────────────────────────────────────
 PAGES.asistentes = async (v, offerId) => {
   // Sin evento (enlace cortado o escrito a mano): a Publicaciones, no a un error.
-  if (!offerId) { location.hash = '#/publicaciones'; return; }
+  if (!offerId) { location.hash = '#/publicar'; return; }
   // Por partes (50 y «Ver más») y con la búsqueda en la base; las cuentas,
   // con todos (`offer_attendees_summary`).
   const POR = 50;
@@ -5562,7 +5567,7 @@ PAGES.asistentes = async (v, offerId) => {
       ${nombresEspera ? `<ol class="lista-espera">${nombresEspera.map((p) => `<li><b>${esc(p.name || I18N.t('Invitada'))}</b>${p.notified_until
         ? ` <span class="muted">· ${esc(bi(`Plaza guardada hasta las ${fmtHora(p.notified_until)}`, `Place held until ${fmtHora(p.notified_until)}`))}</span>` : ''}${resumen?.contact ? botonesContacto(p, p.name || I18N.t('Invitada')) : ''}</li>`).join('')}</ol>` : ''}</div>`;
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Volver</a><h1>Asistentes</h1><span class="spacer"></span>
+    <div class="page-head"><a class="btn sm ghost" href="#/publicar">← Volver</a><h1>Asistentes</h1><span class="spacer"></span>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     <div class="card"><h2>${esc(offer?.title || '')}</h2>
       <p class="muted" style="margin:0">${esc(bi(
@@ -6626,11 +6631,11 @@ PAGES.cartel = async (v, offerId) => {
   const o = await miPublicacion(offerId);
   // Una oferta de RRPP no tiene cartel: sin el enlace de un RRPP, su QR no
   // la abriría (cada RRPP tiene el suyo en «RRPP»).
-  if (!o || o.audience === 'promoters') { location.hash = o ? '#/rrpp' : '#/publicaciones'; return; }
+  if (!o || o.audience === 'promoters') { location.hash = o ? '#/rrpp' : '#/publicar'; return; }
   const url = `https://klendar.app/o/${o.id}`;
 
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Publicaciones</a>
+    <div class="page-head"><a class="btn sm ghost" href="#/publicar">← Publicaciones</a>
       <span class="spacer"></span><button class="btn sm primary" id="print">Imprimir</button></div>
     ${helpBox('¿Para qué sirve?', '<p>Un folio para la puerta, la barra o el escaparate. Quien pase, apunta con la cámara del móvil y le sale tu publicación; si no tiene la app, la ve igual en la web.</p><p>Imprímelo en blanco y negro si quieres: el código se lee igual.</p>')}
     <div class="cartel" id="cartel">

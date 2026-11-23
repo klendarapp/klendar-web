@@ -1134,8 +1134,9 @@ PAGES.alta = async (v, param) => {
       if (!CATS.length) CATS = cats;
       // Como la app (`showDone`): la marca de «hecho» al terminar el alta.
       hechoBreve('Solicitud enviada. Te avisamos cuando la revisemos.');
-      // Como la app: al panel del negocio nuevo.
-      if (location.hash === '#/hoy') route(); else location.hash = '#/hoy';
+      // Al panel del negocio nuevo, a Negocio: arriba, «Primeros pasos» (la
+      // primera oferta y lo que le falta a la ficha), como la app.
+      if (location.hash === '#/negocio') route(); else location.hash = '#/negocio';
     } catch (e2) {
       $('#err', v).textContent = I18N.t(friendly(e2.message));
       boton.disabled = false;

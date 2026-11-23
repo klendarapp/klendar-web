@@ -9,7 +9,7 @@
 //  2. Panel, «Wifi para clientes»: guardar red y contraseña, el enlace de
 //     los carteles (con `?mesas=` al numerar), los escaneos y «Cambiar el
 //     enlace».
-//  3. Panel, «Más herramientas» y el resumen: la tarjeta y la fila del menú,
+//  3. Panel, Negocio, Hoy y Publicar: la baldosa y la fila del menú,
 //     la del wifi; «Crear» ofrece «Menú del día» a un sitio de comida.
 //  4. Panel, «Tu ficha» › Horario: «La cocina tiene otro horario» y
 //     `set_kitchen_hours` al guardar.
@@ -195,35 +195,33 @@ async function panel(nav, nombre, t, vp) {
   ok(await p.locator('#qr svg').count() === 1, `${nombre}/${t} wifi: el QR dibujado`);
   await p.screenshot({ path: `${OUT}/panel-wifi-clientes-${nombre}-${t}.png`, fullPage: true });
 
-  // 3. Más herramientas, resumen y «Crear»
-  await p.goto(`${BASE}/panel#/herramientas`);
-  await p.waitForSelector('.fiel-card', { timeout: 15000 });
-  txt = await vista(p);
-  ok(/Menú del día/.test(txt) && /Publicado hasta las/.test(txt), `${nombre}/${t} herramientas: tarjeta del Menú del día`);
-  ok(/Wifi para clientes/.test(txt) && /142 escaneos este mes/.test(txt), `${nombre}/${t} herramientas: tarjeta del wifi`);
+  // 3. Negocio (las baldosas), Hoy y Publicar (§4zzz-panelapp)
+  await p.goto(`${BASE}/panel#/negocio`);
+  await p.waitForSelector('.neg-tiles', { timeout: 15000 });
+  ok(await p.locator('#g-en-el-local [data-neg="dailyMenu"][href="#/menu-del-dia"]').count() === 1, `${nombre}/${t} Negocio: la baldosa del Menú del día`);
+  ok(await p.locator('#g-en-el-local [data-neg="tableQr"][href="#/wifi-clientes"]').count() === 1, `${nombre}/${t} Negocio: la baldosa del wifi`);
   await p.goto(`${BASE}/panel#/resumen`);
   await p.waitForSelector('.fila-inicio', { timeout: 15000 }).catch(() => null);
   txt = await vista(p);
   ok(/Menú del día · hasta las/.test(txt), `${nombre}/${t} resumen: fila del Menú del día`);
-  const crear = p.locator('[data-go=crear]').first();
-  if (await crear.count()) {
-    await crear.click();
-    await p.waitForSelector('#modal[open] .crear-op');
-    ok(/Menú del día/.test(await p.locator('#modal').innerText()), `${nombre}/${t} crear: ofrece «Menú del día»`);
+  // «¿Qué quieres publicar?», arriba de Publicar (antes, la ventana de «Crear»).
+  await p.goto(`${BASE}/panel#/publicar`);
+  await p.waitForSelector('.crear .crear-op', { timeout: 15000 }).catch(() => null);
+  if (await p.locator('.crear').count()) {
+    ok(/Menú del día/.test(await p.locator('.crear').innerText()), `${nombre}/${t} crear: ofrece «Menú del día»`);
     // «¿Qué quieres publicar?» (Iván, 18-11 y 20-11): arriba las cuatro de
     // siempre, solo con su nombre; lo demás en «Más formas de publicar ▾».
-    let hoja = await p.locator('#modal').innerText();
+    let hoja = await p.locator('.crear').innerText();
     ok(/\bOferta\b/.test(hoja) && !/Nueva oferta/.test(hoja) && /De unas horas a varios días, o cada semana/.test(hoja), `${nombre}/${t} crear: «Oferta» con su línea`);
     ok(/Más formas de publicar/.test(hoja) && !/Para los tuyos/.test(hoja), `${nombre}/${t} crear: lo demás, plegado`);
-    await p.click('#modal .crear-mas > summary');
+    await p.click('.crear .crear-mas > summary');
     await p.waitForTimeout(400);
-    hoja = await p.locator('#modal').innerText();
-    ok(await p.locator('#modal .crear-mas[open]').count() === 1, `${nombre}/${t} crear: «Más formas de publicar» se abre`);
+    hoja = await p.locator('.crear').innerText();
+    ok(await p.locator('.crear .crear-mas[open]').count() === 1, `${nombre}/${t} crear: «Más formas de publicar» se abre`);
     ok(/Para los tuyos/.test(hoja) && /Oferta de primera visita/.test(hoja) && /Avisar a mis clientes/.test(hoja), `${nombre}/${t} crear: «Para los tuyos»`);
     ok(/Para vender o dar en el local/.test(hoja) && /\bBono\b/.test(hoja) && /Tarjeta de sellos/.test(hoja) && !/Crear un bono/.test(hoja), `${nombre}/${t} crear: «Para vender o dar en el local»`);
     await p.screenshot({ path: `${OUT}/panel-crear-${nombre}-${t}.png` });
-    await p.keyboard.press('Escape');
-  } else ok(false, `${nombre}/${t} crear: no se encuentra el botón`);
+  } else ok(false, `${nombre}/${t} crear: no sale «¿Qué quieres publicar?» en Publicar`);
 
   // 4. Tu ficha › Horario
   await p.goto(`${BASE}/panel#/ficha/horario`);

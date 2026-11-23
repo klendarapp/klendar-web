@@ -167,13 +167,13 @@ const PANEL = (x = {}) => ({
 
 async function panelResumen(nav, n, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, PANEL());
+  // Hoy (antes, el resumen con «Últimas publicaciones»; §4zzz-panelapp): lo
+  // del día sale de `business_today`; las publicaciones, solo en Publicar.
   await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('a.link[href="#/publicaciones"]', { state: 'attached' });
-  const v = await p.locator('#view').innerText();
-  ok(/Ver todas \(40\) · 37 activas/.test(v), `${n}/${t} resumen: «Ver todas (40) · 37 activas» de la base`);
-  ok(llamadas(estado, 'my_business_offers_page').some((a) => a.p_limit === 8 && a.p_live_first === true), `${n}/${t} resumen: pide solo 8, lo vivo primero`);
-  ok(!llamadas(estado, 'my_business_offers').length, `${n}/${t} resumen: ya no pide todas`);
-  ok(errores.length === 0, `${n}/${t} resumen sin errores JS ${errores.join(' | ')}`);
+  await p.waitForSelector('.hoy-cab');
+  ok(/#\/hoy$/.test(p.url()), `${n}/${t} #/resumen lleva a Hoy`);
+  ok(!llamadas(estado, 'my_business_offers_page').length && !llamadas(estado, 'my_business_offers').length, `${n}/${t} Hoy: no pide las publicaciones`);
+  ok(errores.length === 0, `${n}/${t} Hoy sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
 
@@ -226,10 +226,6 @@ async function panelPublicacionesBaseVieja(nav, n, t, vp) {
       ? { __error: { status: 404, code: 'PGRST202', message: 'Could not find the function public.my_business_offers_page(p_business, p_limit, p_live_first, p_status) in the schema cache' } }
       : pagina(PUBS, a)),
   }));
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('a.link[href="#/publicaciones"]', { state: 'attached' });
-  ok(llamadas(estado, 'my_business_offers_page').some((a) => a.p_limit === 8 && !a.p_live_first), `${n}/${t} base vieja: el resumen pide sus 8 como antes`);
-  ok(/Ver todas \(40\)/.test(await p.locator('#view').innerText()), `${n}/${t} base vieja: el resumen se pinta`);
   await p.goto(`${BASE}/panel#/publicaciones`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas="pubs"]');
   ok(await p.locator('.pub-item').count() === 24, `${n}/${t} base vieja: las 24 primeras, como antes`);

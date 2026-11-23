@@ -130,7 +130,7 @@ window.KEnlaceRellena = (() => {
   };
   const salta = () => {
     GUARDA = null;
-    location.hash = siguiente() || '#/publicaciones';
+    location.hash = siguiente() || '#/publicar';
   };
 
   // ── La tarjeta del formulario ───────────────────────────────────────────

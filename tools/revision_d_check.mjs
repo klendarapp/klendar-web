@@ -251,17 +251,19 @@ async function topes(nav, nombre, t, vp) {
 // ── 7. Listas de esta noche (empleado) ──────────────────────────────────────
 async function listas(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contexto(nav, vp, { rol: 'staff', rpc: { door_list: { ok: true, items: [] } } });
-  await p.goto(`${BASE}/panel#/resumen`);
-  await p.waitForSelector('.esencial');
-  const enlace = p.locator('.esencial a', { hasText: 'Listas de esta noche' });
-  ok(await enlace.count() === 1, `${nombre}/${t} empleado: «Listas de esta noche» en Lo esencial`);
+  // En Negocio › Agenda y equipo, la baldosa «Listas» (antes, en «Lo
+  // esencial» del resumen; §4zzz-panelapp).
+  await p.goto(`${BASE}/panel#/negocio`);
+  await p.waitForSelector('.neg-tiles');
+  const enlace = p.locator('[data-neg="door"][href="#/validar?listas=1"]');
+  ok(await enlace.count() === 1 && /Listas de esta noche/.test(await enlace.getAttribute('aria-label')), `${nombre}/${t} empleado: «Listas» (de esta noche) en Negocio`);
   await enlace.click();
   await p.waitForSelector('#code');
   await p.waitForTimeout(800);
   ok(/Nadie se ha apuntado aún esta noche/.test(await vista(p)), `${nombre}/${t} empleado sin nadie apuntado: lo dice`);
   // Validar a secas (sin venir de ahí): sin la caja vacía.
-  await p.goto(`${BASE}/panel#/resumen`);
-  await p.waitForSelector('.esencial');
+  await p.goto(`${BASE}/panel#/hoy`);
+  await p.waitForSelector('#view h1');
   await p.goto(`${BASE}/panel#/validar`);
   await p.waitForSelector('#code');
   await p.waitForTimeout(800);
@@ -298,9 +300,9 @@ async function entidad(nav, nombre, t, vp) {
   for (const r of ['aforo', 'wifi-clientes', 'menu-del-dia', 'pedidos']) {
     await p.goto(`${BASE}/panel#/${r}`);
     await p.waitForTimeout(900);
-    // El resumen lleva «Lo esencial»; la herramienta, no.
-    const resumen = await p.locator('#view nav.esencial').count();
-    ok(resumen === 1 && (!PIDE[r] || llamadas(estado, PIDE[r]).length === 0), `${nombre}/${t} entidad: #/${r} vuelve al resumen${PIDE[r] ? ` (sin pedir ${PIDE[r]})` : ''}`);
+    // Vuelve a Hoy (la dirección lo dice) sin abrir la herramienta.
+    const hoy = await p.evaluate(() => location.hash) === '#/hoy' && await p.locator('#view .hoy-cab').count() === 1;
+    ok(hoy && (!PIDE[r] || llamadas(estado, PIDE[r]).length === 0), `${nombre}/${t} entidad: #/${r} vuelve a Hoy${PIDE[r] ? ` (sin pedir ${PIDE[r]})` : ''}`);
   }
   ok(errores.length === 0, `${nombre}/${t} entidad sin errores JS ${errores.join(' | ')}`);
   await ctx.close();

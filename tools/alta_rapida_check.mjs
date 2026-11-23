@@ -103,7 +103,7 @@ const PANEL = (x = {}, biz = {}) => ({
 
 async function sugerida(nav, n) {
   const { ctx, p, estado, errores } = await contexto(nav, { rpc: PANEL({ save_offer_rule: 'r1' }) });
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.primeros [data-sug]');
   const v = await p.locator('.primeros').innerText();
   ok(await p.locator('.primeros [data-sug]').count() === 3, `${n}: tres sugerencias`);
@@ -133,7 +133,7 @@ async function sugerida(nav, n) {
 
 async function reglaFalla(nav, n) {
   const { ctx, p, estado } = await contexto(nav, { rpc: PANEL(), fallan: ['save_offer_rule'] });
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
   await p.click('.primeros [data-sug="0"]');
   await p.click('#modal button[type=submit]');
   await p.waitForTimeout(800);
@@ -143,13 +143,13 @@ async function reglaFalla(nav, n) {
 
 async function idiomas(nav, n) {
   const fr = await contexto(nav, { lang: 'fr', rpc: PANEL() });
-  await fr.p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await fr.p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
   await fr.p.waitForSelector('.primeros [data-sug]');
   const v = await fr.p.locator('.primeros').innerText();
   ok(/Café et tartine pour 2,50\s€/.test(v) && /Ta première offre, qui se répète toute seule/.test(v), `${n}: en francés`);
   await fr.ctx.close();
   const bar = await contexto(nav, { categoria: CATS[1].id, rpc: PANEL() });
-  await bar.p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await bar.p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
   await bar.p.waitForSelector('.primeros [data-sug]');
   const b = await bar.p.locator('.sug-lista').innerText();
   ok(/Tapa gratis con tu consumición/.test(b) && !/caña|cerveza|vino|copa|alcohol/i.test(b), `${n}: las de un bar, sin alcohol`);
@@ -165,7 +165,7 @@ async function sinSugerencias(nav, n) {
   ];
   for (const [nombre, rpc, conPasos] of casos) {
     const { ctx, p } = await contexto(nav, { rpc });
-    await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
     await p.waitForSelector('#view h1');
     ok(await p.locator('[data-sug]').count() === 0, `${n}: ${nombre}, sin sugerencias`);
     const pasos = await p.locator('.primeros').count();
@@ -262,16 +262,19 @@ async function fichaSitios(nav, n) {
     if (texto) {
       ok(await aviso.count() === 1 && texto.test(await aviso.innerText()), `${n}: ${nombre}, el aviso`);
       ok(await aviso.locator('a.btn').getAttribute('href') === href, `${n}: ${nombre}, el botón a ${href}`);
-      ok(await p.locator('.primeros').count() === 0, `${n}: ${nombre}, sin «Primeros pasos»`);
       if (nombre === 'sin horario ni foto') await p.screenshot({ path: `${OUT}/ficha-sitios-${n}.png`, fullPage: false });
     } else ok(await aviso.count() === 0, `${n}: ${nombre}, sin aviso`);
     ok(errores.length === 0, `${n}: ${nombre}, sin errores JS ${errores.join(' | ')}`);
     await ctx.close();
   }
-  // Recién dado de alta y sin nada publicado: «Primeros pasos» ya lo dice.
+  // Recién dado de alta y sin nada publicado: «Primeros pasos» (en Negocio)
+  // ya lo dice; Hoy no repite el aviso.
   const { ctx, p } = await contexto(nav, { rpc: PANEL({}, { verification_status: 'verified' }) });
-  await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/#/negocio`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.primeros');
+  await p.goto(`${BASE}/panel/#/hoy`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#view h1');
+  await p.waitForTimeout(400);
   ok(await p.locator('.aviso-ficha-sitios').count() === 0, `${n}: con «Primeros pasos», sin el aviso`);
   await ctx.close();
 }

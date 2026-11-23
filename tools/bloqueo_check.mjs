@@ -273,30 +273,38 @@ async function panelBloqueado(nav, nombre, t, vp) {
   ok(/bonos vendidos, sellos, premios, códigos y sorteos abiertos/.test(v), `${nombre}/${t} bloqueado: explica lo que se respeta`);
   const pagar = p.locator('.aviso-parado a.btn.primary');
   ok(await pagar.count() === 1 && (await pagar.getAttribute('href')) === '#/plan' && /Pagar/.test(await pagar.innerText()), `${nombre}/${t} bloqueado: «Pagar» coral a «Tu plan»`);
-  ok(await p.locator('[data-go=validar]').count() === 1 && await p.locator('[data-descarga]').count() === 2 && await p.locator('#view a[href="#/baja"]').count() === 1,
-    `${nombre}/${t} bloqueado: validar, descargar los datos y darse de baja`);
-  ok(!/Crear|Últimas publicaciones|Fidelizar/.test(v), `${nombre}/${t} bloqueado: nada de gestión en el resumen`);
-  ok(!estado.llamadas.some(([fn]) => ['business_stats', 'my_business_offers'].includes(fn)), `${nombre}/${t} bloqueado: no pide lo de gestión`);
+  // Hoy, solo el aviso (como la app); descargar los datos, darse de baja y
+  // «Tu plan», en Negocio (§4zzz-panelapp).
+  ok(!/Crear|Últimas publicaciones|Fidelizar/.test(v), `${nombre}/${t} bloqueado: nada de gestión en Hoy`);
+  ok(!estado.llamadas.some(([fn]) => ['business_stats', 'my_business_offers', 'business_today'].includes(fn)), `${nombre}/${t} bloqueado: no pide lo de gestión`);
   const m = await menu(p);
-  ok(/Validar códigos/.test(m) && /Tu plan/.test(m) && /Dar de baja el negocio/.test(m) && !/Publicaciones|Calendario|Fidelizar|RRPP|Equipo|Tu ficha/.test(m), `${nombre}/${t} bloqueado: el menú solo con lo que se puede (${m.replace(/\s+/g, ' ')})`);
+  ok(/Hoy/.test(m) && /Validar/.test(m) && /Negocio/.test(m) && !/Calendario|Fidelizar|RRPP|Equipo|Tu ficha|Que vuelvan/.test(m), `${nombre}/${t} bloqueado: las secciones, sin los grupos de Negocio (${m.replace(/\s+/g, ' ')})`);
   await foto('bloqueado-resumen');
-  // Otra pantalla → al resumen.
+  await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#g-delicado');
+  ok(await p.locator('[data-neg="plan"][href="#/plan"]').count() === 1 && await p.locator('[data-descarga]').count() === 2 && await p.locator('#view a[href="#/baja"]').count() === 1,
+    `${nombre}/${t} bloqueado: en Negocio, «Tu plan», descargar los datos y darse de baja`);
+  ok(await p.locator('.aviso-parado').count() === 1, `${nombre}/${t} bloqueado: Negocio con el aviso`);
+  await foto('bloqueado-negocio');
+  // Publicar: solo el aviso (como la app). Otra pantalla → a Hoy.
   await p.goto(`${BASE}/panel#/publicaciones`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(300);
   await p.waitForSelector('.aviso-parado');
-  ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/publicaciones vuelve al resumen (${p.url()})`);
+  ok(/#\/publicar$/.test(p.url()) && await p.locator('.crear-op, #list').count() === 0, `${nombre}/${t} bloqueado: Publicar, solo el aviso (${p.url()})`);
   await p.goto(`${BASE}/panel#/ficha`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(300);
   await p.waitForSelector('.aviso-parado');
-  ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/ficha vuelve al resumen`);
+  ok(/#\/hoy$/.test(p.url()), `${nombre}/${t} bloqueado: #/ficha vuelve a Hoy`);
   // Las herramientas de la tanda D, también al resumen (revisión 2026-10-21).
   for (const r of ['menu-del-dia', 'wifi-clientes', 'aforo', 'pedidos', 'preguntas', 'festivo/2026-11-01', 'estaba-cerrado', 'ficha/que-pedir', 'cerrados']) {
     await p.goto(`${BASE}/panel#/${r}`, { waitUntil: 'networkidle' });
     await p.waitForTimeout(300);
     await p.waitForSelector('.aviso-parado');
-    ok(/#\/resumen$/.test(p.url()), `${nombre}/${t} bloqueado: #/${r} vuelve al resumen`);
+    ok(/#\/hoy$/.test(p.url()), `${nombre}/${t} bloqueado: #/${r} vuelve a Hoy`);
   }
   // «Pagar» → «Tu plan».
+  await p.goto(`${BASE}/panel#/hoy`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.aviso-parado');
   await p.click('.aviso-parado a.btn.primary');
   await p.waitForSelector('#plan-pagar');
   const plan = await texto(p);
@@ -400,7 +408,9 @@ async function panelEncargado(nav, nombre, t, vp) {
   const v = await texto(p);
   ok(/Hay un pago pendiente del plan/.test(v) && /Solo el propietario del negocio puede pagar el plan/.test(v) && await p.locator('.aviso-parado .btn.primary').count() === 0,
     `${nombre}/${t} encargado bloqueado: sin «Pagar»`);
-  ok(!/Dar de baja el negocio/.test(await menu(p)) && /Tu plan/.test(await menu(p)), `${nombre}/${t} encargado bloqueado: el menú sin la baja`);
+  await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('.neg-tiles');
+  ok(await p.locator('#g-delicado, #view a[href="#/baja"]').count() === 0 && await p.locator('[data-neg="plan"]').count() === 1, `${nombre}/${t} encargado bloqueado: Negocio con «Tu plan», sin la baja`);
   if (t === 'escritorio') await p.screenshot({ path: `${OUT}/web-bloqueado-encargado-${nombre}-${t}.png`, fullPage: true });
   ok(errores.length === 0, `${nombre}/${t} encargado sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
@@ -413,8 +423,9 @@ async function panelPersonal(nav, nombre, t, vp) {
     await p.waitForSelector('.aviso-parado');
     const v = await texto(p);
     const titulo = caso === 'personal' ? /Ahora no se puede publicar/ : /Cerrado temporalmente hasta el 3 de noviembre de 2026/;
-    ok(titulo.test(v) && /Habla con el propietario del negocio/.test(v) && /Validar códigos/.test(v),
-      `${nombre}/${t} ${caso}: aviso neutro y «Validar códigos»`);
+    // Validar, en su sección (el botón de antes la repetía; §4zzz-propnegB).
+    ok(titulo.test(v) && /Habla con el propietario del negocio/.test(v) && /Validar/.test(await menu(p) + await p.locator('#tabbar').textContent()),
+      `${nombre}/${t} ${caso}: aviso neutro y «Validar»`);
     ok(!/bloqueado|pago|pagar|cobra|plan no está|prueba gratis|Volver a abrir/i.test(await p.locator('.aviso-parado').innerText())
       && await p.locator('.aviso-parado .btn').count() === 0,
       `${nombre}/${t} ${caso}: nada del cobro ni botones`);
@@ -453,8 +464,8 @@ async function panelArranque(nav, nombre, t, vp) {
     const { ctx, p, errores } = await contextoPanel(nav, vp, caso);
     await p.goto(`${BASE}/panel`, { waitUntil: 'networkidle' });
     if (caso === 'gratisLejos') {
-      // El resumen ya pintado (los botones de arriba) y sin el aviso.
-      await p.waitForSelector('[data-go=validar]');
+      // Hoy ya pintado (las cifras de hoy) y sin el aviso.
+      await p.waitForSelector('.hoy-cab');
       await p.waitForTimeout(300);
       ok(await p.locator('.aviso-cobro').count() === 0 && !/Gratis de lanzamiento» termina/.test(await texto(p)),
         `${nombre}/${t} gratis a más de un mes del fin: sin aviso arriba`);
@@ -487,7 +498,7 @@ async function panelPronto(nav, nombre, t, vp) {
     ok(await p.locator('.aviso-cobro').count() === 1 && /Tu negocio se bloquea el/.test(v), `${nombre}/${t} ${caso}: un solo aviso arriba`);
     if (caso === 'pronto') {
       ok(/Tu prueba gratis está a punto de acabar/.test(v) && (await p.locator('.aviso-cobro a.btn.primary').getAttribute('href')) === '#/plan', `${nombre}/${t} se bloquea pronto: «Pagar» a «Tu plan»`);
-      ok(/Publicaciones/.test(await menu(p)), `${nombre}/${t} se bloquea pronto: el menú de siempre`);
+      ok(/Publicar/.test(await menu(p)) && /Que vuelvan/.test(await menu(p)), `${nombre}/${t} se bloquea pronto: el menú de siempre`);
       await p.screenshot({ path: `${OUT}/web-pronto-resumen-${nombre}-${t}.png`, fullPage: false });
       await p.goto(`${BASE}/panel#/plan`, { waitUntil: 'networkidle' });
       await p.waitForSelector('#plan-pagar');
@@ -517,10 +528,10 @@ async function panelEntidad(nav, nombre, t, vp) {
     const v = await texto(p);
     ok(await p.locator('.aviso-parado').count() === 0 && await p.locator('.aviso-cobro').count() === 0
       && !/bloquea|Pagar|prueba gratis/i.test(v), `${nombre}/${t} ${caso}: sin bloqueo ni avisos de cobro`);
-    ok(/Publicaciones/.test(await menu(p)), `${nombre}/${t} ${caso}: el menú de siempre`);
+    ok(/Publicar/.test(await menu(p)) && /Agenda y equipo/.test(await menu(p)), `${nombre}/${t} ${caso}: el menú de siempre`);
     await p.goto(`${BASE}/panel#/publicaciones`, { waitUntil: 'networkidle' });
     await p.waitForTimeout(300);
-    ok(/#\/publicaciones$/.test(p.url()), `${nombre}/${t} ${caso}: #/publicaciones se abre (${p.url()})`);
+    ok(/#\/publicar$/.test(p.url()) && await p.locator('#list').count() === 1, `${nombre}/${t} ${caso}: Publicar se abre (${p.url()})`);
     if (t === 'escritorio' && caso === 'entidad') await p.screenshot({ path: `${OUT}/web-entidad-${nombre}-${t}.png`, fullPage: false });
     ok(errores.length === 0, `${nombre}/${t} ${caso} sin errores JS ${errores.join(' | ')}`);
     await ctx.close();

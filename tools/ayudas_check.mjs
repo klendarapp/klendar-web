@@ -132,7 +132,7 @@ const estado3 = { dado: false };
   ok(await p.locator('.ia-oferta, .ia-puesto').count() === 0, 'apagado: en el formulario no sale nada');
   // Con lo escrito, el formulario pregunta antes de salir: de una página en blanco.
   await p.goto('about:blank');
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
   await p.waitForTimeout(400);
   ok(await p.locator('.ia-ideas').count() === 0, 'apagado: en el resumen no hay tarjeta');
   await p.goto('about:blank');
@@ -233,7 +233,7 @@ const estado3 = { dado: false };
 // ── Ideas ────────────────────────────────────────────────────────────────
 {
   const { ctx, p, errores, estado } = await contexto(nav);
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.ia-ideas');
   const txt = await p.locator('.ia-ideas').innerText();
   ok(/Ideas para esta semana/.test(txt) && txt.includes(IDEA.title) && txt.includes(IDEA.reason), 'la tarjeta: la idea y su motivo');
@@ -254,7 +254,7 @@ const estado3 = { dado: false };
 }
 {
   const { ctx, p, estado } = await contexto(nav, { rpc: { business_ideas_week: SEMANA({ ideas: [{ ...IDEA, reason_kind: 'weather' }] }), dismiss_business_idea: { ok: true } } });
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.ia-ideas');
   ok(/MET Norway/.test(await p.locator('.ia-ideas').innerText()), 'el tiempo lleva su fuente');
   await p.click('[data-quita-ia]');
@@ -265,7 +265,7 @@ const estado3 = { dado: false };
 {
   // Sin encender: se ofrece; encender pide el permiso.
   const { ctx, p, estado } = await contexto(nav, { rpc: { business_ideas_week: SEMANA({ enabled: false, consent: false, state: 'none', ideas: [] }), set_ai_consent: { ok: true }, set_business_ideas: { ok: true, enabled: true } } });
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#iaEncender');
   await p.click('#iaEncender');
   await p.waitForSelector('#modal[open]');
@@ -282,7 +282,7 @@ const estado3 = { dado: false };
 {
   // Apagarlas por negocio.
   const { ctx, p, estado } = await contexto(nav, { rpc: { set_business_ideas: { ok: true, enabled: false } } });
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#iaApagar');
   await p.click('#iaApagar');
   // Sin preguntar (se deshace): apagadas y el aviso con «Deshacer».
@@ -333,7 +333,7 @@ const estado3 = { dado: false };
 // ── En francés ───────────────────────────────────────────────────────────
 {
   const { ctx, p, errores } = await contexto(nav, { lang: 'fr' });
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.ia-ideas');
   await p.waitForTimeout(400);
   ok(/Idées pour cette semaine/.test(await p.locator('.ia-ideas').innerText()), 'en francés');

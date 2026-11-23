@@ -183,8 +183,8 @@ async function navegador() {
         await pg.screenshot({ path: `${OUT}/${foto}.png`, fullPage: true });
       }
       await pg.goto(`${BASE}/panel#/series`);
-      await pg.waitForSelector('#view a[href="#/publicaciones"]', { timeout: 15000 }).catch(() => null);
-      ok(await pg.locator('#view a[href="#/publicaciones"]').count() === 1, '3. panel series vacías: «Ver publicaciones»');
+      await pg.waitForSelector('#view a[href="#/publicar"]', { timeout: 15000 }).catch(() => null);
+      ok(await pg.locator('#view a[href="#/publicar"]').count() === 1, '3. panel series vacías: «Ver publicaciones»');
       // La Ayuda, con el asistente apagado: nada.
       await pg.goto(`${BASE}/panel#/ayuda`);
       await pg.waitForSelector('#view [data-asistente]', { state: 'attached' });
