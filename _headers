@@ -165,6 +165,9 @@
   Cache-Control: public, max-age=3600, stale-while-revalidate=604800, no-transform
 /captcha/*
   Cache-Control: public, max-age=3600, stale-while-revalidate=604800, no-transform
+# Su script (fuera de la página por la CSP, §4zzz-csp), con la misma caché.
+/assets/captcha.js
+  Cache-Control: public, max-age=3600, stale-while-revalidate=604800
 
 /widget/*
   ! Content-Security-Policy

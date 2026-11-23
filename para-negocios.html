@@ -93,27 +93,7 @@
   <div class="calc-fila"><label for="c-margen">Margen sobre el ticket</label><span class="calc-campo"><input type="number" id="c-margen" value="60" min="5" max="100" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
   <output id="c-out" for="c-ticket c-desc c-gente c-margen" aria-live="polite"></output>
 </div>
-<script>
-(function () {
-  var $ = function (id) { return document.getElementById(id); };
-  var eur = function (n) { return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-  function calc() {
-    var t = +$('c-ticket').value || 0, d = +$('c-desc').value || 0;
-    var g = +$('c-gente').value || 0, m = +$('c-margen').value || 0;
-    var cobras = t * (1 - d / 100);
-    var ingresos = cobras * g;
-    var margen = ingresos * m / 100;
-    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '
-      + eur(margen) + ' de margen.'
-      + '<br><span class="mu">Cada persona te paga ' + eur(cobras) + ' en vez de ' + eur(t) + '. '
-      + 'Si esa gente iba a venir igual, el descuento te cuesta ' + eur(t * d / 100 * g) + '.</span>';
-  }
-  ['c-ticket', 'c-desc', 'c-gente', 'c-margen'].forEach(function (id) {
-    $(id).addEventListener('input', calc);
-  });
-  calc();
-})();
-</script>
+<script src="/assets/calculadora.js?v=1" defer></script>
 
 <h2>Lo que no hacemos</h2>
 <p>No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: <a href="/preguntas">en la app el orden de serie es «Recomendado»</a> (el tiempo de hoy, lo más nuevo y los gustos de cada persona) y cada uno puede cambiarlo en los filtros («Más cerca», «Empieza antes» o «Lo más nuevo»); lo que pagues no cuenta. Hoy no se vende destacar publicaciones; si algún día se puede, <strong>se dirá</strong> en cada una.</p>
@@ -142,12 +122,6 @@
     <span><!--email_off--><a href="mailto:info@klendar.app">info@klendar.app</a><!--/email_off--> · Hecho en España</span>
   </div>
 </div></footer>
-<script>
-(function(){
-  var links=document.querySelectorAll('.lang a');
-  for(var i=0;i<links.length;i++){links[i].addEventListener('click',function(){try{localStorage.setItem('klendar_lang',this.getAttribute('data-lang'))}catch(e){}});}
-})();
-</script>
 
 <!--/email_off-->
 </body></html>

@@ -57,37 +57,14 @@ PAGINAS['para-negocios'] = (
 
 <h2>Echa la cuenta</h2>
 <p>Con tus números, no con los nuestros. Es una estimación para ver si sale a cuenta, no una promesa.</p>
-<div class="calc" id="calc">
+<div class="calc" id="calc" data-plan="19.9">
   <div class="calc-fila"><label for="c-ticket">Ticket medio</label><span class="calc-campo"><input type="number" id="c-ticket" value="12" min="1" step="0.5" inputmode="decimal"><span class="calc-ud">€</span></span></div>
   <div class="calc-fila"><label for="c-desc">Descuento</label><span class="calc-campo"><input type="number" id="c-desc" value="20" min="0" max="90" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
   <div class="calc-fila"><label for="c-gente">Personas al mes</label><span class="calc-campo"><input type="number" id="c-gente" value="25" min="1" step="1" inputmode="decimal"><span class="calc-ud" aria-hidden="true"></span></span></div>
   <div class="calc-fila"><label for="c-margen">Margen sobre el ticket</label><span class="calc-campo"><input type="number" id="c-margen" value="60" min="5" max="100" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
   <output id="c-out" for="c-ticket c-desc c-gente c-margen" aria-live="polite"></output>
 </div>
-<script>
-(function () {
-  var $ = function (id) { return document.getElementById(id); };
-  var eur = function (n) { return n.toLocaleString('es-ES', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-  function calc() {
-    var t = +$('c-ticket').value || 0, d = +$('c-desc').value || 0;
-    var g = +$('c-gente').value || 0, m = +$('c-margen').value || 0;
-    var cobras = t * (1 - d / 100);
-    var ingresos = cobras * g;
-    var margen = ingresos * m / 100;
-    var plan = 19.9;
-    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
-    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '
-      + eur(margen) + ' de margen. El plan cuesta ' + eur(plan) + ' + IVA: lo pagas con '
-      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' canje' : ' canjes') + '</b> al mes.'
-      + '<br><span class="mu">Cada persona te paga ' + eur(cobras) + ' en vez de ' + eur(t) + '. '
-      + 'Si esa gente iba a venir igual, el descuento te cuesta ' + eur(t * d / 100 * g) + '.</span>';
-  }
-  ['c-ticket', 'c-desc', 'c-gente', 'c-margen'].forEach(function (id) {
-    $(id).addEventListener('input', calc);
-  });
-  calc();
-})();
-</script>
+<script src="/assets/calculadora.js?v=1" defer></script>
 
 <h2>Lo que no hacemos</h2>
 <p>No vendemos tus datos ni los de tus clientes, no cobramos por canje y no ponemos tu oferta por delante de otra porque pagues más: <a href="/preguntas">en la app el orden de serie es «Recomendado»</a> (el tiempo de hoy, lo más nuevo y los gustos de cada persona) y cada uno puede cambiarlo en los filtros («Más cerca», «Empieza antes» o «Lo más nuevo»); la cuota no cuenta. Hoy no se vende destacar publicaciones; si algún día se puede, <strong>se dirá</strong> en cada una.</p>
@@ -127,37 +104,14 @@ PAGINAS['para-negocios'] = (
 
 <h2>Do the maths</h2>
 <p>With your numbers, not ours. It's an estimate to see whether it adds up, not a promise.</p>
-<div class="calc" id="calc">
+<div class="calc" id="calc" data-plan="19.9">
   <div class="calc-fila"><label for="c-ticket">Average ticket</label><span class="calc-campo"><input type="number" id="c-ticket" value="12" min="1" step="0.5" inputmode="decimal"><span class="calc-ud">€</span></span></div>
   <div class="calc-fila"><label for="c-desc">Discount</label><span class="calc-campo"><input type="number" id="c-desc" value="20" min="0" max="90" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
   <div class="calc-fila"><label for="c-gente">People per month</label><span class="calc-campo"><input type="number" id="c-gente" value="25" min="1" step="1" inputmode="decimal"><span class="calc-ud" aria-hidden="true"></span></span></div>
   <div class="calc-fila"><label for="c-margen">Margin on the ticket</label><span class="calc-campo"><input type="number" id="c-margen" value="60" min="5" max="100" step="5" inputmode="decimal"><span class="calc-ud">%</span></span></div>
   <output id="c-out" for="c-ticket c-desc c-gente c-margen" aria-live="polite"></output>
 </div>
-<script>
-(function () {
-  var $ = function (id) { return document.getElementById(id); };
-  var eur = function (n) { return n.toLocaleString('en-GB', { style: 'currency', currency: 'EUR', minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
-  function calc() {
-    var t = +$('c-ticket').value || 0, d = +$('c-desc').value || 0;
-    var g = +$('c-gente').value || 0, m = +$('c-margen').value || 0;
-    var cobras = t * (1 - d / 100);
-    var ingresos = cobras * g;
-    var margen = ingresos * m / 100;
-    var plan = 19.9;
-    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;
-    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '
-      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ' + VAT: '
-      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'
-      + '<br><span class="mu">Each person pays you ' + eur(cobras) + ' instead of ' + eur(t) + '. '
-      + 'If they were coming anyway, the discount costs you ' + eur(t * d / 100 * g) + '.</span>';
-  }
-  ['c-ticket', 'c-desc', 'c-gente', 'c-margen'].forEach(function (id) {
-    $(id).addEventListener('input', calc);
-  });
-  calc();
-})();
-</script>
+<script src="/assets/calculadora.js?v=1" defer></script>
 
 <h2>What we don't do</h2>
 <p>We don't sell your data or your customers' data, we don't charge per redemption, and we don't put your offer ahead of another because you pay more: <a href="/en/faq">in the app the default order is “Recommended”</a> (today's weather, what's newest and each person's interests) and anyone can change it in the filters (“Nearest”, “Starts soonest” or “Newest”); your plan doesn't count. Featuring publications isn't sold today; if it ever is, each one <strong>will say so</strong>.</p>
@@ -793,13 +747,8 @@ SIN_PRECIOS = {
             ('<p>Lo <strong>pruebas gratis</strong>: 30 días con todo al darte de alta, sin tarjeta. Después, un solo plan con todo incluido: 19,90 € + IVA al mes por local (24,08 € con IVA), sin límites, sin permanencia y sin comisión por canje. <a href="/precios">Ver precios</a>.</p>\n'
              '<p class="callout"><strong>Gratis hasta el 31 de marzo de 2027</strong> (te avisamos 7 días y 1 día antes).</p>',
              f'<p class="callout"><strong>Te lo explicamos en persona, sin compromiso</strong>: escríbenos a <a href="mailto:info@klendar.app?subject={ASUNTO_ES}">info@klendar.app</a> y lo vemos con tu caso. Sin permanencia y sin comisión por canje.</p>'),
-            ("    var plan = 19.9;\n"
-             "    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;\n"
-             "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '\n"
-             "      + eur(margen) + ' de margen. El plan cuesta ' + eur(plan) + ' + IVA: lo pagas con '\n"
-             "      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' canje' : ' canjes') + '</b> al mes.'\n",
-             "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' al mes</b> de caja con esa oferta, '\n"
-             "      + eur(margen) + ' de margen.'\n"),
+            # La calculadora (assets/calculadora.js) sin `data-plan` no dice lo que cuesta el plan.
+            ('<div class="calc" id="calc" data-plan="19.9">', '<div class="calc" id="calc">'),
             ('; la cuota no cuenta.', '; lo que pagues no cuenta.'),
             ('  <a class="pill ghost" href="/panel">Entrar al panel</a>\n'
              '  <a class="pill ghost" href="/precios">Ver precios</a>',
@@ -811,13 +760,8 @@ SIN_PRECIOS = {
             ('<p>You <strong>try it free</strong>: 30 days with everything when you register, no card. After that, one plan with everything included: €19.90 + VAT a month per venue (€24.08 incl. VAT), with no limits, no lock-in and no commission per redemption. <a href="/en/pricing">See pricing</a>.</p>\n'
              '<p class="callout"><strong>Free until 31 March 2027</strong> (we remind you 7 days and 1 day before).</p>',
              f'<p class="callout"><strong>We\'ll explain it in person, with no obligation</strong>: email us at <a href="mailto:info@klendar.app?subject={ASUNTO_EN}">info@klendar.app</a> and we\'ll look at your case. No lock-in and no commission per redemption.</p>'),
-            ("    var plan = 19.9;\n"
-             "    var paraPagarlo = cobras * m / 100 > 0 ? Math.ceil(plan / (cobras * m / 100)) : 0;\n"
-             "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '\n"
-             "      + eur(margen) + ' in margin. The plan costs ' + eur(plan) + ' + VAT: '\n"
-             "      + '<b>' + paraPagarlo + (paraPagarlo === 1 ? ' redemption' : ' redemptions') + '</b> a month pays for it.'\n",
-             "    $('c-out').innerHTML = '<b>' + eur(ingresos) + ' a month</b> through the till from that offer, '\n"
-             "      + eur(margen) + ' in margin.'\n"),
+            # La calculadora (assets/calculadora.js) sin `data-plan` no dice lo que cuesta el plan.
+            ('<div class="calc" id="calc" data-plan="19.9">', '<div class="calc" id="calc">'),
             ('  <a class="pill ghost" href="/panel">Go to the dashboard</a>\n'
              '  <a class="pill ghost" href="/en/pricing">See pricing</a>',
              '  <a class="pill ghost" href="/panel">Go to the dashboard</a>'),

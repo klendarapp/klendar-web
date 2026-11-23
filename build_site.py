@@ -323,25 +323,17 @@ def footer(t, only_footer=True):
     legal = ''.join(f'<a href="{h}">{l}</a>' for h, l in t['foot_links_legal'])
     return f'''
 {FOOTER_HTML[t['lang']]}
-<script>
-(function(){{
-  var links=document.querySelectorAll('.lang a');
-  for(var i=0;i<links.length;i++){{links[i].addEventListener('click',function(){{try{{localStorage.setItem('klendar_lang',this.getAttribute('data-lang'))}}catch(e){{}}}});}}
-}})();
-</script>
 {'' if only_footer else LIVE_SCRIPTS}
 {EMAIL_ON}
 </body></html>
 '''
 
 
-LANG_REDIRECT = '''<script>
-// Primera visita a la portada: si el navegador está en inglés, a /en (recordamos la elección).
-// Francés, alemán e italiano también van a la inglesa; catalán, gallego y euskera, a la española
-// (la web pública solo está en español e inglés; «Tu cuenta» y el panel, en los ocho idiomas).
-(function(){try{var p=location.pathname;if(p!=='/')return;var s=localStorage.getItem('klendar_lang');
-if(s?/^(en|fr|de|it)$/.test(s):/^(en|fr|de|it)\\b/i.test(navigator.language||'')){location.replace('/en'+location.hash);}}catch(e){}})();
-</script>'''
+# Primera visita a la portada: si el navegador está en inglés, a /en (recordamos la elección).
+# Francés, alemán e italiano también van a la inglesa; catalán, gallego y euskera, a la española
+# (la web pública solo está en español e inglés; «Tu cuenta» y el panel, en los ocho idiomas).
+# En un fichero y sin `defer` (la CSP no deja scripts en línea, §4zzz-csp): corre antes de pintar.
+LANG_REDIRECT = '<script src="/assets/portada-idioma.js?v=1"></script>'
 
 
 def landing(t):
