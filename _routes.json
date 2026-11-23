@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "description": "Lo que no es HTML (assets, iconos, robots, sitemap, config.js, widget.js, los JS del panel) no pasa por las Functions (límite de CPU del plan gratis; RUNBOOK §3f). Las páginas estáticas sí pasan desde el 23-11 (RUNBOOK §4zzz-csp): functions/_middleware.js les pone un nonce nuevo en la CSP para el script que mete Cloudflare; solo copia la respuesta (menos de 1 ms). /captcha sigue fuera (lleva no-transform: Cloudflare no le mete nada). Lo viejo (/x/, /x.html) pasa y el middleware lo manda a /x con un 301. El admin (§4zzz-admindom) pasa entero por el middleware: en admin.klendar.app, `/` y `/carta` se reescriben a sus ficheros y sus JS y su CSS se sirven tal cual; en klendar.app, `/admin…` (también sus JS) da la 404 normal.",
+  "description": "Lo que no es HTML (assets, iconos, robots, sitemap, config.js, widget.js, los JS del panel) no pasa por las Functions (límite de CPU del plan gratis; RUNBOOK §3f). Las páginas estáticas sí pasan desde el 23-11 (RUNBOOK §4zzz-csp): functions/_middleware.js les pone un nonce nuevo en la CSP para el script que mete Cloudflare; solo copia la respuesta (menos de 1 ms). /captcha sigue fuera (lleva no-transform: Cloudflare no le mete nada). Lo viejo (/x/, /x.html) pasa y el middleware lo manda a /x con un 301. El admin (§4zzz-admindom) pasa entero por el middleware: en admin.klendar.app, `/` y `/carta` se reescriben a sus ficheros y sus JS y su CSS se sirven tal cual; en klendar.app, `/admin…` (también sus JS) da la 404 normal, menos /admin/admin.css, que también usa el panel y va fuera.",
   "include": [
     "/*"
   ],
@@ -17,6 +17,7 @@
     "/assets/*",
     "/captcha",
     "/en/404.html",
-    "/panel/*"
+    "/panel/*",
+    "/admin/admin.css"
   ]
 }

@@ -9,7 +9,7 @@
 //   se sirven tal cual. `/admin…` da la 404 normal. Lo demás, a la misma
 //   dirección en klendar.app (301).
 // - En klendar.app (y www, y *.pages.dev): `/admin…` (también `/admin.html` y
-//   los JS del admin) da la 404 normal de la web, sin pistas de que exista ni
+//   los JS del admin; menos `/admin/admin.css`, que usa el panel) da la 404 normal de la web, sin pistas de que exista ni
 //   de dónde está (Iván, 23-11: las direcciones viejas no redirigen). La
 //   sesión vieja del admin que quedara en klendar.app la borra en silencio
 //   `assets/errores.js`, que cargan todas sus páginas.
@@ -34,6 +34,10 @@ export const esRutaAdmin = (ruta) => /^\/admin(\/|$)/.test(ruta || '');
 
 /** Las páginas del admin en su host → el fichero que las sirve por dentro. */
 export const PAGINAS_ADMIN = { '/': '/admin', '/carta': '/admin/carta' };
+
+/** La hoja de estilos del admin la usa también el panel (`panel.html`): se
+ * sirve en los dos hosts (y va fuera de las Functions, `_routes.json`). */
+export const CSS_COMUN = '/admin/admin.css';
 
 /** Sus JS y su CSS (los pide admin.html): se sirven tal cual en su host. */
 const FICHERO_ADMIN = /^\/admin\/[\w.-]+\.(js|css)$/;
@@ -70,5 +74,5 @@ export function decideHost(url, buena = url.pathname) {
     if (fichero) return buena === ruta ? { reescribe: fichero } : { salto: url.origin + buena + url.search };
     return { salto: origenPublico(url) + buena + url.search };
   }
-  return esRutaAdmin(buena) ? { noExiste: true } : null;
+  return esRutaAdmin(buena) && ruta !== CSS_COMUN ? { noExiste: true } : null;
 }

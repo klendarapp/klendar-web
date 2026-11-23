@@ -148,7 +148,8 @@ ok('origenPublico de admin.localhost', origenPublico(new URL('http://admin.local
   ok('CSP_ADMIN: sin Mapbox ni WebSocket (el admin no los usa)', !/mapbox|wss:/.test(CSP_ADMIN));
   ok('CABECERAS_ADMIN: sin dejarse enmarcar, sin caché, sin buscadores', CABECERAS_ADMIN['x-frame-options'] === 'DENY' && /no-store/.test(CABECERAS_ADMIN['cache-control']) && /noindex/.test(CABECERAS_ADMIN['x-robots-tag']));
   const rutas = JSON.parse(lee('_routes.json'));
-  ok('_routes.json: nada del admin fuera del middleware (en klendar.app, todo 404)', !rutas.exclude.some((r) => r.startsWith('/admin')));
+  ok('_routes.json: del admin, fuera del middleware solo su CSS (lo usa el panel)', rutas.exclude.filter((r) => r.startsWith('/admin')).join() === '/admin/admin.css');
+  ok('el panel sigue con /admin/admin.css (y klendar.app se lo sirve)', /href="\/admin\/admin\.css\?v=/.test(lee('panel.html')) && decideHost(new URL('https://klendar.app/admin/admin.css')) === null);
   ok('robots.txt no nombra el admin', !/admin/i.test(lee('robots.txt')));
   ok('sin página puente', !/puente/.test(lee('functions/_middleware.js')) && !/puente/.test(lee('functions/_lib/admin.js')));
   const js = lee('admin/admin.js');
