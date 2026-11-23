@@ -104,7 +104,16 @@ console.log('Escritorio');
   await page.click('#bandejaFiltros [data-f="denuncia"]');
   const visibles = await page.$$eval('#bandeja .bj', (xs) => xs.filter((x) => !x.hidden).map((x) => x.dataset.tipo));
   ok(visibles.length === 2 && visibles.every((t) => t === 'denuncia'), 'filtrar por tipo', visibles.join(','));
-  await page.click('#bandejaFiltros [data-f=""]');
+  // Sin «Todo» y de varios a la vez (§4zzz-chips): otro tipo se suma; al soltarlos, todo.
+  ok(!(await page.$('#bandejaFiltros [data-f=""]')) && await page.getAttribute('#bandejaFiltros [data-f="denuncia"]', 'aria-pressed') === 'true', 'sin chip «Todo»; el tipo, pulsado');
+  const otro = await page.$$eval('#bandejaFiltros [data-f]', (xs) => xs.map((x) => x.dataset.f).find((f) => f !== 'denuncia'));
+  await page.click(`#bandejaFiltros [data-f="${otro}"]`);
+  const dos = await page.$$eval('#bandeja .bj', (xs) => xs.filter((x) => !x.hidden).map((x) => x.dataset.tipo));
+  ok(dos.length > 2 && dos.every((t) => t === 'denuncia' || t === otro) && dos.includes(otro), 'dos tipos a la vez', dos.join(','));
+  await page.click('#bandejaFiltros [data-f="denuncia"]');
+  await page.click(`#bandejaFiltros [data-f="${otro}"]`);
+  const todas = await page.$$eval('#bandeja .bj', (xs) => xs.filter((x) => !x.hidden).length);
+  ok(todas === (await page.$$('#bandeja .bj')).length && !(await page.$('#bandejaFiltros [aria-pressed="true"]')), 'sueltos, todo');
 
   console.log('  aprobar todos los que cuadran');
   ok((await page.textContent('#bandejaListosN')).trim() === '2', 'cuenta los dos que cuadran (la entidad con documento no)');

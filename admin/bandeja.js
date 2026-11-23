@@ -523,31 +523,46 @@ function activaBandeja(v, cards) {
   const porKey = new Map(cards.map((c) => [c.key, c]));
   const reintentar = caja.querySelector('[data-bandeja-reintentar]');
   if (reintentar) reintentar.onclick = () => route();
-  let filtro = '';
-  try { filtro = localStorage.getItem(BANDEJA_FILTRO) || ''; } catch { /* sin almacenamiento */ }
+  // Los tipos pulsados, de varios a la vez y sin «Todo» (§4zzz-chips):
+  // ninguno o todos, todo. Se guardan separados por comas (lo de antes, uno
+  // solo o '' de «Todo», se lee igual).
+  let filtro = new Set();
+  try { filtro = new Set((localStorage.getItem(BANDEJA_FILTRO) || '').split(',').filter((k) => BANDEJA_TIPOS[k])); } catch { /* sin almacenamiento */ }
 
   const pintaFiltros = () => {
     const vivos = [...porKey.values()];
     const n = {};
     vivos.forEach((c) => { n[c.tipo] = (n[c.tipo] || 0) + 1; });
-    if (filtro && !n[filtro]) filtro = '';
-    const chip = (k, texto, cuantos) => `<button type="button" class="chip${filtro === k ? ' on' : ''}" aria-pressed="${filtro === k}" data-f="${esc(k)}">${esc(texto)} <span class="chip-n">${fmtNum(cuantos)}</span></button>`;
+    for (const k of [...filtro]) if (!n[k]) filtro.delete(k);
+    const chip = (k, texto, cuantos) => `<button type="button" class="chip${filtro.has(k) ? ' on' : ''}" aria-pressed="${filtro.has(k)}" data-f="${esc(k)}">${esc(texto)} <span class="chip-n">${fmtNum(cuantos)}</span></button>`;
     const tipos = Object.keys(BANDEJA_TIPOS).filter((k) => n[k]);
+    const uno = filtro.size === 1 ? [...filtro][0] : '';
     // En el ordenador, los tipos a la vista; en el móvil, un desplegable (catorce botones ocupaban media pantalla).
+    // El desplegable sigue siendo de uno (o «Todo»); con varios pulsados en los chips, lo dice arriba.
+    const varios = filtro.size > 1
+      ? `<option value="-" disabled selected hidden>${esc(`${en ? 'Several types' : 'Varios tipos'} (${tipos.filter((k) => filtro.has(k)).reduce((s, k) => s + n[k], 0)})`)}</option>` : '';
     $('#bandejaFiltros', caja).innerHTML = vivos.length > 1
-      ? `<div class="bandeja-chips">${chip('', en ? 'All' : 'Todo', vivos.length)}${tipos.map((k) => chip(k, BANDEJA_TIPOS[k][en ? 2 : 1], n[k])).join('')}</div>
-        <label class="bandeja-sel"><select id="bandejaSel" aria-label="${en ? 'Filter by type' : 'Filtrar por tipo'}">
-          <option value=""${filtro ? '' : ' selected'}>${esc(`${en ? 'All' : 'Todo'} (${vivos.length})`)}</option>
-          ${tipos.map((k) => `<option value="${esc(k)}"${filtro === k ? ' selected' : ''}>${esc(`${BANDEJA_TIPOS[k][en ? 2 : 1]} (${n[k]})`)}</option>`).join('')}</select></label>`
+      ? `<div class="bandeja-chips">${tipos.map((k) => chip(k, BANDEJA_TIPOS[k][en ? 2 : 1], n[k])).join('')}</div>
+        <label class="bandeja-sel"><select id="bandejaSel" aria-label="${en ? 'Filter by type' : 'Filtrar por tipo'}">${varios}
+          <option value=""${uno || varios ? '' : ' selected'}>${esc(`${en ? 'All' : 'Todo'} (${vivos.length})`)}</option>
+          ${tipos.map((k) => `<option value="${esc(k)}"${uno === k ? ' selected' : ''}>${esc(`${BANDEJA_TIPOS[k][en ? 2 : 1]} (${n[k]})`)}</option>`).join('')}</select></label>`
       : '';
-    const elige = (f) => { filtro = f; try { localStorage.setItem(BANDEJA_FILTRO, filtro); } catch { /* */ } aplica(); };
-    $$('[data-f]', caja).forEach((b) => { b.onclick = () => elige(b.dataset.f); });
+    const guarda = () => { try { localStorage.setItem(BANDEJA_FILTRO, [...filtro].join(',')); } catch { /* */ } aplica(); };
+    $$('[data-f]', caja).forEach((b) => {
+      b.onclick = () => {
+        const k = b.dataset.f;
+        if (!filtro.delete(k)) filtro.add(k);
+        guarda();
+        // El foco, en el mismo chip (se vuelven a pintar).
+        $(`[data-f="${CSS.escape(k)}"]`, caja)?.focus();
+      };
+    });
     const sel = $('#bandejaSel', caja);
-    if (sel) sel.onchange = () => elige(sel.value);
+    if (sel) sel.onchange = () => { filtro = new Set(sel.value ? [sel.value] : []); guarda(); };
   };
   const aplica = () => {
     pintaFiltros();
-    $$('.bj', caja).forEach((el) => { el.hidden = !!filtro && el.dataset.tipo !== filtro; });
+    $$('.bj', caja).forEach((el) => { el.hidden = filtro.size > 0 && !filtro.has(el.dataset.tipo); });
     const total = porKey.size;
     $('#bandejaN', caja).textContent = fmtNum(total);
     $('#bandejaVacia', caja).hidden = total > 0 || !!caja.querySelector('[data-bandeja-reintentar]');
