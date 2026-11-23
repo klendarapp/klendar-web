@@ -98,7 +98,7 @@ PAGES.sorteos = async (v, param) => {
   if (!(await sorteosEnPanel())) {
     const S = KSp.t(sorteoL());
     v.innerHTML = `<section class="vacio"><h2>${esc(S.offTitle)}</h2><p>${esc(S.offTextBiz)}</p>
-      <div class="vacio-botones"><a class="btn primary" href="#/resumen">${esc(S.offGoBiz)}</a></div></section>`;
+      <div class="vacio-botones"><a class="btn primary" href="#/hoy">${esc(S.offGoBiz)}</a></div></section>`;
     return;
   }
   const d = await sorteosDelNegocio();

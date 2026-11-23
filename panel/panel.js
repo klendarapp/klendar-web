@@ -74,9 +74,10 @@ function sinCobroEntidad(s) {
 const cobro = () => SUB?.billing || {};
 const bloqueado = () => cobro().blocked === true;
 const enPausaCierre = () => bloqueado() && cobro().hold === 'paused';
-/** Lo único que se abre con el negocio parado (lo demás, al resumen, que
- * enseña el aviso). `alta` es otro negocio. */
-const RUTAS_BLOQUEO = ['resumen', 'validar', 'momento', 'plan', 'baja', 'alta'];
+/** Lo único que se abre con el negocio parado (lo demás, a Hoy, que enseña
+ * el aviso; Publicar y Negocio, con el mismo aviso, como la app). `alta` es
+ * otro negocio. */
+const RUTAS_BLOQUEO = ['hoy', 'validar', 'publicar', 'negocio', 'momento', 'plan', 'baja', 'alta', 'ayuda'];
 async function cargaCobro() {
   const negocio = BIZ?.id;
   if (!negocio) { SUB = null; return; }
@@ -1004,26 +1005,16 @@ async function preparaNegocio() {
   if (BIZ?.id === conLocal) BIZ.no_fixed_venue = org === true;
   await entidadLista;
   await cobroListo;
-  // «Antes de cerrar» en el menú: se sabe al momento, sin esperar.
-  ANTES = null;
-  const negocio = BIZ.id;
-  rpc('before_closing_setup', { p_business: negocio })
-    .then((r) => { if (BIZ?.id === negocio) { ANTES = r; if (ME) renderNav(currentRoute()[0]); } })
-    .catch(() => {});
-  // «Partidos que pones» en el menú: si es de su gremio o ya pone alguno.
-  PARTIDOS_NAV = null;
-  rpc('business_broadcast_week', { p_business: negocio, p_days: 1, p_lang: I18N.lang })
-    .then((r) => { if (BIZ?.id === negocio) { PARTIDOS_NAV = r; if (ME) renderNav(currentRoute()[0]); } })
-    .catch(() => {});
+  // Lo que sale en Negocio (antes de cerrar, partidos…) lo dice
+  // `business_tools_overview` (panel/negocio.js): el menú ya no lo pregunta
+  // aparte (dos peticiones menos al entrar y al cambiar de local).
 }
-/** Lo de «Antes de cerrar» del negocio (`before_closing_setup`). */
+/** Lo de «Antes de cerrar» del negocio (`before_closing_setup`), cuando se abre. */
 let ANTES = null;
 /** ¿El negocio activo es un organizador sin local fijo? (`preparaNegocio`). */
 const esOrganizador = () => BIZ?.no_fixed_venue === true;
 /** Lo que el panel no enseña a un organizador: necesita un local (tanda C). */
 const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados', 'menu-del-dia', 'wifi-clientes', 'aforo', 'festivo'];
-/** Si «Partidos que pones» sale en el menú (`business_broadcast_week`). */
-let PARTIDOS_NAV = null;
 
 /** A dónde volver después de entrar o de aceptar los términos: la página del
  * panel con lo que traía (el código de un QR escaneado sin sesión, «Crear a
@@ -1155,6 +1146,7 @@ function showLogin() {
 }
 async function noBusiness() {
   $('#nav').innerHTML = '';
+  $('#tabbar').innerHTML = '';
   $('.bizpick').hidden = true;
   $('#bizTop').hidden = true;
   const v = $('#view');
@@ -1230,7 +1222,6 @@ sb.auth.onAuthStateChange((ev) => {
   // contraseña nueva se pone en «Tu cuenta» y se vuelve al panel.
   if (ev === 'PASSWORD_RECOVERY') location.href = '/cuenta/nueva-clave?destino=%2Fpanel';
 });
-$('#menuBtn').onclick = () => MENU.alterna();
 
 // ── Idioma ──────────────────────────────────────────────────────────────────
 // El panel se escribió en español; la versión inglesa se pinta encima (ver
@@ -1309,68 +1300,58 @@ const SVG = {
 const svg = (n, s = 20) => `<svg class="ms svg" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${SVG[n]}"/></svg>`;
 const icono = (n) => (SVG[n] ? svg(n) : ms(n));
 
-// El menú, ordenado como «Mi negocio» en la app (Iván, 2026-10-10: nada se
-// quita, todo ordenado): arriba lo de todos los días (Resumen, Calendario,
-// Validar códigos y Publicaciones, con las novedades dentro); «Lo esencial»
-// (Tu ficha, Fidelizar, Cifras y RRPP), «Más herramientas» en su propia fila,
-// «Tu negocio» (Equipo, Reseñas, Preguntas, Días cerrados y Preguntas
-// frecuentes) y al final «Tu plan» (Iván, 2026-11-12: como la app, también
-// los iconos). Lo de Fidelizar (sellos, bonos,
-// cumpleaños, avisar a los clientes, sorteos, cupón y habituales) y lo de
-// «Más herramientas» (cola, tele, partidos, grupos, antes de cerrar, series,
-// carta y cartel del local) se abre desde su pantalla y marca su entrada.
-// `en` dice qué pantallas cuentan como esa entrada (para marcarla).
-const NAV = [
-  [null, [
-    ['resumen', 'dashboard', 'Resumen'],
-    ['calendario', 'calendario', 'Calendario'],
-    ['validar', 'qr_code_scanner', 'Validar códigos'],
-    ['publicaciones', 'bolt', 'Publicaciones', ['asistentes', 'cartel', 'novedades']],
-  ]],
-  ['Lo esencial', [
-    // «Dar de baja el negocio» está en la «Zona delicada» de «Tu ficha».
-    ['ficha', 'storefront', 'Tu ficha', ['baja']],
-    // Fidelizar (panel/fidelizar.js): lo ve todo el equipo; cambiarlo,
-    // propietario y encargado.
-    ['fidelizar', 'favorite', 'Fidelizar', ['cupon', 'habituales', 'sellos', 'bonos', 'cumpleanos', 'mensajes', 'sorteos']],
-    ['informe', 'insights', 'Cifras'],
-    ['rrpp', 'badge', 'RRPP'],
-  ]],
-  // «Más herramientas» (panel/herramientas.js): lo opcional, en una fila
-  // aparte entre «Lo esencial» y «Tu negocio», como en la app.
-  [null, [
-    ['herramientas', 'herramientas', 'Más herramientas', ['cola', 'tele', 'partidos', 'grupos', 'antes-de-cerrar', 'series', 'carta', 'cartel-local', 'menu-del-dia', 'wifi-clientes', 'aforo', 'pedidos']],
-  ]],
-  ['Tu negocio', [
-    ['equipo', 'group', 'Equipo'],
-    ['resenas', 'reviews', 'Reseñas'],
-    // «Pregúntale al local» (panel/preguntas.js).
-    ['preguntas', 'contact_support', 'Preguntas'],
-    ['cerrados', 'event_busy', 'Días cerrados'],
-    // Las preguntas frecuentes de los negocios (como la app: «Preguntas
-    // frecuentes», dentro de «Tu negocio»; no hay grupo «Ayuda»).
-    ['ayuda', 'help_outline', 'Preguntas frecuentes'],
-  ]],
-  // «Tu plan» (panel/plan.js): estado del plan y, para el propietario,
-  // pagar. Al final, aparte, como la tarjeta del plan en «Mi negocio».
-  [null, [
-    ['plan', 'workspace_premium', 'Tu plan'],
-  ]],
+// ── Las cuatro secciones, como el modo negocio de la app ────────────────────
+// (Iván, 23-11; RUNBOOK §4zzz-panelapp). Hoy · Validar · Publicar · Negocio,
+// con los mismos nombres, iconos y orden que la barra de la app, las cuatro
+// iguales. El personal ve tres (sin Publicar) y una entidad, «Entidad» con su
+// icono. En el escritorio y la tablet en horizontal, a la izquierda, con los
+// grupos de Negocio debajo (siempre a la vista: son cinco); en el móvil y la
+// tablet en vertical, abajo, como la app. Antes: un menú con «Resumen»,
+// «Lo esencial», «Más herramientas», «Tu negocio»… y una barra «Lo
+// principal» distinta en el móvil.
+//
+// Cada pantalla de siempre sigue en su dirección (`#/ficha`, `#/sellos`…) y
+// marca su sección y su grupo; las direcciones viejas (`#/resumen`,
+// `#/publicaciones`, `#/herramientas`) llevan a su sitio nuevo (`ALIAS`).
+const SECCIONES = [
+  ['hoy', 'today', 'Hoy'],
+  ['validar', 'qr_code_scanner', 'Validar'],
+  ['publicar', 'add_box', 'Publicar'],
+  ['negocio', 'storefront', 'Negocio'],
 ];
-/** Las cuatro de todos los días, abajo en el móvil, en el mismo orden que
- * arriba del menú (y que «Mi negocio» de la app); «Más» abre el menú entero. */
-const BARRA = ['resumen', 'calendario', 'validar', 'publicaciones'];
-/** Con el negocio parado (bloqueado o en pausa), el menú solo lleva lo que se
- * puede hacer: el aviso (en el resumen), validar, «Tu plan» y darse de baja. */
-const NAV_BLOQUEO = [
-  [null, [
-    ['resumen', 'dashboard', 'Resumen'],
-    ['validar', 'qr_code_scanner', 'Validar códigos'],
-    ['plan', 'workspace_premium', 'Tu plan'],
-    ['baja', 'salir', 'Dar de baja el negocio'],
-  ]],
+/** Los grupos de Negocio, en el orden de la app (`BizToolSection`): su
+ * dirección (`#/negocio/<grupo>`) y las pantallas que cuentan como suyas
+ * (para marcarlo en el menú). Lo delicado y «Salir del equipo» van al final
+ * de Negocio, sin entrada propia (como la app). */
+const GRUPOS_NEGOCIO = [
+  ['tu-ficha', ['ficha', 'carta', 'cerrados', 'resenas', 'preguntas', 'estaba-cerrado']],
+  ['que-vuelvan', ['fidelizar', 'sellos', 'bonos', 'cupon', 'cumpleanos', 'habituales', 'mensajes', 'sorteos']],
+  ['en-el-local', ['cola', 'aforo', 'pedidos', 'encargos', 'encargos-cosas', 'menu-del-dia', 'antes-de-cerrar', 'wifi-clientes', 'cartel-local', 'tele', 'partidos', 'grupos']],
+  ['agenda-y-equipo', ['series', 'calendario', 'equipo', 'rrpp']],
+  ['cifras', ['informe', 'plan', 'ayuda']],
 ];
-const menuActual = () => (bloqueado() ? NAV_BLOQUEO : NAV);
+/** Las direcciones de antes de las cuatro secciones (correos, avisos,
+ * marcadores): se cambian por la nueva sin dejar la vieja en el historial.
+ * `#/publicaciones` (sin más) es Publicar: lo mira `route`. */
+const ALIAS = { resumen: 'hoy', herramientas: 'negocio' };
+/** La sección de una pantalla. Lo de publicar es de Publicar para quien
+ * gestiona; el personal no tiene Publicar (la lista de lo publicado, de solo
+ * mirar, cuelga de Hoy, como «Ver todo» de la app). */
+function seccionDe(page) {
+  if (page === 'alta') return null;
+  if (['hoy', 'festivo'].includes(page)) return 'hoy';
+  if (['validar', 'momento'].includes(page)) return 'validar';
+  if (['publicar', 'publicaciones', 'novedades', 'asistentes', 'cartel'].includes(page)) return gestiona() && !bloqueado() ? 'publicar' : 'hoy';
+  return 'negocio';
+}
+const grupoDe = (page) => (GRUPOS_NEGOCIO.find(([, ps]) => ps.includes(page)) || [])[0] || null;
+/** Las secciones que ve este papel: el personal, sin Publicar (como la app). */
+const seccionesVisibles = () => SECCIONES.filter(([k]) => k !== 'publicar' || gestiona());
+/** Icono y nombre de una sección: «Negocio» o, en una entidad, «Entidad»
+ * con su icono (la app, `bizModeTabEntity`). */
+const nombreSeccion = ([k, ic, txt]) => (k === 'negocio' && typeof esEntidad === 'function' && esEntidad()
+  ? ['account_balance', bi('Entidad', 'Organisation')] : [ic, bi(txt, { Hoy: 'Today', Validar: 'Validate', Publicar: 'Publish', Negocio: 'Business' }[txt])]);
+
 /** En una entidad, sus palabras: «Tu entidad», «Dar de baja la entidad»…
  * (Iván, 20-11; §4zzz-propent). Lo demás, tal cual. */
 const PALABRAS_ENTIDAD = {
@@ -1397,61 +1378,44 @@ function palabrasEntidadEn(root) {
 /** «Esta sección es del propietario o de un encargado»: el único aviso para
  * el personal que llega a algo que no es suyo, por la dirección, un enlace o
  * «Nueva oferta» (antes había dos distintos; Iván, 20-11). Con el candado y
- * salida al resumen, centrado como las pantallas vacías. */
+ * salida a Hoy, centrado como las pantallas vacías. */
 function pintaSoloGestion(v) {
   v.innerHTML = `<section class="vacio" aria-labelledby="soloGestionT">
       <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
       <h1 id="soloGestionT">Esta sección es del propietario o de un encargado</h1>
-      <div class="vacio-botones"><a class="btn primary" href="#/resumen">Ir al resumen</a></div></section>`;
+      <div class="vacio-botones"><a class="btn primary" href="#/hoy">Ir a Hoy</a></div></section>`;
   I18N.translate(v);
 }
 
-const barraActual = () => (bloqueado() ? ['resumen', 'validar', ...(gestiona() ? ['plan'] : [])] : BARRA);
-const visibleEnMenu = (k) => (gestiona() || !SOLO_GESTION.includes(k)) && (k !== 'baja' || esPropietario())
-  && (k !== 'antes-de-cerrar' || !!ANTES?.suggested)
-  && (k !== 'partidos' || !!PARTIDOS_NAV?.suggested)
-  && !(esOrganizador() && SIN_LOCAL_FIJO.includes(k))
-  && !(typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(k));
-const marcada = (current, n) => current === n[0] || (n[3] || []).includes(current);
+/** El menú de la izquierda y la barra de abajo: las mismas secciones. En el
+ * menú, debajo de Negocio, sus grupos (los que tiene este papel y este
+ * negocio, `negGrupos` de panel/negocio.js); el de la pantalla abierta,
+ * marcado. La sección de una pantalla de dentro se marca como «actual»
+ * (`aria-current="true"`); su portada, como la página. */
 function renderNav(current) {
-  let g = 0;
-  const nav = menuActual();
-  $('#nav').innerHTML = nav.map(([titulo, items]) => {
-    const vis = items.filter((n) => visibleEnMenu(n[0]));
-    if (!vis.length) return '';
-    const id = `navg${g++}`;
-    const tit = palabraEntidad(titulo);
-    return `<div class="nav-grupo" ${titulo ? `role="group" aria-labelledby="${id}"` : ''}>
-      ${titulo ? `<p class="group" id="${id}">${esc(tit)}</p>` : ''}
-      ${vis.map((n) => `<a class="nav ${marcada(current, n) ? 'on' : ''}" href="#/${n[0]}"${marcada(current, n) ? ' aria-current="page"' : ''}>${icono(n[1])}<span>${esc(palabraEntidad(n[2]))}</span></a>`).join('')}
-    </div>`;
+  const [, param] = currentRoute();
+  const sec = seccionDe(current);
+  const secs = seccionesVisibles();
+  const grupo = sec === 'negocio' ? (current === 'negocio' ? param || null : grupoDe(current)) : null;
+  const marca = (on, tipo) => (on ? ` aria-current="${tipo}"` : '');
+  const grupos = !bloqueado() && typeof negGrupos === 'function' ? negGrupos().filter(([g]) => g !== 'delicado') : [];
+  $('#nav').innerHTML = secs.map((s) => {
+    const [ic, txt] = nombreSeccion(s);
+    const on = sec === s[0];
+    const portada = on && current === s[0] && !(s[0] === 'negocio' && param);
+    const a = `<a class="nav${on ? ' on' : ''}" href="#/${s[0]}"${marca(on, portada ? 'page' : 'true')}>${icono(ic)}<span>${esc(txt)}</span></a>`;
+    if (s[0] !== 'negocio' || !grupos.length) return a;
+    return `${a}<ul class="nav-sub" aria-label="${esc(txt)}">${grupos.map(([g, titulo]) => `<li><a href="#/negocio/${g}"${grupo === g
+      ? ` class="on"${marca(true, current === 'negocio' ? 'page' : 'true')}` : ''}>${esc(titulo)}</a></li>`).join('')}</ul>`;
   }).join('');
-  I18N.translate($('#nav'));
-  const todas = nav.flatMap(([, items]) => items);
-  const barra = barraActual();
-  const enBarra = barra.some((k) => marcada(current, todas.find((n) => n[0] === k)));
-  $('#tabbar').innerHTML = barra.map((k) => todas.find((n) => n[0] === k)).map((n) =>
-    `<a href="#/${n[0]}" class="${marcada(current, n) ? 'on' : ''}"${marcada(current, n) ? ' aria-current="page"' : ''}>${icono(n[1])}<span>${esc(n[2] === 'Validar códigos' ? 'Validar' : n[2])}</span></a>`).join('')
-    + `<button type="button" id="masBtn" class="${enBarra ? '' : 'on'}" aria-expanded="false" aria-controls="side">${ms('more_horiz')}<span>${esc(I18N.t('Más'))}</span></button>`;
-  $('#tabbar').style.setProperty('--n', String(barra.length + 1));
-  I18N.translate($('#tabbar'));
-  $('#masBtn').onclick = () => abreMenu(true);
+  $('#tabbar').innerHTML = secs.map((s) => {
+    const [ic, txt] = nombreSeccion(s);
+    const on = sec === s[0];
+    return `<a href="#/${s[0]}"${on ? ' class="on"' : ''}${marca(on, current === s[0] ? 'page' : 'true')}>${icono(ic)}<span>${esc(txt)}</span></a>`;
+  }).join('');
+  $('#tabbar').style.setProperty('--n', String(secs.length));
 }
-
-// El menú en el móvil: un cajón (assets/cajon.js) que se abre con «Más» (o
-// «Menú» arriba) y se cierra con su X, tocando fuera, con Escape, al elegir
-// una opción o deslizándolo a la izquierda, y devuelve el foco.
-const MENU = window.KL_CAJON({
-  cajon: $('#side'), velo: $('#sideVelo'), cerrar: $('#menuCerrar'),
-  botones: () => $$('#menuBtn, #masBtn'),
-  detras: () => [$('#side').nextElementSibling.nextElementSibling, $('#tabbar'), ...$$('body > [data-only]')],
-});
-/** Al cambiar de pantalla, el cajón se cierra sin mover el foco (la pantalla nueva se lo queda). */
-function abreMenu(abrir) {
-  if (abrir) MENU.abre();
-  else MENU.cierra(true);
-}
-const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
+const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'hoy').split('/');
 const PAGES = {};
 // Cada pintada lleva su número: si mientras carga una se pide otra (cambiar
 // de negocio y de pantalla seguido), lo que termine tarde no pisa ni saca
@@ -1527,7 +1491,7 @@ async function puedeSalir() {
   const destino = location.hash;
   if (!GUARDA || !GUARDA.sucia() || (GUARDA.dentro && GUARDA.dentro(destino))) { HASH_ANTES = destino; return true; }
   // Se vuelve a la pantalla de antes sin pintarla otra vez y se pregunta.
-  history.replaceState(null, '', HASH_ANTES || '#/resumen');
+  history.replaceState(null, '', HASH_ANTES || '#/hoy');
   if (!(await confirmaSalir())) return false;
   GUARDA = null;
   HASH_ANTES = destino;
@@ -1544,35 +1508,44 @@ async function route() {
   // Con la barra de abajo del móvil, que el formulario de publicación esconde.
   document.body.classList.remove('con-barra-pub');
   let [page, param] = currentRoute();
+  // Las direcciones de antes de las cuatro secciones (`#/resumen`,
+  // `#/publicaciones`, `#/herramientas`, también con `?biz=` o `?estado=`
+  // de un correo o un aviso): a la nueva, con lo que lleven detrás.
+  const nueva = ALIAS[page] || (page === 'publicaciones' && !param ? 'publicar' : null);
+  if (nueva) {
+    const resto = location.hash.replace(/^#\/?[^?]*/, '');
+    page = nueva;
+    param = undefined;
+    history.replaceState(null, '', `#/${nueva}${resto}`);
+    HASH_ANTES = location.hash;
+  }
   const pedida = page;
   // Un empleado que llega por un enlace a algo del propietario o de un
-  // encargado (sellos, equipo, ficha…): un aviso corto con salida al resumen,
-  // no el resumen sin más (Iván, 2026-10-28). La dirección se queda.
+  // encargado (sellos, equipo, ficha…): un aviso corto con salida a Hoy,
+  // no Hoy sin más (Iván, 2026-10-28). La dirección se queda.
   const soloGestion = !gestiona() && SOLO_GESTION.includes(page) && !bloqueado();
   if (soloGestion) {
     renderNav(page);
-    abreMenu(false);
     const v = document.createElement('div');
     pintaSoloGestion(v);
     $('#view').replaceChildren(v);
     return;
   }
-  if (!gestiona() && SOLO_GESTION.includes(page)) page = 'resumen';
-  if (esOrganizador() && SIN_LOCAL_FIJO.includes(page)) page = 'resumen';
-  if (typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(page)) page = 'resumen';
-  // Lo que este papel no abre lleva al resumen y la dirección lo dice (antes
+  if (!gestiona() && SOLO_GESTION.includes(page)) page = 'hoy';
+  if (esOrganizador() && SIN_LOCAL_FIJO.includes(page)) page = 'hoy';
+  if (typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(page)) page = 'hoy';
+  // Lo que este papel no abre lleva a Hoy y la dirección lo dice (antes
   // se quedaba, por ejemplo, en #/sellos con el resumen pintado).
-  if (page !== pedida) { param = undefined; history.replaceState(null, '', '#/resumen'); HASH_ANTES = '#/resumen'; }
-  // Parado (bloqueado o en pausa): lo demás lleva al resumen, que lo explica.
+  if (page !== pedida) { param = undefined; history.replaceState(null, '', '#/hoy'); HASH_ANTES = '#/hoy'; }
+  // Parado (bloqueado o en pausa): lo demás lleva a Hoy, que lo explica.
   if (bloqueado() && !RUTAS_BLOQUEO.includes(page)) {
-    page = 'resumen';
+    page = 'hoy';
     param = undefined;
-    if (location.hash && !/^#\/?(resumen)?(\?|$)/.test(location.hash)) history.replaceState(null, '', '#/resumen');
+    if (location.hash && !/^#\/?(hoy)?(\?|$)/.test(location.hash)) history.replaceState(null, '', '#/hoy');
   }
   renderNav(page);
-  // Al ir a otra pantalla, el cajón se cierra; si el foco se ha quedado sin
-  // sitio (el botón «Más» se repinta), pasa a la pantalla nueva.
-  abreMenu(false);
+  // Si el foco se ha quedado sin sitio (el menú se repinta), pasa a la
+  // pantalla nueva.
   if (!document.activeElement || document.activeElement === document.body || !document.activeElement.isConnected) $('#view').focus({ preventScroll: true });
   // Cada pintada va en su propia caja: si una vieja termina tarde, escribe
   // en una caja que ya no está en la página y no se ve.
@@ -1580,7 +1553,7 @@ async function route() {
   v.innerHTML = '<div class="loading">Cargando…</div>';
   $('#view').replaceChildren(v);
   try {
-    await (PAGES[page] || PAGES.resumen)(v, param);
+    await (PAGES[page] || PAGES.hoy)(v, param);
     if (n === RUTA_N) {
       sinDobleEnvio(v); palabrasEntidadEn(v); I18N.translate(v);
       // Cambiar de pantalla con el teclado o un lector de pantalla: el foco va
@@ -1616,7 +1589,7 @@ window.addEventListener('hashchange', async () => {
 
 // El alta (`#/alta/1…3`) y «Tu ficha» (`#/ficha/…`) están en ficha.js.
 
-// ── Resumen ─────────────────────────────────────────────────────────────────
+// ── Los avisos de arriba de Hoy ─────────────────────────────────────────────
 /** En revisión o rechazado: qué pasa y cómo escribirnos, como en la app. Si
  * lo rechazamos, el motivo (en inglés si el admin lo escribió). */
 function avisoVerificacion() {
@@ -1867,35 +1840,14 @@ function avisoParado(bill) {
     ${boton}</div>`;
 }
 
-/** El resumen de un negocio parado: el aviso y, para el propietario,
- * descargar los datos y darse de baja. Validar sigue en el menú y en la
- * barra de abajo (sin el botón de antes, que lo repetía; Iván, 20-11, como
- * el modo negocio de la app). */
+/** Hoy (y Publicar) de un negocio parado: solo el aviso, como el modo negocio
+ * de la app. Descargar los datos, darse de baja, «Tu plan» y «Salir del
+ * equipo» están en Negocio (`negParado`); Validar, en su sección. */
 function pintaParado(v) {
-  const bill = cobro();
-  const dueno = esPropietario();
   v.innerHTML = `
     <div class="page-head"><h1>${esc(BIZ.name)}</h1><span class="spacer"></span></div>
-    ${avisoParado(bill)}
-    ${dueno ? tarjetaDescarga() : ''}
-    ${dueno ? `<div class="card"><h2>Dar de baja el negocio</h2>
-      <p class="muted" style="margin:0 0 10px">${esc(bi('Si dejas Klendar: cancelar la suscripción, traspasar el negocio o eliminarlo.', 'If you’re leaving Klendar: cancel the subscription, transfer the business or delete it.'))}</p>
-      <a class="btn" href="#/baja">Dar de baja el negocio</a></div>` : ''}
-    ${dueno ? '' : `<div class="card"><h2>Salir del equipo</h2>
-      <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
-      <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
-  activaDescarga(v);
-  const volver = $('#volver-abrir', v);
-  if (volver) volver.onclick = () => volverAAbrir(volver);
-  const salirEq = $('#salir-equipo', v);
-  if (salirEq) {
-    salirEq.onclick = async () => {
-      if (salirEq.disabled) return;
-      salirEq.disabled = true;
-      try { await salirDelEquipo(); } catch (e) { toast(e.message, true); }
-      salirEq.disabled = false;
-    };
-  }
+    ${avisoParado(cobro())}`;
+  activaParado(v);
 }
 
 /** «Volver a abrir» (pausa por cierre): la Edge Function `billing` (`resume`)
@@ -1936,66 +1888,87 @@ async function pideOtraRevision(boton) {
   }
 }
 
-PAGES.resumen = async (v) => {
-  // Parado (bloqueado o en pausa): solo el aviso y lo que se puede hacer. Lo
-  // de gestión lo niega la base, así que su error solo cuenta si no lo está.
-  if (bloqueado()) { await cargaCobro(); if (bloqueado()) { renderNav('resumen'); return pintaParado(v); } }
-  let fallo = null;
-  const [stats, offers, sub, cerradoDeVerdad, condiciones, cuentas] = await Promise.all([
-    rpc('business_stats', { p_id: BIZ.id }).catch((e) => { fallo = e; return null; }),
-    // Las 8 de arriba, lo vivo primero (Iván, 19-11), como en «Publicaciones».
-    pubsElegidas([], null, 8).catch((e) => { fallo = e; return []; }),
+// ── Hoy ─────────────────────────────────────────────────────────────────────
+// Lo del día de un local, como la pestaña Hoy del modo negocio de la app
+// (RUNBOOK §4zzb, parte 3, y §4zzz-panelapp): el único aviso de arriba, el
+// día con «Cerrar por hoy» al lado, las cifras de hoy (`business_today`: lo
+// de Cifras para hoy), «Por contestar», «¿Hay sitio ahora?», las filas de
+// «Ahora», «Para hoy», en una entidad «Lo próximo», y «Lo último validado».
+// Lo que el antiguo «Resumen» tenía y no es del día está en su sección:
+// publicar y las publicaciones, en Publicar; la ficha, Fidelizar, Cifras,
+// RRPP, «Más herramientas», «Tu negocio», el plan, «Primeros pasos» y
+// «Salir del equipo», en Negocio. Validar, en su sección (era el botón de
+// al lado de «Crear»: un solo camino).
+/** Lo que hay que conectar de un aviso parado o de cobro (los botones). */
+function activaParado(v) {
+  activaDescarga(v);
+  const volver = $('#volver-abrir', v);
+  if (volver) volver.onclick = () => volverAAbrir(volver);
+}
+/** El día del negocio, «Lunes, 23 de noviembre», con mayúscula. */
+const diaDeHoy = () => {
+  const t = new Date().toLocaleDateString(LOC(), { weekday: 'long', day: 'numeric', month: 'long', timeZone: TZ });
+  return t.charAt(0).toLocaleUpperCase(LOC()) + t.slice(1);
+};
+/** Una línea de «Para hoy» o «Lo próximo»: el título, cuándo y cómo va. Quien
+ * gestiona abre la publicación; el personal, los asistentes de un evento con
+ * reserva (lo demás, solo mirar). Como `TodayOffersCard` de la app. */
+function lineaDelDia(o, { conDia = false } = {}) {
+  const evento = o.kind === 'future_event';
+  const ini = evento ? o.event_at : o.redeem_start_at;
+  const fin = evento ? o.event_end_at : o.redeem_end_at;
+  const cuando = conDia
+    ? new Date(ini).toLocaleString(LOC(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: TZ })
+    : `${fmtHora(ini)}${fin ? `–${fmtHora(fin)}` : ''}`;
+  const href = gestiona() ? `#/publicaciones/${o.id}` : evento && o.reservations_enabled ? `#/asistentes/${o.id}` : '';
+  const dentro = `<span class="hoy-linea-t"><b class="title" translate="no">${esc(o.title)}</b>
+      <small>${esc(cuando)} · ${etiquetaEstado(o)}${etiquetaOculta(o)}</small></span>${cifrasRapidas(o)}`;
+  return href ? `<li><a class="hoy-linea" href="${esc(href)}">${dentro}${ms('chevron_right')}</a></li>`
+    : `<li><div class="hoy-linea">${dentro}</div></li>`;
+}
+/** Un título de Hoy con su botón a la derecha («Ver todo», «Ver todos»). */
+const tituloHoy = (id, texto, accion = '') => `<div class="hoy-tit"><h2 id="${id}">${esc(texto)}</h2>${accion}</div>`;
+
+PAGES.hoy = async (v) => {
+  // Parado (bloqueado o en pausa): solo el aviso, como Hoy en la app. Lo de
+  // gestión lo niega la base, así que su error solo cuenta si no lo está.
+  if (bloqueado()) { await cargaCobro(); if (bloqueado()) { renderNav('hoy'); return pintaParado(v); } }
+  const ent = esEntidad();
+  // «Primeros pasos» y el aviso de la ficha a medias (para salir antes en
+  // Sitios) solo a quien gestiona y con el negocio a la vista.
+  const candidato = gestiona() && BIZ.verification_status !== 'rejected' && !BIZ.entity?.pending
+    && (!ent || BIZ.verification_status === 'verified');
+  const sinLocal = esOrganizador() || ent;
+  const conFicha = candidato && !sinLocal && BIZ.verification_status === 'verified';
+  const [hoy, sub, cerradoDeVerdad, condiciones, cuentas, ficha] = await Promise.all([
+    // Si falla, lo demás sale igual y su parte dice el error.
+    rpc('business_today', { p_business: BIZ.id }).catch((e) => ({ error: e })),
     rpc('my_subscription', { p_business: BIZ.id }).catch(() => null),
     rpc('business_closure_state', { p_ref: BIZ.id }).catch(() => null),
     // Un cambio en las condiciones (solo al propietario; la base lo apunta
-    // como visto). Si no llega, no sale: nunca tapa el resumen.
+    // como visto). Si no llega, no sale: nunca tapa Hoy.
     esPropietario() ? rpc('business_terms_notice', { p_business: BIZ.id }).catch(() => null) : null,
-    // «Ver todas (N) · M activas»: lo cuenta la base, no lo que se ha traído.
-    rpc('my_business_offer_counts', { p_business: BIZ.id }).catch(() => null),
+    conFicha ? rpc('my_business_offer_counts', { p_business: BIZ.id }).catch(() => null) : null,
+    conFicha ? sb.from('businesses').select('logo_url, cover_image_url, gallery, opening_hours, menu_url, menu_images, created_at, category_id').eq('id', BIZ.id).maybeSingle()
+      .then((r) => r.data || {}, () => ({})) : {},
   ]);
   if (sub) SUB = sinCobroEntidad(sub);
   // Se acaba de bloquear (o de pausar desde otro sitio): a lo que se puede hacer.
-  if (bloqueado()) { renderNav('resumen'); return pintaParado(v); }
-  if (fallo) throw fallo;
-  const nTodas = cuentas?.todas ?? offers.length;
-  const nActivas = cuentas?.activa ?? offers.filter((o) => estadoPub(o) === 'activa').length;
-  const s = stats || {};
-  // Primeros pasos: recién dado de alta (también mientras se verifica: deja
-  // su oferta lista) y sin nada publicado. La primera oferta, que se repite
-  // sola, en dos toques, y «Completa tu ficha» con lo que falta; lo opcional
-  // no frena el alta y se queda aquí hasta 30 días o hasta que esté todo. Lo
-  // mismo que en la app (alta rápida, 2026-11-05).
-  // «Sin nada publicado»: un borrador aún no cuenta (`publicadas`, las que
-  // han salido alguna vez; con una base de antes, el total). Como la app.
-  const sinNada = cuentas?.publicadas != null ? cuentas.publicadas === 0
-    : (!offers.length && !(cuentas?.total));
-  // Una entidad, cuando ya se ha comprobado su documento (antes no publica).
-  const candidato = gestiona() && BIZ.verification_status !== 'rejected' && !BIZ.entity?.pending
-    && (!esEntidad() || BIZ.verification_status === 'verified');
-  const ficha = candidato
-    ? (await sb.from('businesses').select('logo_url, cover_image_url, gallery, opening_hours, menu_url, menu_images, created_at, category_id').eq('id', BIZ.id).maybeSingle()).data || {}
-    : {};
-  if (candidato) BIZ.category_id = ficha.category_id ?? null;
-  const faltan = candidato ? fichaFaltan(ficha) : [];
+  if (bloqueado()) { renderNav('hoy'); return pintaParado(v); }
+  const d = hoy && !hoy.error && typeof hoy === 'object' && !Array.isArray(hoy) ? hoy : null;
+  if (conFicha && ficha.category_id !== undefined) BIZ.category_id = ficha.category_id ?? null;
+  // Sin nada publicado o recién dado de alta con la ficha a medias: lo dice
+  // «Primeros pasos» (en Negocio) y aquí no se repite el aviso de la ficha.
+  const sinNada = cuentas?.publicadas != null ? cuentas.publicadas === 0 : !(cuentas?.total);
   const reciente = ficha.created_at && Date.now() - new Date(ficha.created_at).getTime() < 30 * 86400e3;
-  const primeros = candidato && (sinNada || (reciente && faltan.some((f) => !f.hecho)));
-  // Sin local fijo (o entidad), cada publicación pide su sitio: ahí, el formulario.
-  const sinLocal = esOrganizador() || esEntidad();
-  const sugerencias = primeros && sinNada && !sinLocal ? await sugerenciasDelNegocio() : [];
-  const paso = (n, hecho, titulo, pista, href, attrs = '') => `<a class="paso${hecho ? ' hecho' : ''}" ${hecho ? '' : `href="${href}" ${attrs}`}>
-      <span class="n">${hecho ? ms('check') : n}</span><span><b>${titulo}</b>${pista && !hecho ? `<small>${pista}</small>` : ''}</span>${hecho ? '' : ms('chevron_right')}</a>`;
+  const primeros = conFicha && (sinNada || (reciente && fichaFaltan(ficha).some((f) => !f.hecho)));
   // Un solo aviso arriba: lo más grave primero (cerrado por Klendar, un
-  // cambio en las condiciones, en revisión o rechazado, cerrado hasta nuevo
-  // aviso). Como la app. Una entidad que se dio de alta y aún no hemos
-  // comprobado lo dice en su lugar (entidades.js).
-  const entidad = esEntidad();
-  // Sin cobro: la entidad o lo que diga la base (`billing.entity`, aunque
-  // BIZ.entity aún no haya llegado).
-  const sinCobro = entidad || cobro().entity === true;
+  // cambio en las condiciones, cerrado por hoy, en revisión o rechazado, lo
+  // del cobro, cerrado hasta nuevo aviso). Como la app. Una entidad que se
+  // dio de alta y aún no hemos comprobado lo dice en su lugar (entidades.js).
+  const sinCobro = ent || cobro().entity === true;
   const aviso = cerradoDeVerdad ? avisoCerrado()
     : condiciones ? avisoCondiciones(condiciones)
-    // Cerrado por hoy (lo ha hecho el negocio y se abre con un toque): antes
-    // que lo del cobro o la verificación, que no cambian hoy. Como la app.
     : pausado() && !cerradoIndef() ? avisoCerradoHoy()
     : BIZ.verification_status !== 'verified' && BIZ.entity?.pending ? entAvisoPendiente()
     : BIZ.verification_status !== 'verified' ? avisoVerificacion()
@@ -2003,9 +1976,6 @@ PAGES.resumen = async (v) => {
       // Una entidad no paga: ningún aviso de cobro ni de bloqueo (Iván, 11-11).
       : gestiona() && !sinCobro && sub?.billing?.block_soon && sub.billing.block_on ? avisoBloqueoPronto(sub.billing)
       : gestiona() && !sinCobro && sub?.status === 'past_due' ? avisoCobro()
-      // El «Gratis de lanzamiento» con fecha de fin: en los últimos 30 días
-      // (cuando llegan el push y el correo; migración 20261260100002 de la
-      // app). Antes, la fecha va en la tarjeta del plan.
       : gestiona() && !sinCobro && gratisAcabaPronto(sub) ? avisoGratisFin(sub)
       : cerradoIndef() ? `<div class="card pausa"><div>
         <h2 style="margin:0">Cerrado hasta nuevo aviso</h2>
@@ -2013,58 +1983,72 @@ PAGES.resumen = async (v) => {
           ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Lo abres de nuevo cuando quieras.'))
           : esc(I18N.t('Solo el propietario puede abrirlo de nuevo.'))}</p></div>
         ${esPropietario() ? '<a class="btn primary" href="#/baja">Abrir de nuevo</a>' : ''}</div>` : '';
-  // Lo último del «un solo aviso arriba»: a la ficha le falta el horario o
-  // una foto. Sale si no hay otro aviso ni pregunta de festivo (la pinta
-  // pedFestivo después) ni «Primeros pasos» (allí ya lo dice).
-  // Pendiente de verificación con otro aviso más grave arriba (las
-  // condiciones, cerrado por hoy…): en una línea, que se vea igual (como Hoy
-  // en la app; §4zzz-propent).
+  // Pendiente de verificación con otro aviso más grave arriba: en una línea,
+  // que se vea igual (como Hoy en la app; §4zzz-propent).
   const avisoEsVerif = !cerradoDeVerdad && !condiciones && !(pausado() && !cerradoIndef())
     && BIZ.verification_status !== 'verified';
   const lineaPendiente = BIZ.verification_status === 'pending' && !avisoEsVerif ? lineaVerificacion() : '';
-  const fichaSitios = !aviso && candidato && !primeros && !sinLocal && BIZ.verification_status === 'verified'
-    ? fichaSitiosFalta(ficha) : null;
-  // Lo de «Tu negocio» (el resto está en el menú): botones iguales.
-  const negocioBtn = (href, icon, txt) => `<a class="herr-btn" href="${href}">${icono(icon)}<span>${esc(I18N.t(txt))}</span></a>`;
+  const fichaSitios = !aviso && conFicha && !primeros ? fichaSitiosFalta(ficha) : null;
+  // «Cerrar por hoy», junto al día, a quien gestiona y con el local abierto;
+  // una entidad no lo tiene (no tiene local ni horario).
+  const puedeCerrar = !cerradoIndef() && !pausado() && gestiona() && BIZ.verification_status === 'verified' && !ent && !cerradoDeVerdad;
+
+  // Las cifras de hoy: «validados hoy» (no a una entidad sin eventos con
+  // reserva: casi siempre 0), «vistas hoy» y, si hay eventos con reserva
+  // hoy, «reservas de hoy» (plazas cogidas de las que hay). Como la app.
+  let cifras = '';
+  let delDia = '';
+  if (d) {
+    const hoyL = d.today || [];
+    const prox = d.next || [];
+    const recientes = d.recent || [];
+    const conReserva = hoyL.filter((o) => o.kind === 'future_event' && o.reservations_enabled);
+    const valida = !ent || Number(d.validated) > 0 || [...hoyL, ...prox].some((o) => o.kind === 'future_event' && o.reservations_enabled);
+    let cogidas = 0;
+    let aforo = 0;
+    for (const o of conReserva) {
+      cogidas += o.seats_taken ?? ((Number(o.redemptions_count) || 0) + (Number(o.reserved_seats) || 0));
+      aforo = aforo == null || o.max_redemptions == null ? null : aforo + Number(o.max_redemptions);
+    }
+    const cifra = (n, de, txt) => `<div class="hoy-cifra"><b>${fmtNum(n)}${de != null ? `<small> /${fmtNum(de)}</small>` : ''}</b><span>${esc(txt)}</span></div>`;
+    const nV = Number(d.validated) || 0;
+    const nVi = Number(d.views) || 0;
+    cifras = `<section class="hoy-cifras" aria-label="${esc(bi('Cifras de hoy', 'Today’s numbers'))}">
+      ${valida ? cifra(nV, null, nV === 1 ? bi('validado hoy', 'validated today') : bi('validados hoy', 'validated today')) : ''}
+      ${cifra(nVi, null, nVi === 1 ? bi('vista hoy', 'view today') : bi('vistas hoy', 'views today'))}
+      ${conReserva.length ? cifra(cogidas, aforo, bi('reservas de hoy', 'reservations today')) : ''}</section>`;
+    const verTodo = ent && prox.length >= 5
+      ? `<a class="linkbtn" href="#/publicar">${esc(bi('Ver todo', 'See all'))}</a>` : '';
+    delDia = `
+      ${hoyL.length ? `<section class="hoy-bloque" aria-labelledby="hoyParaHoy">${tituloHoy('hoyParaHoy', bi('Para hoy', 'For today'))}
+        <ul class="hoy-lineas card">${hoyL.map((o) => lineaDelDia(o)).join('')}</ul></section>` : ''}
+      ${ent ? `<section class="hoy-bloque" aria-labelledby="hoyProximo">${tituloHoy('hoyProximo', bi('Lo próximo', 'Coming up'), verTodo)}
+        ${prox.length ? `<ul class="hoy-lineas card">${prox.map((o) => lineaDelDia(o, { conDia: true })).join('')}</ul>`
+          : `<p class="muted">${esc(bi('No tienes nada publicado para los próximos días.', 'You have nothing published for the coming days.'))}</p>`}</section>` : ''}
+      ${recientes.length ? `<section class="hoy-bloque" aria-labelledby="hoyUltimo">${tituloHoy('hoyUltimo', bi('Lo último validado', 'Latest validated'),
+        `<a class="linkbtn" href="#/validar?recientes=1">${esc(bi('Ver todos', 'See all'))}</a>`)}
+        <ul class="hoy-lineas card">${recientes.map((r) => `<li><a class="hoy-linea" href="#/validar?recientes=1"><span class="hoy-linea-t"><b class="title" translate="no">${esc(r.title || queValidado(r))}</b>
+          <small>${esc([fmtHora(r.at), queValidado(r), entranTxt(r)].filter(Boolean).join(' · '))}${etiquetaDeshecha(r)}</small></span>${ms('chevron_right')}</a></li>`).join('')}</ul></section>` : ''}`;
+    // Sin nada del día en ninguna parte (una entidad tiene «Lo próximo»,
+    // que ya dice si no hay nada): lo que saldrá aquí.
+    if (!hoyL.length && !recientes.length && !ent) {
+      delDia += `<p class="muted hoy-nada" data-hoy-nada>${esc(bi('Nada pendiente ahora mismo. Aquí sale lo del día: lo que hay que contestar, lo publicado para hoy, la cola y lo último validado.',
+        "Nothing pending right now. Today's things show up here: what needs a reply, what's published for today, the queue and the latest validated."))}</p>`;
+    }
+  } else {
+    // Lo del día no ha llegado: lo dice y deja reintentar (lo demás sigue).
+    delDia = `<div class="card hoy-error"><p class="muted" style="margin:0 0 10px">${esc(friendly(hoy?.error?.message))}</p>
+      <button class="btn sm" type="button" data-hoy-otra>${esc(I18N.t('Reintentar'))}</button></div>`;
+  }
+
   v.innerHTML = `
-    <div class="page-head"><h1>${esc(BIZ.name)}</h1>${BIZ.entity?.kind ? `<span class="tag badge-entidad">${icono('entidad')} ${esc(entSello(BIZ.entity.kind))}</span>` : ''}<span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span><span class="spacer"></span>
-      ${!cerradoIndef() && !pausado() && gestiona() && BIZ.verification_status === 'verified' && !entidad
-        ? `<button class="btn sm ghost" type="button" id="pausa" title="${esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}">${esc(I18N.t('Cerrar por hoy'))}</button>` : ''}
-      <a class="btn sm ghost" href="${APP_URL}/b/${esc(BIZ.id)}" target="_blank" rel="noopener">Ver cómo se ve ↗</a></div>
+    <div class="page-head hoy-cab"><h1>${esc(diaDeHoy())}</h1><span class="spacer"></span>
+      ${puedeCerrar ? `<button class="btn sm ghost" type="button" id="pausa" title="${esc(I18N.t('Si hoy no puedes atender, esconde todo de una vez. Mañana vuelve a verse solo.'))}">${esc(I18N.t('Cerrar por hoy'))}</button>` : ''}</div>
     ${aviso}
     ${lineaPendiente}
     ${aviso ? '' : '<div id="festivoCaja"></div>'}
     ${fichaSitios ? '<div id="fichaSitiosCaja"></div>' : ''}
-    <!-- Crear y validar, iguales y uno al lado del otro (como «Mi negocio» en
-         la app), pero un solo coral por pantalla (Iván, 2026-10-28): «Crear»
-         en coral y «Validar códigos» en tinta. Un empleado no publica: solo
-         «Validar códigos», y en coral (es su botón principal). -->
-    <div class="quick quick-2">
-      ${gestiona() ? `<button class="primary" data-go="crear">${svg('mas', 24).replace('class="ms svg"', 'class="ic ms svg"')}Crear<small>${entidad ? 'Evento o novedad' : 'Oferta, evento o novedad'}</small></button>` : ''}
-      <button class="${gestiona() ? 'tinta' : 'primary'}" data-go="validar"><span class="ic ms" aria-hidden="true">qr_code_scanner</span>Validar códigos<small>Con la cámara o escribiendo el código</small></button>
-    </div>
-    ${primeros ? `<div class="card primeros" style="margin-top:14px"><h2>${sugerencias.length ? 'Primeros pasos' : 'Completa tu ficha'}</h2>
-      ${sugerencias.length ? `<h3 class="sug-titulo">Tu primera oferta, que se repite sola</h3>
-      <p class="muted" style="margin:0 0 4px">Elige una y ajusta el precio o los días: sale sola cada semana a su hora.</p>
-      ${sugLista(sugerencias)}
-      <p style="margin:2px 0 10px"><a class="link" href="#/publicaciones/nueva-flash?idea=1">Prefiero escribir otra</a></p>
-      <h3 class="sug-titulo">Completa tu ficha</h3>` : ''}
-      <p class="muted" style="margin:0 0 8px">Nada de esto frena tu alta: hazlo ahora o cuando quieras.</p>
-      ${sinLocal && sinNada ? (esEntidad()
-        // Una entidad publica eventos: su primer evento, no una oferta.
-        ? paso('', false, 'Publica tu primer evento', 'Con su fecha y su sitio: cada evento lleva el suyo.', '#/publicaciones/nuevo-evento')
-        : paso('', false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')) : ''}
-      ${faltan.map((f) => paso('', f.hecho, f.titulo, '', f.href)).join('')}
-    </div>` : ''}
-    <div id="ideasIA" style="margin-top:14px"></div>
-    <!-- Ordenado como la app (Iván, 2026-10-22): «Lo esencial», «Por
-         contestar», «¿Hay sitio ahora?» y «Ahora» (3 filas y «Ver N más»); al
-         lado en el escritorio y debajo en el móvil, las publicaciones.
-         «Cerrar por hoy», arriba junto a «Ver cómo se ve» (cerrado, el
-         aviso de arriba con «Abrir de nuevo»). -->
-    <div class="resumen-cols">
-    <div class="resumen-izq">
-    ${herrEsencialHtml(s)}
+    ${cifras}
     <div id="pendienteCaja"></div>
     <div id="aforoCaja"></div>
     <div id="ahoraCaja">
@@ -2072,45 +2056,17 @@ PAGES.resumen = async (v) => {
       <div id="listoCaja"></div>
       <div id="filasCaja"></div>
     </div>
-    </div>
-    <div class="resumen-der">
-    <div class="card resumen-pubs"><h2>Últimas publicaciones</h2>
-      <ul class="pub-lineas">${offers.map((o) => `<li><a href="#/publicaciones/${esc(o.id)}"><b class="title" translate="no">${esc(o.title)}</b>${etiquetaEstado(o)}${etiquetaOculta(o)}${ms('chevron_right')}</a></li>`).join('')
-        || `<li class="muted">${esc(I18N.t('Todavía no has publicado nada.'))}</li>`}</ul>
-      ${table({
-      cols: [
-        { h: 'Publicación', r: (o) => `<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
-        { h: 'Estado', r: (o) => etiquetaEstado(o) + etiquetaOculta(o) },
-        { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
-        { h: 'Canjes', num: true, r: (o) => fmtNum(o.redemptions_count) },
-        { h: '', r: (o) => `<a class="btn sm" href="#/publicaciones/${esc(o.id)}">Abrir</a>` },
-      ],
-      rows: offers,
-      empty: 'Todavía no has publicado nada.',
-    })}
-      <p style="margin:10px 0 0"><a class="link" href="#/publicaciones">${esc(bi(`Ver todas (${fmtNum(nTodas)}) · ${fmtNum(nActivas)} activas`, `See all (${fmtNum(nTodas)}) · ${fmtNum(nActivas)} active`))}</a></p></div>
-    </div>
-    </div>
-    <a class="mas-herr" href="#/herramientas">${icono('herramientas')}<span><b>${esc(bi('Más herramientas', 'More tools'))}</b>
-      <small>${esc(typeof esEntidad === 'function' && esEntidad()
-        ? bi('Series, tele, enlaces, tu web… Activa lo que te sirva.', 'Series, TV, links, your website… Turn on whatever helps.')
-        : bi('Cola virtual, tele, partidos, carta… Activa lo que te sirva.', 'Virtual queue, TV, matches, menu… Turn on whatever helps.'))}</small></span>${ms('chevron_right')}</a>
-    <h2 class="grupo-titulo">${esc(entidad ? bi('Tu entidad', 'Your organisation') : bi('Tu negocio', 'Your business'))}</h2>
-    <div class="herr-grid">
-      ${gestiona() ? negocioBtn('#/equipo', 'group', 'Equipo') : ''}
-      ${negocioBtn('#/resenas', 'reviews', 'Reseñas')}
-      ${negocioBtn('#/preguntas', 'help_outline', 'Preguntas')}
-      ${gestiona() && !esOrganizador() && !entidad ? negocioBtn('#/cerrados', 'event_busy', 'Días cerrados') : ''}
-      ${negocioBtn('#/ayuda', 'help', 'Ayuda')}
-    </div>
-    ${sub && gestiona() && !sinCobro ? planCard(sub) : ''}
-    ${esPropietario() ? '' : `<div class="card"><h2>Salir del equipo</h2>
-      <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
-      <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}`;
-  herrResumen(v, { cajaFilas: $('#filasCaja', v), cajaPendiente: $('#pendienteCaja', v) });
+    ${delDia}`;
+  // Con algo en «Ahora», la frase de «Nada pendiente» sobra (llega después).
+  const nada = $('[data-hoy-nada]', v);
+  if (nada) new MutationObserver(() => { nada.hidden = !!$('#ahoraCaja .fila-inicio, #pendienteCaja .por-contestar, #aforoCaja .card', v); })
+    .observe(v, { childList: true, subtree: true });
+  const otra = $('[data-hoy-otra]', v);
+  if (otra) otra.onclick = () => route();
+  herrHoy(v, { cajaFilas: $('#filasCaja', v), cajaPendiente: $('#pendienteCaja', v) });
   herrLimitaAhora($('#ahoraCaja', v));
-  const otra = $('#otra-revision', v);
-  if (otra) otra.onclick = () => pideOtraRevision(otra);
+  const revision = $('#otra-revision', v);
+  if (revision) revision.onclick = () => pideOtraRevision(revision);
   const entendido = $('#condiciones-ok', v);
   if (entendido) {
     entendido.onclick = async () => {
@@ -2123,10 +2079,9 @@ PAGES.resumen = async (v) => {
     };
   }
   pintaAforo($('#aforoCaja', v));
-  // «¿Abres el 1 de noviembre?» (pedir.js), si no hay otro aviso.
+  // «¿Abres el 1 de noviembre?» (pedir.js), si no hay otro aviso; si no, el
+  // aviso de la ficha a medias (nunca dos avisos apilados).
   {
-    // La pregunta del festivo y, si no la hay, el aviso de la ficha a medias
-    // (nunca dos avisos apilados).
     const festivo = $('#festivoCaja', v);
     const pinta = () => {
       const caja = $('#fichaSitiosCaja', v);
@@ -2135,39 +2090,18 @@ PAGES.resumen = async (v) => {
     if (typeof pedFestivo === 'function') Promise.resolve(pedFestivo(festivo)).then(pinta, pinta);
     else pinta();
   }
-  if (window.KAyudas && BIZ.verification_status !== 'rejected') KAyudas.tarjeta($('#ideasIA', v));
   // «Cola virtual · N esperando», si está abierta (panel/cola.js).
   if (typeof resumenCola === 'function') resumenCola($('#colaCaja', v));
   // «Pedidos de hoy · N preparando», si el avisador está activado (panel/listo.js).
   if (typeof resumenListo === 'function') resumenListo($('#listoCaja', v));
-  const salirEq = $('#salir-equipo', v);
-  if (salirEq) {
-    salirEq.onclick = async () => {
-      if (salirEq.disabled) return;
-      salirEq.disabled = true;
-      try { await salirDelEquipo(); } catch (e) { toast(e.message, true); }
-      salirEq.disabled = false;
-    };
-  }
-  $$('[data-go]', v).forEach((b) => {
-    b.onclick = () => {
-      const g = b.dataset.go;
-      // Una entidad aún sin comprobar no publica (la base tampoco lo deja).
-      if (g === 'crear' && BIZ.entity?.pending) { toast(I18N.t('Podrás publicar cuando verifiquemos la entidad.'), true); return; }
-      if (g === 'crear') { herrCrear(); return; }
-      location.hash = g === 'validar' ? '#/validar'
-        : g === 'nueva-flash' ? '#/publicaciones/nueva-flash' : '#/publicaciones/nuevo-evento';
-    };
-  });
-  // «Cerrar por hoy» (arriba) y «Abrir de nuevo» (en el aviso): sin
+  // «Cerrar por hoy» (junto al día) y «Abrir de nuevo» (en el aviso): sin
   // preguntar antes, con «Deshacer» en el aviso de abajo.
   for (const b of [$('#pausa', v), $('#pausa-abrir', v)]) {
     if (b) b.onclick = () => cambiaCerradoHoy(b, b.id === 'pausa');
   }
-  sugActiva(v, sugerencias, () => route());
 };
 
-/** Cerrado por hoy: el único aviso de arriba del resumen, con «Abrir de
+/** Cerrado por hoy: el único aviso de arriba de Hoy, con «Abrir de
  * nuevo» a quien gestiona (el personal sabe que está cerrado). */
 function avisoCerradoHoy() {
   return `<div class="card pausa" role="status"><div>
@@ -2272,7 +2206,27 @@ PAGES.publicaciones = async (v, param) => {
   if (param === 'nueva-flash') return offerForm(v, null, 'flash_offer', desde);
   if (param === 'nuevo-evento') return offerForm(v, null, 'future_event', desde);
   if (param) return offerForm(v, param);
+  // Sin más, es Publicar (la dirección vieja la cambia `route`).
+  return PAGES.publicar(v);
+};
 
+// ── Publicar ────────────────────────────────────────────────────────────────
+// Como la pestaña Publicar del modo negocio de la app (Iván, 23-11;
+// §4zzz-panelapp): arriba «¿Qué quieres publicar?» (las cuatro de siempre y
+// «Más formas de publicar ▾», panel/herramientas.js) con las ideas de la
+// semana y, debajo, «Publicaciones», la lista entera con sus chips. Antes,
+// «Crear» abría una ventana desde el resumen y las publicaciones eran otra
+// entrada del menú con «Nueva oferta» y «Nuevo evento» arriba (un camino
+// doble). Solo quien gestiona: el personal no tiene Publicar y, si llega
+// aquí (un enlace, «Ver todo» de Hoy en una entidad), ve la lista para
+// mirar, como «Ver todo» en la app. Parado, solo el aviso (como la app).
+PAGES.publicar = async (v) => {
+  if (bloqueado()) {
+    if (!gestiona()) { location.replace('#/hoy'); return; }
+    v.innerHTML = `<div class="page-head"><h1>${esc(bi('Publicar', 'Publish'))}</h1></div>${avisoParado(cobro())}`;
+    activaParado(v);
+    return;
+  }
   // Por partes: los recuentos de cada estado los da la base y la lista llega
   // de 24 en 24, ya filtrada («Ver más» al final).
   const qf = new URLSearchParams(location.hash.split('?')[1] || '').get('estado');
@@ -2286,14 +2240,24 @@ PAGES.publicaciones = async (v, param) => {
     portadaNegocio(),
   ]);
   const cuentas = cuentasRaw || {};
+  // «¿Qué quieres publicar?»: a quien gestiona. Una entidad aún sin
+  // comprobar no publica (la base tampoco la deja); sin verificar, puede
+  // preparar, con la línea de arriba (como la app).
+  const crear = !gestiona() ? ''
+    : BIZ.entity?.pending ? `<p class="muted crear-bloqueado">${esc(I18N.t('Podrás publicar cuando verifiquemos la entidad.'))}</p>`
+      : await herrCrearHtml();
   // Las cargadas del filtro elegido; las acciones buscan aquí la suya.
   const offers = [...primera];
   let hayMas = primera.length >= POR_PARTE;
   OTROS_LOCALES = otros || [];
+  // El personal: la lista para mirar, con su título de siempre.
+  const pubTit = `<h${gestiona() ? 2 : 1} id="pubsT">${esc(bi('Publicaciones', 'Publications'))}</h${gestiona() ? 2 : 1}>`;
   v.innerHTML = `
-    <div class="page-head"><h1>Publicaciones</h1><span class="spacer"></span>
-      ${gestiona() ? `${esEntidad() ? '' : `<a class="btn sm" href="#/publicaciones/nueva-flash">${ms('bolt')}Nueva oferta</a>`}
-      <a class="btn sm" href="#/publicaciones/nuevo-evento">${ms('event')}Nuevo evento</a>` : ''}
+    ${gestiona() ? `<div class="page-head"><h1>${esc(bi('Publicar', 'Publish'))}</h1></div>
+    ${BIZ.verification_status === 'pending' ? lineaVerificacion() : ''}
+    ${crear}
+    <div id="ideasIA" class="publicar-ideas"></div>` : ''}
+    <div class="page-head pubs-cab">${pubTit}<span class="spacer"></span>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     ${esEntidad() ? '' : helpBox('¿Oferta o evento?', bi('<p><b>Oferta</b>: de unas horas a varios días, o cada semana, con cuenta atrás y aforo («café + tostada 2,50 € hasta mediodía»). <b>Evento</b>: algo con fecha, que se guarda en la agenda y puede admitir reserva de plaza.</p>',
       '<p><b>Offer</b>: from a few hours to several days, or every week, with a countdown and a limit (“coffee + toast €2.50 until noon”). <b>Event</b>: something with a date, which people save to their agenda and where people can reserve a place.</p>'))}
@@ -2415,10 +2379,9 @@ PAGES.publicaciones = async (v, param) => {
     });
     const filas = offers;
     $('#list').innerHTML = !nTotal && !offers.length
-      ? `<div class="card sin-pubs"><h2>${esc(I18N.t('Todavía no has publicado nada.'))}</h2>
-          <p class="muted">${esc(I18N.t('Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.'))}</p>
-          ${gestiona() ? `<p class="actions" style="margin:12px 0 0">${esEntidad() ? '' : `<a class="btn primary" href="#/publicaciones/nueva-flash">${ms('bolt')}${esc(I18N.t('Nueva oferta'))}</a>`}
-          <a class="btn${esEntidad() ? ' primary' : ''}" href="#/publicaciones/nuevo-evento">${ms('event')}${esc(I18N.t('Nuevo evento'))}</a></p>` : ''}</div>`
+      // Qué publicar ya está justo encima (un solo camino).
+      ? `<div class="card sin-pubs"><h3>${esc(I18N.t('Todavía no has publicado nada.'))}</h3>
+          <p class="muted">${esc(I18N.t('Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.'))}</p></div>`
       : (vista === 'lista' ? tablaPublicaciones(filas) : tarjetasPublicaciones(filas)) + (hayMas ? botonVerMas('pubs') : '');
     activaVideos($('#list'));
     const mas = $('[data-ver-mas="pubs"]', $('#list'));
@@ -2517,12 +2480,15 @@ PAGES.publicaciones = async (v, param) => {
   ].map(([c, h]) => [c, I18N.t(h)]));
   };
   render();
+  herrCrearActiva(v);
+  // «Ideas para esta semana» (como la pestaña Publicar de la app).
+  if (gestiona() && window.KAyudas && BIZ.verification_status !== 'rejected') KAyudas.tarjeta($('#ideasIA', v));
   if (gestiona()) renderRules().catch((e) => toast(friendly(e.message), true));
   // Desde el aviso «tu oferta termina en 1 h» (Tu cuenta → notificaciones).
   const qx = new URLSearchParams(location.hash.split('?')[1] || '');
   const aAmpliar = qx.get('extend') && (offers.find((x) => x.id === qx.get('extend')) || await miPublicacion(qx.get('extend')).catch(() => null));
   if (aAmpliar) {
-    history.replaceState(null, '', `${location.pathname}#/publicaciones`);
+    history.replaceState(null, '', `${location.pathname}#/publicar`);
     ampliarDialogo(aAmpliar);
   }
 };
@@ -5163,7 +5129,7 @@ PAGES.validar = async (v) => {
       <div id="cola"></div>
     </div>
     <div id="puertaRrpp"></div>
-    <div class="card" style="margin-top:18px"><h2>Últimos validados</h2>
+    <div class="card ultimos-validados" style="margin-top:18px"><h2 id="recientesT">Últimos validados</h2>
       <p class="muted" style="margin:0 0 10px">${esc(I18N.t('Durante 24 horas puedes apuntar o corregir el importe del ticket de cada canje.'))}</p>
       <div id="recent"></div></div>`;
   // «Pedidos de hoy» (Te aviso cuando esté listo), si está activado.
@@ -5507,6 +5473,17 @@ PAGES.validar = async (v) => {
     };
   }
   await loadRecent();
+  // Desde «Lo último validado» de Hoy (`#/validar?recientes=1`): baja a
+  // «Últimos validados» con el foco en su título.
+  if (new URLSearchParams(location.hash.split('?')[1] || '').get('recientes') === '1') {
+    const t = $('#recientesT', v);
+    if (t) {
+      requestAnimationFrame(() => {
+        t.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+        t.tabIndex = -1; t.focus({ preventScroll: true });
+      });
+    }
+  }
 };
 
 // ── Contacto de quien reserva (como la app: ContactButtons) ─────────────────
@@ -6739,7 +6716,7 @@ PAGES['cartel-local'] = async (v) => {
 function cartelAgenda(v, d, base, url) {
   const q = (mesa) => `${base}${esc(d.token)}?agenda=1${mesa ? '&mesa=1' : ''}`;
   v.innerHTML = `
-    <p class="crumbs"><a href="#/herramientas">${esc(bi('Más herramientas', 'More tools'))}</a></p>
+    <p class="crumbs"><a href="#/negocio/en-el-local">${esc(bi('Pantallas y gente', 'Screens and people'))}</a></p>
     <div class="page-head"><h1>${esc(I18N.t('Cartel «Sigue nuestra agenda»'))}</h1></div>
     ${helpBox('¿Para qué sirve?', `<p>${esc(I18N.t('Para el tablón de anuncios, la entrada o tus actividades. Quien lo escanea con la cámara del móvil ve tu ficha con todo lo que publicas y puede seguirte para enterarse de lo próximo.'))}</p>`)}
     <div class="card cartel-local">
@@ -8352,7 +8329,7 @@ async function eliminarNegocio(v) {
     if (!BIZ) { noBusiness(); return; }
     await preparaNegocio();
     renderBizPicker();
-    location.hash = '#/resumen';
+    location.hash = '#/hoy';
   };
 }
 
@@ -8371,7 +8348,7 @@ async function salirDelEquipo() {
   if (!BIZ) { noBusiness(); return; }
   await preparaNegocio();
   renderBizPicker();
-  if (location.hash === '#/resumen') route(); else location.hash = '#/resumen';
+  if (location.hash === '#/hoy') route(); else location.hash = '#/hoy';
 }
 
 boot();

@@ -640,7 +640,7 @@ async function datosFicha() {
 }
 
 PAGES.ficha = async (v, parte) => {
-  if (!gestiona()) { location.hash = '#/resumen'; return; }
+  if (!gestiona()) { location.hash = '#/hoy'; return; }
   // Un apartado que no existe (un enlace viejo o mal escrito): el índice.
   if (parte === 'carta') { location.hash = '#/carta'; return; }
   if (parte && !PARTES_FICHA.some((p) => p[0] === parte) && !['datos', 'entidad'].includes(parte)) { location.hash = '#/ficha'; return; }
@@ -1135,7 +1135,7 @@ PAGES.alta = async (v, param) => {
       // Como la app (`showDone`): la marca de «hecho» al terminar el alta.
       hechoBreve('Solicitud enviada. Te avisamos cuando la revisemos.');
       // Como la app: al panel del negocio nuevo.
-      if (location.hash === '#/resumen') route(); else location.hash = '#/resumen';
+      if (location.hash === '#/hoy') route(); else location.hash = '#/hoy';
     } catch (e2) {
       $('#err', v).textContent = I18N.t(friendly(e2.message));
       boton.disabled = false;

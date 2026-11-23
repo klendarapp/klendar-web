@@ -10,11 +10,11 @@
 <link rel="icon" href="/favicon.ico" sizes="48x48"><link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96.png"><link rel="manifest" href="/site.webmanifest">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/fonts/material-symbols-panel-v375d.css">
+<link rel="stylesheet" href="/assets/fonts/material-symbols-panel-v375e.css">
 <link rel="stylesheet" href="/assets/site.css?v=20261119a11y2">
 <link rel="stylesheet" href="/admin/admin.css?v=14e6d4d8cf">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=20261119a11y2">
-<link rel="stylesheet" href="/panel/panel.css?v=b9cbcc1300">
+<link rel="stylesheet" href="/panel/panel.css?v=c2fc0ad82a">
 <link rel="stylesheet" href="/panel/partidos.css?v=7e400803a5">
 <link rel="stylesheet" href="/panel/aforo.css?v=dfe54c8f12">
 <link rel="stylesheet" href="/assets/asistente.css?v=4">
@@ -87,23 +87,19 @@
 <div id="app" class="layout" hidden>
   <aside class="side" id="side" aria-label="Menú del panel">
     <div class="side-cab">
-      <a class="brand" href="#/resumen"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar <small>negocios</small></a>
-      <button class="btn sm ghost menu-cerrar" type="button" id="menuCerrar" aria-label="Cerrar el menú"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+      <a class="brand" href="#/hoy"><svg class="simbolo" viewBox="0 0 64 64" width="30" height="30" aria-hidden="true"><path class="simbolo-anillo" pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg> Klendar <small>negocios</small></a>
     </div>
     <div class="bizpick"><select id="bizSelect" aria-label="Negocio"></select></div>
     <nav id="nav" aria-label="Secciones del panel"></nav>
     <div class="me"><span style="opacity:.6">Sesión</span><b id="who"></b><a href="#" id="logout">Cerrar sesión</a></div>
   </aside>
-  <div class="side-velo" id="sideVelo" aria-hidden="true"></div>
   <div>
     <div class="topbar">
       <select id="bizTop" class="biztop" aria-label="Negocio" hidden></select>
-      <button class="btn sm" id="menuBtn" type="button" aria-expanded="false" aria-controls="side"><span class="ms" aria-hidden="true">menu</span>Menú</button>
-      <span class="spacer"></span>
     </div>
     <main class="content" id="view" tabindex="-1"></main>
   </div>
-  <nav class="tabbar" id="tabbar" aria-label="Lo principal"></nav>
+  <nav class="tabbar" id="tabbar" aria-label="Secciones del panel"></nav>
 </div>
 
 <div class="toasts" id="toasts" role="status" aria-live="polite"></div>
@@ -128,15 +124,14 @@
 <script src="/assets/categorias.js?v=7"></script>
 <script src="/assets/emisiones.js?v=20261104st"></script>
 <script src="/assets/artistas.js?v=4"></script>
-<script src="/assets/cajon.js?v=9ba982af34"></script>
-<script src="/panel/panel.js?v=731c6ad1c6"></script>
+<script src="/panel/panel.js?v=4889eb462c"></script>
 <script src="/assets/aviso-ia.js?v=1"></script>
 <script src="/assets/asistente.js?v=3"></script>
 <script src="/panel/foto.js?v=e586ec77e8"></script>
 <script src="/panel/enlace.js?v=49bdb11f04"></script>
 <script src="/panel/ayudas.js?v=11097d6e1e"></script>
-<script src="/panel/ficha.js?v=5313d848b2"></script>
-<script src="/panel/entidades.js?v=e07a6fd068"></script>
+<script src="/panel/ficha.js?v=266b1bd0dd"></script>
+<script src="/panel/entidades.js?v=5c83bca77e"></script>
 <script src="/panel/series.js?v=e3d26fef5d"></script>
 <script src="/panel/partidos.js?v=5122718ced"></script>
 <script src="/panel/rrpp.js?v=ff58ef4879"></script>
@@ -144,25 +139,26 @@
 <script src="/panel/momento.js?v=f35243aca3"></script>
 <script src="/assets/textos-grupos.js?v=4"></script>
 <script src="/assets/textos-sorteos.js?v=7"></script>
-<script src="/panel/sorteos.js?v=e5e2206d47"></script>
+<script src="/panel/sorteos.js?v=2b0510bb48"></script>
 <script src="/panel/grupos.js?v=fc52a87af4"></script>
 <script src="/panel/cola.js?v=622002cba1"></script>
-<script src="/panel/encargos.js?v=7f4e5698d5"></script>
+<script src="/panel/encargos.js?v=21c0d674ca"></script>
 <script src="/assets/cuenta/reservar_preguntas.js?v=7ae366529e"></script>
 <script src="/panel/preguntas_reservar.js?v=2bb8f49479"></script>
 <script src="/panel/listo.js?v=2be30291da"></script>
 <script src="/panel/artistas.js?v=971c4e6468"></script>
 <script src="/panel/guias.js?v=fc854dd56f"></script>
 <script src="/panel/fidelizar.js?v=443037be4f"></script>
-<script src="/panel/herramientas.js?v=9fc0ff3d3e"></script>
+<script src="/panel/herramientas.js?v=56a0cab86c"></script>
+<script src="/panel/negocio.js?v=1c50f96785"></script>
 <script src="/panel/mesa.js?v=daef78ab61"></script>
-<script src="/panel/aforo.js?v=b61855c74c"></script>
+<script src="/panel/aforo.js?v=9a46fb24a1"></script>
 <script src="/panel/plan.js?v=051769741f"></script>
 <script src="/panel/cerrado.js?v=89b67f438f"></script>
-<script src="/panel/pedir.js?v=66c34561bc"></script>
+<script src="/panel/pedir.js?v=529b8d4e34"></script>
 <script src="/panel/preguntas.js?v=ac7f2ed3c2"></script>
 <script src="/assets/fotogramas.js?v=fe49cf52c6"></script>
 <script src="/assets/retenido.js?v=ffa9139bb2"></script>
-<script src="/panel/retenido.js?v=b23a6337d4"></script>
+<script src="/panel/retenido.js?v=3eafcb0d94"></script>
 </body>
 </html>

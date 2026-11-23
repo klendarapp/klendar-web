@@ -234,7 +234,7 @@ PAGES.festivo = async (v, dia) => {
   const q = (Array.isArray(lista) ? lista : []).find((x) => x.day === dia);
   v.innerHTML = `<div class="page-head"><h1>${esc(I18N.t('Festivo'))}</h1></div>`;
   if (q) {
-    v.appendChild(pedTarjetaFestivo(q, () => { location.hash = '#/resumen'; }));
+    v.appendChild(pedTarjetaFestivo(q, () => { location.hash = '#/hoy'; }));
     return;
   }
   v.insertAdjacentHTML('beforeend', `<section class="vacio"><h2>${esc(I18N.t('Ya está contestado'))}</h2>

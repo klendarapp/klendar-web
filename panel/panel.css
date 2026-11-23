@@ -18,32 +18,8 @@
 .topbar:has(.biztop:not([hidden])) .brand-txt,
 .topbar:has(.biztop:not([hidden])) .spacer { display: none; }
 
-/* Acciones grandes de la portada del panel */
-.quick { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
-.quick button {
-  border: 1px solid var(--glass-border);
-  background: var(--elevated);
-  color: var(--ink);
-  border-radius: 18px;
-  padding: 16px;
-  font: inherit;
-  font-weight: 700;
-  text-align: left;
-  cursor: pointer;
-  display: grid;
-  gap: 4px;
-}
-.quick button:hover { filter: brightness(1.04); }
-.quick button .ic { font-size: 1.625rem; color: var(--ink); }
-.quick button.primary .ic { color: inherit; }
-.quick button small { font-weight: 500; color: var(--ink-2); }
-.quick button.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
-.quick button.primary small { color: rgba(10, 10, 10, .8); }
-/* El segundo botón fuerte, en tinta («Validar códigos» junto a «Crear»): un
-   solo coral por pantalla. Como `AppTheme.inkFilled` en la app. */
-.quick button.tinta { background: var(--ink); color: var(--surface); border-color: transparent; }
-.quick button.tinta .ic { color: inherit; }
-.quick button.tinta small { color: color-mix(in srgb, var(--surface) 80%, transparent); }
+/* El botón fuerte en tinta (un solo coral por pantalla). Como
+   `AppTheme.inkFilled` en la app. */
 .btn.tinta { background: var(--ink); color: var(--surface); border-color: transparent; }
 
 /* Formulario de publicación */
@@ -547,7 +523,7 @@ main.content:focus { outline: none; }
 /* Lo que ya no se ve: la foto en gris (el texto sigue igual de legible). */
 .pub-archivada .tj-media, .pub-terminada .tj-media, .pub-cancelada .tj-media { filter: grayscale(.85); }
 .tag.st-scheduled { background: var(--soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--glass-border); }
-.sin-pubs h2 { margin: 0 0 6px; }
+.sin-pubs h3 { margin: 0 0 6px; font-size: 1rem; }
 .sin-pubs p { margin: 0; }
 
 /* ── Calendario del negocio (el de Explorar, con lo suyo) ─────────────── */
@@ -959,34 +935,7 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .toques-enlaces { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .toques-enlaces li { display: flex; gap: 6px; align-items: baseline; }
 
-/* ── «Mi negocio» ordenado (panel/herramientas.js) ─────────────────────── */
-/* «Crear» y «Validar códigos»: los dos iguales, uno al lado del otro. */
-.quick.quick-2 { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
-/* En el móvil, «Crear» y «Validar códigos» como en la app: icono y nombre en
-   una fila, sin la frase (así las publicaciones se ven antes). */
-@media (max-width: 640px) {
-  .quick.quick-2 { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); }
-  .quick.quick-2 button { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 10px; min-height: 52px; text-align: center; }
-  .quick.quick-2 button .ic { font-size: 1.375rem; }
-  .quick.quick-2 button small { display: none; }
-}
-/* «Lo esencial»: una fila de cuatro accesos iguales, con su icono y su
-   nombre (como la app, 2026-10-22). La línea de estado («Completa al 80 %»)
-   la lee el lector de pantalla y se ve dentro. */
-.esencial { display: grid; gap: 8px; grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 14px 0; }
-.esencial-tile { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 84px; padding: 10px 6px;
-  border-radius: 18px; text-align: center; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
-.esencial-tile:hover { text-decoration: none; border-color: var(--ink-2); }
-.esencial-tile > .ms, .esencial-tile > svg { font-size: 1.5rem; }
-.esencial-tile b { font-size: .875rem; line-height: 1.15; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical; overflow: hidden; }
-.esencial-tile small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-/* El resumen: en el escritorio, dos columnas (lo de ahora a la izquierda y
-   las publicaciones a la derecha); en el móvil, una debajo de otra. */
-.resumen-cols { display: grid; gap: 0 22px; grid-template-columns: minmax(0, 1fr); }
-@media (min-width: 1100px) { .resumen-cols { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); align-items: start; } }
-.resumen-izq, .resumen-der { min-width: 0; }
-.resumen-der > .card:first-child { margin-top: 14px; }
+/* ── Hoy: «Por contestar» y «Ahora» (panel/herramientas.js) ──────────────── */
 /* «Por contestar: 2 preguntas · 1 reseña»: una fila; cada trozo, un enlace. */
 .por-contestar { display: flex; align-items: center; gap: 12px; margin: 0 0 10px; padding: 4px 16px; border-radius: 16px;
   background: var(--glass); border: 1px solid var(--glass-border); }
@@ -999,34 +948,6 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 #ahoraCaja .filas-inicio { margin: 0; }
 #ahoraCaja .fila-inicio[hidden] { display: none; }
 .ahora-mas { justify-self: start; min-height: 44px; font-weight: 700; }
-/* Las publicaciones del resumen: en el móvil, una línea cada una (como la
-   app); en el escritorio, la tabla. */
-.pub-lineas { display: none; list-style: none; margin: 0; padding: 0; }
-.pub-lineas a { display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 6px 0; color: var(--ink);
-  border-bottom: 1px solid var(--glass-border); }
-.pub-lineas li:last-child a { border-bottom: 0; }
-.pub-lineas a:hover { text-decoration: none; }
-.pub-lineas .title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pub-lineas .tag { flex: none; }
-.pub-lineas .ms { flex: none; color: var(--ink-2); }
-@media (max-width: 640px) {
-  .resumen-pubs .pub-lineas { display: block; }
-  .resumen-pubs .tbl-wrap { display: none; }
-}
-/* «Más herramientas»: una fila grande. */
-.mas-herr { display: flex; align-items: center; gap: 14px; padding: 16px 18px; margin: 4px 0 18px; border-radius: 18px;
-  background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); }
-.mas-herr:hover { text-decoration: none; border-color: var(--ink-2); }
-.mas-herr > span:not(.ms) { flex: 1; min-width: 0; display: grid; gap: 2px; }
-.mas-herr b { font-size: 1rem; }
-.mas-herr small { color: var(--ink-2); font-weight: 500; }
-.mas-herr > .ms:last-child { color: var(--ink-2); }
-/* «Tu negocio»: botones iguales. */
-.grupo-titulo { font-size: 1.0625rem; margin: 6px 0 10px; }
-.herr-grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); margin-bottom: 14px; }
-.herr-btn { display: grid; justify-items: center; align-content: center; gap: 6px; min-height: 84px; padding: 12px; border-radius: 18px;
-  text-align: center; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink); font-weight: 600; }
-.herr-btn:hover { text-decoration: none; border-color: var(--ink-2); }
 /* La línea de estado de cada herramienta y sus botones (dos, iguales). */
 .herr-estado { margin: 10px 0 0; font-weight: 700; display: flex; align-items: center; gap: 6px; }
 .herr-estado .ms { color: var(--ink); font-size: 1.125rem; }
@@ -1035,7 +956,10 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .herr-botones.n2 { grid-template-columns: 1fr 1fr; }
 .herr-botones .btn { justify-content: center; text-align: center; white-space: normal; }
 .fiel-card .code { white-space: pre-wrap; word-break: break-all; }
-/* «Crear»: qué publicar. */
+/* Publicar: «¿Qué quieres publicar?», arriba de la página. */
+.crear { margin: 0 0 18px; max-width: 760px; }
+.crear > h2 { font-size: 1.0625rem; margin: 0 0 4px; }
+.crear-bloqueado { margin: 0 0 18px; }
 .crear-ops { display: grid; gap: 8px; margin: 12px 0 4px; }
 .crear-grupo { margin: 18px 0 0; font-size: 13px; font-weight: 700; color: var(--ink-2); }
 .crear-op { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
@@ -1196,7 +1120,6 @@ input[type=file]::file-selector-button { font: inherit; font-weight: 700; color:
 .barra-botones .btn, .alta-botones .btn, .dos-botones .btn, .cerr-dos .btn, .vacio-botones .btn, .aforo-botones .btn,
 #view form :is(.full, .foot) > .btn, #view .btn.principal { white-space: normal; text-align: center; line-height: 1.2;
   hyphens: auto; -webkit-hyphens: auto; overflow-wrap: break-word; min-width: 0; }
-.quick.quick-2 button b { min-width: 0; overflow-wrap: break-word; }
 /* El botón principal de un formulario, a lo ancho en el móvil (como en la
    app): Sellos › Nueva, Cumpleaños, Cupón, Wifi, Grupos, Días cerrados… */
 @media (max-width: 600px) {
@@ -1317,3 +1240,107 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .linea-pendiente .svg { flex: none; margin-top: 1px; }
 .linea-pendiente span { color: var(--ink-2, inherit); }
 .linea-pendiente b { color: var(--ink, inherit); }
+
+/* ══ Las cuatro secciones, como el modo negocio de la app (§4zzz-panelapp) ══
+   Hoy · Validar · Publicar · Negocio. En el escritorio y la tablet en
+   horizontal (más de 900 px), el menú de la izquierda con los grupos de
+   Negocio debajo; en el móvil y la tablet en vertical, la barra de abajo con
+   las cuatro (tres para el personal), como la app. Sin cajón ni «Más». */
+.side #nav { display: grid; gap: 2px; }
+.side a.nav { font-size: .9375rem; }
+.nav-sub { list-style: none; margin: 2px 0 8px; padding: 0 0 0 22px; display: grid; gap: 0; }
+.nav-sub a { position: relative; display: flex; align-items: center; min-height: 36px; padding: 6px 12px 6px 20px; border-radius: 10px;
+  color: inherit; opacity: .72; font-weight: 600; font-size: .8125rem; }
+.nav-sub a::before { content: ''; position: absolute; left: 6px; top: 50%; width: 6px; height: 6px; margin-top: -3px; border-radius: 50%;
+  background: currentColor; opacity: .35; transition: transform var(--mov-rapido) var(--mov-entra), opacity var(--mov-rapido) var(--mov-entra); }
+.nav-sub a:hover { opacity: 1; text-decoration: none; background: rgba(255,255,255,.06); }
+.nav-sub a.on { opacity: 1; color: #fff; background: rgba(255,255,255,.08); }
+.nav-sub a.on::before { opacity: 1; transform: scale(1.35); }
+.nav-sub a:focus-visible { outline: 2px solid currentColor; outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) { .nav-sub a::before { transition: none; } }
+@media (max-width: 900px) {
+  /* Sin menú lateral: la barra de abajo y, arriba, el local. */
+  .side { display: none !important; }
+  .topbar:not(:has(.biztop:not([hidden]))) { display: none; }
+  .tabbar a { font-size: .75rem; }
+}
+/* Al cambiar de sección, la pantalla nueva entra con un fundido corto (como
+   las de la app); con «Reducir movimiento», de golpe. */
+@media (prefers-reduced-motion: no-preference) {
+  #view > div { animation: mov-funde var(--mov-base) var(--mov-entra) both; }
+}
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* ── Hoy ── */
+.hoy-cab h1 { font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem); }
+.hoy-cifras { display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 120px), 1fr)); margin: 0 0 14px; }
+.hoy-cifra { display: grid; gap: 2px; align-content: start; padding: 12px 14px; border-radius: 18px; background: var(--glass); border: 1px solid var(--glass-border); }
+.hoy-cifra b { font-family: Sora, Manrope, sans-serif; font-size: 1.625rem; line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.hoy-cifra b small { font-size: .9375rem; color: var(--ink-2); font-weight: 700; }
+.hoy-cifra span { color: var(--ink-2); font-size: .8125rem; font-weight: 600; }
+.hoy-bloque { margin: 18px 0 0; }
+.hoy-tit { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
+.hoy-tit h2 { font-size: 1.0625rem; margin: 0; }
+.hoy-tit .linkbtn { min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; }
+.hoy-lineas { list-style: none; margin: 0; padding: 0 14px; }
+.hoy-linea { display: flex; align-items: center; gap: 10px; min-height: 56px; padding: 10px 0; color: var(--ink); border-bottom: 1px solid var(--glass-border); }
+.hoy-lineas li:last-child .hoy-linea { border-bottom: 0; }
+a.hoy-linea:hover { text-decoration: none; }
+a.hoy-linea:hover .title { text-decoration: underline; }
+.hoy-linea-t { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.hoy-linea-t .title { overflow-wrap: anywhere; }
+.hoy-linea-t small { color: var(--ink-2); font-weight: 500; }
+.hoy-linea .pub-cifras { display: none; }
+@media (min-width: 641px) { .hoy-linea .pub-cifras { display: block; flex: none; margin: 0; font-size: .8125rem; color: var(--ink-2); text-align: end; max-width: 45%; } }
+.hoy-linea > .ms:last-child { flex: none; color: var(--ink-2); }
+.hoy-nada { margin: 6px 0 0; max-width: 640px; }
+.hoy-nada[hidden] { display: none; }
+.hoy-error { margin-top: 14px; }
+
+/* ── Publicar ── */
+.publicar-ideas:empty { display: none; }
+.pubs-cab { margin-top: 22px; }
+.pubs-cab h2 { font-size: 1.25rem; margin: 0; }
+
+/* ── Negocio: la cabecera, los grupos y sus baldosas (como la app: icono y
+   nombre corto, tres por fila en el móvil) ── */
+.neg-cab { display: flex; align-items: center; gap: 14px; margin: 0 0 6px; }
+.neg-logo { width: 56px; height: 56px; flex: none; border-radius: 16px; object-fit: cover; background: var(--soft); border: 1px solid var(--glass-border); }
+.neg-letra { display: grid; place-items: center; font-family: Sora, Manrope, sans-serif; font-weight: 800; font-size: 1.375rem; color: var(--ink); }
+.neg-cab-t { min-width: 0; display: grid; gap: 2px; }
+.neg-nombre { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.neg-nombre b { font-size: 1.0625rem; overflow-wrap: anywhere; }
+.neg-donde { margin: 0; }
+.neg-cab .link { justify-self: start; display: inline-flex; align-items: center; min-height: 32px; font-weight: 700; }
+.neg-grupo { margin: 24px 0 0; scroll-margin-top: 84px; }
+@media (max-width: 900px) { .neg-grupo { scroll-margin-top: 140px; } }
+.neg-grupo > h2 { font-size: 1.0625rem; margin: 0 0 10px; }
+.neg-grupo > h2:focus { outline: none; }
+.neg-grupo > h2:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 4px; }
+.neg-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.25rem), 1fr)); max-width: 1040px; }
+@media (max-width: 640px) { .neg-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } }
+.neg-tile { display: grid; justify-items: center; align-content: center; gap: 6px; width: 100%; min-height: 88px; height: 100%; box-sizing: border-box;
+  padding: 12px 6px; border-radius: 18px; text-align: center; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink);
+  font: inherit; font-weight: 600; font-size: .875rem; line-height: 1.2; cursor: pointer;
+  transition: transform var(--mov-rapido) var(--mov-entra), border-color var(--mov-rapido) var(--mov-entra); }
+.neg-tile:hover { text-decoration: none; border-color: var(--ink-2); }
+.neg-tile:active { transform: scale(var(--mov-escala)); }
+.neg-tile:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.neg-tile > .ms { font-size: 1.625rem; }
+.neg-tile > .ms.svg { width: 26px; height: 26px; }
+.neg-tile > span:last-child { overflow-wrap: anywhere; hyphens: auto; -webkit-hyphens: auto; }
+@media (prefers-reduced-motion: reduce) { .neg-tile { transition: none; } .neg-tile:active { transform: none; } }
+.neg-delicado .card { max-width: 760px; }
+.neg-delicado .card h3 { font-size: 1rem; margin: 0 0 6px; }
+.neg-salir { margin-top: 24px; max-width: 760px; }
+/* La sesión y «Cerrar sesión»: en el ordenador están abajo del menú; en el
+   móvil (sin menú), al final de Negocio. */
+.neg-sesion { display: none; }
+@media (max-width: 900px) {
+  .neg-sesion { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 28px 0 0; padding-top: 16px; border-top: 1px solid var(--glass-border); }
+  .neg-sesion b { overflow-wrap: anywhere; }
+  .neg-sesion .linkbtn { min-height: 44px; display: inline-flex; align-items: center; font-weight: 700; }
+}
+/* Las secciones de Hoy, Publicar y Negocio, sin el aire de las de las
+   páginas públicas (site.css). */
+#view section.hoy-cifras, #view section.hoy-bloque, #view section.neg-grupo, #view section.crear { padding: 0; }

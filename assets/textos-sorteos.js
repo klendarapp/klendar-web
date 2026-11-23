@@ -118,7 +118,7 @@
       offText: 'Por ahora no hay sorteos en Klendar. Mientras, mira lo que hay hoy cerca de ti.',
       offTextBiz: 'Por ahora los sorteos no están disponibles en Klendar. Lo demás de Fidelizar funciona como siempre.',
       offGo: 'Ir a Descubre',
-      offGoBiz: 'Volver al resumen',
+      offGoBiz: 'Volver a Hoy',
       // «En los que participas»: los terminados, por partes y quitables (migración 20261281000000 de la app).
       doneTitle: 'Terminados',
       seeMore: 'Ver más',
@@ -224,7 +224,7 @@
       offText: "There are no giveaways on Klendar for now. Meanwhile, see what's on near you today.",
       offTextBiz: "Giveaways aren't available on Klendar for now. Everything else in Loyalty works as usual.",
       offGo: 'Go to Discover',
-      offGoBiz: 'Back to the overview',
+      offGoBiz: 'Back to Today',
       doneTitle: 'Finished',
       seeMore: 'See more',
       hideOne: 'Remove from list',

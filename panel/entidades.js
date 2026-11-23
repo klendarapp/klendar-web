@@ -369,7 +369,7 @@ async function entAlta(v, param) {
       $('.bizpick').hidden = false;
       renderBizPicker();
       toast('Solicitud enviada. Te avisamos cuando la revisemos.');
-      if (location.hash === '#/resumen') route(); else location.hash = '#/resumen';
+      if (location.hash === '#/hoy') route(); else location.hash = '#/hoy';
     } catch (e2) {
       $('#err', v).textContent = e2.yaDicho ? e2.message : I18N.t(friendly(e2.message));
       boton.disabled = false;

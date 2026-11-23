@@ -8,7 +8,7 @@
  *   descripción, precio orientativo, alérgenos —obligatorios en comida—,
  *   opciones, antelación, días y franjas o fechas, máximo por día, plazo
  *   para anular, +18; pausar y quitar). Propietario y encargado.
- * - En «Más herramientas», la tarjeta (panel/herramientas.js).
+ * - En Negocio › En el local, su baldosa (panel/negocio.js).
  *
  * Va después de panel.js y usa lo suyo (`PAGES`, `rpc`, `BIZ`, `esc`, `bi`,
  * `toast`, `modal`, `confirmDlg`, `friendly`, `KFotos`, `BUCKET`). Comparten

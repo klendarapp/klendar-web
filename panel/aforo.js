@@ -116,7 +116,7 @@ PAGES.aforo = async (v, param) => {
   if (param === 'ajustes') return afdAjustes(v);
   let st = await rpc('capacity_status', { p_business: BIZ.id });
   if (!st) throw new Error('not_authorized');
-  if (st.organizer) { location.replace('#/resumen'); return; }
+  if (st.organizer) { location.replace('#/hoy'); return; }
   const puedeAjustar = st.can_edit === true;
   if (!st.enabled || !(Number(st.max) > 0)) {
     // Apagado: la pantalla vacía de siempre, centrada y con salida.
@@ -125,7 +125,7 @@ PAGES.aforo = async (v, param) => {
         <p>${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo. Por ejemplo: «32 de 60». Actívalo y pon cuántas personas caben.', 'Count at the door with +1 and −1, and “Room right now?” updates itself. For example: “32 of 60”. Turn it on and say how many people fit.'))}</p>
         <div class="vacio-botones">${puedeAjustar
     ? `<a class="btn primary" href="#/aforo/ajustes">${esc(bi('Activar', 'Turn on'))}</a>`
-    : `<a class="btn" href="#/resumen">${esc(bi('Volver al resumen', 'Back to the summary'))}</a>`}</div>
+    : `<a class="btn" href="#/hoy">${esc(bi('Volver a Hoy', 'Back to Today'))}</a>`}</div>
         ${puedeAjustar ? '' : `<p class="muted">${esc(bi('Lo activa el propietario o un encargado.', 'The owner or a manager turns it on.'))}</p>`}</section>`;
     return;
   }
@@ -320,7 +320,7 @@ PAGES.aforo = async (v, param) => {
 async function afdAjustes(v) {
   const st = await rpc('capacity_status', { p_business: BIZ.id });
   if (!st) throw new Error('not_authorized');
-  if (st.organizer) { location.replace('#/resumen'); return; }
+  if (st.organizer) { location.replace('#/hoy'); return; }
   if (!(st.can_edit === true)) { location.replace('#/aforo'); return; }
   const casiTxt = (n) => bi(`Por debajo del ${n} %, «Hay sitio».`, `Below ${n}%, “There’s room”.`);
   v.innerHTML = `
@@ -376,7 +376,7 @@ async function afdAjustes(v) {
     try {
       await rpc('set_capacity_settings', { p_business: BIZ.id, p_enabled: on, p_max: max, p_almost: casi, p_full: lleno, p_show: el.show.checked });
       toast(bi('Guardado', 'Saved'));
-      location.hash = on ? '#/aforo' : '#/herramientas';
+      location.hash = on ? '#/aforo' : '#/negocio/en-el-local';
     } catch (x) {
       const c = String(x.clave || x.message);
       if (c.includes('invalid_max')) err('max', afdError(c));
