@@ -1352,3 +1352,41 @@ body.en-panel header.top .idioma { display: block; }
 .panel-volver:hover { color: var(--ink); background: var(--soft); text-decoration: none; }
 .panel-volver:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .panel-volver svg { flex: none; }
+
+/* En una pantalla ancha, las de lista y las de formulario (Hoy, Validar, Tu
+   ficha, Equipo, Sellos…) en una columna de lectura centrada, como en la app
+   en tablet (ReadablePage): las filas con su flecha › iban de 1.080 en un
+   portátil (Iván, 23-11). Negocio (las baldosas), Publicar (las tarjetas),
+   el calendario y las cifras siguen a lo ancho. */
+@media (min-width: 901px) {
+  #view > [data-pagina="hoy"],
+  #view > [data-pagina="validar"],
+  #view > [data-pagina="ficha"],
+  #view > [data-pagina="equipo"],
+  #view > [data-pagina="ayuda"],
+  #view > [data-pagina="plan"],
+  #view > [data-pagina="baja"],
+  #view > [data-pagina="festivo"],
+  #view > [data-pagina="cerrados"],
+  #view > [data-pagina="preguntas"],
+  #view > [data-pagina="resenas"],
+  #view > [data-pagina="novedades"],
+  #view > [data-pagina="cumpleanos"],
+  #view > [data-pagina="cupon"],
+  #view > [data-pagina="habituales"],
+  #view > [data-pagina="mensajes"],
+  #view > [data-pagina="fidelizar"],
+  #view > [data-pagina="series"],
+  #view > [data-pagina="sorteos"],
+  #view > [data-pagina="rrpp"],
+  #view > [data-pagina="partidos"],
+  #view > [data-pagina="sellos"],
+  #view > [data-pagina="bonos"],
+  #view > [data-pagina="grupos"],
+  #view > [data-pagina="encargos"],
+  #view > [data-pagina="cola"],
+  #view > [data-pagina="aforo"],
+  #view > [data-pagina="momento"],
+  #view > [data-pagina="pedidos"],
+  #view > [data-pagina="carta"] { max-width: 820px; margin-inline: auto; }
+}

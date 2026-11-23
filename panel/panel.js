@@ -1573,6 +1573,9 @@ async function route() {
   // Cada pintada va en su propia caja: si una vieja termina tarde, escribe
   // en una caja que ya no está en la página y no se ve.
   const v = document.createElement('div');
+  // Qué pantalla es: las de lista y las de formulario van en una columna
+  // de lectura en una pantalla ancha (panel.css, `data-pagina`).
+  v.dataset.pagina = page;
   v.innerHTML = '<div class="loading">Cargando…</div>';
   $('#view').replaceChildren(v);
   try {
