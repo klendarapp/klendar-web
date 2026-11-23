@@ -26,7 +26,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CSP_PUBLICA, CSP_WIDGET, conNonce } from '../functions/_lib/csp.js';
+import { CSP_PUBLICA, CSP_PUENTE, CSP_WIDGET, conNonce } from '../functions/_lib/csp.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const lee = (f) => readFileSync(path.join(RAIZ, f), 'utf8');
@@ -71,7 +71,7 @@ ok('sin report-only en el middleware (salvo para quitarla)', !/'content-security
 for (const d of ["script-src 'self'", 'https://challenges.cloudflare.com', 'https://api.mapbox.com', 'https://static.cloudflareinsights.com', "worker-src 'self' blob:", "base-uri 'self'", "object-src 'none'", "frame-ancestors 'none'"]) {
   ok(`CSP_PUBLICA con ${d}`, CSP_PUBLICA.includes(d));
 }
-const todas = [...cab.matchAll(/^ {2}Content-Security-Policy: (.+)$/gm)].map((m) => m[1]).concat([CSP_PUBLICA, CSP_WIDGET]);
+const todas = [...cab.matchAll(/^ {2}Content-Security-Policy: (.+)$/gm)].map((m) => m[1]).concat([CSP_PUBLICA, CSP_WIDGET, CSP_PUENTE]);
 for (const c of todas) {
   const s = /(?:^|;)\s*script-src\s([^;]*)/.exec(c)?.[1] || '';
   ok(`sin 'unsafe-inline' ni 'unsafe-eval' en script-src (${c.slice(0, 50)}…)`, !/unsafe-inline|unsafe-eval|\*(?!\.)/.test(s) || !s, s);
@@ -84,11 +84,11 @@ ok('…y la misma en /widget/* de _headers', new RegExp(`^/widget/\\*\\r?\\n(?: 
 // ── 2. El middleware ───────────────────────────────────────────────────────
 {
   const { onRequest } = await import('../functions/_middleware.js');
-  const pide = async (ruta, { csp, tipo = 'text/html; charset=utf-8', metodo = 'GET' } = {}) => {
+  const pide = async (ruta, { csp, tipo = 'text/html; charset=utf-8', metodo = 'GET', host = 'klendar.app' } = {}) => {
     const h = { 'content-type': tipo };
     if (csp) h['content-security-policy'] = csp;
     const ctx = {
-      request: new Request(`https://klendar.app${ruta}`, { method: metodo }), env: {},
+      request: new Request(`https://${host}${ruta}`, { method: metodo }), env: {},
       next: async () => new Response(metodo === 'HEAD' ? null : '<!doctype html><p>hola', { status: 200, headers: h }),
     };
     return onRequest(ctx);
@@ -106,7 +106,8 @@ ok('…y la misma en /widget/* de _headers', new RegExp(`^/widget/\\*\\r?\\n(?: 
   const w = await pide('/widget/abc', { csp: CSP_WIDGET });
   ok('middleware: el widget, su CSP + nonce', w.headers.get('content-security-policy') === conNonce(CSP_WIDGET, nonce(w)) && !!nonce(w));
   for (const z of ['/panel', '/cuenta/codigos', '/admin', '/tv']) {
-    const r = await pide(z, { csp: "default-src 'self'; script-src 'self'" });
+    // El admin, en su host (§4zzz-admindom); en klendar.app, `/admin` es la página puente.
+    const r = await pide(z, { csp: "default-src 'self'; script-src 'self'", host: z === '/admin' ? 'admin.klendar.app' : 'klendar.app' });
     ok(`middleware: ${z} sin nonce (zona con sesión, no-transform)`, !nonce(r) && r.headers.get('content-security-policy') === "default-src 'self'; script-src 'self'");
   }
   const js = await pide('/assets/x.js', { csp: CSP_PUBLICA, tipo: 'text/javascript' });
@@ -152,7 +153,7 @@ if (SIN_NAVEGADOR) {
   process.exit(fallos ? 1 : 0);
 }
 const { webConDatos, NEGOCIOS, PLANES } = await import('./_web_con_datos.mjs');
-const { playwright } = await import('./_supabase_simulado.mjs');
+const { enSuHost, fetchLocal, playwright } = await import('./_supabase_simulado.mjs');
 const flash = PLANES.find((p) => p.kind === 'flash_offer');
 const evento = PLANES.find((p) => p.kind === 'future_event' && !p.adults_only && !p.imported);
 const adultos = PLANES.find((p) => p.adults_only);
@@ -185,7 +186,7 @@ const web = await webConDatos({ puerto: Number(process.env.PORT || 9361), rpc: R
 try {
   // 5a. El HTML tal cual sale del servidor.
   for (const r of rutas) {
-    const res = await fetch(web.BASE + r, { redirect: 'manual' });
+    const res = await fetchLocal(enSuHost(web.BASE, r), { redirect: 'manual' });
     const html = await res.text();
     const tipo = res.headers.get('content-type') || '';
     if (!/text\/html/.test(tipo)) { ok(`${r}: es HTML`, false, `${res.status} ${tipo}`); continue; }
@@ -225,7 +226,7 @@ try {
           consola = [];
           if (process.env.CSP_TRAZA) console.log(`· ${nombre} ${vn} ${r}`);
           try {
-            await p.goto(web.BASE + r, { waitUntil: 'load', timeout: 30000 }).catch(() => {});
+            await p.goto(enSuHost(web.BASE, r), { waitUntil: 'load', timeout: 30000 }).catch(() => {});
             await p.waitForLoadState('networkidle', { timeout: 6000 }).catch(() => {});
             await p.waitForTimeout(250);
           } catch (e) {
