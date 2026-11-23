@@ -8,6 +8,7 @@
 // (guardar, seguir, pedir el código, opinar, denunciar) lleva a «Tu cuenta»
 // (/cuenta), que hace lo mismo que la app desde el navegador.
 
+import { categoriasSinFoto } from './sinfoto.js';
 import { enlaceCuenta } from './cuenta.js';
 import { cabeceraEdad, edadDeclarada, esc, fmtWhen, html, isUuid, preguntaEdadEncendida, rpc, rpcAll, rows, supabasePublic, jsonEnScript } from './page.js';
 import KZ from '../../assets/zona.js';
@@ -944,6 +945,8 @@ const PREGUNTAS_CSS = `<style>
 </style>`;
 
 export async function businessPage(param, lang, search = '') {
+  // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  await categoriasSinFoto();
   const en = lang === 'en';
   const raw = String(param || '');
   let id = raw;
@@ -1681,6 +1684,8 @@ ${GRUPOS_CSS}` : ''}`,
 const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toLocaleUpperCase('es'));
 
 export async function agendaPage(rawCity, lang) {
+  // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  await categoriasSinFoto();
   const en = lang === 'en';
   // Mal codificada: «esa ciudad no está» (404), no un 500.
   const dec = decodeSeg(rawCity);
@@ -1815,6 +1820,8 @@ function placesBlock(negocios, lang, titulo) {
  * con cada categoría de la ciudad.
  */
 export async function todayPage(rawCity, lang) {
+  // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  await categoriasSinFoto();
   const en = lang === 'en';
   const dec = decodeSeg(rawCity);
   if (dec == null) return notFound(lang, `${todayBase(lang)}`, 'c');

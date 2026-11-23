@@ -19,6 +19,7 @@
 // Lo mismo que la app (`lib/features/guides/`): mismos textos, mismos
 // filtros, el mismo orden (lo que empieza antes, primero).
 
+import { categoriasSinFoto } from './sinfoto.js';
 import { esc, html, rpc, rpcAll } from './page.js';
 import { zonaDeConexion } from './conexion.js';
 import { BASE, breadcrumbLd, discoverBase, ldScript, publicPage } from './public.js';
@@ -128,6 +129,8 @@ const dec = (x) => { try { return decodeURIComponent(String(x || '')).replace(/\
 
 /** /guia/<slug>[/<municipio>], /en/guide/<slug>[/<municipio>]. */
 export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
+  // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  await categoriasSinFoto();
   const en = lang === 'en';
   const S = T(en);
   const slug = dec(rawSlug);

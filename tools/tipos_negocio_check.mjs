@@ -28,7 +28,7 @@ ok(KC.GRUPOS.every((g) => ['es', 'en', 'ca', 'gl', 'eu', 'fr', 'de', 'it'].every
 ok(KC.nombreGrupo('events', 'ca') === 'Esdeveniments i celebracions' && KC.nombreGrupo('stay', 'de') === 'Unterkünfte', 'el nombre del grupo en catalán y alemán');
 ok(slugs.length >= 90, `${slugs.length} categorías`);
 ok(KC.GRUPOS.every((g) => slugs.some((s) => KC.POR_SLUG[s] === g.id)), 'todos los grupos tienen alguna');
-const iconosCat = readFileSync(new URL('../functions/_lib/iconos-cat.js', import.meta.url), 'utf8');
+const iconosCat = readFileSync(new URL('../assets/sin-foto.js', import.meta.url), 'utf8');
 const sinIcono = slugs.filter((s) => !iconosCat.includes(`"${s}": '`));
 ok(!sinIcono.length, `todas con icono en la cuadrícula ${sinIcono.join(', ')}`);
 const mapa = readFileSync(new URL('../assets/iconos-mapa.js', import.meta.url), 'utf8');

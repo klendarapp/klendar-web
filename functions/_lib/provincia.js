@@ -14,6 +14,7 @@
 // (`_lib/cache.js`, EN_CACHE). Sin la función `public_seo_places` (prod antes
 // de su migración), «Ofertas» mira lo que enseña y la provincia no existe (404).
 
+import { categoriasSinFoto } from './sinfoto.js';
 import { esc, html, rpc, rpcAll } from './page.js';
 import {
   BASE, agendaBase, breadcrumbLd, cityLinks, citySeg, decodeSeg, exploreBase, firstPhoto, kidsBase, ldScript, listingLd,
@@ -31,6 +32,8 @@ const portada = (items) => items.map((o) => firstPhoto(o.images)).find(Boolean);
 
 // ── Ofertas en un municipio ────────────────────────────────────────────────
 export async function ofertasPage(rawCity, lang) {
+  // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  await categoriasSinFoto();
   const en = lang === 'en';
   const dec = decodeSeg(rawCity);
   if (dec == null) return notFound(lang, ofertasBase(lang), 'c');
@@ -101,6 +104,8 @@ const MUNICIPIOS_HOY = 4;
 const POR_MUNICIPIO = 8;
 
 export async function provinciaPage(rawSlug, lang) {
+  // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  await categoriasSinFoto();
   const en = lang === 'en';
   const dec = decodeSeg(rawSlug);
   const slug = (dec || '').replace(/[/]+$/, '').toLowerCase();

@@ -17,6 +17,7 @@
 //   cambio de contraseña se ve en menos de un minuto, también contando la
 //   caché del navegador.
 
+import { categoriasSinFoto } from './sinfoto.js';
 import { alergenosDeCategoria, cartaDeCategoria, categoriaDe, hayAlergenos, textoCarta } from './carta.js';
 import { enlaceCuenta } from './cuenta.js';
 import { esc, html, isUuid, rpc, rpcAll, supabasePublic } from './page.js';
@@ -76,6 +77,8 @@ const WIFI_IC = '<svg class="ic" viewBox="0 0 24 24" width="22" height="22" aria
 
 /** La página del QR de mesa. */
 export async function tableQrPage(token, lang) {
+  // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  await categoriasSinFoto();
   const en = lang === 'en';
   // `let`: el nombre de la carta, según su tipo, llega después.
   let S = T[en ? 'en' : 'es'];

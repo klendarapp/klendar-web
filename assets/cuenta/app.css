@@ -705,6 +705,19 @@ body.cola-llamado .cola-botones .pill:not(.accent) { background: transparent; co
 .ocard .ph .ms-svg { width: 30px; height: 30px; }
 /* Sin foto: el icono de tienda, como la app (antes «✦»). */
 .ocard .ph .ms { font-size: 30px; }
+/* Sin foto, nunca un hueco vacío (§4zzz-sinfoto): el hueco de siempre
+   (`assets/sin-foto.js`), con el icono del tipo de negocio o de la categoría
+   de la publicación y las iniciales. Copia de `.sin-foto` de
+   /assets/tarjeta.css (esta página no carga esa hoja). */
+.sin-foto { --sf-fondo: linear-gradient(135deg, color-mix(in srgb, var(--ink) 7%, transparent), color-mix(in srgb, var(--ink) 3.5%, transparent));
+  display: grid; place-content: center; justify-items: center; gap: 4px; container-type: size; overflow: hidden;
+  background: var(--sf-fondo); color: var(--ink-2); }
+.sin-foto svg { width: 28px; height: 28px; width: clamp(16px, 34cqmin, 36px); height: clamp(16px, 34cqmin, 36px); flex: none; }
+.sin-foto b { font: 800 12px/1 var(--display, inherit); font-size: clamp(10px, 15cqmin, 13px); letter-spacing: .08em; }
+@container (max-width: 63px) { .sin-foto b { display: none; } }
+@container (max-height: 63px) { .sin-foto b { display: none; } }
+@media (prefers-color-scheme: dark) { .sin-foto { --sf-fondo: linear-gradient(135deg, color-mix(in srgb, var(--ink) 10%, transparent), color-mix(in srgb, var(--ink) 5%, transparent)); } }
+.ocard .ph.sin-foto { display: grid; background: var(--sf-fondo); }
 /* Favoritos: las ofertas, en coral; los eventos, en tinta (como la app). */
 .fav-cuentas { font-weight: 600; color: var(--ink); }
 .fav-cuentas .fav-ofertas { color: var(--accent-text); }

@@ -1390,3 +1390,7 @@ body.en-panel header.top .idioma { display: block; }
   #view > [data-pagina="pedidos"],
   #view > [data-pagina="carta"] { max-width: 820px; margin-inline: auto; }
 }
+
+/* Sin foto, el hueco de siempre en la lista de publicaciones (§4zzz-sinfoto;
+   `.sin-foto` en /assets/tarjeta.css): el icono de su categoría. */
+table.tbl .ph.sin-foto { display: inline-grid; background: var(--sf-fondo); }

@@ -9,6 +9,7 @@ import { bizPath } from './public.js';
 import KZ from '../../assets/zona.js';
 import KS from '../../assets/sitios.js';
 import KM from '../../assets/marcas.js';
+import KSF from '../../assets/sin-foto.js';
 
 // (`KZ` se importa para que `KlendarZona` esté puesto cuando `KS` lo use.)
 void KZ;
@@ -66,8 +67,9 @@ const IC = {
 const ic = (n, s = 16) => `<svg class="ic" viewBox="0 0 24 24" width="${s}" height="${s}" aria-hidden="true"><path fill="currentColor" d="${IC[n]}"/></svg>`;
 
 /**
- * Una fila: foto (la portada; si no, el logo; sin ninguno, las iniciales sobre
- * un fondo neutro), nombre, categoría y distancia; el horario de ahora (lo
+ * Una fila: foto (la portada; si no, el logo; sin ninguno, el hueco de siempre:
+ * el icono de su tipo de negocio y sus iniciales, `assets/sin-foto.js`),
+ * nombre, categoría y distancia; el horario de ahora (lo
  * vuelve a escribir /assets/sitios.js con la hora del navegador); su menú
  * del día o «Qué pedir aquí»; y «2 planes hoy» con el estilo de la etiqueta
  * de oferta. Toda la fila lleva a la ficha. [conDistancia]: solo con «Cerca
@@ -84,7 +86,7 @@ export function filaSitio(p, lang, { conDistancia = true } = {}) {
   const geo = !dist && p.lat != null && p.lng != null && Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lng))
     ? ` data-lat="${Number(p.lat).toFixed(5)}" data-lng="${Number(p.lng).toFixed(5)}"` : '';
   return `<a class="sitio-fila" href="${esc(bizPath(lang, p.slug || p.id))}"${geo}>
-    ${p.photo || p.logo ? `<img src="${esc(p.photo || p.logo)}" alt="" width="76" height="76" loading="lazy" decoding="async">` : `<span class="ph iniciales" aria-hidden="true">${esc(KS.iniciales(p.name))}</span>`}
+    ${p.photo || p.logo ? `<img src="${esc(p.photo || p.logo)}" alt="" width="76" height="76" loading="lazy" decoding="async">` : KSF.html({ slug: p.category || p.category_slug, categoria: p.category_id, nombre: p.name, clase: 'ph' })}
     <span class="sitio-cuerpo">
       <b>${esc(p.name)}</b>
       ${meta || precioLocal || geo ? `<span class="muted">${esc(meta)}${geo ? '<span class="tj-dist" hidden></span>' : ''}${precioLocal ? `${meta ? ' · ' : ''}<span aria-label="${esc(KM.t(lang).priceA11y + KM.significado(Number(p.price_level), lang))}">${precioLocal}</span>` : ''}</span>` : ''}
@@ -145,8 +147,9 @@ export const SITIOS_CSS = `<style>
 .sitio-cuerpo .muted { font-size: 13px; }
 .sitio-hora { font-size: 13px; font-weight: 600; color: var(--ink-2); }
 .sitio-hora.abierto { color: var(--ink); }
-/* Sin foto ni logo (ficha a medias): las iniciales, en gris sobre el neutro. */
-.sitio-fila .ph.iniciales { font-weight: 800; font-size: 24px; letter-spacing: .02em; line-height: 1; }
+/* Sin foto ni logo (ficha a medias): el hueco de siempre (\`.sin-foto\` en
+   /assets/tarjeta.css), el icono de su tipo de negocio y sus iniciales. */
+.sitio-fila .ph.sin-foto { display: grid; background: var(--sf-fondo); }
 /* El marcador de un sitio sin logo ni portada (\`marcaEl\` con \`iniciales\`). */
 #mapa-sitios .marca .mc-cara.mc-iniciales { font-weight: 800; font-size: 13px; line-height: 1; letter-spacing: .01em; }
 .sitio-festivo { font-size: 13px; font-weight: 600; color: var(--ink-2); }
@@ -164,12 +167,11 @@ export const SITIOS_CSS = `<style>
 /* En una tablet o un ordenador, tarjetas con la foto arriba en una rejilla de
    dos o tres columnas, como en la app (Iván, 23-11): las filas iban de lado a
    lado (1.200 px) con la flecha en la otra punta y vacías por dentro. Sin
-   foto ni logo, las iniciales grandes sobre el neutro. */
+   foto ni logo, el hueco de siempre (icono e iniciales), como la app. */
 @media (min-width: 700px) {
   .sitios-lista { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
   .pub .sitio-fila { flex-direction: column; align-items: stretch; gap: 0; padding: 0; overflow: hidden; }
   .sitio-fila img, .sitio-fila .ph { width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: 0; }
-  .sitio-fila .ph.iniciales { font-size: 34px; letter-spacing: .06em; }
   .sitio-cuerpo { padding: 12px 14px 14px; }
   .sitio-fila .ncard-ir { display: none; }
 }

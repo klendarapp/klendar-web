@@ -1149,6 +1149,8 @@ async function boot() {
   await preparaNegocio();
   renderBizPicker();
   CATS = await categoriasP;
+  // Sin foto, el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  globalThis.KlendarSinFoto?.categorias(CATS);
   route();
 }
 /** Sin sesión: a la pantalla de entrar de siempre (la de «Tu cuenta»), que
@@ -2723,7 +2725,7 @@ const tarjetasPublicaciones = (rows) => `<div class="pubs">${rows.map((o) => `
 /** La lista de siempre (más densa), con las mismas acciones. */
 const tablaPublicaciones = (rows) => table({
   cols: [
-    { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(KFotos.mini(primeraFoto(o.images)))}" data-original="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>`}<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
+    { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(KFotos.mini(primeraFoto(o.images)))}" data-original="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : ((o.images || []).some(esVideo) || !globalThis.KlendarSinFoto ? `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>` : KlendarSinFoto.html({ categoria: o.category_id, clase: 'ph' }))}<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
     { h: 'Estado', r: (o) => etiquetaEstado(o) },
     { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `<span data-plazas="${esc(o.id)}">${plazasTxt(o, plazasOcupadas(o))}</span>` },
     { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },

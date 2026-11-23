@@ -340,7 +340,11 @@
       <span class="tj-video" aria-hidden="true">${ic('play', 14)}<span class="sr">${esc(S.video)}</span></span>`;
     }
     if (foto) return `<img class="tj-img" src="${esc(foto)}" alt="" width="${ancho}" height="${alto}" ${carga}${vt}>`;
-    // Sin foto: la inicial del negocio sobre un fondo neutro (nunca un hueco).
+    // Sin foto: el hueco de siempre (§4zzz-sinfoto, `assets/sin-foto.js`), el
+    // icono de la categoría de la publicación y las iniciales del negocio,
+    // como la app. Sin ese script (una página que no lo carga), la inicial.
+    const SF = globalThis.KlendarSinFoto;
+    if (SF) return SF.html({ slug: o.category_slug, categoria: o.category_id, nombre: o.business_name || o.title, clase: 'tj-sf' });
     return `<span class="tj-ph" aria-hidden="true">${esc((o.business_name || o.title || '·').trim().charAt(0).toUpperCase())}</span>`;
   }
 

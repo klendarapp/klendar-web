@@ -6,6 +6,8 @@
 // Aquí solo se reexporta para las Pages Functions. Los estilos: `assets/tarjeta.css`.
 
 import '../../assets/zona.js';
+// Sin foto, el hueco de siempre (§4zzz-sinfoto): deja `KlendarSinFoto` puesto.
+import '../../assets/sin-foto.js';
 import KT from '../../assets/tarjeta.js';
 
 export const {

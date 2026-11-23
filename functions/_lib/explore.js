@@ -15,6 +15,7 @@
 //   JavaScript y con él) y se ve también en el mapa; la lista de Planes
 //   (`?vista=lista`) es solo de la web, para quien llega desde Google.
 
+import { categoriasSinFoto } from './sinfoto.js';
 import { enlaceCuenta } from './cuenta.js';
 import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido, jsonEnScript } from './page.js';
 import KZ from '../../assets/zona.js';
@@ -1574,6 +1575,8 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       p_city: cerca ? null : city || null,
     }).catch(() => null)
     : Promise.resolve(null);
+  // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
+  const sinFotoP = categoriasSinFoto();
   const [res, cities, cats, cols, sitios, tiempo, todasCats, klendarCities, seccionPartidos, seccionArtistas] = await Promise.all([
     negocios
       ? rpc('public_places', {
@@ -1609,6 +1612,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     conNegociosArriba ? artistasEnBusqueda({ q, lang }).catch(() => '') : '',
   ]);
   const catsHoja = (todasCats || []).length ? todasCats : (cats || []);
+  await sinFotoP;
   const populares0 = await popularesP;
   const items = res?.items || [];
   // Sin «Cerca de ti» de verdad, ninguna distancia como si fuera desde donde estás (I1).

@@ -2013,6 +2013,19 @@ function pintaExclusiva(aud, negocioId, negocio) {
     </div>`);
 }
 
+/** Las categorías (`id` y `slug`) para el hueco sin foto (§4zzz-sinfoto):
+ * una vez por visita; si fallan, el hueco sale con la tienda. */
+let catsSinFotoP = null;
+const catsSinFoto = () => (catsSinFotoP ||= sb.from('categories').select('id, slug')
+  .then((r) => globalThis.KlendarSinFoto?.categorias(r.data || []), () => {}));
+
+/** Sin foto ni logo, el hueco de siempre (como `NoPhoto` en la app): el icono
+ * de la categoría [categoria] (de la publicación o del negocio; sin ella, la
+ * tienda) y las iniciales de [nombre]. */
+const sinFoto = (categoria, nombre) => (globalThis.KlendarSinFoto
+  ? globalThis.KlendarSinFoto.html({ categoria, nombre, clase: 'ph' })
+  : `<span class="ph">${ic('storefront')}</span>`);
+
 function tarjeta(o, tz) {
   // (La genérica de la agenda pública no es una foto: assets/tarjeta.js, `arteDe`.)
   const img = (o.images || []).find((u) => !/\.(mp4|mov|webm)(\?|$)/i.test(u) && !/\/business-images\/agenda\//.test(u));
@@ -2024,7 +2037,7 @@ function tarjeta(o, tz) {
   const tag = beneficio(o.discount, o.price_cents, o.currency);
   const exclusiva = etiquetaExclusiva(o.audience);
   return `<a class="ocard" href="${pre}/o/${esc(o.id)}">
-    ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : `<span class="ph">${ic('storefront')}</span>`}
+    ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : sinFoto(o.category_id, o.business_name)}
     <span class="ocard-body"><b>${esc(o.title)}</b>
       <span class="muted">${esc(o.business_name || '')}</span>
       <span class="ocard-meta">${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${exclusiva ? `<span class="tag off">${esc(exclusiva)}</span>` : ''}<span class="muted">${esc(cuando)}</span></span>
@@ -2141,6 +2154,7 @@ RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
     llamar('my_queue_turns', {}).catch(() => []),
     // El pedido que se prepara (Te aviso cuando esté listo, assets/cuenta/listo.js).
     llamar('my_orders', {}).catch(() => []),
+    catsSinFoto(),
   ]);
   // Tu turno en una cola y tu pedido, cada uno con su título (como la app),
   // debajo de «Sigues N series».
@@ -2308,6 +2322,7 @@ RUTAS.favoritos = async () => {
     llamar('favorites_feed', { ...pos, p_limit: 30 }).catch(() => []),
     sb.from('categories').select('id, names').then((r) => r.data || [], () => []),
     llamar('public_organizers', {}).catch(() => []),
+    catsSinFoto(),
   ]);
   const organiza = new Set((orgs || []).map((x) => (typeof x === 'string' ? x : x?.id || x?.business_id)).filter(Boolean));
   const catDe = new Map((cats || []).map((c) => [c.id, (c.names && (c.names[LANG] || c.names[PUB_EN ? 'en' : 'es'] || c.names.es)) || '']));
@@ -2339,7 +2354,7 @@ RUTAS.favoritos = async () => {
     ].filter(Boolean).join(' · ');
     return `<div class="fav-fila${b.id === llega ? ' mov-llega' : ''}" data-fav-fila="${esc(b.id)}">
       <a class="ocard" href="${pre}/b/${esc(b.id)}">
-        ${b.logo ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : `<span class="ph">${ic('storefront')}</span>`}
+        ${b.logo ? `<img src="${esc(b.logo)}" alt="" loading="lazy">` : sinFoto(b.category_id, b.name)}
         <span class="ocard-body"><b>${esc(b.name)}</b>
           ${meta ? `<span class="muted">${esc(meta)}</span>` : ''}
           <span class="ocard-meta">${cuentas ? `<span class="fav-cuentas">${cuentas}</span>` : `<span class="muted">${esc(EN ? 'Nothing new right now' : 'Sin novedades ahora mismo')}</span>`}</span>
@@ -2417,7 +2432,7 @@ function filaCanje(r, tz, resaltado = false) {
   const destino = vivo ? `/cuenta/codigo/${esc(r.offer_id)}` : r.status === 'validated' ? `/cuenta/recibo/${esc(r.id)}` : `${pre}/o/${esc(r.offer_id)}`;
   return `
     <a class="ocard${resaltado ? ' resaltado' : ''}" href="${destino}"${resaltado ? ' id="codigo-pedido"' : ''}>
-      ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : `<span class="ph">${ic('storefront')}</span>`}
+      ${r.business_logo ? `<img src="${esc(r.business_logo)}" alt="" loading="lazy">` : sinFoto(r.category_id, r.business_name)}
       <span class="ocard-body"><b>${esc(r.offer_title)}</b>
         <span class="muted">${esc(r.business_name)} · ${esc(fecha(r.validated_at || (r.status === 'pending' && r.event_at) || r.created_at, undefined, tz))}</span>
         <span class="ocard-meta"><span class="tag${vivo ? '' : ' off'}">${esc(estado)}</span>

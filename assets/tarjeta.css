@@ -16,6 +16,21 @@
 .tj-media { position: relative; aspect-ratio: 4 / 5; border-radius: 26px; overflow: hidden; background: var(--soft); }
 .tj-img { width: 100%; height: 100%; object-fit: cover; display: block; background: var(--soft); transition: transform .4s ease; }
 .tj:hover .tj-img { transform: scale(1.03); }
+/* Sin foto, nunca un hueco vacío (§4zzz-sinfoto; `assets/sin-foto.js`, como
+   `NoPhoto` en la app): un velo suave de tinta, más claro abajo, el icono
+   del tipo de negocio (o de la categoría de la publicación) y, desde 64 px de
+   lado, las iniciales del sitio. Se mide por su propio tamaño (`cqmin`), así
+   vale igual en una miniatura de 48 que en una portada. Una copia en
+   /assets/cuenta/app.css («Tu cuenta» no carga esta hoja). */
+.sin-foto { --sf-fondo: linear-gradient(135deg, color-mix(in srgb, var(--ink) 7%, transparent), color-mix(in srgb, var(--ink) 3.5%, transparent));
+  display: grid; place-content: center; justify-items: center; gap: 4px; container-type: size; overflow: hidden;
+  background: var(--sf-fondo); color: var(--ink-2); }
+.sin-foto svg { width: 28px; height: 28px; width: clamp(16px, 34cqmin, 36px); height: clamp(16px, 34cqmin, 36px); flex: none; }
+.sin-foto b { font: 800 12px/1 var(--display, inherit); font-size: clamp(10px, 15cqmin, 13px); letter-spacing: .08em; }
+@container (max-width: 63px) { .sin-foto b { display: none; } }
+@container (max-height: 63px) { .sin-foto b { display: none; } }
+@media (prefers-color-scheme: dark) { .sin-foto { --sf-fondo: linear-gradient(135deg, color-mix(in srgb, var(--ink) 10%, transparent), color-mix(in srgb, var(--ink) 5%, transparent)); } }
+.tj-media > .sin-foto, .tj-pieza > .sin-foto { position: absolute; inset: 0; }
 .tj-ph { position: absolute; inset: 0; display: grid; place-items: center; font: 800 64px/1 var(--display); color: var(--ink-2);
   background: linear-gradient(140deg, var(--soft), transparent 70%); }
 /* La agenda pública sin foto (`arteHtml`, como `AgendaArtBackground` en la
