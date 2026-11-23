@@ -35,6 +35,8 @@ if [ -n "$PW" ]; then
   PW="$PW" node tools/cartel_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/cartel_check.mjs (node tools/cartel_check.mjs para ver qué); no se sube."; exit 1; }
   # El panel con las cuatro secciones de la app (§4zzz-panelapp): menú o barra según el tamaño, papeles, entidad, direcciones viejas (unos 25 s).
   PW="$PW" node tools/panel_app_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/panel_app_check.mjs (node tools/panel_app_check.mjs para ver qué); no se sube."; exit 1; }
+  # La CSP de scripts (§4zzz-csp): ni <script> en línea ni on…=, y las páginas principales sin violaciones en Chromium y WebKit, móvil y escritorio (unos 4 min).
+  PW="$PW" CSP_CALLADO=1 node tools/csp_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/csp_check.mjs (CSP; node tools/csp_check.mjs para ver qué); no se sube."; exit 1; }
   # Accesibilidad (axe-core, foco con el teclado, reflujo a 320 px; unos 95 s): con axe-core instalado (npm install -g axe-core).
   if [ -n "${AXE:-}" ] || [ -f "${APPDATA:-}/npm/node_modules/axe-core/axe.min.js" ]; then
     PW="$PW" node tools/a11y_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/a11y_check.mjs (accesibilidad; node tools/a11y_check.mjs para ver qué); no se sube."; exit 1; }
@@ -42,7 +44,8 @@ if [ -n "$PW" ]; then
     echo "pre-push: sin axe-core (npm install -g axe-core), me salto tools/a11y_check.mjs."
   fi
 else
-  echo "pre-push: sin Playwright, me salto tools/seguir_optimista_check.mjs y tools/captcha_sitio_check.mjs."
+  echo "pre-push: sin Playwright, me salto tools/seguir_optimista_check.mjs y tools/captcha_sitio_check.mjs (y la CSP solo sin navegador)."
+  node tools/csp_check.mjs --sin-navegador >/dev/null 2>&1 || { echo "pre-push: falla tools/csp_check.mjs --sin-navegador (CSP); no se sube."; exit 1; }
 fi
 # Dev ↔ prod solo a propósito (KLENDAR_CAMBIO_ENTORNO=1), config.js y page.js al mismo Supabase y Turnstile con sus textos.
 printf '%s\n' "$refs" | python tools/entorno_check.py || { echo "pre-push: el cambio de entorno no cuadra (ver arriba); no se sube."; exit 1; }

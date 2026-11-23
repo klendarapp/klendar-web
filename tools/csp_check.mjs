@@ -157,14 +157,14 @@ const flash = PLANES.find((p) => p.kind === 'flash_offer');
 const evento = PLANES.find((p) => p.kind === 'future_event' && !p.adults_only && !p.imported);
 const adultos = PLANES.find((p) => p.adults_only);
 const NEG = NEGOCIOS[0];
-const COLA = 'ABC123';
+const COLA = 'CoLa0123456789ab';
 const TOKEN = 'AbCdEfGhIjKlMnOp';
 const infoNegocio = { id: NEG.id, name: NEG.name, slug: NEG.slug, city: NEG.city, address: NEG.address, logo_url: null, time_zone: 'Europe/Madrid' };
 const RPC = {
   queue_info: { ok: true, business: infoNegocio, queue: { status: 'open', called: [3], next: [4, 5], waiting: 2, wait_minutes: 6, call_minutes: 5 } },
   queue_screen: { ok: true, business: infoNegocio, queue: { status: 'open', called: [3, 2], next: [4, 5], wait_minutes: 6 } },
-  orders_info: { ok: true, business: infoNegocio, orders: { enabled: true } },
-  table_qr_info: { ok: true, business: infoNegocio, business_id: NEG.id, slug: NEG.slug, wifi: { ssid: 'Bar-Clientes', password: 'cafe1234' } },
+  orders_info: { ok: true, business: infoNegocio, state: 'available', team: false, me: null },
+  table_qr_info: { ok: true, visible: true, has_wifi: true, business: infoNegocio, wifi: { ssid: 'Bar-Clientes', password: 'cafe1234' } },
   visit_qr_info: { ok: true, business: infoNegocio, business_id: NEG.id, slug: NEG.slug },
 };
 const RUTAS = [
