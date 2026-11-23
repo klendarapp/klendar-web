@@ -196,7 +196,7 @@ async function panel(nav, nombre, t, vp) {
   await p.waitForSelector('#view h1');
   await foto('panel-entidad-pendiente');
   await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('#view h1');
+  await p.waitForSelector('#view .crear-bloqueado, #view .crear', { timeout: 15000 }).catch(() => null);
   ok(await p.locator('text=Podrás publicar cuando verifiquemos la entidad.').count() > 0 && await p.locator('.crear-op').count() === 0, `${nombre}/${t} Publicar no publica hasta verificarla`);
   ok(errores.length === 0, `${nombre}/${t} panel sin errores JS ${errores.join(' | ')}`);
   await ctx.close();

@@ -169,7 +169,8 @@ async function sinSugerencias(nav, n) {
     await p.waitForSelector('#view h1');
     ok(await p.locator('[data-sug]').count() === 0, `${n}: ${nombre}, sin sugerencias`);
     const pasos = await p.locator('.primeros').count();
-    ok(conPasos ? pasos === 1 && /Publica tu primera oferta/.test(await p.locator('.primeros').innerText()) : pasos === 0, `${n}: ${nombre}, ${conPasos ? '«Publica tu primera oferta»' : 'sin «Primeros pasos»'}`);
+    // Una entidad publica eventos: «Publica tu primer evento» (§4zzz-propent).
+    ok(conPasos ? pasos === 1 && /Publica tu primer(a oferta| evento)/.test(await p.locator('.primeros').innerText()) : pasos === 0, `${n}: ${nombre}, ${conPasos ? '«Publica tu primera oferta» (o «primer evento»)' : 'sin «Primeros pasos»'}`);
     await ctx.close();
   }
 }
