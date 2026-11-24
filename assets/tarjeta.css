@@ -142,6 +142,10 @@
 .tjs .tj:not(.tj--pantalla) .tj-media { border-radius: 25px 25px 0 0; }
 .tjs .tj:not(.tj--pantalla) .tj-panel { box-shadow: none; }
 .tjs .tj:not(.tj--pantalla) .tj-enlace::after { border-radius: 25px; }
+/* En oscuro, dentro del marco la cuenta atrás en coral se lee sobre un fondo
+   ya conocido: el chip, con --glass (7 %) y no --soft (8 %), para pasar de
+   4,5:1 (con --soft daba 4,46; tools/a11y_check.mjs). */
+@media (prefers-color-scheme: dark) { .tjs .tj:not(.tj--pantalla) .tj-chip { background: var(--glass); } }
 @media (max-width: 600px) {
   .tjs .tj:not(.tj--pantalla) .tj-media:has(> .sin-foto, > .tj-arte, > .tj-ph) { aspect-ratio: 16 / 9; }
   .tjs .tj:not(.tj--pantalla) .tj-media:has(> .tj-arte) .tj-arte svg { width: 26%; transform: translateY(-14%); }
