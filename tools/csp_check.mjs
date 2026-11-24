@@ -26,7 +26,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { CSP_ADMIN, CSP_PUBLICA, CSP_WIDGET, conNonce } from '../functions/_lib/csp.js';
+import { CSP_ADMIN, CSP_PANEL, CSP_PUBLICA, CSP_WIDGET, conNonce } from '../functions/_lib/csp.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const lee = (f) => readFileSync(path.join(RAIZ, f), 'utf8');
@@ -106,7 +106,12 @@ ok('…y la misma en /widget/* de _headers', new RegExp(`^/widget/\\*\\r?\\n(?: 
   ok('middleware: página de una Function sin CSP → CSP_PUBLICA + nonce', f.headers.get('content-security-policy') === conNonce(CSP_PUBLICA, nonce(f)) && !!nonce(f), f.headers.get('content-security-policy'));
   const w = await pide('/widget/abc', { csp: CSP_WIDGET });
   ok('middleware: el widget, su CSP + nonce', w.headers.get('content-security-policy') === conNonce(CSP_WIDGET, nonce(w)) && !!nonce(w));
-  for (const z of ['/panel', '/cuenta/codigos', '/tv']) {
+  // El panel (§4zzz-panellimpio): sus pantallas, con CSP_PANEL (la de `/panel` en `_headers`) y sin nonce.
+  for (const z of ['/panel', '/panel/hoy', '/panel/sellos/abc/editar']) {
+    const r = await pide(z, { csp: CSP_PUBLICA });
+    ok(`middleware: ${z} con CSP_PANEL y sin nonce (zona con sesión, no-transform)`, !nonce(r) && r.headers.get('content-security-policy') === CSP_PANEL, r.headers.get('content-security-policy'));
+  }
+  for (const z of ['/cuenta/codigos', '/tv']) {
     const r = await pide(z, { csp: "default-src 'self'; script-src 'self'" });
     ok(`middleware: ${z} sin nonce (zona con sesión, no-transform)`, !nonce(r) && r.headers.get('content-security-policy') === "default-src 'self'; script-src 'self'");
   }
