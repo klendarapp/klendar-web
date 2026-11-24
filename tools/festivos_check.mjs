@@ -252,7 +252,7 @@ async function municipio(nav, nombre, t, vp, lang = 'es') {
   await p.screenshot({ path: `${OUT}/web-admin-festivos-buscar-${nombre}-${t}-${lang}.png` });
   await p.click('#festMuniRes a.fest-op >> nth=0');
   await p.waitForSelector('#festLugar');
-  ok(/#\/festivos\/2028\?m=torrent-valencia$/.test(p.url()), `${nombre}/${t}/${lang} municipio: el elegido va en la dirección (${p.url()})`);
+  ok(new URL(p.url()).pathname + new URL(p.url()).search === '/festivos/2028?m=torrent-valencia' && !p.url().includes('#'), `${nombre}/${t}/${lang} municipio: el elegido va en la dirección (${p.url()})`);
   c = await card();
   ok(/Torrent Valencia\/València · Comunitat Valenciana/.test(c) && /46244/.test(c) && /8 (nacionales|national)/.test(c) && /3 (de su comunidad|regional)/.test(c)
     && /Sant Blai/.test(c) && /Mare de Déu del Rebollet/.test(c) && await p.locator('#festLugar a[href="https://dogv.gva.es/"]').count() === 1,
@@ -374,7 +374,7 @@ async function crecer(nav, nombre, t, vp) {
   ok(info && info[1].p_id === 'teruel' && info[1].p_region === 'AR' && info[1].p_postal_prefix === '440', `${nombre}/${t} crecer: guarda comunidad y código postal ${JSON.stringify(info?.[1])}`);
   await p.click('#modal button[type=submit]'); // «Añadirlos ahora»
   await p.waitForTimeout(300);
-  ok(/#\/festivos\/2026$/.test(p.url()), `${nombre}/${t} crecer: «Añadirlos ahora» lleva a Festivos (${p.url()})`);
+  ok(new URL(p.url()).pathname === '/festivos/2026' && !p.url().includes('#'), `${nombre}/${t} crecer: «Añadirlos ahora» lleva a Festivos (${p.url()})`);
   ok(errores.length === 0, `${nombre}/${t} crecer sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
