@@ -213,7 +213,7 @@ async function admin(nav, nombre, t, vp) {
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
   p.setDefaultTimeout(15000);
-  await p.goto(`${ADMIN}/#/configuracion`);
+  await p.goto(`${ADMIN}/configuracion`);
   await p.waitForSelector('#gwf');
   const card = p.locator('.card', { has: p.locator('#gwf') });
   const txt = await card.innerText();

@@ -303,7 +303,7 @@ for (const [why, frase] of [['bad_link', /tiene que empezar por https/], ['nothi
     admin_link_fill_overview: () => ({ ...resumen, enabled: on.v }),
     admin_link_fill_set: (b) => { on.v = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
   } });
-  await p.goto(`${ADMIN}/#/automatico`);
+  await p.goto(`${ADMIN}/automatico`);
   await p.waitForSelector('#enlaceInterruptor');
   const txt = await p.locator('#enlaceInterruptor').locator('xpath=ancestor::div[contains(@class,"card")]').innerText();
   ok(/Rellenar desde un enlace o un texto/.test(txt) && /apagado/.test(txt), 'admin: apagado');

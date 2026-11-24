@@ -138,7 +138,7 @@ const nav = await chromium.launch();
 // ── La cola del admin ──────────────────────────────────────────────────────
 {
   const { ctx, page, estado, errores } = await abre(nav, { claveAdmin: true });
-  await page.goto(`${ADMIN}/#/medios`);
+  await page.goto(`${ADMIN}/medios`);
   await page.waitForSelector('.med-fila', { timeout: 15000 }).catch(() => {});
   const texto = await page.locator('main, body').first().innerText();
   ok(await page.locator('.med-fila').count() === 3, 'la cola enseña lo retenido', texto.slice(0, 300));
@@ -179,7 +179,7 @@ const nav = await chromium.launch();
 // ── El Resumen ─────────────────────────────────────────────────────────────
 {
   const { ctx, page, errores } = await abre(nav, { claveAdmin: true });
-  await page.goto(`${ADMIN}/#/resumen`);
+  await page.goto(`${ADMIN}/`);
   await page.waitForSelector('#limitesGratis', { timeout: 15000 }).catch(() => {});
   const texto = await page.locator('body').innerText();
   ok(/Límites gratis/.test(texto), 'el Resumen enseña los límites gratis');

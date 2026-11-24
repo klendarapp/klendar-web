@@ -120,11 +120,11 @@ async function alSiguiente(nav, nombre, t, vp) {
     admin_set_offer_moderation: null,
     admin_offers_page: (b) => (b.p_moderation === 'pending' ? { total: 2, rows: [{ id: O1, ends_at: dia(2) }, { id: O2, ends_at: dia(3) }] } : { total: 0, rows: [] }),
   });
-  await p.goto(`${ADMIN}/#/negocios/${B1}`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/negocios/${B1}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-a="verify"]');
   await p.click('[data-a="verify"]');
   await p.click('#modal button[type=submit]');
-  await p.waitForFunction(() => location.hash.includes('b1000000-0000-4000-8000-0000000a0d02'));
+  await p.waitForFunction(() => location.pathname.includes('b1000000-0000-4000-8000-0000000a0d02'));
   await p.waitForSelector('.siguiente-aviso');
   const aviso = await p.locator('.siguiente-aviso').innerText();
   ok(/El siguiente/.test(aviso) && /queda 1/.test(aviso) && /Volver a la lista/.test(aviso), `${nombre}/${t} negocio verificado: abre el siguiente («queda 1»)`);
@@ -136,15 +136,15 @@ async function alSiguiente(nav, nombre, t, vp) {
   await p.click('[data-a="verify"]');
   await p.click('#modal button[type=submit]');
   await p.waitForSelector('#todoRevisado');
-  ok(/#\/negocios$/.test(await p.evaluate(() => location.hash)), `${nombre}/${t} el último: vuelve a la lista`);
+  ok((await p.evaluate(() => location.pathname + location.hash)) === '/negocios', `${nombre}/${t} el último: vuelve a la lista`);
   ok(/Todo revisado/.test(await p.locator('#todoRevisado').innerText()), `${nombre}/${t} «Todo revisado»`);
   ok(await p.locator('#todoRevisado[role=status]').count() === 1, `${nombre}/${t} «Todo revisado» se anuncia (role=status)`);
   await p.screenshot({ path: `${OUT}/web-admin-todo-revisado-${nombre}-${t}.png` });
   // Publicación por moderar.
-  await p.goto(`${ADMIN}/#/publicaciones/${O1}`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/publicaciones/${O1}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-a="approve"]');
   await p.click('[data-a="approve"]');
-  await p.waitForFunction(() => location.hash.includes('c1000000-0000-4000-8000-0000000a0d02'));
+  await p.waitForFunction(() => location.pathname.includes('c1000000-0000-4000-8000-0000000a0d02'));
   ok(true, `${nombre}/${t} publicación aprobada: abre la siguiente`);
   ok(errores.length === 0, `${nombre}/${t} al siguiente: sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
@@ -157,7 +157,7 @@ async function denuncias(nav, nombre, t, vp) {
     admin_resolve_report_group: { reports: 1 },
     admin_report_groups: { total: 0, rows: [] },
   });
-  await p.goto(`${ADMIN}/#/denuncias/offer/${O1}`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/denuncias/offer/${O1}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-dec="keep"]');
   await p.click('[data-dec="keep"]');
   await p.click('#modal button[type=submit]');
@@ -179,12 +179,12 @@ async function caminos(nav, nombre, t, vp) {
       notifications: [{ title: 'Ya estás en Klendar', kind: 'business_verified', created_at: dia(-1) }, { title: 'Hola', kind: 'kind_nuevo', created_at: dia(-1) }],
       audit: [{ action: 'business.verification', admin_email: 'a@example.com', created_at: dia(-1), details: { status: 'verified', reason: null } }] },
   });
-  await p.goto(`${ADMIN}/#/resenas`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/resenas`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.tabs [data-t="reviews"]');
   ok(await p.locator('.tabs [data-t="cola"]').count() === 0, `${nombre}/${t} Reseñas y novedades: sin «En revisión»`);
   ok(!llamo(estado, 'admin_text_reviews', (b) => b.p_limit > 1 && !/medios/.test('')) || true, `${nombre}/${t} (los textos no se piden aquí)`);
-  await p.goto(`${ADMIN}/#/resenas?tab=cola`, { waitUntil: 'networkidle' });
-  await p.waitForFunction(() => location.hash.startsWith('#/medios'));
+  await p.goto(`${ADMIN}/resenas?tab=cola`, { waitUntil: 'networkidle' });
+  await p.waitForFunction(() => location.pathname === '/medios' && !location.search);
   await p.waitForSelector('[data-lok]');
   const m = await p.locator('#view').innerText();
   ok(/Texto con un taco/.test(m) && /Listas de palabras/.test(m), `${nombre}/${t} «?tab=cola» lleva a Filtro automático, con los textos de las listas`);
@@ -195,10 +195,10 @@ async function caminos(nav, nombre, t, vp) {
   await p.waitForTimeout(300);
   ok(llamo(estado, 'admin_review_text', (b) => b.p_approve === true && b.p_kind === 'post'), `${nombre}/${t} aprobar un texto de las listas, desde aquí`);
   // Usuario: sin «Hacer admin».
-  await p.goto(`${ADMIN}/#/usuarios/${UX}`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/usuarios/${UX}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.detail-head');
   ok(await p.locator('[data-a="admin"]').count() === 0, `${nombre}/${t} ficha del usuario: sin «Hacer admin»`);
-  ok(await p.locator('a.tag[href="#/administradores"]').count() === 1, `${nombre}/${t} «administrador» lleva a Administradores`);
+  ok(await p.locator('a.tag[href="/administradores"]').count() === 1, `${nombre}/${t} «administrador» lleva a Administradores`);
   const u = await p.locator('#view').innerText();
   ok(/Negocio verificado/.test(u) && !/business_verified|kind_nuevo/.test(u), `${nombre}/${t} notificaciones: el tipo en llano`);
   ok(/Verificación de negocio/.test(u) && /Estado: verificado/.test(u) && !/business\.verification|status:/.test(u), `${nombre}/${t} registro de la ficha en llano`);
@@ -209,7 +209,7 @@ async function caminos(nav, nombre, t, vp) {
 // 2c. «Ver más cifras» sin las seis de arriba.
 async function cifras(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contexto(nav, vp, {});
-  await p.goto(`${ADMIN}/#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#masCifras');
   await p.evaluate(() => { document.querySelector('#masCifras').open = true; });
   const mas = await p.locator('#masCifras').innerText();
@@ -227,12 +227,12 @@ async function cobro(nav, nombre, t, vp) {
     admin_business_detail: detalle(negocio(B1, 'Bar Bloqueado', { verification_status: 'verified', review_only: true, billing_hold: 'blocked', billing_hold_detail: 'ended' })),
     admin_business_billing: { hold: 'ended', since: dia(-2), cause: 'trial', ends: diaISO(-3), kind: 'trial', on: diaISO(-2), review_only: true, unblocked_until: null },
   });
-  await p.goto(`${ADMIN}/#/negocios/${B1}`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/negocios/${B1}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.cobro-ficha');
   const v = await p.locator('#view').innerText();
   ok(/Bloqueado por el cobro: fin de la prueba/.test(v), `${nombre}/${t} ficha: bloqueado por el cobro, con la causa`);
   ok(/Negocio de revisión de las tiendas/.test(v) && /Apple y Google/.test(v), `${nombre}/${t} ficha: negocio de revisión de las tiendas`);
-  ok(await p.locator('.cobro-ficha a[href="#/planes?tab=stripe"]').count() === 1, `${nombre}/${t} ficha: dónde se desbloquea`);
+  ok(await p.locator('.cobro-ficha a[href="/planes?tab=stripe"]').count() === 1, `${nombre}/${t} ficha: dónde se desbloquea`);
   await p.screenshot({ path: `${OUT}/web-admin-ficha-cobro-${nombre}-${t}.png` });
   ok(errores.length === 0, `${nombre}/${t} cobro: sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
@@ -241,7 +241,7 @@ async function cobro(nav, nombre, t, vp) {
     admin_business_detail: detalle(negocio(B1, 'Bar Pronto', { verification_status: 'verified' })),
     admin_business_billing: { hold: null, kind: 'free', on: diaISO(5), review_only: false },
   });
-  await s.p.goto(`${ADMIN}/#/negocios/${B1}`, { waitUntil: 'networkidle' });
+  await s.p.goto(`${ADMIN}/negocios/${B1}`, { waitUntil: 'networkidle' });
   await s.p.waitForSelector('.detail-head');
   ok(/Se bloquea el .* si no paga \(fin del gratis de lanzamiento\)/.test(await s.p.locator('.detail-head').innerText()), `${nombre}/${t} ficha: se bloquea pronto`);
   await s.ctx.close();
@@ -249,7 +249,7 @@ async function cobro(nav, nombre, t, vp) {
     admin_business_detail: detalle(negocio(B1, 'Bar Viejo', { verification_status: 'verified' })),
     admin_business_billing: { __status: 404, body: { code: 'PGRST202', message: 'Could not find the function public.admin_business_billing(p_id) in the schema cache' } },
   });
-  await n.p.goto(`${ADMIN}/#/negocios/${B1}`, { waitUntil: 'networkidle' });
+  await n.p.goto(`${ADMIN}/negocios/${B1}`, { waitUntil: 'networkidle' });
   await n.p.waitForSelector('.detail-head');
   ok(/Bar Viejo/.test(await n.p.locator('h1').innerText()) && n.errores.length === 0, `${nombre}/${t} ficha: sin la migración, sale igual`);
   await n.ctx.close();
@@ -270,7 +270,7 @@ async function listas(nav, nombre, t, vp) {
     admin_venue_requests: (b) => ({ counts: { open: 53 }, cities: [], items: filas(Math.min(b.p_limit, 53 - (b.p_offset || 0)), (i) => ({ id: `g${i + (b.p_offset || 0)}`, name: `Local ${i + (b.p_offset || 0)}`, people: 1, status: 'open', last_request_at: dia(-1) })) }),
   });
   // Duplicados: 50 y «Ver más» (offset 50).
-  await p.goto(`${ADMIN}/#/duplicados`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/duplicados`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas]');
   ok(await p.locator('#list [data-parte-fila]').count() === 50, `${nombre}/${t} duplicados: los 50 primeros`);
   await p.click('[data-ver-mas]');
@@ -278,31 +278,31 @@ async function listas(nav, nombre, t, vp) {
   ok(llamo(estado, 'admin_duplicate_alerts', (b) => b.p_offset === 50) && await p.locator('[data-ver-mas]').count() === 0, `${nombre}/${t} duplicados: «Ver más» trae los 10 que faltan y se va`);
   ok(await p.evaluate(() => !!document.activeElement?.closest?.('[data-parte-fila]')), `${nombre}/${t} duplicados: el foco, en lo primero nuevo`);
   // Artistas: cursor.
-  await p.goto(`${ADMIN}/#/artistas`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/artistas`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas]');
   await p.click('[data-ver-mas]');
   await p.waitForFunction(() => document.querySelectorAll('#list tbody tr').length === 70);
   ok(llamo(estado, 'admin_artists', (b) => b.p_before && b.p_before_id === 'a049'), `${nombre}/${t} artistas: «Ver más» con el cursor del último`);
   // Cola de push: cursor y el tipo en llano.
-  await p.goto(`${ADMIN}/#/avisos?tab=push`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/avisos?tab=push`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas]');
   ok(/De un favorito/.test(await p.locator('#list').innerText()) && !/favorite_offer/.test(await p.locator('#list').innerText()), `${nombre}/${t} cola de push: el tipo en llano`);
   await p.click('[data-ver-mas]');
   await p.waitForFunction(() => document.querySelectorAll('#list tbody tr').length === 55);
   ok(llamo(estado, 'admin_push_queue', (b) => b.p_before_id === 951), `${nombre}/${t} cola de push: la parte siguiente por cursor`);
   // Notificaciones enviadas.
-  await p.goto(`${ADMIN}/#/avisos?tab=history`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/avisos?tab=history`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-ver-mas]');
   await p.click('[data-ver-mas]');
   await p.waitForFunction(() => document.querySelectorAll('#tabview tbody tr').length === 52);
   ok(llamo(estado, 'admin_audit', (b) => b.p_action === 'notification.send' && b.p_offset === 50), `${nombre}/${t} enviados: «Ver más»`);
   // Cuentas inactivas y locales pedidos.
-  await p.goto(`${ADMIN}/#/inactivas`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/inactivas`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#inactivasLista [data-ver-mas]');
   await p.click('#inactivasLista [data-ver-mas]');
   await p.waitForFunction(() => document.querySelectorAll('#inactivasLista tbody tr').length === 51);
   ok(llamo(estado, 'admin_inactive_accounts', (b) => b.p_offset === 50), `${nombre}/${t} cuentas inactivas: «Ver más»`);
-  await p.goto(`${ADMIN}/#/pedidos`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/pedidos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#list [data-ver-mas]');
   await p.click('#list [data-ver-mas]');
   await p.waitForFunction(() => document.querySelectorAll('#list tbody tr').length === 53);
@@ -314,7 +314,7 @@ async function listas(nav, nombre, t, vp) {
   const v = await contexto(nav, vp, {
     admin_duplicate_alerts: (b) => ('p_offset' in b ? { __status: 404, body: { code: 'PGRST202', message: 'Could not find the function public.admin_duplicate_alerts(p_limit, p_offset) in the schema cache' } } : filas(60, dup)),
   });
-  await v.p.goto(`${ADMIN}/#/duplicados`, { waitUntil: 'networkidle' });
+  await v.p.goto(`${ADMIN}/duplicados`, { waitUntil: 'networkidle' });
   await v.p.waitForSelector('#list [data-parte-fila]');
   ok(await v.p.locator('#list [data-parte-fila]').count() === 60 && await v.p.locator('[data-ver-mas]').count() === 0 && llamo(v.estado, 'admin_duplicate_alerts', (b) => b.p_limit === 100 && !('p_offset' in b)), `${nombre}/${t} sin la migración: la lista de antes, sin «Ver más»`);
   ok(v.errores.length === 0, `${nombre}/${t} sin la migración: sin errores JS ${v.errores.join(' | ')}`);
@@ -330,7 +330,7 @@ async function registro(nav, nombre, t, vp) {
       { action: 'algo.nuevo_sin_nombre', target_type: 'offer', target_id: O1, admin_email: 'a@example.com', created_at: dia(-1), details: { offer_id: O1, until: diaISO(3) } },
     ] },
   });
-  await p.goto(`${ADMIN}/#/actividad`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/actividad`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#list tbody tr');
   const v = await p.locator('#list').innerText();
   ok(/Verificación de negocio/.test(v) && /Negocio «Bar Primero»/.test(v) && /Motivo: No existe/.test(v) && /Estado: rechazado/.test(v), `${nombre}/${t} Registro: acción, objeto y detalles en llano`);
@@ -349,7 +349,7 @@ async function mantenimiento(nav, nombre, t, vp) {
     storage_cleanup_count: { total: 0, bytes: 0, por_motivo: {} },
     admin_set_config: null,
   });
-  await p.goto(`${ADMIN}/#/configuracion`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/configuracion`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#mantEnciende');
   ok(/Pedir un código/.test(await p.locator('#limites').innerText()), `${nombre}/${t} límites: la acción en llano`);
   await p.click('#mantEnciende');

@@ -162,7 +162,7 @@ async function pruebaMenu(nav, nombre, zona) {
   await abre();
   await p.locator('#nav a.nav:not(.on)').first().tap();
   await cerrado('al elegir otra pantalla');
-  ok(!/#\/resumen/.test(p.url()), `${t}: y va a la pantalla elegida (${new URL(p.url()).hash})`);
+  ok(zona === 'panel' ? !/#\/resumen/.test(p.url()) : !['/', '/resumen'].includes(new URL(p.url()).pathname) && !new URL(p.url()).hash, `${t}: y va a la pantalla elegida (${zona === 'panel' ? new URL(p.url()).hash : new URL(p.url()).pathname})`);
 
   if (nombre === 'chromium') {
     await abre();

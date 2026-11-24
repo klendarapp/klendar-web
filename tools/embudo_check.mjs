@@ -98,7 +98,7 @@ for (const [t, vp] of [['escritorio', { width: 1280, height: 900 }], ['movil', {
   // 1. Cifras con la migración.
   {
     const { ctx, pg, errores } = await contexto(nav, vp);
-    await pg.goto(`${ADMIN}/#/cifras`, { waitUntil: 'networkidle' });
+    await pg.goto(`${ADMIN}/cifras`, { waitUntil: 'networkidle' });
     await pg.waitForSelector('#cfAlta');
     const v = await pg.locator('#view').innerText();
     ok(/Alta de negocios/.test(v) && /De los 10 negocios que se dieron de alta/.test(v), `${t}: «Alta de negocios» con el total`);
@@ -106,7 +106,7 @@ for (const [t, vp] of [['escritorio', { width: 1280, height: 900 }], ['movil', {
     ok(/70 %/.test(v) && /40 %/.test(v), `${t}: porcentajes de los pasos`);
     ok(/Confirman el correo/.test(v) && /Ven una publicación/.test(v), `${t}: dos pasos más en «Activación»`);
     const atascos = await pg.locator('#cfAltaSec a.kpi').evaluateAll((as) => as.map((a) => [a.getAttribute('href'), a.querySelector('b').textContent]));
-    ok(atascos.length === 4 && atascos[0][0] === '#/negocios?stuck=pending_48h' && atascos[0][1] === '3' && atascos[3][1] === '4', `${t}: «Atascados ahora» con enlaces ${JSON.stringify(atascos)}`);
+    ok(atascos.length === 4 && atascos[0][0] === '/negocios?stuck=pending_48h' && atascos[0][1] === '3' && atascos[3][1] === '4', `${t}: «Atascados ahora» con enlaces ${JSON.stringify(atascos)}`);
     await pg.screenshot({ path: `${OUT}/web-admin-embudo-${t}.png`, fullPage: true });
     await pg.click('#cfAltaTipo button[data-k=entity]');
     const v2 = await pg.locator('#cfAltaSec').innerText();
@@ -118,7 +118,7 @@ for (const [t, vp] of [['escritorio', { width: 1280, height: 900 }], ['movil', {
   // 2. Sin la migración.
   {
     const { ctx, pg, errores } = await contexto(nav, vp, { sinMigracion: true });
-    await pg.goto(`${ADMIN}/#/cifras`, { waitUntil: 'networkidle' });
+    await pg.goto(`${ADMIN}/cifras`, { waitUntil: 'networkidle' });
     await pg.waitForSelector('#cfAlta');
     const v = await pg.locator('#view').innerText();
     ok(/falta la migración 20261281700000/.test(v) && /Activación/.test(v) && /Sacan su primer código/.test(v), `${t}: sin migración, Cifras sale y avisa`);
@@ -129,7 +129,7 @@ for (const [t, vp] of [['escritorio', { width: 1280, height: 900 }], ['movil', {
   // 3. La lista de Negocios filtrada.
   {
     const { ctx, pg, llamadas, errores } = await contexto(nav, vp);
-    await pg.goto(`${ADMIN}/#/negocios?stuck=no_publication`, { waitUntil: 'networkidle' });
+    await pg.goto(`${ADMIN}/negocios?stuck=no_publication`, { waitUntil: 'networkidle' });
     await pg.waitForSelector('#quitaAtasco');
     const pide = llamadas.filter(([fn]) => fn === 'admin_businesses_page');
     ok(pide.length && pide.at(-1)[1].p_stuck === 'no_publication' && pide.at(-1)[1].p_status === 'all', `${t}: manda p_stuck ${JSON.stringify(pide.at(-1))}`);

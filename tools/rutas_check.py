@@ -7,11 +7,15 @@ publica (no en tools/ ni en lo de terceros):
 
   - `//` pegado a `/cuenta/`, `/panel/` o `/admin/` (también `/panel/${… ? `/x` …}`,
     que da `//` al juntarse);
-  - `/panel/<algo>` y `/admin/<algo>` sin `#/`: el panel y el admin son una sola
-    página y sus pantallas van con `#/` (salvo sus propios ficheros);
+  - `/panel/<algo>` y `/admin/<algo>` sin `#/`: el panel es una sola página y sus
+    pantallas van con `#/`; el admin no tiene `/admin/…` (salvo sus propios ficheros);
   - `/cuenta/<pantalla>`: que «Tu cuenta» tenga esa pantalla (`RUTAS.x = …`);
-  - `/panel/#/<pantalla>`, `/admin/#/<pantalla>` y los `#/<pantalla>` de dentro
-    del panel y del admin: que exista (`PAGES.x = …`).
+  - `/panel/#/<pantalla>` y los `#/<pantalla>` de dentro del panel: que exista
+    (`PAGES.x = …`);
+  - el admin, desde el 24-11 en admin.klendar.app con direcciones limpias (sin
+    `#`, §4zzz-adminlimpio): ni `/admin#/x` ni un `#/x` dentro; sus enlaces
+    (`href="/x…"`, `go('/x…')`) llevan a una pantalla que existe (`PAGES.x`,
+    `/` o `/carta`).
 
 Y, desde el 11-11 (Iván: todas las direcciones sin barra al final), que ningún
 enlace propio lleve la barra final (`/privacidad/`, `klendar.app/en/privacy/`,
@@ -93,6 +97,10 @@ PIEZA_CON_BARRA = re.compile(r"""\$\{(?!(BASE|origin|location\.origin|APP_URL)\}
 LOGICA = re.compile(r"startsWith\(|\.test\(|\.match\(|\.replace\(|\.slice\(|RegExp|Disallow|direccionBuena")
 HASH_DENTRO = re.compile(r"""(?<=['"`=])#/([a-z][a-z0-9-]*)""")
 COMENTARIO = re.compile(r'^\s*(//|\*|/\*|#)')
+# Dentro del admin: sus enlaces a pantallas (`href="/negocios/…"`, `go('/x')`).
+A_PANTALLA_ADMIN = re.compile(r"""(?:href=["']|\bgo\(\s*['"`])/([a-z][a-z0-9-]*)""")
+# Lo que no es una pantalla pero vive en su host: la carta y sus ficheros.
+ADMIN_FICHEROS = {'carta', 'admin', 'assets', 'favicon', 'site'}
 
 
 # Las que se siguen sirviendo con barra (200, sin redirigir): la app hasta la
@@ -124,12 +132,15 @@ def main() -> int:
                 # El fichero de la carta imprimible (admin.klendar.app/carta lo sirve por dentro).
                 if m[1] == 'admin' and resto == 'carta':
                     continue
-                malos.append(f'{donde}: «/{m[1]}/{resto}» (el {m[1]} no tiene esa dirección; sus pantallas van con #/)')
+                malos.append(f'{donde}: «/{m[1]}/{resto}» (el {m[1]} no tiene esa dirección; '
+                             + ('sus pantallas van con #/)' if m[1] == 'panel' else 'sus pantallas van en admin.klendar.app/<apartado>)'))
             for m in A_CUENTA.finditer(linea):
                 if m[1] not in CUENTA:
                     malos.append(f'{donde}: «/cuenta/{m[1]}» («Tu cuenta» no tiene esa pantalla)')
             for m in A_HASH.finditer(linea):
-                if m[2] not in (PANEL if m[1] == 'panel' else ADMIN):
+                if m[1] == 'admin':
+                    malos.append(f'{donde}: «/admin#/{m[2]}» (dirección vieja: el admin va en admin.klendar.app/{m[2]}, sin #)')
+                elif m[2] not in PANEL:
                     malos.append(f'{donde}: «/{m[1]}/#/{m[2]}» (el {m[1]} no tiene esa pantalla)')
             if not LOGICA.search(linea) and not f.endswith('.md') and f not in ('functions/_lib/direccion.js',):
                 for m in CON_BARRA.finditer(linea):
@@ -137,10 +148,16 @@ def main() -> int:
                 if f.endswith('.js'):
                     for m in PIEZA_CON_BARRA.finditer(linea):
                         malos.append(f'{donde}: «{m[0]}» acaba en barra (las direcciones van sin ella)')
-            if propio:
+            if propio == 'panel':
                 for m in HASH_DENTRO.finditer(linea):
-                    if m[1] not in (PANEL if propio == 'panel' else ADMIN):
-                        malos.append(f'{donde}: «#/{m[1]}» (el {propio} no tiene esa pantalla)')
+                    if m[1] not in PANEL:
+                        malos.append(f'{donde}: «#/{m[1]}» (el panel no tiene esa pantalla)')
+            if propio == 'admin' or f == 'admin.html':
+                for m in HASH_DENTRO.finditer(linea):
+                    malos.append(f'{donde}: «#/{m[1]}» (el admin va sin #: «/{m[1]}»)')
+                for m in A_PANTALLA_ADMIN.finditer(linea):
+                    if m[1] not in ADMIN and m[1] not in ADMIN_FICHEROS:
+                        malos.append(f'{donde}: «/{m[1]}» (el admin no tiene esa pantalla)')
     # Cada página estática (`x.html`) sin barra: con su `/x/ /x 301` en
     # `_redirects` (sin él, Cloudflare da un 308) y pasando por el middleware
     # (no en el exclude de `_routes.json`), que le pone el nonce de la CSP

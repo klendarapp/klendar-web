@@ -70,7 +70,7 @@ async function prueba(nav, kindAntes, elige, motivo) {
   const errores = [];
   pg.on('pageerror', (e) => errores.push(e.message));
   pg.setDefaultTimeout(15000);
-  await pg.goto(`${ADMIN}/#/negocios/${BIZ}`, { waitUntil: 'networkidle' });
+  await pg.goto(`${ADMIN}/negocios/${BIZ}`, { waitUntil: 'networkidle' });
   await pg.waitForSelector('[data-a="entity"]', { state: 'attached' }).catch(async (e) => {
     const v = await pg.locator('#view').innerText().catch(() => '');
     throw new Error(`no sale «Cuenta de entidad…»: ${v.replace(/\s+/g, ' ').slice(0, 400)} ${errores.join(' | ')} ${e.message}`);

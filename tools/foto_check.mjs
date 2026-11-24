@@ -383,7 +383,7 @@ for (const [why, frase] of [['nothing', /No vemos ningún cartel/], ['cap', /Est
     admin_photo_fill_overview: () => ({ ...resumen, enabled: estado2.on }),
     admin_photo_fill_set: (b) => { estado2.on = b.p_enabled; return { ok: true, enabled: b.p_enabled }; },
   } });
-  await p.goto(`${ADMIN}/#/automatico`);
+  await p.goto(`${ADMIN}/automatico`);
   await p.waitForSelector('#fotoInterruptor');
   const txt = await p.locator('#fotoInterruptor').locator('xpath=ancestor::div[contains(@class,"card")]').innerText();
   ok(/Rellenar desde una foto/.test(txt) && /apagado/.test(txt), 'admin: apagado');

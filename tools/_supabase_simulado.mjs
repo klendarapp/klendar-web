@@ -63,16 +63,20 @@ export const KEY = (CONFIG.match(/key:\s*'([^']+)'/) || [])[1] || '';
 /** El otro proyecto (para probar que la sesión de otro no cuenta). */
 export const OTRO_REF = REF === PROYECTOS.dev ? PROYECTOS.prod : PROYECTOS.dev;
 // El admin vive en su propio host (admin.klendar.app; en local,
-// admin.localhost con el mismo puerto: tools/serve_dev.mjs, §4zzz-admindom).
-// `${adminDe(BASE)}/#/…` lo abre allí (en la raíz: ya no hay /admin a la vista).
+// admin.localhost con el mismo puerto: tools/serve_dev.mjs, §4zzz-admindom),
+// con direcciones limpias, sin `#` (§4zzz-adminlimpio): `${adminDe(BASE)}/`
+// es el Resumen y `${adminDe(BASE)}/negocios/<id>` un apartado.
 export const adminDe = (base) => String(base)
   .replace(/^(https?:\/\/)(localhost|127\.0\.0\.1)(?=[:/]|$)/, '$1admin.localhost')
   .replace(/^https:\/\/(www\.)?klendar\.app(?=[:/]|$)/, 'https://admin.klendar.app');
-/** `base + ruta`; las rutas de siempre del admin (`/admin`, `/admin#/x`,
- *  `/admin/carta.html`), en la raíz de su host: `/`, `/#/x`, `/carta.html`. */
+/** `base + ruta`; las rutas de siempre del admin (`/admin`, `/admin#/x?q`,
+ *  `/admin/carta.html`), en su host y sin `#`: `/`, `/x?q`, `/carta.html`
+ *  (`/admin#/resumen` es la raíz). */
 export const enSuHost = (base, ruta) => {
   if (!/^\/admin(\/|[?#]|$)/.test(ruta)) return base + ruta;
-  const resto = ruta.slice('/admin'.length);
+  let resto = ruta.slice('/admin'.length);
+  const hash = /^\/?#\/(.*)$/.exec(resto);
+  if (hash) resto = /^resumen(\?|$)/.test(hash[1]) ? `/${hash[1].slice('resumen'.length)}` : `/${hash[1]}`;
   return adminDe(base) + (resto.startsWith('/') ? resto : `/${resto}`);
 };
 /** `fetch` que también llega a `admin.localhost` (los navegadores lo resuelven

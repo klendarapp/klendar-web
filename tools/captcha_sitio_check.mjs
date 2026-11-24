@@ -149,7 +149,7 @@ for (const [t, vp] of [['movil', { width: 360, height: 740 }], ['escritorio', { 
     const n = `${t}/${esquema}`;
     {
       const { ctx, pg, errores } = await abre(nav, { vp, esquema, modo: 'mirar' });
-      await pg.goto(`${ADMIN}/#/condiciones`);
+      await pg.goto(`${ADMIN}/condiciones`);
       await pg.waitForSelector('#login .kl-captcha-sitio .ts-falso:has-text("humano")');
       const m = await mide(pg, '#login', '#doLogin');
       ok(m.dentro && !m.fija, `${n} admin: el recuadro va dentro del acceso, no fijo abajo`, JSON.stringify(m));
@@ -219,7 +219,7 @@ for (const [t, vp] of [['movil', { width: 360, height: 740 }], ['escritorio', { 
 // ── 4. Admin: del acceso al código (se quita) y, tras entrar, al Resumen.
 {
   const { ctx, pg, estado, errores } = await abre(nav, { modo: 'mirar' });
-  await pg.goto(`${ADMIN}/#/condiciones`);
+  await pg.goto(`${ADMIN}/condiciones`);
   await pg.waitForSelector('#login .ts-falso:has-text("humano")');
   await pg.evaluate(() => window.turnstile.marca());  // la persona lo marca
   ok(await pg.evaluate(() => document.querySelector('#login .kl-captcha-sitio').style.position === 'absolute'), 'admin: marcado, el hueco deja de ocupar sitio');
@@ -234,13 +234,15 @@ for (const [t, vp] of [['movil', { width: 360, height: 740 }], ['escritorio', { 
   await pg.screenshot({ path: `${OUT}/web-captcha-admin-codigo.png` });
   await pg.fill('#mfaCode', '123456');
   await pg.waitForFunction(() => !document.querySelector('#app').hidden);
-  ok(await pg.evaluate(() => location.hash) === '#/resumen', `admin: tras entrar (con 2FA), al Resumen aunque la dirección dijera #/condiciones (${await pg.evaluate(() => location.hash)})`);
+  const dir = () => pg.evaluate(() => location.pathname + location.search + location.hash);
+  ok(await dir() === '/', `admin: tras entrar (con 2FA), al Resumen (/) aunque la dirección dijera /condiciones (${await dir()})`);
   // Con la sesión abierta, la sección de la dirección.
-  await pg.evaluate(() => { location.hash = '#/condiciones'; });
+  await pg.goto(`${ADMIN}/condiciones`);
+  await pg.waitForFunction(() => !document.querySelector('#app').hidden);
   await pg.reload();
   await pg.waitForFunction(() => !document.querySelector('#app').hidden);
   await pg.waitForTimeout(300);
-  ok(await pg.evaluate(() => location.hash) === '#/condiciones', 'admin: al recargar con la sesión abierta, se queda en #/condiciones');
+  ok(await dir() === '/condiciones', `admin: al recargar con la sesión abierta, se queda en /condiciones (${await dir()})`);
   // Cerrar sesión: el acceso vuelve con su Turnstile.
   await pg.evaluate(() => document.querySelector('#logout').click());
   await pg.waitForSelector('#login:not([hidden]) .kl-captcha-sitio #kl-captcha', { state: 'attached' });
@@ -251,13 +253,13 @@ for (const [t, vp] of [['movil', { width: 360, height: 740 }], ['escritorio', { 
 {
   // Sin 2FA («Ahora no» en esta pestaña): también al Resumen.
   const { ctx, pg } = await abre(nav, { modo: 'pasa', con2fa: false, luego: true });
-  await pg.goto(`${ADMIN}/#/condiciones`);
+  await pg.goto(`${ADMIN}/condiciones`);
   await pg.waitForSelector('#login:not([hidden]) #kl-captcha', { state: 'attached' });
   await pg.fill('#email', 'captcha@example.com');
   await pg.fill('#password', 'Prueba-Captcha-2026');
   await pg.click('#doLogin');
   await pg.waitForFunction(() => !document.querySelector('#app').hidden);
-  ok(await pg.evaluate(() => location.hash) === '#/resumen', 'admin sin 2FA: tras entrar, al Resumen');
+  ok(await pg.evaluate(() => location.pathname + location.hash) === '/', 'admin sin 2FA: tras entrar, al Resumen (/)');
   ok((await vivos(pg)).length === 0, 'admin sin 2FA: Turnstile quitado en el panel');
   await ctx.close();
 }

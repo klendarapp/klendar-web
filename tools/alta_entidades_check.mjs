@@ -224,7 +224,7 @@ async function admin(nav, nombre, t, vp) {
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  await p.goto(`${ADMIN}/#/entidades`, { waitUntil: 'networkidle' });
+  await p.goto(`${ADMIN}/entidades`, { waitUntil: 'networkidle' });
   // En el móvil el menú cerrado no se ve (assets/cajon.js): el título, en la pantalla.
   await p.waitForSelector('#view >> text=Entidades por verificar');
   await p.waitForSelector('[data-aprobar]');
