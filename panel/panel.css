@@ -1352,6 +1352,11 @@ body.en-panel header.top .idioma { display: block; }
 .panel-volver:hover { color: var(--ink); background: var(--soft); text-decoration: none; }
 .panel-volver:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
 .panel-volver svg { flex: none; }
+/* En un móvil estrecho (360) con un idioma largo y la cifra de la campana,
+   «Volver a Klendar» cede antes de que nada se salga por la derecha. */
+.panel-volver { min-width: 0; flex: 0 1 auto; }
+.panel-volver span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+body.en-panel header.top .top-acciones { flex: none; }
 .idioma-palabra { display: none; }
 
 /* ── Escritorio y tablet tumbada: sin barra de arriba (§4zzz-sinfoto) ──────
