@@ -366,7 +366,7 @@ for (const [nombre, r, texto] of [
   ok(/Contestadas: 12/.test(txt) && /No lo sabía: 5/.test(txt) && /Intentos de engañarlo: 2/.test(txt), 'admin: los resultados del mes');
   ok(/Lo que no supo responder/.test(txt), 'admin: lo que no supo');
   ok(/Canjes/.test(txt) && /¿Cómo se canjea una oferta\?/.test(txt), 'admin: agrupado, con su tema y el apartado cercano');
-  ok(await caja.locator('a[href="/preguntas#canjear"]').count() === 1, 'admin: enlaza a ese apartado');
+  ok(await caja.locator(`a[href="${BASE}/preguntas#canjear"]`).count() === 1, 'admin: enlaza a ese apartado');
   await p.click('[data-asistente-on]');
   await p.waitForFunction(() => document.querySelector('[data-asistente-on]')?.dataset.asistenteOn === '1');
   ok(estado.llamadas.some(([f, b]) => f === 'admin_assistant_set' && b.p_enabled === true), 'admin: se enciende');
