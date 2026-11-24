@@ -59,7 +59,15 @@
 .photos label.add input { display: none; }
 
 /* Validación de códigos */
-.scan-box { display: grid; gap: 12px; max-width: 460px; }
+.scan-box { display: grid; gap: 12px; }
+/* En el ordenador y la tablet (§4zzz-coherencia1): el campo y «Validar» en
+   una fila, de borde a borde de la pantalla, como los dos botones de
+   arriba y «Últimos validados»; en el móvil, uno debajo de otro. */
+@media (min-width: 641px) {
+  .scan-box { grid-template-columns: minmax(0, 1fr) auto; }
+  .scan-box > :not(#code, #go) { grid-column: 1 / -1; }
+  .scan-box > #go { min-width: 9.5rem; }
+}
 /* Los botones ocupan el ancho de la caja: el texto, centrado. */
 .scan-box > .btn { justify-content: center; }
 /* «Escanear con la cámara» y «Dar en el momento»: dos iguales, lado a lado. */
@@ -68,7 +76,8 @@
 /* Sin cámara (el botón se esconde), «Dar en el momento» a lo ancho. */
 .validar-dos:has(> [hidden]) { grid-template-columns: 1fr; }
 #listoEntrada:empty { display: none; }
-.scan-box input { font-size: 1.125rem !important; letter-spacing: 2px; text-align: center; font-family: ui-monospace, Menlo, Consolas, monospace; }
+/* La letra del código, la de los demás campos (antes, monoespaciada y espaciada). */
+.scan-box input { font-size: 1rem; }
 .scan-result { border-radius: 18px; padding: 16px 18px; font-weight: 700; }
 .validados-sesion { margin: 0; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 /* «Válido» y «No válido» como en la app: el mismo verde y el mismo rojo, con
@@ -189,7 +198,7 @@
    Etiqueta encima, campo de cristal con esquinas de 16 y el acento al
    escribir. En escritorio, dos columnas y un ancho máximo (un campo de
    1.100 px no se lee); en móvil, una columna a lo ancho. */
-.form { display: grid; gap: 16px 18px; grid-template-columns: 1fr 1fr; max-width: 820px; margin: 0 0 18px; }
+.form { display: grid; gap: 16px 18px; grid-template-columns: 1fr 1fr; max-width: var(--panel-lectura, 820px); margin: 0 0 18px; }
 .form .full, .form > .help, .form > details { grid-column: 1 / -1; }
 @media (max-width: 760px) { .form { grid-template-columns: 1fr; } }
 .card .form { margin-bottom: 0; }
@@ -261,6 +270,11 @@ table.tbl .actions { align-items: flex-start; }
   /* Tres o más: uno debajo de otro, todos a lo ancho (nunca una fila con
      botones de distinto tamaño; «Publicaciones»). */
   .page-head:has(> .btn ~ .btn ~ .btn) > .btn { flex-basis: 100%; }
+  /* Un botón pequeño (`.sm`: «Cerrar por hoy», «Exportar CSV», «Ver cómo se
+     ve ↗») se queda a su texto, debajo del título y a la izquierda, como los
+     demás pequeños (§4zzz-coherencia1); los grandes se reparten como arriba. */
+  .page-head > .btn.sm { flex: none; }
+  .page-head:not(:has(> .btn:not(.sm))) { justify-content: flex-start; }
 }
 
 /* Primeros pasos (negocio recién aprobado, sin nada publicado) */
@@ -361,6 +375,10 @@ a.card.tarjeta-sellos:hover { border-color: var(--ink-2); }
 .persona-form { margin-top: 6px; }
 .dos-botones { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .dos-botones .btn, .persona-form .btn.primary { width: 100%; justify-content: center; }
+/* «JSON» y «CSV» (descargar los datos): botones pequeños, a su texto, desde
+   la tablet; de lado a lado de una tarjeta de 900 px no eran botones
+   (§4zzz-coherencia1). En el móvil, los dos iguales a lo ancho. */
+@media (min-width: 641px) { .dos-botones:has([data-descarga]) { grid-template-columns: repeat(2, minmax(7rem, max-content)); justify-content: start; } }
 .linkbtn.peligro { color: #b3261e; }
 @media (prefers-color-scheme: dark) { .linkbtn.peligro { color: #FF9B9B; } }
 .linkbtn:disabled { opacity: .45; cursor: default; text-decoration: none; }
@@ -496,6 +514,13 @@ main.content:focus { outline: none; }
 .pub-item { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 0; min-width: 0; margin-bottom: 28px; }
 .pub-item .tjv { display: flex; }
 .pub-item .tj { flex: 1; }
+/* En la rejilla de Tarjetas, la tarjeta entera dentro de un marco: la foto
+   arriba y el recuadro del texto (negocio, título, precio y botón) dentro,
+   sin salirse por debajo (§4zzz-coherencia1; en la web pública el recuadro
+   cuelga de la foto, sin marco). */
+.pub-item .tj { border: 1px solid var(--glass-border); border-radius: 26px; background: var(--glass); padding-bottom: 10px; }
+.pub-item .tj-media { border-radius: 25px 25px 0 0; }
+.pub-item .tj-enlace::after { border-radius: 25px; }
 .pub-meta { padding: 12px 4px 0; display: grid; gap: 8px; align-content: start; }
 .pub-estado { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
 .pub-cifras { margin: 0; color: var(--ink-2); font-size: .8125rem; line-height: 1.45; }
@@ -612,14 +637,13 @@ a.cal-dia { text-decoration: none; }
 .aforo-botones .btn.on { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 
 /* ── «Tu ficha» por apartados y el alta en tres pasos (ficha.js) ───────── */
-.form.ficha-form { max-width: 680px; }
 label.f.casilla { grid-template-columns: auto 1fr; align-items: start; }
 label.f.casilla small { display: block; font-weight: 500; margin-top: 2px; }
-.ficha-cab { display: flex; align-items: center; gap: 14px; margin: 0 0 16px; max-width: 680px; }
+.ficha-cab { display: flex; align-items: center; gap: 14px; margin: 0 0 16px; }
 .ficha-cab > img, .ficha-cab > .ph { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex: none; display: grid; place-items: center; background: var(--soft); font-size: 1.625rem; }
 .ficha-cab > div { display: grid; gap: 2px; min-width: 0; }
 .ficha-cab b { font-size: 1.25rem; }
-.card.indice { padding: 4px 0; max-width: 680px; }
+.card.indice { padding: 4px 0; }
 .card.indice h2 { margin: 10px 18px 4px; font-size: .8125rem; letter-spacing: .04em; text-transform: uppercase; }
 .indice-fila { display: flex; align-items: center; gap: 12px; padding: 13px 18px; color: var(--ink); text-decoration: none; min-height: 48px; }
 .indice-fila + .indice-fila { border-top: 1px solid var(--glass-border); }
@@ -630,7 +654,7 @@ label.f.casilla small { display: block; font-weight: 500; margin-top: 2px; }
 .indice-fila small.mal { color: #b3261e; }
 .indice-fila.peligro b { color: #b3261e; }
 .indice-fila .ms { color: var(--ink-2); flex: none; }
-.aviso-falta { display: flex; align-items: center; gap: 10px; max-width: 680px; padding: 12px 16px; margin: 0 0 14px; border-radius: 16px;
+.aviso-falta { display: flex; align-items: center; gap: 10px; padding: 12px 16px; margin: 0 0 14px; border-radius: 16px;
   border: 1px solid rgba(211,47,47,.55); color: var(--ink); font-weight: 600; text-decoration: none; }
 .aviso-falta > span:nth-child(2) { flex: 1; }
 .aviso-falta > .ms:first-child { color: #b3261e; }
@@ -653,7 +677,7 @@ label.f.casilla small { display: block; font-weight: 500; margin-top: 2px; }
 .htramo-quitar .ms { font-size: 1.125rem; }
 .hcopia-atajos { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 6px; }
 /* El alta: progreso y botones. */
-.alta-progreso { max-width: 680px; margin: 0 0 16px; }
+.alta-progreso { margin: 0 0 16px; }
 .alta-progreso p { margin: 0 0 8px; }
 .alta-barra { height: 6px; border-radius: 3px; background: var(--soft); overflow: hidden; }
 .alta-barra > span { display: block; height: 100%; background: var(--ink); border-radius: 3px; }
@@ -793,7 +817,7 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .grupo-tu-propuesta { padding: 10px 12px; border-radius: 14px; background: var(--soft); margin: 6px 0; }
 /* «Enviar propuesta» / «No podemos» (y «Escribir» / «Llamar»): uno debajo de otro, del mismo ancho. */
 .grupo-botones { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; margin-top: 8px; max-width: 360px; }
-.grupo-plegable { margin-top: 18px; max-width: 720px; }
+.grupo-plegable { margin-top: 18px; }
 .grupo-plegable > summary { cursor: pointer; display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .grupo-plegable[open] > summary { margin-bottom: 14px; }
 .grupo-plegable .form { margin: 0; }
@@ -809,7 +833,7 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .sorteo-irpf { margin: 0; padding: 10px 14px; border-radius: 14px; background: var(--soft); font-weight: 600; font-size: .875rem; }
 .sorteo-obligaciones { align-items: flex-start; }
 .sorteo-obligaciones input { margin-top: 3px; }
-.form.grupo-ajustes, .form.sorteo-form { grid-template-columns: minmax(0, 1fr); max-width: 680px; }
+.form.grupo-ajustes, .form.sorteo-form { grid-template-columns: minmax(0, 1fr); }
 .seg .btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: transparent; }
 /* El periodo de «Cifras» (y el de RRPP): el elegido en tinta, como en la app. */
 .periodo { display: inline-flex; flex-wrap: wrap; gap: 6px; }
@@ -829,7 +853,7 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .cola-cifras p { margin: 0 0 6px; }
 .btn.cola-avisar { width: 100%; justify-content: center; padding: 16px 20px; font-size: 1.0625rem; margin-top: 10px; white-space: normal; }
 .cola-pausa { margin-bottom: 14px; }
-.cola-h2 { font-size: .9375rem; margin: 18px 0 8px; }
+.cola-h2, .card .cola-h2 { font-size: .9375rem; margin: 20px 0 8px; }
 .cola-lista { padding: 4px 16px; }
 .cola-fila { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; padding: 12px 0; }
 .cola-fila + .cola-fila { border-top: 1px solid var(--glass-border); }
@@ -937,10 +961,19 @@ details.bloque .b-cuerpo { display: grid; gap: 14px; padding: 0 16px 16px; }
 .herr-botones .btn { justify-content: center; text-align: center; white-space: normal; }
 .fiel-card .code { white-space: pre-wrap; word-break: break-all; }
 /* Publicar: «¿Qué quieres publicar?», arriba de la página. */
-.crear { margin: 0 0 18px; max-width: 760px; }
+.crear { margin: 0 0 18px; }
 .crear > h2 { font-size: 1.0625rem; margin: 0 0 4px; }
 .crear-bloqueado { margin: 0 0 18px; }
 .crear-ops { display: grid; gap: 8px; margin: 12px 0 4px; }
+/* Desde la tablet, de dos en dos, a lo ancho de la pantalla (como las
+   ideas y las publicaciones de debajo); si sobra una, a lo ancho. */
+@media (min-width: 641px) {
+  .crear-ops { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .crear-ops > :last-child:nth-child(odd) { grid-column: 1 / -1; }
+}
+/* El alta («¿Qué vas a dar de alta?»): tres a elegir, uno debajo de otro. */
+.crear-ops.alta-elegir { grid-template-columns: minmax(0, 1fr); }
+.crear-ops.alta-elegir > * { grid-column: auto; }
 .crear-grupo { margin: 18px 0 0; font-size: 13px; font-weight: 700; color: var(--ink-2); }
 .crear-op { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px;
   border: 1px solid var(--glass-border); color: var(--ink); }
@@ -1061,12 +1094,17 @@ details.plegable[open] > summary { margin-bottom: 12px; }
    alineado con lo demás, no centrado (docs/GLOSARIO.md de la app, «Aspecto»;
    centrado, solo `.vacio`, la pantalla vacía). Lo de admin.css lo centraba. */
 .empty { text-align: left; padding: 16px 18px; }
+/* Suelto en la pantalla (sin tarjeta ni tabla alrededor), alineado con el
+   borde de lo demás, sin la sangría de dentro de una caja (§4zzz-coherencia1). */
+#view .empty:not(.tbl-wrap .empty, .card .empty) { padding-inline: 0; }
 
 /* Formularios (GLOSARIO «Aspecto»: campos a lo ancho de la columna, etiqueta
    encima y ayuda debajo). «Menú del día» usaba los campos estrechos de
    «Antes de cerrar» y sin aire entre ellos. */
 .menu-hoy { display: grid; gap: 12px; }
-.menu-hoy .f { max-width: 640px; }
+/* Los campos, a lo ancho de su tarjeta (como «Publicar», debajo); los de
+   «Antes de cerrar» (`.antes .f`) siguen estrechos. */
+.menu-hoy .f { max-width: none; }
 .menu-hoy .hint { margin: -6px 0 0; }
 /* «Elegir archivo» del navegador, con el aspecto de un botón del panel. */
 input[type=file] { padding: 0; border: 0; background: none; color: var(--ink-2); font-size: .875rem; }
@@ -1147,7 +1185,7 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .sug-caja { border: 1px solid var(--glass-border); border-radius: 14px; padding: 10px 12px 4px; margin: 0 0 14px; }
 
 /* «Lo estamos revisando» (assets/retenido.js) */
-.retenido { max-width: 680px; margin: 0 0 14px; padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(127,127,127,.3); }
+.retenido { margin: 0 0 14px; padding: 12px 16px; border-radius: 14px; border: 1px solid rgba(127,127,127,.3); }
 .retenido-bloque + .retenido-bloque { margin-top: 12px; }
 .retenido p { margin: 4px 0 8px; font-size: .875rem; }
 .retenido-fotos { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -1253,7 +1291,9 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 
 /* ── Hoy ── */
 .hoy-cab h1 { font-size: clamp(1.375rem, 1.1rem + 1vw, 1.75rem); }
-.hoy-cifras { display: grid; gap: 8px; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0 0 14px; max-width: 760px; }
+/* Dos o tres, siempre de borde a borde (antes se quedaban en 760 px y,
+   con dos, dejaban el hueco de una tercera). */
+.hoy-cifras { display: grid; gap: 8px; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); margin: 0 0 14px; }
 @media (max-width: 640px) { .hoy-cifra { padding: 10px 12px; } .hoy-cifra b { font-size: 1.375rem; } }
 .hoy-cifra { display: grid; gap: 2px; align-content: start; padding: 12px 14px; border-radius: 18px; background: var(--glass); border: 1px solid var(--glass-border); }
 .hoy-cifra b { font-family: Sora, Manrope, sans-serif; font-size: 1.625rem; line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
@@ -1298,7 +1338,7 @@ a.hoy-linea:hover .title { text-decoration: underline; }
 .neg-grupo > h2 { font-size: 1.0625rem; margin: 0 0 10px; }
 .neg-grupo > h2:focus { outline: none; }
 .neg-grupo > h2:focus-visible { outline: 2px solid var(--ink); outline-offset: 4px; border-radius: 4px; }
-.neg-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.25rem), 1fr)); max-width: 1040px; }
+.neg-tiles { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.25rem), 1fr)); }
 @media (max-width: 640px) { .neg-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; } }
 .neg-tile { display: grid; justify-items: center; align-content: center; gap: 6px; width: 100%; min-height: 88px; height: 100%; box-sizing: border-box;
   padding: 12px 6px; border-radius: 18px; text-align: center; background: var(--glass); border: 1px solid var(--glass-border); color: var(--ink);
@@ -1311,9 +1351,8 @@ a.hoy-linea:hover .title { text-decoration: underline; }
 .neg-tile > .ms.svg { width: 26px; height: 26px; }
 .neg-tile > span:last-child { overflow-wrap: anywhere; hyphens: auto; -webkit-hyphens: auto; }
 @media (prefers-reduced-motion: reduce) { .neg-tile { transition: none; } .neg-tile:active { transform: none; } }
-.neg-delicado .card { max-width: 760px; }
 .neg-delicado .card h3 { font-size: 1rem; margin: 0 0 6px; }
-.neg-salir { margin-top: 24px; max-width: 760px; }
+.neg-salir { margin-top: 24px; }
 /* La sesión y «Cerrar sesión»: en el ordenador están abajo del menú; en el
    móvil (sin menú), al final de Negocio. */
 .neg-sesion { display: none; }
@@ -1392,42 +1431,22 @@ body.en-panel header.top .top-acciones { flex: none; }
   .side-pie .idioma-menu { position: relative; inset: auto; z-index: 42; width: auto; margin: 4px 0 6px; box-shadow: none; }
 }
 
-/* En una pantalla ancha, las de lista y las de formulario (Hoy, Validar, Tu
-   ficha, Equipo, Sellos…) en una columna de lectura centrada, como en la app
-   en tablet (ReadablePage): las filas con su flecha › iban de 1.080 en un
-   portátil (Iván, 23-11). Negocio (las baldosas), Publicar (las tarjetas),
-   el calendario y las cifras siguen a lo ancho. */
+/* ── El ancho de cada pantalla (§4zzz-coherencia1) ─────────────────────
+   Iván, 24-11: en cada pantalla, lo que va junto tiene el mismo ancho y los
+   bordes alineados. Dos anchos, y nada por dentro con el suyo propio:
+   - de lectura (`--panel-lectura`, 820 px, centrada en lo que deja el menú,
+     como ReadablePage de la app en tablet): todas las de lista y de
+     formulario (Hoy, Validar, Tu ficha, Sellos, Equipo…);
+   - ancha (lo que deja el menú; desde 1.500 px, 1.180 centrada): las de
+     rejilla o con la vista previa al lado (Publicar y Publicaciones,
+     Negocio, el Calendario, Cifras y el formulario de «Antes de cerrar»).
+   Los bloques de dentro (tarjetas, filas, cifras, campos, rejillas) van de
+   borde a borde de su pantalla; los botones pequeños, a su texto. */
+#view { --panel-lectura: 820px; }
 @media (min-width: 901px) {
-  #view > [data-pagina="hoy"],
-  #view > [data-pagina="validar"],
-  #view > [data-pagina="ficha"],
-  #view > [data-pagina="equipo"],
-  #view > [data-pagina="ayuda"],
-  #view > [data-pagina="plan"],
-  #view > [data-pagina="baja"],
-  #view > [data-pagina="festivo"],
-  #view > [data-pagina="cerrados"],
-  #view > [data-pagina="preguntas"],
-  #view > [data-pagina="resenas"],
-  #view > [data-pagina="novedades"],
-  #view > [data-pagina="cumpleanos"],
-  #view > [data-pagina="cupon"],
-  #view > [data-pagina="habituales"],
-  #view > [data-pagina="mensajes"],
-  #view > [data-pagina="fidelizar"],
-  #view > [data-pagina="series"],
-  #view > [data-pagina="sorteos"],
-  #view > [data-pagina="rrpp"],
-  #view > [data-pagina="partidos"],
-  #view > [data-pagina="sellos"],
-  #view > [data-pagina="bonos"],
-  #view > [data-pagina="grupos"],
-  #view > [data-pagina="encargos"],
-  #view > [data-pagina="cola"],
-  #view > [data-pagina="aforo"],
-  #view > [data-pagina="momento"],
-  #view > [data-pagina="pedidos"],
-  #view > [data-pagina="carta"] { max-width: 820px; margin-inline: auto; }
+  #view > [data-pagina] { max-width: var(--panel-lectura); margin-inline: auto; }
+  #view > :is([data-pagina="publicar"], [data-pagina="publicaciones"], [data-pagina="negocio"], [data-pagina="calendario"],
+    [data-pagina="informe"], [data-pagina="antes-de-cerrar"]) { max-width: none; margin-inline: 0; }
 }
 
 /* Sin foto, el hueco de siempre en la lista de publicaciones (§4zzz-sinfoto;

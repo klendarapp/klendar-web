@@ -102,7 +102,7 @@ PAGES.encargos = async (v) => {
   const vivos = (d.orders || []).filter((o) => encVivo(o.status));
   const hechos = (d.orders || []).filter((o) => !encVivo(o.status));
   v.innerHTML = `<div class="page-head"><h1>${esc(bi('Encargos', 'Pre-orders'))}</h1>
-      <a class="btn" href="/panel/encargos-cosas">${esc(bi('Lo que se encarga', 'What can be pre-ordered'))}</a></div>
+      <a class="btn sm" href="/panel/encargos-cosas">${esc(bi('Lo que se encarga', 'What can be pre-ordered'))}</a></div>
     ${!d.enabled ? `<p class="muted">${esc(I18N.t('Encargos aún no está disponible.'))}</p>` : ''}
     ${d.pending > 0 ? `<p><b>${esc(bi(`${d.pending} por aceptar`, `${d.pending} to accept`))}</b></p>` : ''}
     ${d.blocked ? `<p class="card">${esc(I18N.t('Mientras tu negocio esté bloqueado por el pago, no recibe encargos nuevos. Los que ya tienes siguen aquí.'))}</p>` : ''}
@@ -157,7 +157,7 @@ PAGES['encargos-cosas'] = async (v) => {
   const linea = (x) => [bi(`${x?.orders || 0} encargos`, `${x?.orders || 0} pre-orders`), bi(`${x?.picked_up || 0} recogidos`, `${x?.picked_up || 0} picked up`),
     bi(`${x?.no_show || 0} no vinieron`, `${x?.no_show || 0} didn’t come`)].join(' · ');
   v.innerHTML = `<div class="page-head"><h1>${esc(bi('Lo que se encarga', 'What can be pre-ordered'))}</h1>
-      <a class="btn" href="/panel/encargos">${esc(bi('Encargos', 'Pre-orders'))}</a></div>
+      <a class="btn sm" href="/panel/encargos">${esc(bi('Encargos', 'Pre-orders'))}</a></div>
     <p class="muted">${esc(I18N.t('Lo que tus clientes pueden encargarte desde tu ficha para recogerlo aquí. Pagan al recogerlo.'))}</p>
     ${!d.enabled ? `<p>${esc(I18N.t('Encargos aún no está disponible.'))}</p>` : ''}
     ${s.all?.orders ? `<p><b>${esc(bi('Últimos 30 días:', 'Last 30 days:'))}</b> ${esc(linea(s.d30))}</p>` : ''}

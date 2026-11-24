@@ -252,7 +252,7 @@ function entElegir(v) {
     <div class="page-head"><h1>¿Qué vas a dar de alta?</h1></div>
     <p class="muted" style="max-width:640px">Elige lo que eres: el alta cambia para pedirte solo lo que hace falta.</p>
     ${otro ? '' : `<p class="muted" style="max-width:640px">${esc(I18N.t('¿Te han invitado al equipo de un negocio? Entonces no hace falta: entra con el mismo correo con el que te invitaron y aparecerá solo.'))}</p>`}
-    <div class="crear-ops alta-elegir" style="max-width:640px">
+    <div class="crear-ops alta-elegir">
       ${op('/panel/alta/local', 'storefront', 'Un local', 'Bar, restaurante, tienda, gimnasio, peluquería, sala… Si tienes varios locales, los añades después.')}
       ${op('/panel/alta/eventos', 'event', 'Organizo eventos o actividades', 'Fiestas, conciertos, festivales, mercadillos, promotoras, DJ o artistas, food trucks, clases o rutas… sin local fijo.')}
       ${op('/panel/alta/entidad/1', 'entidad', 'Un ayuntamiento, asociación u ONG', 'Ayuntamiento, junta de distrito, asociación vecinal o de comerciantes, club deportivo, ONG u otra entidad sin ánimo de lucro. Publicáis eventos y campañas; antes comprobamos quiénes sois.')}
@@ -389,7 +389,7 @@ async function entFicha(v, b) {
   const a = e.application;
   const cab = `<p class="crumbs"><a href="/panel/ficha">← ${esc(I18N.t('Tu ficha'))}</a></p>
     <div class="page-head"><h1>${esc(I18N.t('Cuenta de entidad'))}</h1></div>`;
-  const nota = (icon, titulo, texto, extra = '') => `<div class="card" style="max-width:680px"><h2 style="display:flex;gap:8px;align-items:center;margin:0 0 6px">${icono(icon)}<span>${esc(I18N.t(titulo))}</span></h2>
+  const nota = (icon, titulo, texto, extra = '') => `<div class="card"><h2 style="display:flex;gap:8px;align-items:center;margin:0 0 6px">${icono(icon)}<span>${esc(I18N.t(titulo))}</span></h2>
     <p class="muted" style="margin:0">${esc(texto)}</p>${extra}</div>`;
   if (e.kind) {
     v.innerHTML = `${cab}${nota('check_circle', 'Entidad verificada', I18N.t('Tu ficha y lo que publiques llevan este sello. Si los datos dejan de ser ciertos, escríbenos a info@klendar.app.'),
@@ -419,7 +419,7 @@ async function entFicha(v, b) {
     : { kind: 'council', official_name: b?.name || '', tax_id: '', website: b?.website || '', area: b?.city || '', contact_name: '', contact_role: '' };
   Object.assign(d, { proof_path: null, proof_name: '', declaration: false });
   v.innerHTML = `${cab}
-    ${a && a.status === 'rejected' ? `<div class="help" style="max-width:680px"><b>${esc(I18N.t('No hemos podido verificar la entidad'))}</b> ${esc(a.reason || I18N.t('Puedes volver a pedirlo con otro documento o escribirnos a info@klendar.app.'))}</div>` : ''}
+    ${a && a.status === 'rejected' ? `<div class="help"><b>${esc(I18N.t('No hemos podido verificar la entidad'))}</b> ${esc(a.reason || I18N.t('Puedes volver a pedirlo con otro documento o escribirnos a info@klendar.app.'))}</div>` : ''}
     <p class="muted" style="max-width:680px">Si este perfil es de un ayuntamiento, una junta de distrito, una asociación o una ONG, pide la cuenta de entidad: lleva su sello en la ficha y en lo que publique y, de momento, no paga cuota. Comprobamos el documento antes de ponerla; mientras, todo sigue igual.</p>
     <form id="fichaEnt" class="form ficha-form" novalidate>
       ${entHtmlSobre(d)}${entHtmlZonaTexto(d)}${entHtmlPersona(d)}

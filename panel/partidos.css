@@ -1,7 +1,7 @@
 /* «Partidos que pones» (panel/partidos.js). Neutros; coral solo en la
    información de la oferta («Oferta: …») y en el botón principal. */
 .pt-filtros { display: grid; gap: 10px; margin: 0 0 14px; }
-.pt-buscar { max-width: 460px; }
+.pt-buscar { max-width: none; }
 .pt-buscar input { width: 100%; }
 .pt-solo { margin: 0 0 14px; }
 .pt-grupo { padding: 4px 18px 6px; }
@@ -30,7 +30,7 @@ button.pt-oferta:hover { text-decoration: underline; text-underline-offset: 3px;
 .pt-hoja .btn { width: 100%; justify-content: center; white-space: normal; text-align: center; }
 .pt-fuente { font-size: .75rem; color: var(--ink-2); margin: 14px 0 0; }
 .pt-fuente a { color: var(--ink-2); text-decoration: underline; text-underline-offset: 2px; }
-.pt-nuevo { max-width: 640px; display: grid; gap: 14px; }
+.pt-nuevo { display: grid; gap: 14px; }
 
 /* «Pones siempre» (las reglas) y el «⋯» de cada fila («Poner siempre…»). */
 .pt-siempre { padding: 14px 18px; }
