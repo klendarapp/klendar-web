@@ -72,8 +72,9 @@ export async function onRequest(ctx) {
     const url = new URL(ctx.request.url);
     const buena = direccionBuena(url.pathname);
     // 0-bis. El admin vive en la raíz de admin.klendar.app (§4zzz-admindom,
-    //   _lib/admin.js): allí `/` y `/carta` se reescriben a sus ficheros de
-    //   `/admin/…` (más abajo) y lo demás va a klendar.app; `/admin…`, en los
+    //   _lib/admin.js): allí `/`, las rutas de sus apartados (`/semanas`,
+    //   `/negocios/<id>`…, §4zzz-adminlimpio) y `/carta` se reescriben a sus
+    //   ficheros de `/admin/…` (más abajo) y lo demás va a klendar.app; `/admin…`, en los
     //   dos hosts, da la 404 normal (las direcciones viejas no redirigen).
     host = decideHost(url, buena);
     if (host?.salto) {

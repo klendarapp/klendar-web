@@ -165,10 +165,10 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Approve…' : 'Aprobar…', fn: () => verificarNegocio(b) },
         { t: en ? 'Reject…' : 'Rechazar…', cls: 'bad ghost', fn: () => rechazarNegocio(b) },
       ],
-      abrir: `#/negocios/${b.id}`,
+      abrir: `/negocios/${b.id}`,
     });
   }
-  if ((d.pv?.total || 0) > (d.pv?.rows || []).length) ctx.mas.push(['negocio', d.pv.total - d.pv.rows.length, '#/negocios?status=pending']);
+  if ((d.pv?.total || 0) > (d.pv?.rows || []).length) ctx.mas.push(['negocio', d.pv.total - d.pv.rows.length, '/negocios?status=pending']);
   // Las demás también se piden por partes: lo que no cabe, dicho y con su enlace
   // (antes se cortaban sin avisar y la bandeja parecía al día).
   const restoDe = (x, filas, tipo, href) => {
@@ -176,14 +176,14 @@ function tarjetasBandeja(d, k, ctx) {
     const vistos = (filas || []).length;
     if (total > vistos) ctx.mas.push([tipo, total - vistos, href]);
   };
-  restoDe(d.ents, d.ents?.items, 'entidad', '#/entidades');
-  restoDe(d.recl, d.recl?.items, 'reclamacion', '#/reclamaciones');
-  restoDe(d.den, d.den?.rows, 'denuncia', '#/denuncias');
-  restoDe(d.med, d.med?.rows, 'medio', '#/medios');
-  restoDe(d.cont, d.cont?.rows, 'texto', '#/medios');
-  restoDe(d.ofs, d.ofs?.rows, 'publicacion', '#/publicaciones');
-  restoDe(d.txt, d.txt?.rows, 'texto', '#/medios');
-  restoDe(d.sug, d.sug?.rows, 'sugerencia', '#/sugerencias');
+  restoDe(d.ents, d.ents?.items, 'entidad', '/entidades');
+  restoDe(d.recl, d.recl?.items, 'reclamacion', '/reclamaciones');
+  restoDe(d.den, d.den?.rows, 'denuncia', '/denuncias');
+  restoDe(d.med, d.med?.rows, 'medio', '/medios');
+  restoDe(d.cont, d.cont?.rows, 'texto', '/medios');
+  restoDe(d.ofs, d.ofs?.rows, 'publicacion', '/publicaciones');
+  restoDe(d.txt, d.txt?.rows, 'texto', '/medios');
+  restoDe(d.sug, d.sug?.rows, 'sugerencia', '/sugerencias');
   ctx.fallos = d.fallos || [];
 
   // Entidades.
@@ -200,7 +200,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Reject…' : 'Rechazar…', cls: 'bad ghost', fn: () => rechazarEntidad(x) },
         ...(x.proof_path ? [{ t: en ? 'View the document' : 'Ver el documento', cls: 'ghost', fn: async () => { await verPrueba(x.proof_path); return false; } }] : []),
       ],
-      abrir: '#/entidades',
+      abrir: '/entidades',
     });
   }
 
@@ -224,7 +224,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Reject…' : 'Rechazar…', cls: 'bad ghost', fn: () => rechazarReclamacion(x) },
         ...(x.proof_path ? [{ t: en ? 'View the evidence' : 'Ver la prueba', cls: 'ghost', fn: async () => { await verPrueba(x.proof_path); return false; } }] : []),
       ],
-      abrir: '#/reclamaciones',
+      abrir: '/reclamaciones',
     });
   }
 
@@ -246,7 +246,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: g.state === 'removed' ? (en ? 'Close (already taken down)…' : 'Cerrar (ya retirado)…') : (en ? 'Take down and close…' : 'Retirar y cerrar…'), cls: 'bad ghost', fn: () => decideDenuncias(g.target_type, g.target_id, 'remove', g.open_count), off: g.state === 'deleted' },
         { t: en ? 'Close without taking down…' : 'Cerrar sin retirar…', fn: () => decideDenuncias(g.target_type, g.target_id, 'keep', g.open_count) },
       ],
-      abrir: `#/denuncias/${g.target_type}/${g.target_id}`,
+      abrir: `/denuncias/${g.target_type}/${g.target_id}`,
     });
   }
 
@@ -265,7 +265,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Approve' : 'Aprobar', fn: () => decideMedio(x, true) },
         { t: en ? 'Reject…' : 'Rechazar…', cls: 'bad ghost', fn: async () => { const m = await eligeMotivoMedio(); return m ? decideMedio(x, false, m) : false; } },
       ],
-      abrir: '#/medios',
+      abrir: '/medios',
     });
   });
   for (const x of d.cont?.rows || []) {
@@ -280,7 +280,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Approve' : 'Aprobar', fn: () => decideContenido(x, true) },
         { t: en ? 'Reject…' : 'Rechazar…', cls: 'bad ghost', fn: async () => { const m = await eligeMotivoMedio(MOTIVOS_TEXTO); return m ? decideContenido(x, false, m) : false; } },
       ],
-      abrir: '#/medios',
+      abrir: '/medios',
     });
   }
 
@@ -298,7 +298,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Approve' : 'Aprobar', fn: () => moderateOffer(o.id, 'approved') },
         { t: en ? 'Take down…' : 'Retirar…', cls: 'bad ghost', fn: () => moderateOffer(o.id, 'rejected') },
       ],
-      abrir: `#/publicaciones/${o.id}`,
+      abrir: `/publicaciones/${o.id}`,
     });
   }
 
@@ -319,7 +319,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Approve' : 'Aprobar', fn: () => decideTexto(x, true) },
         { t: en ? 'Take down…' : 'Retirar…', cls: 'bad ghost', fn: () => decideTexto(x, false) },
       ],
-      abrir: '#/medios',
+      abrir: '/medios',
     });
   }
 
@@ -336,7 +336,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Send' : 'Enviar', fn: async () => (await decideMensaje(x.id, true)) !== null },
         { t: en ? 'Reject…' : 'Rechazar…', cls: 'bad ghost', fn: async () => (await decideMensaje(x.id, false)) !== null },
       ],
-      abrir: '#/mensajes',
+      abrir: '/mensajes',
     });
   }
 
@@ -352,7 +352,7 @@ function tarjetasBandeja(d, k, ctx) {
           { t: en ? 'Merge…' : 'Fusionar…', cls: 'bad ghost', fn: () => fusionar(x, c, { ir: false }) },
           { t: en ? 'Not a duplicate' : 'No es duplicado', fn: () => noEsDuplicado(x.id, c.id) },
         ],
-        abrir: `#/negocios/${x.id}?ver=duplicados`,
+        abrir: `/negocios/${x.id}?ver=duplicados`,
       });
     }
   }
@@ -374,7 +374,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Add the holidays…' : 'Añadir las fiestas…', fn: () => festLocalesDialogo({ id: h.key, nombre, days: h.days, bulletin: h.bulletin }, h.year), comprueba: true },
         ...(propuestos.length ? [{ t: en ? 'Confirm the proposed ones' : 'Confirmar los propuestos', fn: () => festConfirmar(propuestos.map((x) => x.id)), comprueba: true }] : []),
       ],
-      abrir: `#/festivos/${h.year}?m=${encodeURIComponent(h.slug || h.code)}`,
+      abrir: `/festivos/${h.year}?m=${encodeURIComponent(h.slug || h.code)}`,
       festivo: h,
     });
   }
@@ -383,7 +383,7 @@ function tarjetasBandeja(d, k, ctx) {
       key: 'festivo:aviso', tipo: 'festivo', at: null, urg: 3,
       titulo: en ? `Public holidays ${ctx.festivos.year}` : `Festivos de ${ctx.festivos.year}`,
       sub: [en ? (ctx.festivos.summary || '') : (ctx.festivos.text || '')],
-      abrir: `#/festivos/${ctx.festivos.year}`,
+      abrir: `/festivos/${ctx.festivos.year}`,
     });
   }
 
@@ -399,7 +399,7 @@ function tarjetasBandeja(d, k, ctx) {
           c.distance_m != null ? `${(c.distance_m / 1000).toLocaleString(LOC(), { maximumFractionDigits: 1 })} km` : ''].filter(Boolean).join(' · ')].filter(Boolean),
       lineas: [bjLinea('dim', bjT('Sigue a la vista y verificado: mira que sea el mismo negocio.', 'Still visible and verified: check it is the same business.'))],
       acciones: [{ t: en ? 'Reviewed…' : 'Revisado…', fn: () => marcarRevisado(c.id) }],
-      abrir: `#/negocios/${c.business_id}`,
+      abrir: `/negocios/${c.business_id}`,
     });
   }
   for (const x of ctx.pausas || []) {
@@ -411,7 +411,7 @@ function tarjetasBandeja(d, k, ctx) {
         { t: en ? 'Reopen' : 'Reabrir', fn: () => soltarPausa(x.id, true) },
         { t: en ? 'Let the owner decide' : 'Que lo decida el propietario', cls: 'ghost', fn: () => soltarPausa(x.id, false) },
       ],
-      abrir: `#/negocios/${x.id}`,
+      abrir: `/negocios/${x.id}`,
     });
   }
   for (const c of (ctx.bajas || []).filter((y) => !y.handled_at && !y.undone_at)) {
@@ -421,7 +421,7 @@ function tarjetasBandeja(d, k, ctx) {
       sub: [`${en ? 'Subscription cancellation' : 'Cancelación de suscripción'} · ${en ? 'effective' : 'efectiva'} ${c.effective_on ? fmtDay(c.effective_on) : (en ? 'nothing to pay' : 'sin nada que pagar')}`, c.reason || ''].filter(Boolean),
       lineas: [bjLinea('dim', bjT('Hasta que haya cobro automático: no renovarla en su fecha y marcarla.', 'Until there is automatic billing: stop renewing it on its date and mark it.'))],
       acciones: [{ t: en ? 'Mark as handled…' : 'Marcar gestionada…', fn: () => gestionarBaja(c.id) }],
-      abrir: `#/negocios/${c.business_id}`,
+      abrir: `/negocios/${c.business_id}`,
     });
   }
 
@@ -431,7 +431,7 @@ function tarjetasBandeja(d, k, ctx) {
       key: `sugerencia:${x.id}`, tipo: 'sugerencia', at: x.created_at, urg: 3,
       titulo: bjCorta(x.message, 90) || '—',
       sub: [[x.user_email, x.platform, x.app_version].filter(Boolean).join(' · ')],
-      abrir: '#/sugerencias',
+      abrir: '/sugerencias',
     });
   }
 
@@ -464,15 +464,15 @@ function tarjetasBandeja(d, k, ctx) {
     if (!n) return;
     add({ key: `sistema:${key}`, tipo: 'sistema', at: null, urg: urgencia, titulo: `${fmtNum(n)} ${en ? (n === 1 ? en1 : enN) : (n === 1 ? es1 : esN)}`, sub: [], abrir });
   };
-  sis('disputas', (tk.billing || {})['charge.dispute.created'] || 0, 0, 'disputa o devolución de un cobro (24 h)', 'disputas o devoluciones de cobros (24 h)', 'payment dispute or return (24 h)', 'payment disputes or returns (24 h)', '#/planes');
-  sis('impagos', ap.subs_past_due, 1, 'suscripción impagada', 'suscripciones impagadas', 'unpaid subscription', 'unpaid subscriptions', '#/planes');
-  sis('tareas', (tk.crons || []).length, urg.some((x) => x.kind === 'cron') ? 0 : 1, 'tarea programada con fallos (24 h)', 'tareas programadas con fallos (24 h)', 'scheduled task with failures (24 h)', 'scheduled tasks with failures (24 h)', '#/errores');
-  sis('emisiones', (tk.leagues || []).length, 1, 'importación de emisiones que no va bien', 'importaciones de emisiones que no van bien', 'broadcast import not working', 'broadcast imports not working', '#/emisiones');
-  sis('web', ctx.webErr?.new_24h || 0, 2, 'error nuevo en la web (24 h)', 'errores nuevos en la web (24 h)', 'new website error (24 h)', 'new website errors (24 h)', '#/errores');
-  sis('http', tk.http_24h, 2, 'llamada a una Edge Function con error (24 h)', 'llamadas a Edge Functions con error (24 h)', 'failed Edge Function call (24 h)', 'failed Edge Function calls (24 h)', '#/errores');
-  sis('push', k?.push_failed_7d, 3, 'notificación push fallida (7 d)', 'notificaciones push fallidas (7 d)', 'failed push notification (7 d)', 'failed push notifications (7 d)', '#/avisos?tab=push');
-  sis('vencen', k?.subs_expiring_7d, 3, 'suscripción vence en 7 días', 'suscripciones vencen en 7 días', 'subscription expiring in 7 days', 'subscriptions expiring in 7 days', '#/planes');
-  sis('locales', ap.venue_groups_open, 3, 'local pedido por la gente sin enlazar', 'locales pedidos por la gente sin enlazar', 'place requested by people, not linked yet', 'places requested by people, not linked yet', '#/pedidos');
+  sis('disputas', (tk.billing || {})['charge.dispute.created'] || 0, 0, 'disputa o devolución de un cobro (24 h)', 'disputas o devoluciones de cobros (24 h)', 'payment dispute or return (24 h)', 'payment disputes or returns (24 h)', '/planes');
+  sis('impagos', ap.subs_past_due, 1, 'suscripción impagada', 'suscripciones impagadas', 'unpaid subscription', 'unpaid subscriptions', '/planes');
+  sis('tareas', (tk.crons || []).length, urg.some((x) => x.kind === 'cron') ? 0 : 1, 'tarea programada con fallos (24 h)', 'tareas programadas con fallos (24 h)', 'scheduled task with failures (24 h)', 'scheduled tasks with failures (24 h)', '/errores');
+  sis('emisiones', (tk.leagues || []).length, 1, 'importación de emisiones que no va bien', 'importaciones de emisiones que no van bien', 'broadcast import not working', 'broadcast imports not working', '/emisiones');
+  sis('web', ctx.webErr?.new_24h || 0, 2, 'error nuevo en la web (24 h)', 'errores nuevos en la web (24 h)', 'new website error (24 h)', 'new website errors (24 h)', '/errores');
+  sis('http', tk.http_24h, 2, 'llamada a una Edge Function con error (24 h)', 'llamadas a Edge Functions con error (24 h)', 'failed Edge Function call (24 h)', 'failed Edge Function calls (24 h)', '/errores');
+  sis('push', k?.push_failed_7d, 3, 'notificación push fallida (7 d)', 'notificaciones push fallidas (7 d)', 'failed push notification (7 d)', 'failed push notifications (7 d)', '/avisos?tab=push');
+  sis('vencen', k?.subs_expiring_7d, 3, 'suscripción vence en 7 días', 'suscripciones vencen en 7 días', 'subscription expiring in 7 days', 'subscriptions expiring in 7 days', '/planes');
+  sis('locales', ap.venue_groups_open, 3, 'local pedido por la gente sin enlazar', 'locales pedidos por la gente sin enlazar', 'place requested by people, not linked yet', 'places requested by people, not linked yet', '/pedidos');
 
   // Lo más urgente arriba; dentro de cada nivel, lo que lleva más tiempo esperando.
   const t = (x) => (x.at ? Date.parse(x.at) || 0 : Number.MAX_SAFE_INTEGER);

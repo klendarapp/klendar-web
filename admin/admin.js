@@ -448,31 +448,31 @@ function enlazaVerMas(caja, partes, pinta) {
 // ya rechazado o retirar una publicación aprobada se queda donde está.
 const COLAS = {
   negocios: {
-    lista: '#/negocios',
+    lista: '/negocios',
     nombre: ['Negocios por verificar', 'Businesses to verify'],
     siguiente: async (actual) => {
       const r = await rpc('admin_pending_now', { p_limit: 3 });
       const x = (r?.rows || []).find((b) => b.id !== actual);
-      return x ? { href: `#/negocios/${x.id}`, quedan: Math.max(1, Number(r.total) || 1) } : null;
+      return x ? { href: `/negocios/${x.id}`, quedan: Math.max(1, Number(r.total) || 1) } : null;
     },
   },
   publicaciones: {
-    lista: '#/publicaciones',
+    lista: '/publicaciones',
     nombre: ['Publicaciones por moderar', 'Publications to moderate'],
     siguiente: async (actual) => {
       const r = await rpc('admin_offers_page', { p_moderation: 'pending', p_status: 'all', p_kind: 'all', p_query: null, p_business: null, p_limit: 20, p_offset: 0 });
       // Las caducadas ya no se revisan (revisarlas no sirve de nada).
       const vivas = (r?.rows || []).filter((o) => o.id !== actual && !(o.ends_at && new Date(o.ends_at) <= new Date()));
-      return vivas.length ? { href: `#/publicaciones/${vivas[0].id}`, quedan: vivas.length + Math.max(0, (Number(r.total) || 0) - (r.rows || []).length) } : null;
+      return vivas.length ? { href: `/publicaciones/${vivas[0].id}`, quedan: vivas.length + Math.max(0, (Number(r.total) || 0) - (r.rows || []).length) } : null;
     },
   },
   denuncias: {
-    lista: '#/denuncias',
+    lista: '/denuncias',
     nombre: ['Denuncias abiertas', 'Open reports'],
     siguiente: async (actual) => {
       const r = await rpc('admin_report_groups', { p_status: 'open', p_type: 'all', p_min_open: 1, p_limit: 3, p_offset: 0, p_query: null });
       const g = (r?.rows || []).find((x) => `${x.target_type}/${x.target_id}` !== actual && x.open_count > 0);
-      return g ? { href: `#/denuncias/${g.target_type}/${g.target_id}`, quedan: Math.max(1, Number(r.total) || 1) } : null;
+      return g ? { href: `/denuncias/${g.target_type}/${g.target_id}`, quedan: Math.max(1, Number(r.total) || 1) } : null;
     },
   },
 };
@@ -486,12 +486,12 @@ async function alSiguiente(cola, actual) {
   if (sig === undefined) { route(); return; }
   if (sig) { SIGUIENTE = { cola, href: sig.href, quedan: sig.quedan }; go(sig.href); return; }
   SIGUIENTE = null; TODO_REVISADO = cola;
-  if (location.hash.split('?')[0] === COLAS[cola].lista) route(); else go(COLAS[cola].lista);
+  if (location.pathname === COLAS[cola].lista) route(); else go(COLAS[cola].lista);
 }
 /** Arriba en la ficha que se ha abierto sola: cuántas quedan y volver a la lista. */
 function avisoSiguiente(cola) {
   const s = SIGUIENTE;
-  if (!s || s.cola !== cola || s.href !== location.hash.split('?')[0]) { if (s && s.href !== location.hash.split('?')[0]) SIGUIENTE = null; return ''; }
+  if (!s || s.cola !== cola || s.href !== location.pathname) { if (s && s.href !== location.pathname) SIGUIENTE = null; return ''; }
   const en = I18N.lang === 'en';
   const [es, ing] = COLAS[cola].nombre;
   return `<p class="siguiente-aviso" role="status">${ms('arrow_forward')} <span>${esc(en ? `Next one · ${s.quedan} left in “${ing}”` : `El siguiente · ${s.quedan === 1 ? 'queda 1' : `quedan ${s.quedan}`} en «${es}»`)}</span> <a class="link" href="${COLAS[cola].lista}">${en ? 'Back to the list' : 'Volver a la lista'}</a></p>`;
@@ -613,15 +613,15 @@ const zonaDelicada = (botones, nota = '') => `<div class="card zona-delicada" ro
 
 // ── Filtros en la dirección ─────────────────────────────────────────────────
 // Los desplegables y la pestaña de cada lista van en la dirección
-// (`#/negocios?status=pending`): un enlace, «Atrás» o recargar dejan la lista
-// como estaba. Se reescribe sin recargar (`replaceState` no dispara
-// `hashchange`). Lo escrito en un buscador no se pone: puede ser un correo.
+// (`/negocios?status=pending`): un enlace, «Atrás» o recargar dejan la lista
+// como estaba. Se reescribe sin recargar ni pintar otra vez (`replaceState`
+// no dispara `popstate`). Lo escrito en un buscador no se pone: puede ser un correo.
 /** Escribe `valores` (los vacíos o null no) en la dirección de `pagina`, si sigue en ella. */
 function ponUrl(pagina, valores) {
   if (currentRoute().join('/') !== pagina) return;
   const q = qs(valores);
-  const nuevo = `#/${pagina}${q ? `?${q}` : ''}`;
-  if (location.hash !== nuevo) history.replaceState(null, '', nuevo);
+  const nuevo = `${rutaDe(pagina)}${q ? `?${q}` : ''}`;
+  if (location.pathname + location.search !== nuevo) history.replaceState(null, '', nuevo);
 }
 /** Lee de la dirección los `claves` de `s` y devuelve cómo escribirlos (sin los
  * que valen lo de por defecto). */
@@ -831,9 +831,9 @@ function alPanel() {
   $('#mfa').hidden = true; $('#login').hidden = true; $('#app').hidden = false;
   let nuevo = false;
   try { nuevo = sessionStorage.getItem(LOGIN_NUEVO) === '1'; sessionStorage.removeItem(LOGIN_NUEVO); } catch { /* sin almacenamiento */ }
-  if (nuevo && currentRoute()[0] !== 'resumen') history.replaceState(null, '', `${location.pathname}${location.search}#/resumen`);
+  if (nuevo && currentRoute()[0] !== 'resumen') history.replaceState(null, '', '/');
   route();
-  // Al recargar en otra pantalla (#/negocios…), los numeritos del menú
+  // Al recargar en otra pantalla (/negocios…), los numeritos del menú
   // también (antes solo los pedía el Resumen y el menú salía sin ellos).
   if (currentRoute()[0] !== 'resumen') refreshBadges();
   vigila();
@@ -1151,7 +1151,7 @@ function renderNav(current) {
   if (navSistemaAbierto == null) {
     try { navSistemaAbierto = localStorage.getItem(NAV_SISTEMA) === '1'; } catch { navSistemaAbierto = false; }
   }
-  const enlace = (n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="#/${n[0]}"${current === n[0] ? ' aria-current="page"' : ''}><span class="ic">${ms(n[1])}</span>${n[2]}${BADGES[n[0]] ? `<span class="badge">${BADGES[n[0]]}</span>` : ''}</a>`;
+  const enlace = (n) => `<a class="nav ${current === n[0] ? 'on' : ''}" href="${rutaDe(n[0])}"${current === n[0] ? ' aria-current="page"' : ''}><span class="ic">${ms(n[1])}</span>${n[2]}${BADGES[n[0]] ? `<span class="badge">${BADGES[n[0]]}</span>` : ''}</a>`;
   $('#nav').innerHTML = NAV_GRUPOS.map((g) => {
     if (!g.plegable) return `<div class="group" id="nav-${g.id}">${g.t}</div>${g.items.map(enlace).join('')}`;
     const abierto = !!navSistemaAbierto;
@@ -1242,7 +1242,23 @@ async function pideBadges(lanzar = false) {
     return null;
   }
 }
-const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'resumen').split('/');
+// ── Direcciones ─────────────────────────────────────────────────────────────
+// Sin `#` (Iván, 24-11; RUNBOOK §4zzz-adminlimpio): la raíz es el Resumen y
+// cada apartado va en su ruta (`/semanas`, `/negocios/<id>`,
+// `/negocios?status=pending`). El servidor sirve esta misma página en todas
+// (functions/_lib/admin.js, `SECCIONES_ADMIN`). Los enlaces de dentro se
+// abren sin recargar (`go`, con `history.pushState`) y «Atrás» y «Adelante»
+// vuelven a pintar (`popstate`). Los enlaces viejos con `#/x` ya no llevan a
+// ningún apartado: el `#` se quita de la barra sin moverse de donde se está.
+const currentRoute = () => (location.pathname.replace(/^\/+|\/+$/g, '') || 'resumen').split('/');
+/** La dirección de una pantalla (`resumen` → `/`, `negocios/x` → `/negocios/x`). */
+const rutaDe = (pagina) => (!pagina || pagina === 'resumen' ? '/' : `/${pagina}`);
+/** ¿Es `ruta` (sin `?`) una pantalla de este admin? (`/carta` no: es otra página). */
+const esPantalla = (ruta) => ruta === '/' || Object.hasOwn(PAGES, ruta.split('/')[1] || '');
+const sinAlmohadilla = () => {
+  if (location.hash || location.href.endsWith('#')) history.replaceState(history.state, '', location.pathname + location.search);
+};
+sinAlmohadilla();
 const PAGES = {};
 
 // ── Entidades (migración 20261130100000) ────────────────────────────────────
@@ -1303,7 +1319,20 @@ async function route() {
     I18N.translate(v);
   }
 }
-window.addEventListener('hashchange', route);
+window.addEventListener('popstate', () => { sinAlmohadilla(); route(); });
+// Un `#…` escrito a mano en la barra no lleva a ningún sitio: se quita.
+window.addEventListener('hashchange', sinAlmohadilla);
+// Los enlaces a pantallas del admin, sin recargar la página (con Ctrl, Mayús,
+// la rueda o «Abrir en otra pestaña», como cualquier enlace).
+document.addEventListener('click', (e) => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest?.('a[href]');
+  if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download')) return;
+  const u = new URL(a.href, location.href);
+  if (u.origin !== location.origin || !esPantalla(u.pathname)) return;
+  e.preventDefault();
+  go(u.pathname + u.search);
+});
 // Los desplegables de los filtros no llevan etiqueta a la vista (la primera
 // opción dice lo que son): para los lectores de pantalla, un nombre.
 const NOMBRES_FILTRO = { status: 'Estado', plan: 'Plan', active: 'Activos o desactivados', sort: 'Orden', moderation: 'Moderación', kind: 'Tipo', type: 'Tipo', banned: 'Suspensión', rating: 'Puntuación', area: 'Área', action: 'Acción' };
@@ -1346,7 +1375,16 @@ window.addEventListener('unhandledrejection', (ev) => {
     $$('#view .loading').forEach((l) => { l.textContent = I18N.t('No se ha podido cargar. Prueba otra vez.'); });
   }
 });
-const go = (h) => { location.hash = h; };
+/** A otra pantalla del admin (`/negocios/x`, `/negocios?status=pending`), sin
+ * recargar. Con `reemplaza`, sin dejar la de ahora en «Atrás». A la misma en
+ * la que se está, nada (como un `#` igual al de antes). */
+const go = (h, reemplaza = false) => {
+  const u = new URL(h, location.origin);
+  const destino = u.pathname + u.search;
+  if (destino === location.pathname + location.search && !location.hash) return;
+  history[reemplaza ? 'replaceState' : 'pushState'](null, '', destino);
+  route();
+};
 
 // ── Resumen ─────────────────────────────────────────────────────────────────
 PAGES.semanas = async (v) => {
@@ -1395,7 +1433,7 @@ PAGES.semanas = async (v) => {
           { h: 'Negocio', r: (x) => `<b class="title">${esc(x.name)}</b><span class="sub">${esc(x.city || '')}</span>` },
           { h: 'Última publicación', r: (x) => fmtDate(x.ultima) },
           { h: 'Publicaciones', num: true, r: (x) => fmtNum(x.total) },
-          { h: '', r: (x) => `<a class="btn sm" href="#/negocios/${esc(x.id)}">Abrir</a>` },
+          { h: '', r: (x) => `<a class="btn sm" href="/negocios/${esc(x.id)}">Abrir</a>` },
         ],
         rows: dorm,
         empty: 'Ninguno: todos han publicado este mes.',
@@ -1406,7 +1444,7 @@ PAGES.semanas = async (v) => {
 // Para decidir dónde empujar al lanzar: registros, activación, retención,
 // sitios, negocios y de dónde llegan las visitas. Todo agregado (ninguna
 // persona en pantalla; los negocios sí, con su nombre), con fechas y ciudad
-// en la dirección (`#/cifras?desde=&hasta=&ciudad=`) y CSV de cada bloque.
+// en la dirección (`/cifras?desde=&hasta=&ciudad=`) y CSV de cada bloque.
 // Lo calcula la base: `admin_stats_*` (migración 20261129100000).
 const ORIGENES = [['stories', 'Historias'], ['whatsapp', 'WhatsApp'], ['rrpp', 'RRPP'], ['local_qr', 'QR del local'], ['tv', 'Tele']];
 const pct = (a, b) => (!b ? '—' : `${(Math.round((1000 * a) / b) / 10).toLocaleString(LOC())} %`);
@@ -1498,7 +1536,7 @@ function seccionAlta(fu, f) {
   })}</details>` : ''}
       <h3 class="cf-h3">Atascados ahora</h3>
       <p class="muted small" style="margin:0 0 8px">${esc(en ? 'Today, in every city and whatever the dates above: businesses and organisations that are active. Open one to see the list.' : 'Hoy, en todas las ciudades y sin mirar las fechas de arriba: negocios y entidades activos. Pulsa uno para ver la lista.')}</p>
-      <div class="kpis">${ATASCOS.map(([key, t]) => `<a class="kpi" href="#/negocios?stuck=${key}"><b>${fmtNum(at[key] || 0)}</b><span>${esc(I18N.t(t))}</span></a>`).join('')}</div>`;
+      <div class="kpis">${ATASCOS.map(([key, t]) => `<a class="kpi" href="/negocios?stuck=${key}"><b>${fmtNum(at[key] || 0)}</b><span>${esc(I18N.t(t))}</span></a>`).join('')}</div>`;
 }
 
 PAGES.cifras = async (v) => {
@@ -1619,7 +1657,7 @@ PAGES.cifras = async (v) => {
       <div class="page-head cf-cab"><h2 id="cfDonde">Dónde</h2><span class="spacer"></span>${csvBtn('ciudades', 'por ciudad')} ${csvBtn('zonas', 'por zona')}</div>
       ${table({
     cols: [
-      { h: 'Ciudad', r: (c) => `<a class="link" href="#/cifras?${qs({ desde: f.desde, hasta: f.hasta, ciudad: c.city })}"><b>${esc(c.city)}</b></a>` },
+      { h: 'Ciudad', r: (c) => `<a class="link" href="/cifras?${qs({ desde: f.desde, hasta: f.hasta, ciudad: c.city })}"><b>${esc(c.city)}</b></a>` },
       { h: 'Negocios', num: true, r: (c) => `${fmtNum(c.businesses)} <span class="muted small">(${fmtNum(c.verified)})</span>` },
       { h: 'Vistas', num: true, r: (c) => fmtNum(c.vistas) },
       { h: 'Códigos', num: true, r: (c) => fmtNum(c.codigos) },
@@ -1662,7 +1700,7 @@ PAGES.cifras = async (v) => {
       <p class="muted small" style="margin:0 0 8px">${esc(en ? 'What Klendar brought them in the period: the receipt if it was entered, otherwise price × places. Always “at least”.' : 'Lo que les ha traído Klendar en el periodo: el ticket si se apuntó y, si no, precio × plazas. Siempre «al menos».')}</p>
       ${table({
     cols: [
-      { h: 'Negocio', r: (t) => `<a class="link" href="#/negocios/${esc(t.id)}"><b>${esc(t.name)}</b></a><span class="sub">${esc(t.city || '')}</span>` },
+      { h: 'Negocio', r: (t) => `<a class="link" href="/negocios/${esc(t.id)}"><b>${esc(t.name)}</b></a><span class="sub">${esc(t.city || '')}</span>` },
       { h: 'Al menos', num: true, r: (t) => `<b>${fmtMoney(t.brought_cents)}</b>` },
       { h: 'Canjes', num: true, r: (t) => fmtNum(t.redemptions) },
       { h: 'Con ticket', num: true, r: (t) => fmtNum(t.with_ticket) },
@@ -1744,37 +1782,37 @@ function urgenteTexto(x) {
   const en = I18N.lang === 'en';
   const i = en ? 1 : 0;
   switch (x.kind) {
-    case 'cron': return [en ? `Scheduled task “${x.title}” is failing` : `La tarea programada «${x.title}» falla`, '#/errores', 'schedule'];
-    case 'http': return [en ? `An Edge Function answers ${x.title} to the database` : `Una Edge Function contesta ${x.title} a la base`, '#/errores', 'sync_problem'];
-    case 'league': return [en ? `Broadcasts: “${x.title}” isn’t importing` : `Emisiones: «${x.title}» no se importa`, '#/emisiones', 'cloud_off'];
-    case 'broadcasts': return [en ? `Broadcasts: the import (${x.title}) failed` : `Emisiones: la importación (${x.title}) ha fallado`, '#/emisiones', 'cloud_off'];
+    case 'cron': return [en ? `Scheduled task “${x.title}” is failing` : `La tarea programada «${x.title}» falla`, '/errores', 'schedule'];
+    case 'http': return [en ? `An Edge Function answers ${x.title} to the database` : `Una Edge Function contesta ${x.title} a la base`, '/errores', 'sync_problem'];
+    case 'league': return [en ? `Broadcasts: “${x.title}” isn’t importing` : `Emisiones: «${x.title}» no se importa`, '/emisiones', 'cloud_off'];
+    case 'broadcasts': return [en ? `Broadcasts: the import (${x.title}) failed` : `Emisiones: la importación (${x.title}) ha fallado`, '/emisiones', 'cloud_off'];
     case 'report': {
       const motivos = String(x.detail || '').split(', ').map((m) => (MOTIVO_GRAVE[m] || [m, m])[i]).join(', ');
       const tipo = I18N.t(TIPO_DEN[x.target_type] || 'Contenido').toLowerCase();
       return [en ? `Serious report: ${tipo} for ${motivos}` : `Denuncia grave: ${tipo} por ${motivos}`,
-        x.target_type && x.target_id ? `#/denuncias/${x.target_type}/${x.target_id}` : '#/denuncias', 'report'];
+        x.target_type && x.target_id ? `/denuncias/${x.target_type}/${x.target_id}` : '/denuncias', 'report'];
     }
     case 'free_tier': return [x.level === 'over'
       ? (en ? `Free limit reached: ${x.title}` : `Límite gratis alcanzado: ${x.title}`)
-      : (en ? `${Math.round(x.pct)} % of the free limit: ${x.title}` : `Al ${Math.round(x.pct)} % del límite gratis: ${x.title}`), '#/resumen', 'speed'];
+      : (en ? `${Math.round(x.pct)} % of the free limit: ${x.title}` : `Al ${Math.round(x.pct)} % del límite gratis: ${x.title}`), '/', 'speed'];
     case 'media': return [x.title === 'error'
       ? (en ? 'The photo filter can’t analyse: files held back' : 'El filtro de fotos no puede analizar: archivos retenidos')
-      : (en ? 'Photos or videos held back are waiting for you' : 'Fotos o vídeos retenidos esperan tu decisión'), '#/medios', 'imagesmode'];
+      : (en ? 'Photos or videos held back are waiting for you' : 'Fotos o vídeos retenidos esperan tu decisión'), '/medios', 'imagesmode'];
     case 'content': return [x.title === 'grave'
       ? (en ? 'Serious content hidden by the moderator: you decide' : 'Contenido grave oculto por el moderador: decides tú')
       : x.title === 'lists'
         ? (en ? 'The moderator is using the word lists: the AI isn’t answering or its limit has run out' : 'El moderador está usando las listas: la IA no contesta o se ha acabado su tope')
-        : (en ? 'Texts held back are waiting for you' : 'Textos retenidos esperan tu decisión'), '#/medios', x.title === 'grave' ? 'report' : 'imagesmode'];
+        : (en ? 'Texts held back are waiting for you' : 'Textos retenidos esperan tu decisión'), '/medios', x.title === 'grave' ? 'report' : 'imagesmode'];
     case 'autohide': {
       const tipo = I18N.t(TIPO_DEN[x.target_type] || 'Contenido').toLowerCase();
       return [en ? `Hidden after several reports: ${tipo}` : `Oculto por denuncias: ${tipo}`,
-        x.target_type && x.target_id ? `#/denuncias/${x.target_type}/${x.target_id}` : '#/denuncias', 'visibility_off'];
+        x.target_type && x.target_id ? `/denuncias/${x.target_type}/${x.target_id}` : '/denuncias', 'visibility_off'];
     }
     // Tope de traducciones del día de un negocio (migración 20261288900000 de la app, §4zzz-segF).
     case 'translation_cap': return [en ? `Translations: “${x.title}” has reached today’s limit` : `Traducciones: «${x.title}» ha llegado a su tope de hoy`,
-      x.target_id ? `#/negocios/${x.target_id}` : '#/negocios', 'translate'];
-    case 'dispute': return [en ? `Stripe: payment dispute or return${x.livemode === false ? ' (test)' : ''}` : `Stripe: disputa o devolución de un cobro${x.livemode === false ? ' (pruebas)' : ''}`, '#/planes', 'gavel'];
-    default: return [x.title, '#/resumen', 'warning'];
+      x.target_id ? `/negocios/${x.target_id}` : '/negocios', 'translate'];
+    case 'dispute': return [en ? `Stripe: payment dispute or return${x.livemode === false ? ' (test)' : ''}` : `Stripe: disputa o devolución de un cobro${x.livemode === false ? ' (pruebas)' : ''}`, '/planes', 'gavel'];
+    default: return [x.title, '/', 'warning'];
   }
 }
 function tarjetaUrgentes(urg) {
@@ -1978,7 +2016,7 @@ function tarjetaPorVerificar(pv) {
           : (en ? 'nothing published yet' : 'nada publicado aún'),
     ];
     return `<div class="item vya" data-biz="${esc(b.id)}"><div style="min-width:0;flex:1">
-      <h3><a class="link" href="#/negocios/${esc(b.id)}">${esc(b.name)}</a></h3>
+      <h3><a class="link" href="/negocios/${esc(b.id)}">${esc(b.name)}</a></h3>
       <div class="meta">${esc((en ? b.category_en : b.category) || '')} · ${esc([b.address, b.city].filter(Boolean).join(', '))} · ${esc(cuando)}</div>
       <div class="meta">${esc(b.owner_email || '')} · ${esc(datos.join(' · '))}</div>${typeof motivosAuto === 'function' ? motivosAuto(b.auto_failed) : ''}</div>
       <button class="btn ok" type="button" data-verificar="${esc(b.id)}">✓ ${en ? 'Verify' : 'Verificar'}</button></div>`;
@@ -1987,7 +2025,7 @@ function tarjetaPorVerificar(pv) {
   if (!pv) return `<div class="card" id="porVerificar"><h2>${en ? 'Register a business' : 'Dar de alta un negocio'}</h2>${qr}</div>`;
   return `<div class="card" id="porVerificar"><h2>${en ? 'To verify now' : 'Por verificar ahora'}${pv?.total ? ` <span class="badge">${fmtNum(pv.total)}</span>` : ''}</h2>
     ${filas.length ? filas.map(fila).join('') : `<p class="muted" style="margin:0 0 8px">${en ? 'No business waiting. When an owner sends their request it appears here, newest first.' : 'Ningún negocio esperando. Cuando un dueño envía su solicitud, sale aquí, el más nuevo arriba.'}</p>`}
-    ${pv?.total > filas.length ? `<p style="margin:6px 0 0"><a class="link" href="#/negocios?status=pending">${en ? `See all ${pv.total}` : `Ver los ${pv.total}`}</a></p>` : ''}
+    ${pv?.total > filas.length ? `<p style="margin:6px 0 0"><a class="link" href="/negocios?status=pending">${en ? `See all ${pv.total}` : `Ver los ${pv.total}`}</a></p>` : ''}
     ${qr}</div>`;
 }
 function activaAlta(v, pv) {
@@ -2102,7 +2140,7 @@ PAGES.resumen = async (v) => {
       <div class="card"><h2>Notificaciones push</h2><div class="kpis">
         ${kpi(k.push_queue, 'en cola')} ${kpi(k.push_sent_7d, 'enviadas (7 d)')} ${kpi(k.push_failed_7d, 'fallidas (7 d)', k.push_failed_7d ? 'accent' : '')}
       </div></div>
-      ${WEB_ERR ? `<div class="card"><h2><a class="link" href="#/errores">Errores de la web</a></h2><div class="kpis">
+      ${WEB_ERR ? `<div class="card"><h2><a class="link" href="/errores">Errores de la web</a></h2><div class="kpis">
         ${kpi(WEB_ERR.new_24h || 0, 'errores nuevos (24 h)', WEB_ERR.new_24h ? 'accent' : '')} ${kpi(WEB_ERR.open || 0, 'sin resolver')} ${kpi(WEB_ERR.last_hour || 0, 'veces en la última hora')}
       </div></div>` : ''}
       <div class="card"><h2>Negocios por ciudad</h2>${(k.by_city || []).length ? `<dl class="kv" style="grid-template-columns:1fr auto">${k.by_city.map((c) => `<dt>${esc(c.city)}</dt><dd>${c.verified}/${c.businesses}</dd>`).join('')}</dl><p class="muted small" style="margin:8px 0 0">verificados / total</p>` : '<p class="muted">—</p>'}</div>
@@ -2113,8 +2151,8 @@ PAGES.resumen = async (v) => {
       ${series.length ? `<div class="chart-legend"><span>${fmtDay(series[0]?.day)}</span><span style="margin-left:auto">${fmtDay(series[series.length - 1]?.day)}</span></div>` : ''}
     </div>
     <div class="grid2">
-      <div class="card"><h2>Top negocios (canjes 30 d)</h2>${(k.top_businesses || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_businesses.map((b) => `<li><a class="link" href="#/negocios/${b.id}">${esc(b.name)}</a> <span class="muted">${esc(b.city || '')} · ${b.redemptions}</span></li>`).join('')}</ol>` : '<p class="muted">Aún sin canjes.</p>'}</div>
-      <div class="card"><h2>Top publicaciones (30 d)</h2>${(k.top_offers || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_offers.map((o) => `<li><a class="link" href="#/publicaciones/${o.id}">${esc(o.title)}</a> <span class="muted">${esc(o.business)} · ${en ? `${o.redemptions_count} ${o.redemptions_count === 1 ? 'redemption' : 'redemptions'} · ${o.views_count} ${o.views_count === 1 ? 'view' : 'views'}` : `${o.redemptions_count} ${o.redemptions_count === 1 ? 'canje' : 'canjes'} · ${o.views_count} ${o.views_count === 1 ? 'vista' : 'vistas'}`}</span></li>`).join('')}</ol>` : '<p class="muted">Nada todavía.</p>'}</div>
+      <div class="card"><h2>Top negocios (canjes 30 d)</h2>${(k.top_businesses || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_businesses.map((b) => `<li><a class="link" href="/negocios/${b.id}">${esc(b.name)}</a> <span class="muted">${esc(b.city || '')} · ${b.redemptions}</span></li>`).join('')}</ol>` : '<p class="muted">Aún sin canjes.</p>'}</div>
+      <div class="card"><h2>Top publicaciones (30 d)</h2>${(k.top_offers || []).length ? `<ol style="margin:0;padding-left:18px">${k.top_offers.map((o) => `<li><a class="link" href="/publicaciones/${o.id}">${esc(o.title)}</a> <span class="muted">${esc(o.business)} · ${en ? `${o.redemptions_count} ${o.redemptions_count === 1 ? 'redemption' : 'redemptions'} · ${o.views_count} ${o.views_count === 1 ? 'view' : 'views'}` : `${o.redemptions_count} ${o.redemptions_count === 1 ? 'canje' : 'canjes'} · ${o.views_count} ${o.views_count === 1 ? 'vista' : 'vistas'}`}</span></li>`).join('')}</ol>` : '<p class="muted">Nada todavía.</p>'}</div>
     </div>
     ${tarjetaAvisosCorreo(ATT?.alerts)}`;
   $('#ctabs').onclick = (e) => { const b = e.target.closest('button'); if (!b) return; $$('#ctabs button').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', String(x === b)); }); $('#chart').innerHTML = grafica(b.dataset.k); I18N.translate($('#chart')); };
@@ -2126,7 +2164,7 @@ PAGES.resumen = async (v) => {
 };
 
 // ── Negocios ────────────────────────────────────────────────────────────────
-const params = () => Object.fromEntries(new URLSearchParams((location.hash.split('?')[1] || '')));
+const params = () => Object.fromEntries(new URLSearchParams(location.search));
 const st = { mensajes: { limit: 50, offset: 0 }, sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjes: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 }, errores: { limit: 50, offset: 0 } };
 
 PAGES.negocios = async (v, id) => {
@@ -2171,7 +2209,7 @@ PAGES.negocios = async (v, id) => {
       ], rows, onRow: true, empty: 'No hay negocios con esos filtros.',
     }) + pg.html;
     pg.bind($('#list'));
-    $$('#list tr.row').forEach((tr) => { tr.onclick = () => go(`#/negocios/${rows[tr.dataset.i].id}`); });
+    $$('#list tr.row').forEach((tr) => { tr.onclick = () => go(`/negocios/${rows[tr.dataset.i].id}`); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['status', 'plan', 'active', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
@@ -2231,7 +2269,7 @@ function tarjetaCobro(b, cobro, tz) {
       <p class="muted small" style="margin:6px 0 0">${esc(en
         ? 'Its publications are hidden and its page says “Not available right now”; the team can only pay, download its data, close the account and validate what people already have. Once it pays, everything comes back on its own.'
         : 'Sus publicaciones no se ven y su ficha dice «No disponible ahora mismo»; el equipo solo puede pagar, descargar sus datos, darse de baja y validar lo que ya tiene la gente. Al pagar, todo vuelve solo.')}
-        <a class="link" href="#/planes?tab=stripe">${esc(en ? 'Unblock it in Plans and payments' : 'Desbloquearlo en Planes y pagos')}</a></p>`);
+        <a class="link" href="/planes?tab=stripe">${esc(en ? 'Unblock it in Plans and payments' : 'Desbloquearlo en Planes y pagos')}</a></p>`);
   }
   if (b.review_only || cobro?.review_only) {
     partes.push(`<p class="muted small" style="margin:${partes.length ? '10px' : '0'} 0 0">${ms('verified_user')} ${esc(en
@@ -2273,7 +2311,7 @@ async function businessDetail(v, id) {
   const social = b.social_links && typeof b.social_links === 'object' ? Object.entries(b.social_links).filter(([, u]) => u) : [];
   const hours = b.opening_hours && typeof b.opening_hours === 'object' ? Object.entries(b.opening_hours) : [];
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/negocios">← Negocios</a></div>
+    <div class="page-head"><a class="btn sm ghost" href="/negocios">← Negocios</a></div>
     ${pendiente ? avisoSiguiente('negocios') : ''}
     <div class="detail-head">
       ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="">` : `<div class="ph">${ms('storefront')}</div>`}
@@ -2300,7 +2338,7 @@ async function businessDetail(v, id) {
     ${b.closed_permanently_at ? `<div class="card"><b>${I18N.lang === 'en' ? 'Marked as closed for good on' : 'Marcado como cerrado de verdad el'}</b> ${fmtDate(b.closed_permanently_at, tz)}${b.closed_permanently_note ? ` · ${esc(b.closed_permanently_note)}` : ''}<div class="muted small" style="margin-top:4px">${I18N.lang === 'en' ? 'It no longer appears on Klendar; its address says “This business has closed”. Use “Reopen” if it is a mistake.' : 'Ya no sale en Klendar; su dirección dice «Este negocio ha cerrado». «Reabrir» si es un error.'}</div></div>` : ''}
     ${b.entity_requested ? `<div class="card"><b>${I18N.lang === 'en' ? 'Asks for an organisation account' : 'Pide la cuenta de entidad'}:</b> ${esc(nombreEntidad(b.entity_requested))}${b.entity_requested_at ? ` · ${fmtDate(b.entity_requested_at, tz)}` : ''}${b.entity_request_note ? `<p style="margin:6px 0 0">«${esc(b.entity_request_note)}»</p>` : ''}
       <p class="muted small" style="margin:6px 0 0">${I18N.lang === 'en' ? 'Check who they are before marking it: an email from the official domain, a document signed by the secretary or the registry entry, or a call to the phone on their official website.' : 'Comprueba quién es antes de marcarla: un correo del dominio oficial, un documento firmado por la secretaría o la inscripción en el registro, o una llamada al teléfono de su web oficial.'}</p>
-      <p class="actions" style="margin:8px 0 0"><a class="btn sm" href="#/entidades">${I18N.lang === 'en' ? 'See the request and the document' : 'Ver la solicitud y el documento'}</a> <button class="btn sm" data-a="entity">${I18N.lang === 'en' ? 'Decide without a request…' : 'Decidir sin solicitud…'}</button></p></div>` : ''}
+      <p class="actions" style="margin:8px 0 0"><a class="btn sm" href="/entidades">${I18N.lang === 'en' ? 'See the request and the document' : 'Ver la solicitud y el documento'}</a> <button class="btn sm" data-a="entity">${I18N.lang === 'en' ? 'Decide without a request…' : 'Decidir sin solicitud…'}</button></p></div>` : ''}
     ${b.review_requested_at && b.verification_status === 'pending' ? `<div class="card"><b>${I18N.lang === 'en' ? 'Asked for another review on' : 'Pidió otra revisión el'}</b> ${fmtDate(b.review_requested_at, tz)}${b.review_request_note ? `<p style="margin:6px 0 0">«${esc(b.review_request_note)}»</p>` : ''}</div>` : ''}
     ${pausa ? tarjetaPausas([pausa], false) : ''}
     ${(cambios?.rows || []).length ? tarjetaCambios(cambios.rows, false) : ''}
@@ -2316,7 +2354,7 @@ async function businessDetail(v, id) {
         <dt>Web</dt><dd>${b.website ? enlaceExterno(b.website) : '—'}</dd>
         <dt>Redes</dt><dd>${social.length ? social.map(([k, u]) => (urlSegura(u) ? enlaceExterno(u, k) : `${esc(k)}: ${esc(u)}`)).join(' · ') : '—'}</dd>
         <dt>CIF / NIF</dt><dd>${esc(b.tax_id || '—')}</dd>
-        <dt>Dueño</dt><dd>${esc(b.owner_name || '—')} · <a class="link" href="#/usuarios/${b.owner_id}">${esc(b.owner_email || '')}</a></dd>
+        <dt>Dueño</dt><dd>${esc(b.owner_name || '—')} · <a class="link" href="/usuarios/${b.owner_id}">${esc(b.owner_email || '')}</a></dd>
         <dt>Valoración</dt><dd>${b.rating_count ? `★ ${Number(b.rating_avg).toFixed(1)} (${b.rating_count})` : 'sin reseñas'}</dd>
         <dt>Alta</dt><dd>${fmtDate(b.created_at, tz)} ${b.verified_at ? `· ${I18N.lang === 'en' ? 'verified' : 'verificado'} ${fmtDate(b.verified_at, tz)}` : ''}</dd>
         <dt>Zona horaria</dt><dd>${zonaTxt(tz)}</dd>
@@ -2337,7 +2375,7 @@ async function businessDetail(v, id) {
         </div></div>
         <div class="card"><h2>Equipo</h2>
           ${table({ cols: [
-            { h: 'Persona', r: (m) => `${esc(m.display_name || '—')}<span class="sub"><a class="link" href="#/usuarios/${m.user_id}">${esc(m.email || m.user_id)}</a></span>` },
+            { h: 'Persona', r: (m) => `${esc(m.display_name || '—')}<span class="sub"><a class="link" href="/usuarios/${m.user_id}">${esc(m.email || m.user_id)}</a></span>` },
             { h: 'Rol', r: (m) => `<select data-role="${m.user_id}" aria-label="${esc(I18N.t('Rol'))}: ${esc(m.display_name || m.email || '')}">${['owner', 'manager', 'staff'].map((r) => `<option value="${r}" ${m.role === r ? 'selected' : ''}>${LABELS[r]}</option>`).join('')}</select>` },
             { h: '', r: (m) => m.role === 'owner' ? '' : `<button class="btn sm ghost" data-rm="${m.user_id}">Quitar</button>` },
           ], rows: d.members, empty: 'Sin miembros.' })}
@@ -2370,14 +2408,14 @@ async function businessDetail(v, id) {
     <div id="sorteosNegocio"></div>
     <div id="cerradoNegocio"></div>
     <div class="grid2">
-      <div class="card"><h2>${I18N.lang === 'en' ? 'Related reports' : 'Denuncias relacionadas'} (${d.reports.length})</h2>${d.reports.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => `${esc(r.reason)}<span class="sub">${esc(r.details || '')}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports }) : '<p class="muted">Ninguna.</p>'}<p style="margin:10px 0 0"><a class="link" href="#/denuncias">Ir a denuncias →</a></p></div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Related reports' : 'Denuncias relacionadas'} (${d.reports.length})</h2>${d.reports.length ? table({ cols: [{ h: 'Sobre', r: (r) => tag(r.target_type, 'dim') }, { h: 'Motivo', r: (r) => `${esc(r.reason)}<span class="sub">${esc(r.details || '')}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => fmtDay(r.created_at) }], rows: d.reports }) : '<p class="muted">Ninguna.</p>'}<p style="margin:10px 0 0"><a class="link" href="/denuncias">Ir a denuncias →</a></p></div>
       <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
     </div>
     ${zonaDelicada(`${b.closed_permanently_at ? '<button class="btn" data-a="reopen">Reabrir…</button>' : '<button class="btn bad ghost" data-a="closed">Marcar como cerrado…</button>'}
       <button class="btn bad" data-a="delete">Eliminar negocio…</button>`, I18N.lang === 'en'
       ? '<b>Mark as closed</b>: only if it has closed for good (to take it down for breaking the rules, use “Deactivate” in More actions); asks how we know. <b>Delete</b> can’t be undone: you type DELETE and confirm your password.'
       : '<b>Marcar como cerrado</b>: solo si ha cerrado de verdad (para quitarlo por incumplir las normas, «Desactivar» en «Más acciones»); pide cómo lo sabemos. <b>Eliminar</b> no se puede deshacer: pide escribir ELIMINAR y tu contraseña.')}`;
-  $$('#view tr.row').forEach((tr) => { tr.onclick = () => go(`#/publicaciones/${d.offers[tr.dataset.i].id}`); });
+  $$('#view tr.row').forEach((tr) => { tr.onclick = () => go(`/publicaciones/${d.offers[tr.dataset.i].id}`); });
   // Cada acción bloquea su botón (o su desplegable) mientras trabaja: un
   // doble clic no la manda dos veces.
   $$('[data-role]').forEach((sel) => { let antes = sel.value; sel.onchange = () => esperando(sel, async () => { try { await rpc('admin_set_member_role', { p_business: id, p_user: sel.dataset.role, p_role: sel.value }); antes = sel.value; toast('Rol actualizado'); } catch (e) { sel.value = antes; toast(e.message, true); } }); });
@@ -2421,7 +2459,7 @@ function tablaBajas(items, conNegocio = true) {
     : c.handled_at ? `<span class="tag ok">${en ? 'handled' : 'gestionada'}</span>`
     : c.live ? `<span class="tag bad">${en ? 'pending' : 'por gestionar'}</span>` : `<span class="tag dim">${en ? 'in effect' : 'ya efectiva'}</span>`);
   return table({ cols: [
-    ...(conNegocio ? [{ h: 'Negocio', r: (c) => `<a class="link" href="#/negocios/${esc(c.business_id)}">${esc(c.business_name)}</a><span class="sub">${esc(c.owner_email || '')}</span>` }] : []),
+    ...(conNegocio ? [{ h: 'Negocio', r: (c) => `<a class="link" href="/negocios/${esc(c.business_id)}">${esc(c.business_name)}</a><span class="sub">${esc(c.owner_email || '')}</span>` }] : []),
     { h: en ? 'Requested' : 'Pedida', r: (c) => fmtDay(c.requested_at) },
     { h: en ? 'Effective' : 'Efectiva', r: (c) => (c.effective_on ? fmtDay(c.effective_on) : (en ? 'nothing to pay' : 'sin nada que pagar')) },
     { h: en ? 'Plan status' : 'Estado del plan', r: (c) => esc(c.sub_status || '') },
@@ -2455,7 +2493,7 @@ function tarjetaCambios(rows, conNegocio = true, plegada = false) {
   const fila = (h, a, b2) => `<tr><th>${h}</th><td>${a}</td><td>${b2}</td></tr>`;
   const cambio = (c) => `<div class="item cambio-neg" style="grid-template-columns:1fr">
     <div>
-      <h3>${conNegocio ? `<a class="link" href="#/negocios/${esc(c.business_id)}">${esc(c.business_name)}</a> ` : ''}${(c.reasons || []).map((m) => `<span class="tag warn">${esc(MOTIVO[m] || m)}</span>`).join(' ')}
+      <h3>${conNegocio ? `<a class="link" href="/negocios/${esc(c.business_id)}">${esc(c.business_name)}</a> ` : ''}${(c.reasons || []).map((m) => `<span class="tag warn">${esc(MOTIVO[m] || m)}</span>`).join(' ')}
         ${c.reviewed_at ? `<span class="tag ok">${en ? 'reviewed' : 'revisado'}</span>` : ''}</h3>
       <div class="meta">${esc(c.changed_by_name || c.changed_by_email || '—')}${c.changed_by_role ? ` (${esc(LABELS[c.changed_by_role] ? I18N.t(LABELS[c.changed_by_role]) : c.changed_by_role)})` : ''} · ${fmtDate(c.updated_at)}${c.distance_m != null ? ` · ${(c.distance_m / 1000).toLocaleString(LOC(), { maximumFractionDigits: 1 })} km` : ''}${c.offers_moved ? ` · ${c.offers_moved} ${en ? (c.offers_moved === 1 ? 'live publication moved with it' : 'live publications moved with it') : (c.offers_moved === 1 ? 'publicación viva mudada' : 'publicaciones vivas mudadas')}` : ''}</div>
       <div class="tbl-wrap"><table class="tbl"><thead><tr><th></th><th>${en ? 'Before' : 'Antes'}</th><th>${en ? 'After' : 'Después'}</th></tr></thead><tbody>
@@ -2492,8 +2530,8 @@ function tarjetaPausas(rows, conTitulo = true, plegada = false) {
   if (!rows.length) return '';
   const en = I18N.lang === 'en';
   const fila = (x) => `<div class="item" style="grid-template-columns:1fr"><div>
-    <h3><a class="link" href="#/negocios/${esc(x.id)}">${esc(x.name)}</a>${x.city ? ` <span class="muted small">${esc(x.city)}</span>` : ''}</h3>
-    <div class="meta">${en ? 'Paused since' : 'En pausa desde el'} ${fmtDate(x.suspension_paused_at)}${x.owner_email ? ` · ${en ? 'owner' : 'propietario'} <a class="link" href="#/usuarios/${esc(x.owner_id)}">${esc(x.owner_email)}</a>` : ''}</div>
+    <h3><a class="link" href="/negocios/${esc(x.id)}">${esc(x.name)}</a>${x.city ? ` <span class="muted small">${esc(x.city)}</span>` : ''}</h3>
+    <div class="meta">${en ? 'Paused since' : 'En pausa desde el'} ${fmtDate(x.suspension_paused_at)}${x.owner_email ? ` · ${en ? 'owner' : 'propietario'} <a class="link" href="/usuarios/${esc(x.owner_id)}">${esc(x.owner_email)}</a>` : ''}</div>
     ${x.owner_banned_at
       ? `<p class="muted small" style="margin:6px 0 0">${en ? 'The owner is still suspended: when you lift the suspension, you can reopen it here.' : 'El propietario sigue suspendido: cuando levantes la suspensión, podrás reabrirlo desde aquí.'}</p>`
       : `<div class="actions" style="margin-top:8px"><button class="btn sm ok" type="button" data-pausa="${esc(x.id)}" data-reabrir="1">${en ? 'Reopen' : 'Reabrir'}</button><button class="btn sm" type="button" data-pausa="${esc(x.id)}" data-reabrir="0">${en ? 'Let the owner decide' : 'Que lo decida el propietario'}</button></div>`}
@@ -2694,7 +2732,7 @@ async function businessAction(a, b, d) {
         submit: en ? 'Delete for good' : 'Eliminar para siempre', danger: true, confirmWord: en ? 'DELETE' : 'ELIMINAR' });
       if (!r || !await confirmaIdentidad()) return;
       await rpc('admin_delete_business', { p_id: b.id, p_reason: r.reason });
-      toast(en ? 'Business deleted' : 'Negocio eliminado'); go('#/negocios'); return;
+      toast(en ? 'Business deleted' : 'Negocio eliminado'); go('/negocios'); return;
     }
     if (a === 'notify') {
       const r = await modal({ title: 'Notificación al equipo del negocio', intro: 'Lo reciben el propietario y los encargados como notificación (y push si la tienen activada).', fields: CAMPOS_AVISO, submit: 'Enviar' });
@@ -2875,7 +2913,7 @@ PAGES.publicaciones = async (v, id) => {
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({
       cols: [
-        { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${esc(I18N.t(LABELS[o.kind]))} · <a class="link" href="#/negocios/${o.business_id}" data-sin-fila>${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
+        { h: 'Publicación', r: (o) => `${img(o.images?.[0], KIND_ICON[o.kind])}<span class="title">${esc(o.title)}<span class="sub">${esc(I18N.t(LABELS[o.kind]))} · <a class="link" href="/negocios/${o.business_id}" data-sin-fila>${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''}</span></span>` },
         { h: 'Estado', r: (o) => `${tag(o.status)} ${modTag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? '<span class="tag">boost</span>' : ''} ${o.open_reports ? `<span class="tag bad">${ms('flag')} ${o.open_reports}</span>` : ''}` },
         // Por moderar: cuándo caduca (la cola va por lo que caduca antes) o, si
         // ya pasó, «caducada» (revisarla ya no sirve de nada).
@@ -2889,12 +2927,12 @@ PAGES.publicaciones = async (v, id) => {
       ], rows, onRow: true, empty: 'No hay publicaciones con esos filtros.',
     }) + pg.html;
     pg.bind($('#list'));
-    $$('#list tr.row').forEach((tr) => { tr.onclick = (e) => { if (e.target.closest('button,a')) return; go(`#/publicaciones/${rows[tr.dataset.i].id}`); }; });
+    $$('#list tr.row').forEach((tr) => { tr.onclick = (e) => { if (e.target.closest('button,a')) return; go(`/publicaciones/${rows[tr.dataset.i].id}`); }; });
     $$('#list [data-mod]').forEach((btn) => { btn.onclick = () => esperando(btn, async () => { if (await moderateOffer(btn.dataset.mod, btn.dataset.val)) await load(); }); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['moderation', 'status', 'kind'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
-  if ($('#clearbiz')) $('#clearbiz').onclick = () => { s.business = null; go('#/publicaciones'); };
+  if ($('#clearbiz')) $('#clearbiz').onclick = () => { s.business = null; go('/publicaciones'); };
   enfocaAviso(v);
   $('#csv').onclick = () => exportaTodo($('#csv'), 'publicaciones', 'admin_offers_page', ultimos, [['id', 'id'], ['kind', 'tipo'], ['title', 'título'], ['business_name', 'negocio'], ['status', 'estado'], ['moderation_status', 'moderación'], ['redeem_start_at', 'inicio canje'], ['redeem_end_at', 'fin canje'], ['event_at', 'evento'], ['price_cents', 'precio (cts)'], ['views_count', 'vistas'], ['redemptions_count', 'canjes'], ['max_redemptions', 'máx'], ['created_at', 'creada']]);
   await load();
@@ -2930,12 +2968,12 @@ async function offerDetail(v, id) {
   // Sus horas, en la zona de su negocio (la posición es la del local).
   const tz = KZ.de(o);
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicaciones">← Publicaciones</a></div>
+    <div class="page-head"><a class="btn sm ghost" href="/publicaciones">← Publicaciones</a></div>
     ${o.moderation_status === 'pending' ? avisoSiguiente('publicaciones') : ''}
     <div class="detail-head">
       ${o.images?.[0] ? `<img src="${esc(o.images[0])}" alt="">` : `<div class="ph">${KIND_ICON[o.kind]}</div>`}
       <div><h1>${esc(o.title)}</h1><div class="tags">${tag(o.kind, 'dim')} ${tag(o.status)} ${modTag(o.moderation_status)} ${flagTags(o)} ${o.adults_only ? '<span class="tag bad">+18</span>' : ''} ${o.is_boosted ? `<span class="tag">boost ${I18N.lang === 'en' ? 'until' : 'hasta'} ${fmtDate(o.boosted_until)}</span>` : ''}</div>
-        <div class="muted small" style="margin-top:4px"><a class="link" href="#/negocios/${o.business_id}">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''} · ${esc(o.city || '')}</div></div>
+        <div class="muted small" style="margin-top:4px"><a class="link" href="/negocios/${o.business_id}">${esc(o.business_name)}</a> ${o.verification_status !== 'verified' ? tag(o.verification_status) : ''} · ${esc(o.city || '')}</div></div>
       <span class="spacer"></span>
       <div class="actions">
         ${o.moderation_status !== 'approved' ? '<button class="btn ok" data-a="approve">✓ Aprobar</button>' : ''}
@@ -2966,7 +3004,7 @@ async function offerDetail(v, id) {
       <div>
         <div class="card"><h2>Últimos 14 días</h2><div class="kpis"><div class="kpi"><b>${fmtNum(o.views_count)}</b><span>vistas totales</span></div><div class="kpi"><b>${fmtNum(o.redemptions_count)}</b><span>canjes totales</span></div><div class="kpi"><b>${o.views_count ? Math.round(o.redemptions_count / o.views_count * 100) : 0} %</b><span>conversión</span></div></div>
           <p class="muted small" style="margin:10px 0 0">Vistas</p>${bars(d.series, 'views', (s) => fmtDay(s.day))}<p class="muted small" style="margin:10px 0 0">Canjes</p>${bars(d.series, 'redemptions', (s) => fmtDay(s.day))}</div>
-        <div class="card"><h2>${I18N.lang === 'en' ? 'Reports' : 'Denuncias'} (${d.reports.length})</h2>${d.reports.length ? d.reports.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><b>${esc(r.reason)}</b> ${tag(r.status)} <span class="muted small">${ago(r.created_at)}</span><p>${esc(r.details || '')}</p></div></div>`).join('') + '<a class="link" href="#/denuncias">Gestionar en denuncias →</a>' : '<p class="muted">Ninguna.</p>'}</div>
+        <div class="card"><h2>${I18N.lang === 'en' ? 'Reports' : 'Denuncias'} (${d.reports.length})</h2>${d.reports.length ? d.reports.map((r) => `<div class="item" style="grid-template-columns:1fr"><div><b>${esc(r.reason)}</b> ${tag(r.status)} <span class="muted small">${ago(r.created_at)}</span><p>${esc(r.details || '')}</p></div></div>`).join('') + '<a class="link" href="/denuncias">Gestionar en denuncias →</a>' : '<p class="muted">Ninguna.</p>'}</div>
         <div class="card"><h2>Registro de cambios</h2>${auditList(d.audit)}</div>
       </div>
     </div>
@@ -3022,7 +3060,7 @@ PAGES.canjes = async (v) => {
     rows = r.rows;
     const pg = pager(s, r.total, load);
     $('#list').innerHTML = table({ cols: [
-      { h: 'Publicación', r: (x) => `<a class="link" href="#/publicaciones/${x.offer_id}">${esc(x.title)}</a><span class="sub"><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a></span>` },
+      { h: 'Publicación', r: (x) => `<a class="link" href="/publicaciones/${x.offer_id}">${esc(x.title)}</a><span class="sub"><a class="link" href="/negocios/${x.business_id}">${esc(x.business)}</a></span>` },
       { h: 'Usuario', r: (x) => esc(x.user_email || '—') }, { h: 'Código', r: (x) => `<code>${esc(x.code)}</code>` }, { h: 'Estado', r: (x) => tag(x.status) },
       { h: 'Generado', r: (x) => `<span class="nowrap">${fmtDate(x.created_at)}</span>` }, { h: 'Validado', r: (x) => `<span class="nowrap">${fmtDate(x.validated_at)}</span><span class="sub">${esc(x.validated_by_email || '')}</span>` },
     ], rows, empty: 'Sin canjes con esos filtros.' }) + pg.html;
@@ -3065,7 +3103,7 @@ PAGES.usuarios = async (v, id) => {
       { h: 'Alta', r: (u) => `<span class="nowrap">${fmtDay(u.created_at)}</span>` }, { h: 'Último acceso', r: (u) => `<span class="nowrap">${ago(u.last_sign_in_at)}</span>` },
     ], rows, onRow: true, empty: 'Sin usuarios con esos filtros.' }) + pg.html;
     pg.bind($('#list'));
-    $$('#list tr.row').forEach((tr) => { tr.onclick = () => go(`#/usuarios/${rows[tr.dataset.i].id}`); });
+    $$('#list tr.row').forEach((tr) => { tr.onclick = () => go(`/usuarios/${rows[tr.dataset.i].id}`); });
   };
   $('#q').oninput = debounce(() => { s.q = $('#q').value.trim(); s.offset = 0; load(); });
   ['type', 'banned', 'sort'].forEach((k) => { $('#' + k).onchange = () => { s[k] = $('#' + k).value; s.offset = 0; aUrl(); load(); }; });
@@ -3085,10 +3123,10 @@ async function userDetail(v, id) {
   const prefs = d.notification_prefs;
   const en = I18N.lang === 'en';
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/usuarios">← Usuarios</a></div>
+    <div class="page-head"><a class="btn sm ghost" href="/usuarios">← Usuarios</a></div>
     <div class="detail-head">
       ${u.avatar_url ? `<img src="${esc(u.avatar_url)}" alt="">` : `<div class="ph">${ms('person')}</div>`}
-      <div><h1>${esc(u.display_name || u.email)}</h1><div class="tags">${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? `<a class="tag" href="#/administradores" title="${esc(I18N.t('Se gestiona en «Administradores»'))}">${esc(I18N.t('administrador'))}</a>` : ''} ${u.is_premium ? `<span class="tag ok">premium${u.premium_until ? ` ${en ? 'until' : 'hasta'} ${fmtDay(u.premium_until)}` : ''}</span>` : ''} ${u.banned_at ? `<span class="tag bad">${en ? 'suspended' : 'suspendido'} ${fmtDay(u.banned_at)}</span>` : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''} ${correo?.suppressed_at ? `<span class="tag bad" title="${esc(correo.suppression_detail || '')}">${correo.suppressed_reason === 'complaint' ? (en ? 'marked us as spam' : 'nos marcó como spam') : (en ? 'email bounces' : 'correo devuelto')} ${fmtDay(correo.suppressed_at)}</span>` : ''} ${correo?.new_email ? `<span class="tag warn">${en ? 'pending change to' : 'cambio pendiente a'} ${esc(correo.new_email)}</span>` : ''}</div><div class="muted small" style="margin-top:4px">${esc(u.email)}</div></div>
+      <div><h1>${esc(u.display_name || u.email)}</h1><div class="tags">${tag(u.user_type || 'user', 'dim')} ${u.is_admin ? `<a class="tag" href="/administradores" title="${esc(I18N.t('Se gestiona en «Administradores»'))}">${esc(I18N.t('administrador'))}</a>` : ''} ${u.is_premium ? `<span class="tag ok">premium${u.premium_until ? ` ${en ? 'until' : 'hasta'} ${fmtDay(u.premium_until)}` : ''}</span>` : ''} ${u.banned_at ? `<span class="tag bad">${en ? 'suspended' : 'suspendido'} ${fmtDay(u.banned_at)}</span>` : ''} ${!u.email_confirmed_at ? '<span class="tag warn">email sin confirmar</span>' : ''} ${correo?.suppressed_at ? `<span class="tag bad" title="${esc(correo.suppression_detail || '')}">${correo.suppressed_reason === 'complaint' ? (en ? 'marked us as spam' : 'nos marcó como spam') : (en ? 'email bounces' : 'correo devuelto')} ${fmtDay(correo.suppressed_at)}</span>` : ''} ${correo?.new_email ? `<span class="tag warn">${en ? 'pending change to' : 'cambio pendiente a'} ${esc(correo.new_email)}</span>` : ''}</div><div class="muted small" style="margin-top:4px">${esc(u.email)}</div></div>
       <span class="spacer"></span>
       <div class="actions">
         <button class="btn" data-a="notify">Enviar notificación…</button>
@@ -3108,7 +3146,7 @@ async function userDetail(v, id) {
         <dt>Alta</dt><dd>${fmtDate(u.created_at)}</dd>
         <dt>Último acceso</dt><dd>${fmtDate(u.last_sign_in_at)}</dd>
         ${inactiva?.last_activity_at ? `<dt>${en ? 'Last active' : 'Última actividad'}</dt><dd>${fmtDate(inactiva.last_activity_at)}</dd>` : ''}
-        ${inactiva?.notice ? `<dt>${en ? 'Inactivity' : 'Inactividad'}</dt><dd>${inactiva.notice.held_at ? `<span class="tag warn">${en ? 'held: owns a business' : 'retenida: es dueña de un negocio'}</span>` : `${en ? 'warned on' : 'avisada el'} ${fmtDay(inactiva.notice.warned_at)} · ${en ? 'deleted on' : 'se borra el'} ${fmtDay(inactiva.notice.delete_after)}`} · <a class="link" href="#/inactivas">${en ? 'see all' : 'ver todas'}</a></dd>` : ''}
+        ${inactiva?.notice ? `<dt>${en ? 'Inactivity' : 'Inactividad'}</dt><dd>${inactiva.notice.held_at ? `<span class="tag warn">${en ? 'held: owns a business' : 'retenida: es dueña de un negocio'}</span>` : `${en ? 'warned on' : 'avisada el'} ${fmtDay(inactiva.notice.warned_at)} · ${en ? 'deleted on' : 'se borra el'} ${fmtDay(inactiva.notice.delete_after)}`} · <a class="link" href="/inactivas">${en ? 'see all' : 'ver todas'}</a></dd>` : ''}
         <dt>Email confirmado</dt><dd>${u.email_confirmed_at ? fmtDate(u.email_confirmed_at) : 'no'}</dd>
         <dt>Acceso con</dt><dd>${esc((u.providers || []).join(', ') || 'email')}</dd>
         <dt>Idioma</dt><dd>${esc(u.locale || 'sistema')}</dd>
@@ -3124,7 +3162,7 @@ async function userDetail(v, id) {
       </dl><p class="muted small" style="margin:10px 0 0">Para atender un derecho de acceso, usa «Exportar» en cada listado o pide el volcado en Supabase; para supresión, «Eliminar cuenta».</p></div>
     </div>
     <div class="grid2">
-      <div class="card"><h2>${I18N.lang === 'en' ? 'Businesses' : 'Negocios'} (${d.memberships.length})</h2>${d.memberships.length ? table({ cols: [{ h: 'Negocio', r: (m) => `<a class="link" href="#/negocios/${m.business_id}">${esc(m.name)}</a><span class="sub">${esc(m.city || '')}</span>` }, { h: 'Rol', r: (m) => tag(m.role, 'dim') }, { h: 'Estado', r: (m) => tag(m.verification_status) }], rows: d.memberships }) : '<p class="muted">No pertenece a ningún negocio.</p>'}</div>
+      <div class="card"><h2>${I18N.lang === 'en' ? 'Businesses' : 'Negocios'} (${d.memberships.length})</h2>${d.memberships.length ? table({ cols: [{ h: 'Negocio', r: (m) => `<a class="link" href="/negocios/${m.business_id}">${esc(m.name)}</a><span class="sub">${esc(m.city || '')}</span>` }, { h: 'Rol', r: (m) => tag(m.role, 'dim') }, { h: 'Estado', r: (m) => tag(m.verification_status) }], rows: d.memberships }) : '<p class="muted">No pertenece a ningún negocio.</p>'}</div>
       <div class="card"><h2>${I18N.lang === 'en' ? `Last ${d.redemptions.length} redemptions` : `Canjes (${d.redemptions.length} últimos)`}</h2>${table({ cols: [{ h: 'Publicación', r: (r) => `${esc(r.title)}<span class="sub">${esc(r.business)}</span>` }, { h: 'Estado', r: (r) => tag(r.status) }, { h: 'Fecha', r: (r) => `<span class="nowrap">${fmtDate(r.validated_at || r.created_at)}</span>` }], rows: d.redemptions, empty: 'Ninguno.' })}</div>
     </div>
     <div class="grid2">
@@ -3194,7 +3232,7 @@ async function userDetail(v, id) {
       if (a === 'delete') {
         const r = await modal({ title: 'Eliminar la cuenta definitivamente', warn: en ? `Everything is deleted: profile, redemptions, reviews and favourites. If they own a business, hand it over or delete it first (from its page). This can't be undone. Only do it at the user's request (right to erasure) or for a serious breach.` : 'Se borra todo: perfil, canjes, reseñas y favoritos. Si es propietaria de un negocio, primero hay que traspasarlo o eliminarlo (desde su ficha). No se puede deshacer. Hazlo solo a petición del usuario (derecho de supresión) o por incumplimiento grave.', fields: [{ name: 'reason', label: 'Motivo (queda en el registro)', type: 'textarea', required: true }], submit: 'Eliminar para siempre', danger: true, confirmWord: en ? 'DELETE' : 'ELIMINAR' });
         if (!r || !await confirmaIdentidad()) return;
-        await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta eliminada'); go('#/usuarios'); return;
+        await rpc('admin_delete_user', { p_id: u.id, p_reason: r.reason }); toast('Cuenta eliminada'); go('/usuarios'); return;
       }
       route();
     } catch (e) { toast(e.message, true); }
@@ -3261,7 +3299,7 @@ PAGES.resenas = async (v) => {
   // Los textos retenidos tienen una sola cola: «Filtro automático» (antes
   // también aquí, en «En revisión»; propuestas del admin, 12). Un enlace
   // viejo a `?tab=cola` lleva allí.
-  if (p.tab === 'cola') { location.replace('#/medios'); return; }
+  if (p.tab === 'cola') { go('/medios', true); return; }
   let tab = ['reviews', 'posts'].includes(p.tab) ? p.tab : 'reviews';
   const sR = st.resenas, sP = st.posts;
   if (p.rating) sR.rating = p.rating;
@@ -3270,7 +3308,7 @@ PAGES.resenas = async (v) => {
   v.innerHTML = `
     <div class="page-head"><h1>Reseñas y novedades</h1></div>
     ${helpBox('¿Qué hago aquí?', I18N.lang === 'en' ? `<p><b>Reviews</b> are written by users about businesses; <b>news posts</b> are published by businesses on their page. Only delete them if they break the rules (insults, personal data, spam, content that isn't about the venue). The author gets the reason.</p>` : '<p>Las <b>reseñas</b> las escriben usuarios sobre negocios; las <b>novedades</b> las publican los negocios en su perfil. Bórralos solo si incumplen las normas (insultos, datos personales, spam, contenido que no es del local). El autor recibe el motivo.</p>')}
-    ${TEXTOS_N ? `<p class="muted small" style="margin:0 0 12px">${I18N.lang === 'en' ? `${fmtNum(TEXTOS_N)} ${TEXTOS_N === 1 ? 'text is' : 'texts are'} waiting for a decision in <a class="link" href="#/medios">Automatic filter</a>.` : `${fmtNum(TEXTOS_N)} ${TEXTOS_N === 1 ? 'texto espera' : 'textos esperan'} una decisión en <a class="link" href="#/medios">Filtro automático</a>.`}</p>` : ''}
+    ${TEXTOS_N ? `<p class="muted small" style="margin:0 0 12px">${I18N.lang === 'en' ? `${fmtNum(TEXTOS_N)} ${TEXTOS_N === 1 ? 'text is' : 'texts are'} waiting for a decision in <a class="link" href="/medios">Automatic filter</a>.` : `${fmtNum(TEXTOS_N)} ${TEXTOS_N === 1 ? 'texto espera' : 'textos esperan'} una decisión en <a class="link" href="/medios">Filtro automático</a>.`}</p>` : ''}
     <div class="tabs"><button type="button" data-t="reviews" aria-pressed="${tab === 'reviews'}" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button type="button" data-t="posts" aria-pressed="${tab === 'posts'}" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…" value="${esc((tab === 'posts' ? sP.q : sR.q) || '')}"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}" ${String(sR.rating || '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
@@ -3279,13 +3317,13 @@ PAGES.resenas = async (v) => {
     if (tab === 'reviews') {
       const r = await rpc('admin_reviews', { p_query: sR.q || null, p_max_rating: sR.rating ? +sR.rating : null, p_limit: sR.limit, p_offset: sR.offset });
       const pg = pager(sR, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> ${I18N.lang === 'en' ? 'at' : 'en'} <a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.moderation_status === 'pending' ? '<span class="tag warn">en revisión</span>' : ''} ${flagTags(x)} ${x.reply_pending ? '<span class="tag warn">respuesta en revisión</span>' : ''} ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || (I18N.lang === 'en' ? 'anonymous' : 'anónimo'))} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p>${mediosResena(x.media)}<div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item"><div class="ph">${ms('chat_bubble')}</div><div><h3><span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span> ${I18N.lang === 'en' ? 'at' : 'en'} <a class="link" href="/negocios/${x.business_id}">${esc(x.business)}</a> ${x.moderation_status === 'pending' ? '<span class="tag warn">en revisión</span>' : ''} ${flagTags(x)} ${x.reply_pending ? '<span class="tag warn">respuesta en revisión</span>' : ''} ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${esc(x.user_email || (I18N.lang === 'en' ? 'anonymous' : 'anónimo'))} · ${fmtDate(x.created_at)}</div><p>${esc(x.comment || '(sin texto)')}</p>${mediosResena(x.media)}<div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin reseñas.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, () => deleteReview(b.dataset.del)); });
     } else {
       const r = await rpc('admin_posts', { p_query: sP.q || null, p_limit: sP.limit, p_offset: sP.offset });
       const pg = pager(sP, r.total, load);
-      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><h3><a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${x.moderation_status === 'pending' ? '<span class="tag warn">en revisión</span>' : ''} ${flagTags(x)} ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin novedades.</div></div>') + pg.html;
+      $('#list').innerHTML = (r.rows.length ? r.rows.map((x) => `<div class="item">${x.image_url ? `<img src="${esc(x.image_url)}" alt="">` : `<div class="ph">${ms('article')}</div>`}<div><h3><a class="link" href="/negocios/${x.business_id}">${esc(x.business)}</a> ${x.moderation_status === 'pending' ? '<span class="tag warn">en revisión</span>' : ''} ${flagTags(x)} ${x.open_reports ? `<span class="tag bad">${ms('flag')} ${x.open_reports}</span>` : ''}</h3><div class="meta">${fmtDate(x.created_at)}</div><p>${esc(x.body || '')}</p><div class="actions"><button class="btn sm bad" data-del="${x.id}">Borrar…</button></div></div></div>`).join('') : '<div class="tbl-wrap"><div class="empty">Sin novedades.</div></div>') + pg.html;
       pg.bind($('#list'));
       $$('#list [data-del]').forEach((b) => { b.onclick = () => esperando(b, () => deletePost(b.dataset.del)); });
     }
@@ -3299,7 +3337,7 @@ PAGES.resenas = async (v) => {
 // ── Denuncias ───────────────────────────────────────────────────────────────
 // Una tarjeta por contenido denunciado (publicación, negocio, reseña o
 // novedad), con cuántas denuncias tiene, de cuántas personas (con y sin
-// cuenta), los motivos y cómo está el contenido. Dentro (#/denuncias/<tipo>/<id>),
+// cuenta), los motivos y cómo está el contenido. Dentro (/denuncias/<tipo>/<id>),
 // cada denuncia con su explicación y quién la puso. Las decisiones se toman
 // para todas las abiertas de ese contenido a la vez
 // (`admin_resolve_report_group`); a quien denunció le llega la decisión
@@ -3337,7 +3375,7 @@ const urlDenunciado = (tipo, id, t) => {
   return `/b/${b}#${tipo === 'review' ? 'resena' : 'novedad'}-${id}`;
 };
 /** Su ficha dentro del admin. */
-const adminDenunciado = (tipo, id, t) => (tipo === 'group_request' ? '' : tipo === 'profile' ? `#/usuarios/${id}` : tipo === 'offer' ? `#/publicaciones/${id}` : tipo === 'business' ? `#/negocios/${id}` : t?.business_id ? `#/negocios/${t.business_id}` : '');
+const adminDenunciado = (tipo, id, t) => (tipo === 'group_request' ? '' : tipo === 'profile' ? `/usuarios/${id}` : tipo === 'offer' ? `/publicaciones/${id}` : tipo === 'business' ? `/negocios/${id}` : t?.business_id ? `/negocios/${t.business_id}` : '');
 /** El título que se enseña: el de la publicación, el nombre del negocio o el texto de la reseña o la novedad. */
 const tituloDen = (tipo, t) => {
   const en = I18N.lang === 'en';
@@ -3356,7 +3394,7 @@ const miniDen = (tipo, t) => (tipo === 'review_media' && !t?.image && t?.media_u
 const deQuienDen = (tipo, t) => {
   const en = I18N.lang === 'en';
   if (tipo === 'business' || !t?.business) return '';
-  const nombre = tipo !== 'group_request' && t.business_id ? `<a class="link" href="#/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business);
+  const nombre = tipo !== 'group_request' && t.business_id ? `<a class="link" href="/negocios/${esc(t.business_id)}">${esc(t.business)}</a>` : esc(t.business);
   return `${tipo === 'group_request' ? (en ? 'to' : 'para') : (en ? 'by' : 'de')} ${nombre}`;
 };
 
@@ -3464,7 +3502,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
     $('#list').innerHTML = (filas.length ? filas.map((g) => {
       const t = g.target || {};
       const url = urlDenunciado(g.target_type, g.target_id, t);
-      const det = `#/denuncias/${g.target_type}/${g.target_id}`;
+      const det = `/denuncias/${g.target_type}/${g.target_id}`;
       return `
       <div class="item den-grupo${g.open_count >= 3 ? ' den-caliente' : ''}" data-tipo="${esc(g.target_type)}" data-id="${esc(g.target_id)}" data-abiertas="${g.open_count}">${miniDen(g.target_type, t)}<div style="min-width:0">
         <h3><a class="link" href="${det}">${esc(tituloDen(g.target_type, g.target))}</a></h3>
@@ -3513,7 +3551,7 @@ async function denunciasDe(v, tipo, id) {
   };
   const quien = (r) => {
     const p = r.reporter || {};
-    if (p.kind === 'account') return `${en ? 'Account' : 'Cuenta'}: <a class="link" href="#/usuarios/${esc(p.id)}">${esc(p.email || p.name || (en ? 'user' : 'usuario'))}</a>${p.name && p.email ? ` <span class="muted">(${esc(p.name)})</span>` : ''}`;
+    if (p.kind === 'account') return `${en ? 'Account' : 'Cuenta'}: <a class="link" href="/usuarios/${esc(p.id)}">${esc(p.email || p.name || (en ? 'user' : 'usuario'))}</a>${p.name && p.email ? ` <span class="muted">(${esc(p.name)})</span>` : ''}`;
     if (p.kind === 'public') {
       const datos = [p.name ? esc(p.name) : '', p.email ? `<a class="link" href="mailto:${esc(p.email)}">${esc(p.email)}</a>` : ''].filter(Boolean).join(' · ');
       const correos = [p.ack_sent_at ? `${en ? 'receipt sent' : 'acuse enviado'} ${fmtDate(p.ack_sent_at)}` : '', p.decision_sent_at ? `${en ? 'decision sent' : 'decisión enviada'} ${fmtDate(p.decision_sent_at)}` : ''].filter(Boolean).join(' · ');
@@ -3522,7 +3560,7 @@ async function denunciasDe(v, tipo, id) {
     return `<span class="muted">${en ? 'deleted account' : 'cuenta borrada'}</span>`;
   };
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/denuncias">← ${en ? 'Reports' : 'Denuncias'}</a></div>
+    <div class="page-head"><a class="btn sm ghost" href="/denuncias">← ${en ? 'Reports' : 'Denuncias'}</a></div>
     ${abiertas.length ? avisoSiguiente('denuncias') : ''}
     <div class="card den-ficha">
       <div class="item" style="border:0;padding:0">${miniDen(tipo, d.target)}<div style="min-width:0">
@@ -3627,7 +3665,7 @@ async function fusionar(actual, otra, { ir = true } = {}) {
     throw e;
   }
   toast(en ? 'Merged' : 'Fusionadas');
-  if (ir) go(`#/negocios/${keep}`);
+  if (ir) go(`/negocios/${keep}`);
   else refreshBadges();
   return true;
 }
@@ -3639,10 +3677,10 @@ function tarjetaDuplicados(b, lista) {
   return `<div class="card warnbox" id="duplicados"><h2>${ms('content_copy')} ${en ? 'Possible duplicates' : 'Posibles duplicados'}</h2>
     <p class="muted" style="margin:0 0 8px">${esc(en ? 'Pages that look like this one. Open both and decide: if they are the same, merge them; if not, mark them so we stop flagging them.' : 'Fichas que se parecen a esta. Abre las dos y decide: si son la misma, fusiónalas; si no, márcalo y dejaremos de avisar.')}</p>
     ${lista.map((c) => `<div class="item" style="grid-template-columns:1fr"><div>
-      <h3><a class="link" href="#/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} <span class="muted small">${esc(c.city || '')}</span></h3>
+      <h3><a class="link" href="/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} <span class="muted small">${esc(c.city || '')}</span></h3>
       <div class="meta">${esc(motivoDuplicado(c, en))}${c.owner_email ? ` · ${esc(c.owner_email)}` : ''} · ${en ? 'joined' : 'alta'} ${fmtDay(c.created_at)}</div>
       <div class="meta">${esc(cuentaFicha(c.counts, en))}</div>
-      <div class="actions"><a class="btn sm" href="#/negocios/${esc(c.id)}">${en ? 'Open' : 'Abrir'}</a>
+      <div class="actions"><a class="btn sm" href="/negocios/${esc(c.id)}">${en ? 'Open' : 'Abrir'}</a>
         <button class="btn sm" data-nodup="${esc(c.id)}">${en ? 'Not a duplicate' : 'No es duplicado'}</button>
         <button class="btn sm bad" data-fusion="${esc(c.id)}">${en ? 'Merge…' : 'Fusionar…'}</button></div>
     </div></div>`).join('')}
@@ -3670,10 +3708,10 @@ PAGES.duplicados = async (v) => {
   const pinta = () => {
   const lista = partes.filas;
   $('#list', v).innerHTML = (lista.length ? lista.map((x) => `<div class="item" data-parte-fila><div class="ph">${ms('content_copy')}</div><div>
-      <h3><a class="link" href="#/negocios/${esc(x.id)}">${esc(x.name)}</a> ${tag(x.verification_status)} <span class="muted small">${esc(x.city || '')} · ${en ? 'joined' : 'alta'} ${fmtDay(x.created_at)}</span></h3>
-      ${(x.candidates || []).map((c) => `<div class="meta">↔ <a class="link" href="#/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} · ${esc(motivoDuplicado(c, en))}${c.safe ? ` <span class="tag ok">${en ? 'Safe match: name, address and phone or website' : 'Coinciden con seguridad: nombre, dirección y teléfono o web'}</span>` : ''}
+      <h3><a class="link" href="/negocios/${esc(x.id)}">${esc(x.name)}</a> ${tag(x.verification_status)} <span class="muted small">${esc(x.city || '')} · ${en ? 'joined' : 'alta'} ${fmtDay(x.created_at)}</span></h3>
+      ${(x.candidates || []).map((c) => `<div class="meta">↔ <a class="link" href="/negocios/${esc(c.id)}">${esc(c.name)}</a> ${tag(c.verification_status)} · ${esc(motivoDuplicado(c, en))}${c.safe ? ` <span class="tag ok">${en ? 'Safe match: name, address and phone or website' : 'Coinciden con seguridad: nombre, dirección y teléfono o web'}</span>` : ''}
         <button class="btn sm" data-nodup="${esc(x.id)}" data-otra="${esc(c.id)}">${en ? 'Not a duplicate' : 'No es duplicado'}</button></div>`).join('')}
-      <div class="actions"><a class="btn sm" href="#/negocios/${esc(x.id)}?ver=duplicados">${en ? 'Open and decide' : 'Abrir y decidir'}</a></div>
+      <div class="actions"><a class="btn sm" href="/negocios/${esc(x.id)}?ver=duplicados">${en ? 'Open and decide' : 'Abrir y decidir'}</a></div>
     </div></div>`).join('') : `<div class="tbl-wrap"><div class="empty">${en ? 'No possible duplicates right now.' : 'Ahora no hay posibles duplicados.'}</div></div>`) + (partes.hayMas ? botonVerMas('duplicados') : '');
   $$('[data-nodup]', v).forEach((b) => { b.onclick = () => esperando(b, async () => { if (await noEsDuplicado(b.dataset.nodup, b.dataset.otra)) { refreshBadges(); route(); } }); });
   enlazaVerMas($('#list', v), partes, pinta);
@@ -3713,15 +3751,15 @@ PAGES.reclamaciones = async (v) => {
       const [cls, txt] = ESTADO[x.status] || ['dim', x.status];
       const coincide = (a, b2) => a && b2 && String(a).replace(/\D/g, '').slice(-9) === String(b2).replace(/\D/g, '').slice(-9);
       return `<div class="item"><div class="ph">${ms('how_to_reg')}</div><div>
-        <h3><a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business_name || '—')}</a> <span class="tag ${cls}">${esc(txt)}</span> <span class="muted small">${esc(x.business_city || '')}</span></h3>
-        <div class="meta">${en ? 'Claimed by' : 'Reclama'} <a class="link" href="#/usuarios/${esc(x.user_id)}">${esc(x.user_name || x.user_email || '—')}</a>${x.user_name ? ` (${esc(x.user_email || '')})` : ''} · ${en ? 'account since' : 'cuenta desde'} ${fmtDay(x.user_since)} · ${fmtDate(x.created_at)}${x.user_claims > 1 ? ` · ${fmtNum(x.user_claims)} ${en ? 'claims in total' : 'reclamaciones en total'}` : ''}${x.other_pending ? ` · <b>${fmtNum(x.other_pending)} ${en ? 'other open claims for this business' : 'reclamaciones más abiertas de este negocio'}</b>` : ''}</div>
+        <h3><a class="link" href="/negocios/${esc(x.business_id)}">${esc(x.business_name || '—')}</a> <span class="tag ${cls}">${esc(txt)}</span> <span class="muted small">${esc(x.business_city || '')}</span></h3>
+        <div class="meta">${en ? 'Claimed by' : 'Reclama'} <a class="link" href="/usuarios/${esc(x.user_id)}">${esc(x.user_name || x.user_email || '—')}</a>${x.user_name ? ` (${esc(x.user_email || '')})` : ''} · ${en ? 'account since' : 'cuenta desde'} ${fmtDay(x.user_since)} · ${fmtDate(x.created_at)}${x.user_claims > 1 ? ` · ${fmtNum(x.user_claims)} ${en ? 'claims in total' : 'reclamaciones en total'}` : ''}${x.other_pending ? ` · <b>${fmtNum(x.other_pending)} ${en ? 'other open claims for this business' : 'reclamaciones más abiertas de este negocio'}</b>` : ''}</div>
         <dl class="kv">
           <dt>${en ? 'Role' : 'Cargo'}</dt><dd>${esc(x.role_title)}</dd>
           <dt>${en ? 'Phone given' : 'Teléfono que da'}</dt><dd>${x.contact_phone ? `<a class="link" href="tel:${esc(x.contact_phone)}">${esc(x.contact_phone)}</a> ${coincide(x.contact_phone, x.business_phone) ? `<span class="tag ok">${en ? 'matches the page' : 'coincide con la ficha'}</span>` : ''}` : '—'}</dd>
           <dt>${en ? 'Email given' : 'Correo que da'}</dt><dd>${x.contact_email ? `<a class="link" href="mailto:${esc(x.contact_email)}">${esc(x.contact_email)}</a> ${x.business_email && x.contact_email.toLowerCase() === String(x.business_email).toLowerCase() ? `<span class="tag ok">${en ? 'matches the page' : 'coincide con la ficha'}</span>` : ''}` : '—'}</dd>
           <dt>${en ? 'On the page' : 'En la ficha'}</dt><dd>${esc([x.business_phone, x.business_email, x.business_website, x.business_address].filter(Boolean).join(' · ') || '—')}</dd>
           <dt>${en ? 'Evidence' : 'Prueba'}</dt><dd>${x.proof_text ? `<span style="white-space:pre-wrap">${esc(x.proof_text)}</span>` : ''}${x.proof_path ? ` <button class="btn sm" data-prueba="${i}">${ms('attach_file')} ${en ? 'View the file' : 'Ver el archivo'}</button>` : ''}${x.proof_deleted_at ? ` <span class="muted small">${en ? 'file deleted' : 'archivo borrado'} ${fmtDay(x.proof_deleted_at)}</span>` : ''}${!x.proof_text && !x.proof_path && !x.proof_deleted_at ? '—' : ''}</dd>
-          <dt>${en ? 'Current owner' : 'Propietario ahora'}</dt><dd>${x.owner_id ? `<a class="link" href="#/usuarios/${esc(x.owner_id)}">${esc(x.owner_email || x.owner_name || '—')}</a>${x.owner_last_activity ? ` · ${en ? 'last active' : 'última actividad'} ${fmtDay(x.owner_last_activity)}` : ''}` : '—'}</dd>
+          <dt>${en ? 'Current owner' : 'Propietario ahora'}</dt><dd>${x.owner_id ? `<a class="link" href="/usuarios/${esc(x.owner_id)}">${esc(x.owner_email || x.owner_name || '—')}</a>${x.owner_last_activity ? ` · ${en ? 'last active' : 'última actividad'} ${fmtDay(x.owner_last_activity)}` : ''}` : '—'}</dd>
           ${x.status !== 'pending' ? `<dt>${en ? 'Decision' : 'Decisión'}</dt><dd>${fmtDate(x.resolved_at)}${x.resolved_by_email ? ` · ${esc(x.resolved_by_email)}` : ''}${x.reason ? ` · ${esc(x.reason)}` : ''}${x.status === 'approved' ? ` · ${x.previous_owner_kept ? (en ? 'previous owner kept as manager' : 'quien era dueño sigue de encargado') : (en ? 'previous owner removed from the team' : 'quien era dueño sale del equipo')}` : ''}</dd>` : ''}
         </dl>
         ${x.proved_at ? `<div class="meta"><span class="tag ok">${en ? 'Code checked' : 'Código comprobado'}</span> ${fmtDay(x.proved_at)}</div>` : ''}${x.status === 'pending' && x.hold_until && new Date(x.hold_until) > new Date() ? `<div class="meta"><span class="tag dim">${en ? 'Waiting for the code' : 'Esperando el código'}</span></div>` : ''}${typeof lineaDocumento === 'function' ? lineaDocumento(x.doc_check) + motivosAuto(x.auto_failed) : ''}
@@ -3811,12 +3849,12 @@ PAGES.entidades = async (v) => {
       const [cls, txt] = ESTADO[x.status] || ['dim', x.status];
       return `<div class="item"><div class="ph">${ms('account_balance')}</div><div>
         <h3>${esc(x.official_name)} <span class="tag ${cls}">${esc(txt)}</span> <span class="tag">${esc(nombreEntidad(x.kind))}</span> <span class="muted small">${esc(x.origin === 'signup' ? (en ? 'sign-up as an organisation' : 'alta como entidad') : (en ? 'asked from the page' : 'pedida desde la ficha'))}</span></h3>
-        <div class="meta"><a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business_name || '—')}</a> ${tag(x.business_status)} · ${esc(x.business_city || '')} · ${fmtDate(x.created_at)}${x.business_applications > 1 ? ` · ${fmtNum(x.business_applications)} ${en ? 'requests from this page' : 'solicitudes de esta ficha'}` : ''}</div>
+        <div class="meta"><a class="link" href="/negocios/${esc(x.business_id)}">${esc(x.business_name || '—')}</a> ${tag(x.business_status)} · ${esc(x.business_city || '')} · ${fmtDate(x.created_at)}${x.business_applications > 1 ? ` · ${fmtNum(x.business_applications)} ${en ? 'requests from this page' : 'solicitudes de esta ficha'}` : ''}</div>
         <dl class="kv">
           <dt>CIF</dt><dd translate="no">${esc(x.tax_id)}</dd>
           <dt>${en ? 'Official website' : 'Web oficial'}</dt><dd>${enlaceExterno(x.website)}</dd>
           <dt>${en ? 'Area' : 'Zona'}</dt><dd>${esc(x.area || '—')}</dd>
-          <dt>${en ? 'Registered by' : 'Quién la da de alta'}</dt><dd>${esc(x.contact_name)} · ${esc(x.contact_role)} · <a class="link" href="#/usuarios/${esc(x.user_id)}">${esc(x.user_email || '—')}</a> · ${en ? 'account since' : 'cuenta desde'} ${fmtDay(x.user_since)}</dd>
+          <dt>${en ? 'Registered by' : 'Quién la da de alta'}</dt><dd>${esc(x.contact_name)} · ${esc(x.contact_role)} · <a class="link" href="/usuarios/${esc(x.user_id)}">${esc(x.user_email || '—')}</a> · ${en ? 'account since' : 'cuenta desde'} ${fmtDay(x.user_since)}</dd>
           <dt>${en ? 'Declaration' : 'Declaración'}</dt><dd>${x.declared_at ? `${en ? '“I declare that this information is true and that I can represent this organisation” ✓' : '«Declaro que los datos son ciertos y que puedo representar a esta entidad» ✓'} <span class="muted small">${fmtDate(x.declared_at)}</span>` : `<span class="muted small">${en ? 'not recorded (request from before 14-10-2026)' : 'sin guardar (solicitud de antes del 14-10-2026)'}</span>`}</dd>
           <dt>${en ? 'Document' : 'Documento'}</dt><dd>${x.proof_path ? `<button class="btn sm" data-doc="${i}">${ms('attach_file')} ${en ? 'View the document' : 'Ver el documento'}</button>` : ''}${x.proof_deleted_at ? `<span class="muted small">${en ? 'deleted' : 'borrado'} ${fmtDay(x.proof_deleted_at)}</span>` : ''}${!x.proof_path && !x.proof_deleted_at ? '—' : ''}</dd>
           ${x.status !== 'pending' ? `<dt>${en ? 'Decision' : 'Decisión'}</dt><dd>${fmtDate(x.resolved_at)}${x.resolved_by_email ? ` · ${esc(x.resolved_by_email)}` : ''}${x.reason ? ` · ${esc(x.reason)}` : ''}</dd>` : ''}
@@ -3907,12 +3945,12 @@ PAGES.inactivas = async (v) => {
     </div></div>
     <div class="card"><h2>${en ? 'Accounts' : 'Cuentas'}</h2><div id="inactivasLista"></div></div>`;
   const tabla = () => table({ cols: [
-      { h: en ? 'Account' : 'Cuenta', r: (x) => `<a class="link" href="#/usuarios/${esc(x.user_id)}">${esc(x.email || x.user_id)}</a>${x.display_name ? `<span class="sub">${esc(x.display_name)}</span>` : ''}` },
+      { h: en ? 'Account' : 'Cuenta', r: (x) => `<a class="link" href="/usuarios/${esc(x.user_id)}">${esc(x.email || x.user_id)}</a>${x.display_name ? `<span class="sub">${esc(x.display_name)}</span>` : ''}` },
       { h: en ? 'Last active' : 'Última actividad', r: (x) => `<span class="nowrap">${fmtDay(x.last_activity_at)}</span>` },
       { h: en ? 'Warned' : 'Aviso', r: (x) => `<span class="nowrap">${fmtDay(x.warned_at)}</span>${x.warn_emailed ? '' : `<span class="sub">${en ? 'no email sent' : 'sin correo'}</span>`}` },
       { h: en ? 'Reminder' : 'Recordatorio', r: (x) => (x.reminded_at ? `<span class="nowrap">${fmtDay(x.reminded_at)}</span>` : '—') },
       { h: en ? 'Deleted on' : 'Se borra', r: (x) => (x.held ? `<span class="tag warn">${en ? 'held' : 'retenida'}</span>` : `<span class="nowrap">${fmtDay(x.delete_after)}</span>`) },
-      { h: en ? 'Businesses' : 'Negocios', r: (x) => (x.businesses || []).map((b) => `<a class="link" href="#/negocios/${esc(b.id)}">${esc(b.name)}</a>`).join(', ') || '—' },
+      { h: en ? 'Businesses' : 'Negocios', r: (x) => (x.businesses || []).map((b) => `<a class="link" href="/negocios/${esc(b.id)}">${esc(b.name)}</a>`).join(', ') || '—' },
     ], rows: partes.filas, empty: en ? 'No account has been warned.' : 'Ninguna cuenta avisada.' }) + (partes.hayMas ? botonVerMas('inactivas') : '');
   const pinta = () => {
     const caja = $('#inactivasLista', v);
@@ -3973,7 +4011,7 @@ PAGES.mensajes = async (v) => {
       return `
       <div class="item"><div class="ph">${ms('campaign')}</div><div>
         <h3>${esc(x.title)} <span class="tag ${cls}">${esc(I18N.t(txt))}</span> ${flagTags(x)}</h3>
-        <div class="meta"><a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business_name)}</a>${x.city ? ` · ${esc(x.city)}` : ''} · ${fmtDate(x.created_at)}${x.author_email ? ` · ${esc(x.author_email)}` : ''}</div>
+        <div class="meta"><a class="link" href="/negocios/${esc(x.business_id)}">${esc(x.business_name)}</a>${x.city ? ` · ${esc(x.city)}` : ''} · ${fmtDate(x.created_at)}${x.author_email ? ` · ${esc(x.author_email)}` : ''}</div>
         <p>${esc(x.body)}</p>
         <div class="meta">${esc(en ? (x.include_customers ? 'Favourites and customers with stamps' : 'Favourites') : (x.include_customers ? 'Favoritos y clientes con sellos' : 'Favoritos'))}${x.status === 'sent' ? ` · ${esc(personas)}${x.sent_at ? ` · ${fmtDate(x.sent_at)}` : ''}` : ''}${x.offer_title ? ` · ${esc(en ? `Linking to “${x.offer_title}”` : `Con enlace a «${x.offer_title}»`)}` : ''}</div>
         ${x.status === 'rejected' && x.rejection_reason ? `<div class="meta">${esc(en ? `Reason: ${x.rejection_reason}` : `Motivo: ${x.rejection_reason}`)}</div>` : ''}
@@ -4051,7 +4089,7 @@ PAGES.sugerencias = async (v) => {
     $('#list').innerHTML = (rows.length ? rows.map((f) => `
       <div class="item"><div class="ph">${kindIcon[f.kind] || ms('chat_bubble')}</div><div>
         <h3>${tag(f.kind, 'dim')} ${f.replied_at ? '<span class="tag ok">respondida</span>' : ''} ${(f.offensive || []).length ? `<span class="tag warn" title="${esc(I18N.t('Detectado automáticamente en el texto'))}">${esc(I18N.t('lenguaje ofensivo'))}: ${esc(f.offensive.map((c) => I18N.t(CAT_OFENSIVA[c] || c)).join(', '))}</span>` : ''}</h3>
-        <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="#/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : (I18N.lang === 'en' ? 'no account' : 'sin cuenta')}${f.from_same_user > 1 ? ` · ${f.from_same_user} ${I18N.lang === 'en' ? 'messages from them' : 'mensajes suyos'}` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
+        <div class="meta">${fmtDate(f.created_at)} · ${f.user_id ? `<a class="link" href="/usuarios/${f.user_id}">${esc(f.user_email || f.user_name || 'usuario')}</a>` : (I18N.lang === 'en' ? 'no account' : 'sin cuenta')}${f.from_same_user > 1 ? ` · ${f.from_same_user} ${I18N.lang === 'en' ? 'messages from them' : 'mensajes suyos'}` : ''} · ${esc(f.app_version || '?')} · ${esc(f.platform || '?')}${f.locale ? ' · ' + esc(f.locale) : ''}</div>
         <p style="white-space:pre-wrap">${esc(f.message)}</p>
         ${(f.media || []).length ? `<div class="sug-capturas" data-capturas="${f.id}" aria-label="${esc(I18N.t('Capturas'))}"></div>` : ''}
         ${f.admin_note ? `<div class="meta"><b>Nota interna:</b> ${esc(f.admin_note)}</div>` : ''}
@@ -4133,7 +4171,7 @@ PAGES.planes = async (v) => {
       csvCols = [['business', 'negocio'], ['owner_email', 'email'], ['plan', 'plan'], ['status', 'estado'], ['period_start', 'inicio'], ['period_end', 'fin'], ['days_left', 'días restantes'], ['payment_method', 'pago'], [(x) => (x.paid_cents / 100).toFixed(2), 'cobrado (€)']];
       const pg = pager(s, r.total, load);
       $('#list').innerHTML = table({ cols: [
-        { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a><span class="sub">${esc(x.city || '')} · ${esc(x.owner_email || '')}</span>` },
+        { h: 'Negocio', r: (x) => `<a class="link" href="/negocios/${x.business_id}">${esc(x.business)}</a><span class="sub">${esc(x.city || '')} · ${esc(x.owner_email || '')}</span>` },
         { h: 'Plan', r: (x) => `${tag(x.plan, 'dim')} ${fmtMoney(x.price_cents)}/${I18N.lang === 'en' ? 'month' : 'mes'}` }, { h: 'Estado', r: (x) => tag(x.status) },
         { h: 'Periodo', r: (x) => `${fmtDay(x.period_start)} → ${x.period_end ? fmtDay(x.period_end) : '∞'}` },
         { h: 'Vence', r: (x) => x.days_left == null ? '—' : I18N.lang === 'en' ? (x.days_left < 0 ? `<span class="tag bad">${-x.days_left} d ago</span>` : x.days_left <= 7 ? `<span class="tag warn">in ${x.days_left} d</span>` : `in ${x.days_left} d`) : x.days_left < 0 ? `<span class="tag bad">hace ${-x.days_left} d</span>` : x.days_left <= 7 ? `<span class="tag warn">en ${x.days_left} d</span>` : `en ${x.days_left} d` },
@@ -4152,7 +4190,7 @@ PAGES.planes = async (v) => {
       $('#sum').innerHTML = `<div class="card"><div class="kpis"><div class="kpi accent"><b>${fmtMoney(r.sum_cents)}</b><span>${I18N.lang === 'en' ? `total for the period (${fmtNum(r.total)} ${r.total === 1 ? 'payment' : 'payments'})` : `total en el periodo (${fmtNum(r.total)} ${r.total === 1 ? 'pago' : 'pagos'})`}</span></div></div>${months.length ? `<p class="muted small" style="margin:10px 0 0">Por mes (12 meses)</p>${bars(months.map((m) => ({ ...m, cents: m.cents })), 'cents', (m) => `${m.month} · ${fmtMoney(m.cents)} (${m.n})`)}<div class="chart-legend">${months.map((m) => `<span>${m.month.slice(5)}: ${fmtMoney(m.cents)}</span>`).join('')}</div>` : ''}</div>`;
       const pg = pager(s, r.total, load);
       $('#list').innerHTML = table({ cols: [
-        { h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.paid_at)}</span>` }, { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.business_id}">${esc(x.business)}</a> ${tag(x.plan, 'dim')}` },
+        { h: 'Fecha', r: (x) => `<span class="nowrap">${fmtDate(x.paid_at)}</span>` }, { h: 'Negocio', r: (x) => `<a class="link" href="/negocios/${x.business_id}">${esc(x.business)}</a> ${tag(x.plan, 'dim')}` },
         { h: 'Importe', num: true, r: (x) => fmtMoney(x.amount_cents, x.currency) }, { h: 'Método', r: (x) => esc(x.method) }, { h: 'Periodo', r: (x) => `${fmtDay(x.period_start)} → ${fmtDay(x.period_end)}` },
         { h: 'Notas', r: (x) => `${esc(x.notes || '')}<span class="sub">${esc(x.recorded_by || '')}</span>` },
       ], rows, empty: 'Sin pagos registrados.' }) + pg.html;
@@ -4240,7 +4278,7 @@ PAGES.planes = async (v) => {
             : `El bloqueo empieza el ${fmtDay(`${bloqueoDesde}T12:00:00Z`)}: antes no se bloquea a nadie; los avisos salen ${cfg.warn_days ?? 7} días y 1 día antes.`)}</p>` : '')
             : cfg.block_enabled ? '' : `<p class="muted small" style="margin:0 0 8px">${esc(I18N.t('El bloqueo está apagado: nadie se bloquea por no pagar.'))}</p>`}
           ${table({ cols: [
-            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
+            { h: 'Negocio', r: (x) => `<a class="link" href="/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
             { h: 'Estado', r: (x) => `${x.hold === 'paused' ? tag(EN ? 'paused' : 'en pausa', 'dim') : tag(EN ? 'blocked' : 'bloqueado', 'bad')}${motivo(x.kind || (x.hold === 'paused' ? 'paused' : x.hold === 'unpaid' ? 'unpaid' : 'ended'))}` },
             { h: 'Desde', r: (x) => `<span class="nowrap">${fmtDay(x.since)}</span>` },
             { h: 'Hasta', r: (x) => (x.hold === 'paused' && x.until ? `<span class="nowrap">${fmtDay(x.until)}</span>` : '—') },
@@ -4249,18 +4287,18 @@ PAGES.planes = async (v) => {
         <div class="card"><h2>Se bloquean pronto</h2>
           <p class="muted small" style="margin:0 0 8px">${esc(I18N.t('Los que se bloquean en los próximos 14 días si no pagan.'))}</p>
           ${table({ cols: [
-            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
+            { h: 'Negocio', r: (x) => `<a class="link" href="/negocios/${x.id}">${esc(x.name)}</a><span class="sub">${esc(x.city || '')}</span>` },
             { h: 'Motivo', r: (x) => esc(I18N.t(MOTIVO[x.kind] || x.kind || '')) },
             { h: 'Se bloquea el', r: (x) => `<span class="nowrap">${fmtDay(`${x.on_date}T12:00:00Z`)}</span>` },
             { h: '', r: (x) => `<button class="btn sm" type="button" data-desbloquear="${x.id}" data-desde="${esc(x.on_date || '')}">Aplazar hasta…</button>` },
           ], rows: bd.upcoming || [], empty: 'Ninguno en los próximos 14 días.' })}
           ${(bd.unblocked || []).length ? `<h3 class="small" style="margin:14px 0 6px">${esc(I18N.t('Desbloqueados a mano'))}</h3>${table({ cols: [
-            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a>` },
+            { h: 'Negocio', r: (x) => `<a class="link" href="/negocios/${x.id}">${esc(x.name)}</a>` },
             { h: 'Hasta', r: (x) => `<span class="nowrap">${fmtDay(`${x.until}T12:00:00Z`)}</span>` },
           ], rows: bd.unblocked })}` : ''}</div>
         <div class="card"><h2>Pagos pendientes</h2>
           ${table({ cols: [
-            { h: 'Negocio', r: (x) => `<a class="link" href="#/negocios/${x.id}">${esc(x.name)}</a>` },
+            { h: 'Negocio', r: (x) => `<a class="link" href="/negocios/${x.id}">${esc(x.name)}</a>` },
             { h: 'Pago pendiente desde', r: (x) => fmtDate(x.since) }, { h: 'Pago', r: (x) => esc(x.method || '') },
           ], rows: bd.past_due || [], empty: 'Ningún pago pendiente.' })}</div>
         <div class="card"><h2>Ajustes</h2>
@@ -4585,7 +4623,7 @@ PAGES.ciudades = async (v, param) => {
     <div class="page-head"><h1>Ciudades</h1><span class="muted small">${I18N.lang === 'en' ? `last ${days} days` : `últimos ${days} días`}</span></div>
     <div class="card">${table({
       cols: [
-        { h: 'Ciudad', r: (c) => `<a class="link" href="#/ciudades/${encodeURIComponent(c.city)}"><b>${esc(c.city)}</b></a>` },
+        { h: 'Ciudad', r: (c) => `<a class="link" href="/ciudades/${encodeURIComponent(c.city)}"><b>${esc(c.city)}</b></a>` },
         { h: 'Negocios', num: true, r: (c) => `${fmtNum(c.negocios)} <span class="muted small">(${fmtNum(c.verificados)} ${I18N.lang === 'en' ? 'verified' : 'verif.'})</span>` },
         { h: 'Publicaciones', num: true, r: (c) => fmtNum(c.publicaciones) },
         { h: 'Activas ahora', num: true, r: (c) => fmtNum(c.activas) },
@@ -4606,7 +4644,7 @@ async function cityDetail(v, city, days) {
   const max = Math.max(1, ...weeks.map((w) => w.published));
   const dormidos = biz.filter((b) => b.published === 0).length;
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/ciudades">← Ciudades</a><h1>${esc(city)}</h1>
+    <div class="page-head"><a class="btn sm ghost" href="/ciudades">← Ciudades</a><h1>${esc(city)}</h1>
       <span class="muted small">${I18N.lang === 'en' ? `last ${days} days` : `últimos ${days} días`}</span></div>
     <div class="card"><h2>Publicaciones por semana</h2>
       <div class="spark">${weeks.map((w) => `<i title="${I18N.lang === 'en' ? 'Week of' : 'Semana del'} ${w.week}: ${w.published}" style="height:${Math.round((w.published / max) * 100)}%"></i>`).join('')}</div>
@@ -4616,7 +4654,7 @@ async function cityDetail(v, city, days) {
       ${dormidos ? `<p class="muted" style="margin:0 0 10px"><b>${dormidos}</b> ${I18N.lang === 'en' ? (dormidos === 1 ? "hasn't published anything in this period: that's the one to call." : "haven't published anything in this period: these are the ones to call.") : (dormidos === 1 ? 'no ha publicado nada en este periodo: es al que hay que llamar.' : 'no han publicado nada en este periodo: son los que hay que llamar.')}</p>` : ''}
       ${table({
         cols: [
-          { h: 'Negocio', r: (b) => `<a class="link" href="#/negocios/${esc(b.id)}"><b>${esc(b.name)}</b></a><span class="sub">${I18N.lang === 'en' ? 'joined' : 'alta'} ${fmtDate(b.created_at)}</span>` },
+          { h: 'Negocio', r: (b) => `<a class="link" href="/negocios/${esc(b.id)}"><b>${esc(b.name)}</b></a><span class="sub">${I18N.lang === 'en' ? 'joined' : 'alta'} ${fmtDate(b.created_at)}</span>` },
           { h: 'Estado', r: (b) => tag(b.status) },
           { h: 'Activas', num: true, r: (b) => fmtNum(b.active) },
           { h: 'Publicadas', num: true, r: (b) => (b.published ? fmtNum(b.published) : '<span class="muted">0</span>') },
@@ -4652,7 +4690,7 @@ PAGES.colecciones = async (v, param) => {
       { h: 'Estado', r: (c) => c.is_active ? tag('active') : tag('draft') },
       { h: 'Vigencia', r: (c) => (c.active_from || c.active_until) ? `<span class="small nowrap">${c.active_from ? fmtDay(c.active_from) : '—'} → ${c.active_until ? fmtDay(c.active_until) : '—'}</span>` : 'siempre' },
       { h: 'Orden', num: true, r: (c) => c.position },
-      { h: '', r: (c) => `<span class="actions"><a class="btn sm" href="#/colecciones/${c.id}">Elegir a dedo…</a><button class="btn sm" data-edit="${c.id}">Editar…</button><button class="btn sm bad ghost" data-del="${c.id}">Borrar</button></span>` },
+      { h: '', r: (c) => `<span class="actions"><a class="btn sm" href="/colecciones/${c.id}">Elegir a dedo…</a><button class="btn sm" data-edit="${c.id}">Editar…</button><button class="btn sm bad ghost" data-del="${c.id}">Borrar</button></span>` },
     ], rows: cols, empty: 'Todavía no hay colecciones.' })}`;
   const edit = async (c) => {
     const fechas = !!(c?.city || c?.active_from || c?.active_until);
@@ -4718,7 +4756,7 @@ PAGES.colecciones = async (v, param) => {
 
 /** Las publicaciones de una colección, elegidas a mano y en orden. */
 async function pintaADedo(v, c) {
-  if (!c) { go('#/colecciones'); return; }
+  if (!c) { go('/colecciones'); return; }
   let busqueda = '';
 
   const dibuja = async () => {
@@ -4742,7 +4780,7 @@ async function pintaADedo(v, c) {
     if (qAntes) busqueda = qAntes.value;
 
     v.innerHTML = `
-      <div class="page-head"><a class="btn sm ghost" href="#/colecciones">← Colecciones</a>
+      <div class="page-head"><a class="btn sm ghost" href="/colecciones">← Colecciones</a>
         <h1>${esc(c.title?.es || c.slug)}</h1></div>
       ${helpBox('¿Cómo va esto?', I18N.lang === 'en' ? `<p>Whatever you put here is shown <b>in this order</b> and instead of the collection's rule. If the list ends up empty, the rule takes over again.</p><p>An expired or taken-down publication stops showing by itself: you don't need to remove it.</p>` : '<p>Lo que pongas aquí se enseña <b>en este orden</b> y en lugar de la regla de la colección. Si la lista se queda vacía, vuelve a mandar la regla.</p><p>Una publicación caducada o retirada deja de verse sola: no hace falta que la quites.</p>')}
       <div class="card"><h2>En la colección</h2>${table({
@@ -5150,7 +5188,7 @@ PAGES.administradores = async (v) => {
       <p style="margin:0 0 10px">${f ? `<span class="tag ok">Activada</span> <span class="muted small">${I18N.lang === 'en' ? 'since' : 'desde'} ${esc(fmtDay(f.created_at))}</span>` : '<span class="tag warn">Sin activar</span>'}</p>
       <p class="muted small" style="margin:0 0 10px">${MFA?.required ? 'Obligatoria para administrar.' : 'Recomendada (todavía no es obligatoria).'}</p>
       <p style="margin:0">${f ? '<button class="btn sm" id="mfaCambiar" type="button">Cambiar de móvil o de app…</button><button class="btn sm bad ghost" id="mfaQuitar" type="button">Quitar…</button>' : '<button class="btn sm primary" id="mfaActivar" type="button">Activar ahora</button>'}</p></div>
-    ${table({ cols: [{ h: 'Administrador', r: (a) => `<span class="title">${esc(a.display_name || '—')}<span class="sub"><a class="link" href="#/usuarios/${a.user_id}">${esc(a.email)}</a></span></span>` }, { h: '2FA', r: (a) => a.mfa ? '<span class="tag ok">activada</span>' : '<span class="tag warn">sin activar</span>' }, { h: 'Desde', r: (a) => fmtDay(a.created_at) }, { h: 'Último acceso', r: (a) => ago(a.last_sign_in_at) }, { h: 'Acciones', num: true, r: (a) => fmtNum(a.actions) }, { h: '', r: (a) => a.user_id === ME.id ? '<span class="muted small">tú</span>' : `<button class="btn sm bad ghost" data-rm="${a.user_id}">Quitar</button>` }], rows: list })}`;
+    ${table({ cols: [{ h: 'Administrador', r: (a) => `<span class="title">${esc(a.display_name || '—')}<span class="sub"><a class="link" href="/usuarios/${a.user_id}">${esc(a.email)}</a></span></span>` }, { h: '2FA', r: (a) => a.mfa ? '<span class="tag ok">activada</span>' : '<span class="tag warn">sin activar</span>' }, { h: 'Desde', r: (a) => fmtDay(a.created_at) }, { h: 'Último acceso', r: (a) => ago(a.last_sign_in_at) }, { h: 'Acciones', num: true, r: (a) => fmtNum(a.actions) }, { h: '', r: (a) => a.user_id === ME.id ? '<span class="muted small">tú</span>' : `<button class="btn sm bad ghost" data-rm="${a.user_id}">Quitar</button>` }], rows: list })}`;
   if ($('#mfaActivar')) $('#mfaActivar').onclick = () => pantallaAlta({ cancelar: true });
   if ($('#mfaCambiar')) $('#mfaCambiar').onclick = () => cambiarFactor(false);
   if ($('#mfaQuitar')) $('#mfaQuitar').onclick = () => cambiarFactor(true);
@@ -5170,7 +5208,7 @@ PAGES.actividad = async (v) => {
     <div id="list"></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
-  const linkFor = (l) => l.target_type === 'giveaway' && l.details?.business_id ? `#/negocios/${l.details.business_id}` : l.target_type === 'business' ? `#/negocios/${l.target_id}` : l.target_type === 'offer' ? `#/publicaciones/${l.target_id}` : l.target_type === 'user' ? `#/usuarios/${l.target_id}` : null;
+  const linkFor = (l) => l.target_type === 'giveaway' && l.details?.business_id ? `/negocios/${l.details.business_id}` : l.target_type === 'business' ? `/negocios/${l.target_id}` : l.target_type === 'offer' ? `/publicaciones/${l.target_id}` : l.target_type === 'user' ? `/usuarios/${l.target_id}` : null;
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
     const r = await rpc('admin_audit', ultimos = { p_query: s.q || null, p_action: s.action || 'all', p_limit: s.limit, p_offset: s.offset });

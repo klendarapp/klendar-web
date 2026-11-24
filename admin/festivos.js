@@ -19,7 +19,7 @@
  * la web; sin texto, las Ciudades de Klendar como «Populares») y lo enseña
  * con su provincia y comunidad (`admin_holiday_place`: homónimos como
  * «Torrent · Valencia/València»), sus locales del año, «Añadir los dos…» y
- * «Añadir uno…». Va en la dirección (`#/festivos/2028?m=torrent-valencia`).
+ * «Añadir uno…». Va en la dirección (`/festivos/2028?m=torrent-valencia`).
  * «Otros municipios» lista los que no son Ciudad de Klendar y ya tienen
  * locales ese año (`admin_holidays.municipalities`).
  *
@@ -72,7 +72,7 @@ async function festImportar() {
 
 /** El municipio elegido en «Cualquier municipio» (`?m=` de la dirección). */
 const festMuniElegido = () => {
-  try { return new URLSearchParams(location.hash.split('?')[1] || '').get('m') || ''; } catch { return ''; }
+  try { return new URLSearchParams(location.search).get('m') || ''; } catch { return ''; }
 };
 /** «Torrent (Valencia/València)»: un municipio que no es Ciudad de Klendar va
  * siempre con su provincia (homónimos). */
@@ -192,14 +192,14 @@ PAGES.festivos = async (v, param) => {
   const panelLugar = !elegido ? '' : sel?.fallo
     ? `<div class="fest-lugar"><p class="err" style="margin:0" role="alert">${esc(en ? "It couldn't be loaded. Try again." : 'No se ha podido cargar. Prueba otra vez.')}</p>
         <p style="margin:8px 0 0"><button type="button" class="btn sm" data-fest-reintenta>${ms('refresh')}${en ? 'Try again' : 'Reintentar'}</button>
-        <a class="btn sm ghost" href="#/festivos/${anio}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></p></div>`
+        <a class="btn sm ghost" href="/festivos/${anio}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></p></div>`
     : !lugar
     ? `<div class="fest-lugar"><p class="err" style="margin:0">${esc(en ? 'That town isn’t in the official list.' : 'Ese municipio no está en la lista oficial.')}</p>
-        <p style="margin:8px 0 0"><a class="btn sm ghost" href="#/festivos/${anio}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></p></div>`
+        <p style="margin:8px 0 0"><a class="btn sm ghost" href="/festivos/${anio}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></p></div>`
     : `<div class="fest-lugar" id="festLugar">
         <div class="fest-lugar-cab"><div><h3>${esc(lugar.name)}</h3>
           <p class="muted small" style="margin:0">${esc([lugar.province, festCcaa(lugar.region)].filter(Boolean).join(' · '))}${lugar.code ? ` · ${en ? 'INE code' : 'código INE'} ${esc(lugar.code)}` : ''}${lugar.city_id ? ` · ${tag(en ? 'Klendar city' : 'Ciudad de Klendar', lugar.city_active ? 'ok' : 'dim')}` : ''}</p></div>
-          <span class="spacer"></span><a class="btn sm ghost" href="#/festivos/${anio}" aria-label="${en ? 'Close the town' : 'Cerrar el municipio'}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></div>
+          <span class="spacer"></span><a class="btn sm ghost" href="/festivos/${anio}" aria-label="${en ? 'Close the town' : 'Cerrar el municipio'}">${ms('close')}${en ? 'Close' : 'Cerrar'}</a></div>
         <p class="muted small">${esc(en
     ? `Its local holidays in ${anio}. Businesses here also get ${sel.national} national and ${sel.regional} regional ones (${festCcaa(lugar.region)}).`
     : `Sus locales de ${anio}. A sus negocios les tocan además ${sel.national} ${sel.national === 1 ? 'nacional' : 'nacionales'} y ${sel.regional} de su comunidad (${festCcaa(lugar.region)}).`)}
@@ -229,7 +229,7 @@ PAGES.festivos = async (v, param) => {
        <p>Almost automatic: every Monday from October to January the BOE resolution and the local holidays published as open data (Madrid, Catalonia, Andalusia, Aragon, Balearic Islands, Basque Country, Castile and León) are loaded as proposed: confirm them here. The rest of the cities, by hand with “Add both…” and the link to their bulletin. On 1 October dev@klendar.app gets “Time to prepare next year’s holidays”, and from November a weekly email while something is missing. By hand: <code>python tool/festivos_importar.py --anio ${vig.year || anio + 1}</code>.</p>`
     : `<p>Nacionales, autonómicos y locales. Siete días antes de cada uno, y otra vez dos días antes si no han contestado, se pregunta a los negocios con horario «¿Abres el …?», y su ficha lo dice. Cada negocio recibe los locales de su municipio (por su punto en el mapa): los de las ciudades de Klendar se vigilan cada año; los de cualquier otro municipio de España, búscalo en «Cualquier municipio» y añádelos ahí. Un negocio de un municipio sin locales cargados solo recibe los nacionales y los de su comunidad; sus fiestas locales las marca él en «Días cerrados».</p>
        <p>Casi solo: cada lunes de octubre a enero se cargan como propuestos la resolución del BOE y los locales que se publican como datos abiertos (Madrid, Cataluña, Andalucía, Aragón, Illes Balears, Euskadi y Castilla y León): confírmalos aquí. Los de las demás ciudades, a mano con «Añadir los dos…» y el enlace a su boletín. El 1 de octubre llega a dev@klendar.app «Toca preparar los festivos del año siguiente» y, desde noviembre, un correo cada semana mientras falte algo. A mano: <code>python tool/festivos_importar.py --anio ${vig.year || anio + 1}</code>.</p>`)}
-    <div class="toolbar">${anios.map((y) => `<a class="btn sm ${y === anio ? 'primary' : 'ghost'}" href="#/festivos/${y}${conM}">${y}</a>`).join(' ')}
+    <div class="toolbar">${anios.map((y) => `<a class="btn sm ${y === anio ? 'primary' : 'ghost'}" href="/festivos/${y}${conM}">${y}</a>`).join(' ')}
       <span class="muted small">${en ? `${lista.length} rows` : `${lista.length} filas`} · ${esc(ultima)}</span>
       ${propuestos.length ? `<span class="spacer"></span><button class="btn sm" type="button" id="confirmarTodos">${ms('done_all')}${esc(en ? `Confirm the ${propuestos.length} proposed` : `Confirmar los ${propuestos.length} propuestos`)}</button>` : ''}</div>
     <div class="card fest-muni"><h2>${ms('location_city')} ${esc(en ? 'Any town' : 'Cualquier municipio')}</h2>
@@ -237,7 +237,7 @@ PAGES.festivos = async (v, param) => {
       <div class="fest-busca"><input id="festMuniQ" type="search" autocomplete="off" placeholder="${en ? 'Find a town (e.g. Torrent, Alcañiz…)' : 'Busca un municipio (Torrent, Alcañiz…)'}" aria-label="${en ? 'Find a town' : 'Busca un municipio'}" aria-controls="festMuniRes">
         <div id="festMuniRes" class="fest-res" role="list"></div></div>
       <div class="fest-pop" id="festPop"><span class="muted small">${en ? 'Popular' : 'Populares'}</span>
-        ${populares.map((c) => `<a class="fest-chip${elegidoEs(c) ? ' on' : ''}" href="#/festivos/${anio}?m=${encodeURIComponent(c.id)}">${esc(c.name)}</a>`).join('')}</div>
+        ${populares.map((c) => `<a class="fest-chip${elegidoEs(c) ? ' on' : ''}" href="/festivos/${anio}?m=${encodeURIComponent(c.id)}">${esc(c.name)}</a>`).join('')}</div>
       ${panelLugar}
     </div>
     <div class="card"><h2>${esc(en ? `Local holidays ${anio}` : `Locales de ${anio}`)}</h2>${table({
@@ -254,7 +254,7 @@ PAGES.festivos = async (v, param) => {
     <div class="card" id="festOtros"><h2>${esc(en ? `Other towns ${anio}` : `Otros municipios en ${anio}`)}</h2>
       <p class="muted small" style="margin:0 0 10px">${esc(en ? 'Towns that are not a Klendar city and have local holidays this year. To add one, look it up in “Any town”.' : 'Los que no son ciudad de Klendar y tienen locales este año. Para añadir otro, búscalo en «Cualquier municipio».')}</p>${table({
     cols: [
-      { h: en ? 'Town' : 'Municipio', r: (m) => `<a class="title link" href="#/festivos/${anio}?m=${encodeURIComponent(m.slug)}">${esc(m.name)}</a><span class="sub">${esc([m.province, festCcaa(m.region)].filter(Boolean).join(' · '))}</span>` },
+      { h: en ? 'Town' : 'Municipio', r: (m) => `<a class="title link" href="/festivos/${anio}?m=${encodeURIComponent(m.slug)}">${esc(m.name)}</a><span class="sub">${esc([m.province, festCcaa(m.region)].filter(Boolean).join(' · '))}</span>` },
       { h: en ? 'Status' : 'Estado', r: estadoLocales },
       { h: en ? 'Days' : 'Días', r: diasCorto },
       { h: en ? 'Where it is published' : 'Dónde sale', r: (m) => enlaceBoletin(m.bulletin) },
@@ -335,7 +335,7 @@ PAGES.festivos = async (v, param) => {
       return;
     }
     res.innerHTML = l.length
-      ? l.map((m) => `<a class="fest-op" role="listitem" href="#/festivos/${anio}?m=${encodeURIComponent(m.slug)}"><span class="title">${esc(m.name)}</span><span class="sub">${esc(m.province || '')}${m.popular ? ` · ${en ? 'Klendar city' : 'Ciudad de Klendar'}` : ''}</span></a>`).join('')
+      ? l.map((m) => `<a class="fest-op" role="listitem" href="/festivos/${anio}?m=${encodeURIComponent(m.slug)}"><span class="title">${esc(m.name)}</span><span class="sub">${esc(m.province || '')}${m.popular ? ` · ${en ? 'Klendar city' : 'Ciudad de Klendar'}` : ''}</span></a>`).join('')
       : `<p class="muted small" style="margin:6px 2px">${esc(en ? 'No town with that name.' : 'Ningún municipio con ese nombre.')}</p>`;
   };
   q.addEventListener('input', () => {

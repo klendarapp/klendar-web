@@ -1,13 +1,22 @@
-// El admin en su propio subdominio, en la raíz: `https://admin.klendar.app/`
+// El admin en su propio subdominio, en la raíz: `https://admin.klendar.app`
 // (Iván, 23-11; RUNBOOK §4zzz-admindom). Otro origen: su sesión
 // (`localStorage`) ya no la comparte con las páginas públicas, «Tu cuenta» ni
 // el panel. Y sin `/admin` a la vista en ningún sitio.
 //
-// - En admin.klendar.app: `/` es el admin (por dentro, el fichero `admin.html`,
-//   `/admin`) y `/carta` la carta imprimible (`admin/carta.html`): se
-//   reescriben sin cambiar la dirección. Sus JS y su CSS (`/admin/<x>.js|css`)
-//   se sirven tal cual. `/admin…` da la 404 normal. Lo demás, a la misma
-//   dirección en klendar.app (301).
+// Direcciones limpias, sin `#` (Iván, 24-11; RUNBOOK §4zzz-adminlimpio): la
+// raíz es el Resumen y cada apartado va en su ruta (`/semanas`,
+// `/negocios/<id>`, `/denuncias/<tipo>/<id>`…), con `history.pushState` en
+// el navegador (admin/admin.js). Los enlaces viejos con `#/x` ya no saltan a
+// ningún apartado: el navegador no manda el `#` y la página lo quita.
+//
+// - En admin.klendar.app: `/` y las rutas de sus apartados (`SECCIONES_ADMIN`
+//   y lo que cuelga de ellas) son el admin (por dentro, el fichero
+//   `admin.html`, `/admin`); `/carta` es la carta imprimible
+//   (`admin/carta.html`). Se reescriben sin cambiar la dirección. `/resumen`
+//   (el Resumen es la raíz) y las direcciones con barra final van con un 301
+//   a la buena. Sus JS y su CSS (`/admin/<x>.js|css`) se sirven tal cual.
+//   `/admin…` da la 404 normal. Lo demás, a la misma dirección en
+//   klendar.app (301).
 // - En klendar.app (y www, y *.pages.dev): `/admin…` (también `/admin.html` y
 //   los JS del admin; menos `/admin/admin.css`, que usa el panel) da la 404 normal de la web, sin pistas de que exista ni
 //   de dónde está (Iván, 23-11: las direcciones viejas no redirigen). La
@@ -35,6 +44,21 @@ export const esRutaAdmin = (ruta) => /^\/admin(\/|$)/.test(ruta || '');
 /** Las páginas del admin en su host → el fichero que las sirve por dentro. */
 export const PAGINAS_ADMIN = { '/': '/admin', '/carta': '/admin/carta' };
 
+/** Los apartados del admin: los `PAGES.x` de admin/*.js menos el Resumen, que
+ * es la raíz (lo comprueba tools/admin_dominio_check.mjs). `/<apartado>` y lo
+ * que cuelga de él (`/negocios/<id>`) sirven el admin. */
+export const SECCIONES_ADMIN = [
+  'actividad', 'administradores', 'artistas', 'automatico', 'avisos', 'ayuda', 'canjes', 'categorias',
+  'cifras', 'ciudades', 'colecciones', 'condiciones', 'configuracion', 'crecer', 'denuncias', 'duplicados',
+  'emisiones', 'entidades', 'errores', 'festivos', 'guias', 'inactivas', 'medios', 'mensajes', 'negocios',
+  'pedidos', 'planes', 'publicaciones', 'reclamaciones', 'resenas', 'semanas', 'sorteos', 'sugerencias',
+  'traduccion', 'usuarios',
+];
+const SECCION = new RegExp(`^/(${SECCIONES_ADMIN.join('|')})(/.*)?$`);
+
+/** ¿Es `ruta` una pantalla del admin en su host? (`/`, `/semanas`, `/negocios/<id>`…). */
+export const esPantallaAdmin = (ruta) => ruta === '/' || SECCION.test(ruta || '');
+
 /** La hoja de estilos del admin la usa también el panel (`panel.html`): se
  * sirve en los dos hosts (y va fuera de las Functions, `_routes.json`). */
 export const CSS_COMUN = '/admin/admin.css';
@@ -60,7 +84,8 @@ export function origenPublico(url) {
 /**
  * Qué hacer con una petición según el host:
  * - `{ salto: <dirección> }`: un 301;
- * - `{ reescribe: <ruta> }`: servir ese fichero sin cambiar la dirección (el admin);
+ * - `{ reescribe: <ruta> }`: servir ese fichero sin cambiar la dirección (el admin
+ *   en `/` y en las rutas de sus apartados, la carta en `/carta`);
  * - `{ noExiste: true }`: la 404 normal de la web;
  * - `null`: seguir como siempre.
  * `buena` es la dirección sin barra al final (`direccionBuena`).
@@ -70,7 +95,9 @@ export function decideHost(url, buena = url.pathname) {
   if (esHostAdmin(url.hostname)) {
     if (FICHERO_ADMIN.test(ruta)) return null;
     if (esRutaAdmin(buena)) return { noExiste: true };
-    const fichero = PAGINAS_ADMIN[buena];
+    // El Resumen es la raíz: `/resumen` no es otra dirección para lo mismo.
+    if (buena === '/resumen') return { salto: `${url.origin}/${url.search}` };
+    const fichero = PAGINAS_ADMIN[buena] || (esPantallaAdmin(buena) ? PAGINAS_ADMIN['/'] : null);
     if (fichero) return buena === ruta ? { reescribe: fichero } : { salto: url.origin + buena + url.search };
     return { salto: origenPublico(url) + buena + url.search };
   }

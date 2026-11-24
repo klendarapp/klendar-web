@@ -115,7 +115,7 @@ const MOTIVOS_DESHACER = [
 function filaHecho(a) {
   const en = I18N.lang === 'en';
   const q = QUE_HECHO[a.kind] || [a.kind, a.kind, a.kind, a.kind];
-  const enlace = a.business_id ? `#/negocios/${esc(a.business_id)}` : (a.kind.startsWith('report') ? `#/denuncias/${esc(a.target_type)}/${esc(a.target_id)}` : '');
+  const enlace = a.business_id ? `/negocios/${esc(a.business_id)}` : (a.kind.startsWith('report') ? `/denuncias/${esc(a.target_type)}/${esc(a.target_id)}` : '');
   const nombre = a.kind.startsWith('report') ? '' : esc(a.label || '');
   const adversa = ['verify_business', 'verify_entity', 'claim_code', 'claim_document'].includes(a.kind);
   const accion = a.undone_at
@@ -143,7 +143,7 @@ function tarjetaHechoSolo(d) {
   return `<div class="card" id="hechoSolo"><h2>${ms('auto_awesome')} ${en ? 'What was done automatically' : 'Lo que se ha hecho solo'}</h2>
     ${cifras ? `<p class="muted small" style="margin:0 0 6px">${en ? 'Last 7 days' : 'Últimos 7 días'}</p><ul class="pend-lista" style="margin:0 0 10px">${cifras}</ul>` : `<p class="muted" style="margin:0 0 8px">${en ? 'Nothing in the last 7 days.' : 'Nada en los últimos 7 días.'}</p>`}
     ${filas.map(filaHecho).join('')}
-    <p style="margin:8px 0 0"><a class="link" href="#/automatico">${en ? 'See everything and the switches' : 'Ver todo y los interruptores'}</a></p></div>`;
+    <p style="margin:8px 0 0"><a class="link" href="/automatico">${en ? 'See everything and the switches' : 'Ver todo y los interruptores'}</a></p></div>`;
 }
 
 function activaDeshacer(v) {

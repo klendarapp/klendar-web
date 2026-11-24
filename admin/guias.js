@@ -178,7 +178,7 @@ PAGES.guias = async (v, param) => {
       { h: biG('Fechas', 'Dates'), r: (g) => `<span class="small nowrap">${esc(diaGuia(g.starts_on))} → ${esc(diaGuia(g.ends_on))}</span>` },
       { h: biG('Estado', 'Status'), r: estadoGuia },
       { h: biG('Publicaciones', 'Publications'), num: true, r: (g) => `${esc(String(g.count ?? 0))} / ${esc(String(g.items ?? 0))}${g.from_business ? `<span class="sub">${esc(biG(`${g.from_business} de negocios`, `${g.from_business} from businesses`))}</span>` : ''}` },
-      { h: '', r: (g) => `<span class="actions"><a class="btn sm" href="#/guias/${esc(g.id)}">${esc(biG('Publicaciones…', 'Publications…'))}</a><button class="btn sm" data-edit="${esc(g.id)}">${esc(biG('Editar…', 'Edit…'))}</button><a class="btn sm ghost" href="${esc(paginaGuia(g.slug))}" target="_blank" rel="noopener">${esc(biG('Ver la página', 'See the page'))}</a><button class="btn sm ghost${g.archived_at ? '' : ' bad'}" data-arch="${esc(g.id)}">${esc(g.archived_at ? biG('Recuperar', 'Restore') : biG('Archivar', 'Archive'))}</button></span>` },
+      { h: '', r: (g) => `<span class="actions"><a class="btn sm" href="/guias/${esc(g.id)}">${esc(biG('Publicaciones…', 'Publications…'))}</a><button class="btn sm" data-edit="${esc(g.id)}">${esc(biG('Editar…', 'Edit…'))}</button><a class="btn sm ghost" href="${esc(paginaGuia(g.slug))}" target="_blank" rel="noopener">${esc(biG('Ver la página', 'See the page'))}</a><button class="btn sm ghost${g.archived_at ? '' : ' bad'}" data-arch="${esc(g.id)}">${esc(g.archived_at ? biG('Recuperar', 'Restore') : biG('Archivar', 'Archive'))}</button></span>` },
     ], rows: guias || [], empty: biG('Todavía no hay guías.', 'No guides yet.') })}
     <p class="muted small">${esc(biG('Publicaciones: las que se ven ahora / todas las que tiene.', 'Publications: those showing now / all it has.'))}</p>`;
   $('#nuevaGuia', v).onclick = async () => { if (await editaGuia(null)) route(); };
@@ -198,7 +198,7 @@ PAGES.guias = async (v, param) => {
 
 /** Las publicaciones de una guía: las que hay (y quién las puso) y añadir a mano. */
 async function pintaGuia(v, g) {
-  if (!g) { go('#/guias'); return; }
+  if (!g) { go('/guias'); return; }
   let busqueda = '';
   let sitio = '';
   const dibuja = async () => {
@@ -223,7 +223,7 @@ async function pintaGuia(v, g) {
     const cursor = escribiendo ? qAntes.selectionStart : null;
     if (qAntes) busqueda = qAntes.value;
     v.innerHTML = `
-      <div class="page-head"><a class="btn sm ghost" href="#/guias">← ${esc(biG('Guías', 'Guides'))}</a>
+      <div class="page-head"><a class="btn sm ghost" href="/guias">← ${esc(biG('Guías', 'Guides'))}</a>
         <h1>${esc(tituloGuia(g))}</h1></div>
       <p class="muted">${esc([g.scope_name || biG('Toda España', 'All of Spain'), `${diaGuia(g.starts_on)} → ${diaGuia(g.ends_on)}`].join(' · '))}</p>
       <div class="card"><h2>${esc(biG('En la guía', 'In the guide'))}</h2>

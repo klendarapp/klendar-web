@@ -92,7 +92,8 @@ createServer(async (req, res) => {
   // (/privacidad, /cuenta/entrar); lo viejo, con un 301 a la buena.
   const buena = direccionBuena(path);
   // Como functions/_middleware.js (_lib/admin.js): el admin en la raíz de
-  // admin.localhost (`/` y `/carta`, reescritos a sus ficheros); `/admin…`, la
+  // admin.localhost (`/`, las rutas de sus apartados y `/carta`, reescritos a
+  // sus ficheros; §4zzz-adminlimpio); `/admin…`, la
   // 404 normal en los dos hosts. Lo que `_routes.json` deja fuera de las
   // Functions (assets, config.js…) no pasa por aquí, como en Cloudflare.
   const host = !FUERA_DE_FUNCTIONS(path) && (req.method === 'GET' || req.method === 'HEAD') ? decideHost(url, buena) : null;

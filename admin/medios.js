@@ -58,7 +58,7 @@ const filaTexto = (x, i, tab) => {
   if (quienDecide(x)) tags.push(`<span class="tag dim">${esc(I18N.t(quienDecide(x)))}${x.provider ? ` · ${esc(x.provider)}` : ''}</span>`);
   if (x.motive) tags.push(`<span class="tag warn">${esc(I18N.t(TEXTO_CATEGORIA[x.motive] || x.motive))}</span>`);
   const quien = [
-    x.business ? `<a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business)}</a>${x.city ? ` (${esc(x.city)})` : ''}` : '',
+    x.business ? `<a class="link" href="/negocios/${esc(x.business_id)}">${esc(x.business)}</a>${x.city ? ` (${esc(x.city)})` : ''}` : '',
     x.user_email ? esc(x.user_email) : '',
     fmtDate(x.created_at),
   ].filter(Boolean).join(' · ');
@@ -80,7 +80,7 @@ const filaListas = (x, i) => {
   const cats = (x.categories || []).map((c) => I18N.t(CAT_OFENSIVA[c] || c));
   const flags = (x.flags || []).filter((f) => f !== 'offensive').map((f) => I18N.t(FLAGS[f] || f));
   const quien = [
-    x.business ? `<a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business)}</a>` : '',
+    x.business ? `<a class="link" href="/negocios/${esc(x.business_id)}">${esc(x.business)}</a>` : '',
     x.user_email ? esc(x.user_email) : '',
     fmtDate(x.created_at),
     x.rating ? `<span class="stars">${'★'.repeat(x.rating)}${'☆'.repeat(5 - x.rating)}</span>` : '',
@@ -186,7 +186,7 @@ const filaMedio = async (x, i, tab) => {
     ? (x.used_in || []).map(esc).join(' · ')
     : esc(I18N.t('Aún no se usa en ningún sitio'));
   const quien = [
-    x.business ? `<a class="link" href="#/negocios/${esc(x.business_id)}">${esc(x.business)}</a>${x.city ? ` (${esc(x.city)})` : ''}` : '',
+    x.business ? `<a class="link" href="/negocios/${esc(x.business_id)}">${esc(x.business)}</a>${x.city ? ` (${esc(x.city)})` : ''}` : '',
     x.user_email ? esc(x.user_email) : '',
     fmtDate(x.created_at),
   ].filter(Boolean).join(' · ');

@@ -1,7 +1,7 @@
 /* Administración → «Crecer» (crecer, 2026-10-14; migración
  * 20261218100000_crecer de la app).
  *
- * - «Locales pedidos» (#/pedidos, #/pedidos/<id>): los sitios que la gente
+ * - «Locales pedidos» (/pedidos, /pedidos/<id>): los sitios que la gente
  *   pide que estén en Klendar, agrupados (mismo nombre o muy parecido y
  *   cerca). Pestañas Abiertos / Enlazados / Descartados con sus cuentas,
  *   filtro por ciudad o zona y buscador; por ciudad y, dentro, por número
@@ -13,7 +13,7 @@
  *   descartar o reabrir y quitar el enlace.
  * - En la ficha de un negocio (`businessDetail` de admin.js): «Locales
  *   pedidos que pueden ser este» con «Enlazar» (`pedidosEnFicha`).
- * - «Dónde crecer» (#/crecer): el ranking de zonas donde esperan a Klendar
+ * - «Dónde crecer» (/crecer): el ranking de zonas donde esperan a Klendar
  *   (`admin_city_waitlist`) con «Activar ciudad…» y «Avisar ahora» (los dos
  *   avisan a gente: no tienen vuelta atrás, se confirman), el «Gratis de
  *   lanzamiento»: arriba, «Gratis para todos» (migración 20261289000000 de
@@ -266,7 +266,7 @@ async function crAccion(accion, g, tras) {
   if (accion === 'enlazar') hecho = await crEnlaza(g);
   else if (accion === 'unir') {
     const queda = await crUne(g);
-    if (queda && queda !== g.id && currentRoute()[1] === g.id) { go(`#/pedidos/${queda}`); return; }
+    if (queda && queda !== g.id && currentRoute()[1] === g.id) { go(`/pedidos/${queda}`); return; }
     hecho = Boolean(queda);
   } else if (accion === 'renombrar') hecho = await crRenombra(g);
   else if (accion === 'descartar' || accion === 'reabrir') hecho = await crDescarta(g);
@@ -329,7 +329,7 @@ PAGES.pedidos = async (v, id) => {
     filas = partes.filas;
     $('#list').innerHTML = `${CR.estado === 'open' && c.people_open ? `<p class="muted small" style="margin:0 0 10px">${esc(bi(`${fmtNum(c.people_open)} peticiones en ${fmtNum(c.open || 0)} sitios abiertos.`, `${fmtNum(c.people_open)} requests across ${fmtNum(c.open || 0)} open places.`))}</p>` : ''}${table({
       cols: [
-        { h: bi('Local', 'Place'), r: (g) => `<a class="link title" href="#/pedidos/${esc(g.id)}">${esc(g.name)}</a>${g.business_name ? `<span class="sub">→ ${esc(g.business_name)}</span>` : ''}` },
+        { h: bi('Local', 'Place'), r: (g) => `<a class="link title" href="/pedidos/${esc(g.id)}">${esc(g.name)}</a>${g.business_name ? `<span class="sub">→ ${esc(g.business_name)}</span>` : ''}` },
         { h: bi('Ciudad o zona', 'City or area'), r: (g) => esc(crDonde(g)) },
         { h: bi('Lo piden', 'Asked by'), num: true, r: (g) => `<b>${fmtNum(g.people)}</b> <span class="muted small">${esc(bi(Number(g.people) === 1 ? 'persona' : 'personas', Number(g.people) === 1 ? 'person' : 'people'))}</span>` },
         { h: bi('Último', 'Latest'), r: (g) => `<span class="nowrap">${esc(ago(g.last_request_at))}</span>` },
@@ -361,14 +361,14 @@ async function crDetalle(v, id) {
   const nombres = g.names || [];
   const lista = (xs) => (xs.length ? `<ul class="cr-nombres">${xs.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="muted">—</p>');
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/pedidos">← ${esc(bi('Locales pedidos', 'Requested places'))}</a></div>
+    <div class="page-head"><a class="btn sm ghost" href="/pedidos">← ${esc(bi('Locales pedidos', 'Requested places'))}</a></div>
     <div class="detail-head">
       <div class="ph">${ms('add_business')}</div>
       <div><h1>${esc(g.name)}</h1><div class="tags">${crEstado(g)} <span class="tag dim">${esc(crPersonas(g.people))}</span></div></div>
       <span class="spacer"></span>
       <div class="actions">
         ${g.status === 'dismissed' ? '' : `<button class="btn" data-cr="carta">${esc(bi('Preparar carta', 'Prepare letter'))}</button>`}
-        ${g.status === 'linked' && g.business_id ? `<a class="btn" href="#/negocios/${esc(g.business_id)}">${esc(bi('Ver el negocio', 'See the business'))}</a>`
+        ${g.status === 'linked' && g.business_id ? `<a class="btn" href="/negocios/${esc(g.business_id)}">${esc(bi('Ver el negocio', 'See the business'))}</a>`
           : g.status === 'open' ? `<button class="btn" data-cr="enlazar">${esc(bi('Enlazar con un negocio…', 'Link to a business…'))}</button>` : `<button class="btn" data-cr="reabrir">${esc(bi('Reabrir…', 'Reopen…'))}</button>`}
         ${crMenu(g)}
       </div>
@@ -380,7 +380,7 @@ async function crDetalle(v, id) {
         <dt>${esc(bi('Primera petición', 'First request'))}</dt><dd>${fmtDate(g.created_at)}</dd>
         <dt>${esc(bi('Última', 'Latest'))}</dt><dd>${fmtDate(g.last_request_at)}</dd>
         <dt>${esc(bi('Punto del local', "Place's location"))}</dt><dd>${g.lat != null ? `<a class="link" target="_blank" rel="noopener" href="https://www.google.com/maps?q=${Number(g.lat)},${Number(g.lng)}">${esc(bi('ver en el mapa', 'see on the map'))} ↗</a>` : '—'}</dd>
-        ${g.business_id ? `<dt>${esc(bi('Negocio', 'Business'))}</dt><dd><a class="link" href="#/negocios/${esc(g.business_id)}">${esc(g.business_name || g.business_id)}</a> ${g.business_live ? `<span class="tag ok">${esc(bi('sale en Klendar', 'live'))}</span>` : `<span class="tag warn">${esc(bi('aún no sale', 'not live yet'))}</span>`}</dd>
+        ${g.business_id ? `<dt>${esc(bi('Negocio', 'Business'))}</dt><dd><a class="link" href="/negocios/${esc(g.business_id)}">${esc(g.business_name || g.business_id)}</a> ${g.business_live ? `<span class="tag ok">${esc(bi('sale en Klendar', 'live'))}</span>` : `<span class="tag warn">${esc(bi('aún no sale', 'not live yet'))}</span>`}</dd>
           <dt>${esc(bi('Avisos', 'Notices'))}</dt><dd>${esc(bi(`${fmtNum(g.notified || 0)} enviados · ${fmtNum(g.pending_notices || 0)} pendientes`, `${fmtNum(g.notified || 0)} sent · ${fmtNum(g.pending_notices || 0)} pending`))}</dd>` : ''}
         ${g.dismissed_reason ? `<dt>${esc(bi('Motivo del descarte', 'Reason for dismissing'))}</dt><dd>${esc(g.dismissed_reason)}</dd>` : ''}
       </dl></div>
@@ -408,7 +408,7 @@ async function pedidosEnFicha(v, b) {
     <p class="muted small" style="margin:0 0 8px">${esc(bi('Gente que pidió en Klendar un sitio con un nombre parecido, cerca. Al enlazarlo, cuando el negocio salga se les avisa.', 'People who asked on Klendar for a place with a similar name, nearby. Once linked, they are told when the business goes live.'))}</p>
     ${table({
       cols: [
-        { h: bi('Local pedido', 'Requested place'), r: (g) => `<a class="link title" href="#/pedidos/${esc(g.id)}">${esc(g.name)}</a>` },
+        { h: bi('Local pedido', 'Requested place'), r: (g) => `<a class="link title" href="/pedidos/${esc(g.id)}">${esc(g.name)}</a>` },
         { h: bi('Ciudad o zona', 'City or area'), r: (g) => esc(crDonde(g)) },
         { h: bi('Lo piden', 'Asked by'), num: true, r: (g) => fmtNum(g.people) },
         { h: '', r: (g, i) => (g.linked_here ? `<span class="tag ok">${esc(bi('Enlazado aquí', 'Linked here'))}</span>` : `<button type="button" class="btn sm" data-enlaza="${i}">${esc(bi('Enlazar', 'Link'))}</button>`) },
@@ -504,7 +504,7 @@ PAGES.crecer = async (v) => {
        <p class="muted small" style="margin:0 0 6px">${esc(TODOS
          ? bi('Ni código postal en la dirección ni un punto dentro de España. Con el «Gratis para todos» puesto, también entran gratis hasta esa fecha.', 'No postcode in the address and no point inside Spain. With “Free for everyone” on, they are also free until that date.')
          : bi('Ni código postal en la dirección ni un punto dentro de España: entran en la prueba de 30 días. Si alguno debería tener el gratis, ábrelo y usa «Cambiar plan…».', 'No postcode in the address and no point inside Spain: they get the 30-day trial. If one should be free, open it and use “Change plan…”.'))}</p>
-       <ul class="cr-lista">${(SIN.list || []).map((b) => `<li><span><a class="link" href="#/negocios/${esc(b.id)}">${esc(b.name)}</a>${b.city ? `<span class="sub">${esc(b.city)}</span>` : ''}</span></li>`).join('')}</ul></div>`
+       <ul class="cr-lista">${(SIN.list || []).map((b) => `<li><span><a class="link" href="/negocios/${esc(b.id)}">${esc(b.name)}</a>${b.city ? `<span class="sub">${esc(b.city)}</span>` : ''}</span></li>`).join('')}</ul></div>`
     : '';
   const accionesGratis = (p, i) => `<div class="cr-acciones">${p.launch_free_until
     ? `<button type="button" class="btn sm" data-gratis-fecha="${i}">${esc(bi('Cambiar la fecha…', 'Change the date…'))}</button><button type="button" class="btn sm" data-gratis-quita="${i}">${esc(bi('Quitar el gratis…', 'Stop free sign-ups…'))}</button>`
@@ -602,7 +602,7 @@ PAGES.crecer = async (v) => {
           `No tiene sus dos fiestas locales de ${faltan.join(' y ')}: hasta que estén, a sus negocios solo se les pregunta por los nacionales y los de su comunidad. Salen en el`,
           `It doesn't have its two local holidays for ${faltan.join(' and ')}: until they're added, its businesses are only asked about national and regional ones. They're published in the`))} ${b.url ? `<a class="link" target="_blank" rel="noopener" href="${esc(b.url)}">${esc(b.name || '')} ↗</a>` : esc(b.name || '')}.`,
         { submit: bi('Añadirlos ahora', 'Add them now') })) {
-          location.hash = `#/festivos/${faltan[0]}`;
+          go(`/festivos/${faltan[0]}`);
           return;
         }
       }
