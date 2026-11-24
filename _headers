@@ -113,9 +113,12 @@
   Content-Security-Policy: default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'
   ! Permissions-Policy
   Permissions-Policy: geolocation=(self), camera=(self), microphone=()
-# Lo de dentro del panel (`/panel/*`) son solo sus JS, su CSS y sus
+# Las pantallas del panel (`/panel/hoy`, `/panel/sellos/<id>`…; §4zzz-panellimpio)
+# las sirve el middleware (panel.html por dentro) con CABECERAS_PANEL
+# (functions/_lib/csp.js), las de `/panel` de arriba (tools/panel_rutas_check.mjs
+# lo mira). Esta regla vale para lo demás de `/panel/*`: sus JS, su CSS y sus
 # diccionarios: un año en el navegador y sin `no-transform` (así Cloudflare
-# los comprime) y fuera de las Functions (`_routes.json`). Su `?v=` (y el
+# los comprime) y fuera de las Functions (`_routes.json`, uno a uno). Su `?v=` (y el
 # `data-dic-v` de los diccionarios) es la huella del fichero y la pone sola
 # tools/versiones.py en el pre-commit; el pre-push lo comprueba. La página,
 # `/panel`, sigue sin caché: es la que dice qué versión toca.

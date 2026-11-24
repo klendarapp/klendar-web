@@ -29,6 +29,8 @@
 // El host del admin no está en config.js (no se toca): se deriva de aquí y,
 // en el navegador, de `location` (admin/admin.js, assets/cuenta/app.js).
 
+import { decidePanel } from './panel.js';
+
 export const HOST_ADMIN = 'admin.klendar.app';
 export const WEB_ADMIN = `https://${HOST_ADMIN}`;
 export const WEB_PUBLICA = 'https://klendar.app';
@@ -85,7 +87,8 @@ export function origenPublico(url) {
  * Qué hacer con una petición según el host:
  * - `{ salto: <dirección> }`: un 301;
  * - `{ reescribe: <ruta> }`: servir ese fichero sin cambiar la dirección (el admin
- *   en `/` y en las rutas de sus apartados, la carta en `/carta`);
+ *   en `/` y en las rutas de sus apartados, la carta en `/carta`; en
+ *   klendar.app, el panel en `/panel/<pantalla>`, con `zona: 'panel'`);
  * - `{ noExiste: true }`: la 404 normal de la web;
  * - `null`: seguir como siempre.
  * `buena` es la dirección sin barra al final (`direccionBuena`).
@@ -101,5 +104,7 @@ export function decideHost(url, buena = url.pathname) {
     if (fichero) return buena === ruta ? { reescribe: fichero } : { salto: url.origin + buena + url.search };
     return { salto: origenPublico(url) + buena + url.search };
   }
-  return esRutaAdmin(buena) && ruta !== CSS_COMUN ? { noExiste: true } : null;
+  if (esRutaAdmin(buena) && ruta !== CSS_COMUN) return { noExiste: true };
+  // El panel de negocios, con sus rutas limpias (§4zzz-panellimpio, _lib/panel.js).
+  return decidePanel(url, buena);
 }

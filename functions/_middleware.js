@@ -17,7 +17,7 @@
 // en el límite de CPU del plan gratis, 10 ms; ver RUNBOOK §3f).
 import { direccionBuena } from './_lib/direccion.js';
 import { EN_CACHE, desdeLaCache } from './_lib/cache.js';
-import { CABECERAS_ADMIN, CSP_PUBLICA, conNonce, nonceNuevo } from './_lib/csp.js';
+import { CABECERAS_ADMIN, CABECERAS_PANEL, CSP_PUBLICA, conNonce, nonceNuevo } from './_lib/csp.js';
 import { decideHost, esHostAdmin } from './_lib/admin.js';
 
 const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/i;
@@ -76,6 +76,9 @@ export async function onRequest(ctx) {
     //   `/negocios/<id>`…, §4zzz-adminlimpio) y `/carta` se reescriben a sus
     //   ficheros de `/admin/…` (más abajo) y lo demás va a klendar.app; `/admin…`, en los
     //   dos hosts, da la 404 normal (las direcciones viejas no redirigen).
+    //   El panel, igual (§4zzz-panellimpio, _lib/panel.js): `/panel` y
+    //   `/panel/<pantalla>…` se reescriben a `panel.html`; sus JS y su CSS
+    //   siguen su camino; lo que no es una pantalla, la 404 normal.
     host = decideHost(url, buena);
     if (host?.salto) {
       return new Response(null, {
@@ -97,7 +100,8 @@ export async function onRequest(ctx) {
   }
 
   const head = ctx.request.method === 'HEAD';
-  // El admin en su host: el fichero de `/admin…`, sin cambiar la dirección.
+  // El admin en su host (el fichero de `/admin…`) y las pantallas del panel
+  // (`panel.html`), sin cambiar la dirección.
   const zonaAdmin = Boolean(host?.reescribe);
   const res = DIRECCION_VIEJA.test(rutaReal(pathname)) || host?.noExiste
     ? await ctx.env.ASSETS.fetch(new URL('/esta-direccion-no-existe/', ctx.request.url))
@@ -115,10 +119,10 @@ export async function onRequest(ctx) {
   for (const [k, v] of Object.entries(SEGURIDAD)) if (!cabeceras.has(k)) cabeceras.set(k, v);
   // La de solo informe ya no se usa (§4zzz-csp): fuera, venga de donde venga.
   cabeceras.delete('content-security-policy-report-only');
-  // El admin (en su host, cabeceras propias aquí: lo reescrito no lleva las de
-  // `_headers` de su ruta), «Tu cuenta», el panel y la tele.
+  // El admin (en su host) y el panel: cabeceras propias aquí (lo reescrito no
+  // lleva las de `_headers` de su ruta); «Tu cuenta» y la tele, las suyas.
   if (zonaAdmin) {
-    for (const [k, v] of Object.entries(CABECERAS_ADMIN)) cabeceras.set(k, v);
+    for (const [k, v] of Object.entries(host.zona === 'panel' ? CABECERAS_PANEL : CABECERAS_ADMIN)) cabeceras.set(k, v);
   }
   const conSesion = zonaAdmin || /^\/(cuenta|panel|tv)(\/|$)/.test(pathname);
   // 6. Las páginas públicas (también las estáticas, que pasan por aquí desde

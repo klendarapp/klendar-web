@@ -51,6 +51,23 @@ export const CABECERAS_ADMIN = {
   'referrer-policy': 'strict-origin-when-cross-origin',
 };
 
+/** La del panel de negocios (`/panel` y `/panel/*` en `_headers`; lo mira
+ * tools/panel_rutas_check.mjs): Mapbox (el mapa de «Tu ficha») y el
+ * WebSocket de Supabase (tiempo real), nada en línea, sin dejarse enmarcar. */
+export const CSP_PANEL = "default-src 'self'; script-src 'self' https://api.mapbox.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://api.mapbox.com; font-src 'self'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.mapbox.com https://events.mapbox.com; frame-src https://challenges.cloudflare.com; worker-src 'self' blob:; base-uri 'self'; form-action 'self'; object-src 'none'; frame-ancestors 'none'";
+
+/** Las cabeceras de las pantallas del panel (`/panel`, `/panel/hoy`,
+ * `/panel/sellos/<id>`…; §4zzz-panellimpio), que el middleware reescribe a
+ * `panel.html` por dentro: las mismas que `/panel` en `_headers`. */
+export const CABECERAS_PANEL = {
+  'content-security-policy': CSP_PANEL,
+  'cache-control': 'no-store, no-transform',
+  'x-robots-tag': 'noindex, nofollow',
+  'x-frame-options': 'DENY',
+  'permissions-policy': 'geolocation=(self), camera=(self), microphone=()',
+  'referrer-policy': 'strict-origin-when-cross-origin',
+};
+
 /** Un nonce nuevo: 16 bytes al azar en base64. */
 export function nonceNuevo() {
   const b = new Uint8Array(16);

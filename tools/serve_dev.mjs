@@ -7,7 +7,7 @@ import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { extname, join } from 'node:path';
 import { direccionBuena } from '../functions/_lib/direccion.js';
-import { CABECERAS_ADMIN, CSP_PUBLICA } from '../functions/_lib/csp.js';
+import { CABECERAS_ADMIN, CABECERAS_PANEL, CSP_PUBLICA } from '../functions/_lib/csp.js';
 import { decideHost } from '../functions/_lib/admin.js';
 
 // En las pruebas (SUPABASE_BLOQUEADO, lo pone tools/_supabase_simulado.mjs a
@@ -94,7 +94,8 @@ createServer(async (req, res) => {
   // Como functions/_middleware.js (_lib/admin.js): el admin en la raíz de
   // admin.localhost (`/`, las rutas de sus apartados y `/carta`, reescritos a
   // sus ficheros; §4zzz-adminlimpio); `/admin…`, la
-  // 404 normal en los dos hosts. Lo que `_routes.json` deja fuera de las
+  // 404 normal en los dos hosts. El panel, en `/panel` y `/panel/<pantalla>…`
+  // (§4zzz-panellimpio, _lib/panel.js). Lo que `_routes.json` deja fuera de las
   // Functions (assets, config.js…) no pasa por aquí, como en Cloudflare.
   const host = !FUERA_DE_FUNCTIONS(path) && (req.method === 'GET' || req.method === 'HEAD') ? decideHost(url, buena) : null;
   if (host?.salto) {
@@ -108,7 +109,7 @@ createServer(async (req, res) => {
     return;
   }
   if (host?.reescribe) {
-    res.writeHead(200, { ...CABECERAS_ADMIN, 'content-type': TYPES['.html'] });
+    res.writeHead(200, { ...(host.zona === 'panel' ? CABECERAS_PANEL : CABECERAS_ADMIN), 'content-type': TYPES['.html'] });
     res.end(req.method === 'HEAD' ? undefined : await readFile(join(ROOT, aFichero(host.reescribe))));
     return;
   }
