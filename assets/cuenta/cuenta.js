@@ -80,30 +80,30 @@ function destinoWeb(ruta) {
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})\/questions(?:\?q=([0-9a-f-]{36}))?/i))) {
     return `/cuenta/preguntar/${m[1]}${m[2] ? `?q=${m[2]}` : ''}`;
   }
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/questions/i))) return `/panel#/preguntas?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/questions/i))) return `/panel/preguntas?biz=${m[1]}`;
   // «Estaba cerrado»: al negocio, en el panel.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/estaba-cerrado/i))) return `/panel#/estaba-cerrado?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/estaba-cerrado/i))) return `/panel/estaba-cerrado?biz=${m[1]}`;
   // «¿Abres el 1 de noviembre?»: la pregunta del festivo, en el panel.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/holiday\/(\d{4}-\d{2}-\d{2})/i))) return `/panel#/festivo/${m[2]}?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/holiday\/(\d{4}-\d{2}-\d{2})/i))) return `/panel/festivo/${m[2]}?biz=${m[1]}`;
   if ((m = r.match(/^\/business\/([0-9a-f-]{36})/i))) return `${pre}/b/${m[1]}`;
   // «Tu oferta termina en 1 h»: al panel, con la pregunta de ampliarla hecha.
   if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?extend=([0-9a-f-]{36})/i))) {
-    return `/panel#/publicar?biz=${m[1]}&extend=${m[2]}`;
+    return `/panel/publicar?biz=${m[1]}&extend=${m[2]}`;
   }
   // «Tu mensaje ya se ha enviado» / «…no se ha enviado»: a «Avisar a mis
   // clientes» de ese negocio en el panel.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/message/i))) return `/panel#/mensajes?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/message/i))) return `/panel/mensajes?biz=${m[1]}`;
   // «… ya es RRPP de …», «Un RRPP lo deja»: a «RRPP» de ese negocio.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/promoters/i))) return `/panel#/rrpp?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/promoters/i))) return `/panel/rrpp?biz=${m[1]}`;
   // «¿Te ha sobrado algo hoy?»: a «Antes de cerrar» de ese negocio.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?before_closing=1/i))) return `/panel#/antes-de-cerrar?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\?before_closing=1/i))) return `/panel/antes-de-cerrar?biz=${m[1]}`;
   // Grupos y Sorteos (tanda C): la bandeja de peticiones y los sorteos del
   // negocio, en el panel.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/groups/i))) return `/panel#/grupos?biz=${m[1]}`;
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/giveaways/i))) return `/panel#/sorteos?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/groups/i))) return `/panel/grupos?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/giveaways/i))) return `/panel/sorteos?biz=${m[1]}`;
   // «Tus clientes más fieles del mes» (Fidelizar): agradecer a los habituales.
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty\/thanks/i))) return `/panel#/habituales?biz=${m[1]}`;
-  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty/i))) return `/panel#/fidelizar?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty\/thanks/i))) return `/panel/habituales?biz=${m[1]}`;
+  if ((m = r.match(/^\/my-business\/([0-9a-f-]{36})\/loyalty/i))) return `/panel/fidelizar?biz=${m[1]}`;
   if (r.startsWith('/my-business')) return '/panel';
   // «X te ha enviado una propuesta»: la petición. «¡Has ganado…!»: la página
   // del sorteo, que con tu sesión enseña lo tuyo.
@@ -196,7 +196,7 @@ function accionAviso(d) {
   }
   if (d?.action === 'duplicate' && uuid.test(d.offer_id || '') && uuid.test(d.business_id || '')) {
     const nueva = d.offer_kind === 'future_event' ? 'nuevo-evento' : 'nueva-flash';
-    return { href: `/panel#/publicaciones/${nueva}?biz=${d.business_id}&from=${d.offer_id}`, txt: t('Crear a partir de esta') };
+    return { href: `/panel/publicaciones/${nueva}?biz=${d.business_id}&from=${d.offer_id}`, txt: t('Crear a partir de esta') };
   }
   return null;
 }
@@ -1042,7 +1042,7 @@ RUTAS.ajustes = async ([sub]) => {
         texto: EN ? `You own ${nombres}. Before deleting your account, take the business off Klendar or hand it over to someone on your team, under “Leave Klendar” in the dashboard.`
           : `Eres propietario de ${nombres}. Antes de eliminar tu cuenta, da de baja el negocio o traspásalo a alguien de tu equipo, en «Dar de baja el negocio» del panel.`,
         aceptar: t('Ir a mi negocio'),
-      })) location.href = propios.length === 1 ? `/panel#/baja?biz=${propios[0].id}` : '/panel';
+      })) location.href = propios.length === 1 ? `/panel/baja?biz=${propios[0].id}` : '/panel';
       return;
     }
     // Lo que sigue vivo y se pierde (reservas, códigos, premios, sellos): se
@@ -2880,7 +2880,7 @@ RUTAS.invitaciones = async () => {
           : t('Esta invitación ha caducado.'), true);
       } else if (acepta) {
         toast(EN ? `You’re now the owner of ${r.business_name}.` : `Ahora eres propietario de ${r.business_name}.`);
-        location.href = `/panel#/hoy?biz=${r.business_id}`;
+        location.href = `/panel/hoy?biz=${r.business_id}`;
         return;
       } else {
         toast(t('Traspaso rechazado.'));

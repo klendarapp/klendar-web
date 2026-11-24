@@ -372,5 +372,5 @@ async function resumenCola(caja) {
   if (!caja.isConnected || BIZ?.id !== negocio) return;
   if (q?.ok === false || !q?.queue) { caja.innerHTML = ''; return; }
   const n = Number(q.queue.waiting) || 0;
-  caja.innerHTML = `<div class="filas-inicio"><a class="fila-inicio" href="#/cola">${svg('cola')}<span>${esc(bi(`Cola virtual · ${n} esperando`, `Virtual queue · ${n} waiting`))}</span>${ms('chevron_right')}</a></div>`;
+  caja.innerHTML = `<div class="filas-inicio"><a class="fila-inicio" href="/panel/cola">${svg('cola')}<span>${esc(bi(`Cola virtual · ${n} esperando`, `Virtual queue · ${n} waiting`))}</span>${ms('chevron_right')}</a></div>`;
 }

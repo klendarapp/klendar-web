@@ -644,7 +644,7 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
           <p class="acciones amigos-acc" id="amigos-ficha" data-offer="${esc(o.id)}"${conCodigo ? ` data-codigo="${flash ? 'codigo' : 'reservar'}"` : ''}${entradas ? '' : ' hidden'}>${entradas ? voy('pill') : ''}</p>
           <p class="note" id="voy-auto" hidden></p>
           ${conCodigo ? `<p class="note" id="voy-pista">${flash ? S.byCode : S.byReservation}${deRrpp ? '' : ` ${S.later}`}</p>` : ''}
-          <div class="acciones"><a class="pill" data-solo-equipo hidden href="/panel#/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
+          <div class="acciones"><a class="pill" data-solo-equipo hidden href="/panel/publicaciones/${id}?biz=${encodeURIComponent(o.business_id)}">${icono('editar', 16)} ${S.edit}</a>
             ${deRrpp ? '' : `<a class="pill" data-solo-publico data-plan="${id}" href="${cuenta(lang, `guardar/${id}`)}"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M6 3h12a1 1 0 0 1 1 1v17l-7-4-7 4V4a1 1 0 0 1 1-1z"/></svg> <span>${S.save}</span></a>`}
             ${(deRrpp && !prom) || enPausa ? '' : compartirMenu(lang, {
     url: `${BASE}${path}${rpQ}`, titulo: o.title,
@@ -1534,7 +1534,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
         ${masMenu([`<a class="mas-peligro" data-solo-publico href="${cuenta(lang, `denunciar/business/${encodeURIComponent(b.id)}`)}" rel="nofollow">${S.reportShort}</a>`], lang, { soloPublico: true })}
         </div>
       </div>
-      <p class="acciones equipo-acc"><a class="pill" data-solo-equipo="gestion" hidden href="/panel#/ficha?biz=${encodeURIComponent(b.id)}">${icono('editar', 16)} <span>${S.editBiz}</span></a><a class="pill" data-solo-equipo="empleado" hidden href="/panel?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a></p>
+      <p class="acciones equipo-acc"><a class="pill" data-solo-equipo="gestion" hidden href="/panel/ficha?biz=${encodeURIComponent(b.id)}">${icono('editar', 16)} <span>${S.editBiz}</span></a><a class="pill" data-solo-equipo="empleado" hidden href="/panel?biz=${encodeURIComponent(b.id)}">${icono('negocio', 16)} <span>${S.myBiz}</span></a></p>
       ${where ? `<a class="neg-dir" href="${esc(maps || '#')}" rel="nofollow noopener" target="_blank">${icono('lugar')}<span>${esc(b.address || where)}</span><svg class="ic" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z"/></svg></a>` : ''}
       ${b.rating && b.ratings ? `<p class="neg-nota"><a href="#resenas"><span class="stars-mini" aria-hidden="true">★</span> ${nota(b.rating, lang)} · ${esc(en ? (b.ratings === 1 ? '1 review' : `${b.ratings} reviews`) : (b.ratings === 1 ? '1 reseña' : `${b.ratings} reseñas`))}</a>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`
     : `<p class="neg-nota"><span class="muted">★ ${S.noRatings}</span>${precioHtml ? ` <span aria-hidden="true">·</span> ${precioHtml}` : ''}</p>`}

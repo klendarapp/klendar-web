@@ -1,4 +1,4 @@
-/* Panel del negocio: «Tu plan» (#/plan). Cobro con Stripe (migración
+/* Panel del negocio: «Tu plan» (/panel/plan). Cobro con Stripe (migración
  * 20261216100000 de la app, Edge Function `billing`) y el bloqueo sin pago y
  * la pausa por cierre (migración 20261222100000).
  *
@@ -229,7 +229,7 @@ PAGES.plan = async (v) => {
     : '';
 
   let html = `<div class="page-head"><h1>Tu plan</h1></div>
-    ${new URLSearchParams(location.hash.split('?')[1] || '').get('pago') === 'ok' && !st
+    ${new URLSearchParams(location.search).get('pago') === 'ok' && !st
       ? `<div class="help"><b>${esc(bi('Pago hecho.', 'Payment done.'))}</b> ${esc(bi('En unos segundos verás aquí tu plan al día.', 'In a few seconds you’ll see your plan up to date here.'))}</div>` : ''}
     <div class="card plan-card">
       <h2>${ms('workspace_premium')} ${esc(I18N.lang === 'en' ? `${nombre} plan` : `Plan ${nombre}`)} ${etiqueta ? `<span class="tag plan-tag ${esc(tono)}">${esc(etiqueta)}</span>` : ''}</h2>
@@ -305,7 +305,7 @@ PAGES.plan = async (v) => {
   // Cancelar (propietario con tarjeta): solo la suscripción de este local.
   if (duena && st) {
     html += `<div class="card"><h2>${ms('more_horiz')} ${esc(bi('Más', 'More'))}</h2><div class="plan-mas">
-      ${!bill.cancel_at_period_end ? `<a class="btn sm ghost" href="#/baja">${esc(bi('Cancelar la suscripción…', 'Cancel the subscription…'))}</a>` : `<a class="btn sm ghost" href="#/baja">${esc(bi('Deshacer la cancelación…', 'Undo the cancellation…'))}</a>`}
+      ${!bill.cancel_at_period_end ? `<a class="btn sm ghost" href="/panel/baja">${esc(bi('Cancelar la suscripción…', 'Cancel the subscription…'))}</a>` : `<a class="btn sm ghost" href="/panel/baja">${esc(bi('Deshacer la cancelación…', 'Undo the cancellation…'))}</a>`}
     </div></div>`;
   }
   v.innerHTML = html;
@@ -452,12 +452,12 @@ PAGES.plan = async (v) => {
   if (reanudar) reanudar.onclick = () => volverAAbrir(reanudar);
 
   // Vuelta de Stripe Checkout: el aviso de Stripe tarda unos segundos.
-  if (!st && new URLSearchParams(location.hash.split('?')[1] || '').get('pago') === 'ok') {
+  if (!st && new URLSearchParams(location.search).get('pago') === 'ok') {
     for (let i = 0; i < 6; i++) {
       await new Promise((ok) => setTimeout(ok, 2500));
       if (!v.isConnected) return;
       const otra = await rpc('billing_overview', { p_business: BIZ.id }).catch(() => null);
-      if (otra?.stripe) { history.replaceState(null, '', '#/plan'); await cargaCobro(); route(); return; }
+      if (otra?.stripe) { cambiaDireccion('/panel/plan'); await cargaCobro(); route(); return; }
     }
   }
 };

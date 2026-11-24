@@ -233,7 +233,7 @@ for (const [t, vp] of Object.entries(TAM)) {
     },
     set_business_broadcast_rule: { ok: true, changed: 3 },
   });
-  await p.goto(`${BASE}/panel#/partidos`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/partidos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.pt-siempre');
   let v = await p.locator('#view').innerText();
   ok(/Pones siempre/.test(v) && /Real Betis/.test(v) && /Champions League/.test(v), `${t} panel: «Pones siempre» con sus reglas`);

@@ -5,7 +5,7 @@
 //  2. El aviso del día siguiente (`/business/<id>?review=1&from=quetal`)
 //     lleva a `/cuenta/opinar/<id>?desde=quetal`: la reseña sin estrellas marcadas
 //     y con «Ahora no»; sin venir del aviso, sin «Ahora no».
-//  3. Panel › `#/estaba-cerrado`: «Horario» y «Era un cierre puntual».
+//  3. Panel › `/panel/estaba-cerrado`: «Horario» y «Era un cierre puntual».
 //  4. Panel › Tu ficha › Horario: el aviso y «Está bien así».
 //  5. Ficha pública (Functions de verdad contra un Supabase falso): sin
 //     sesión, «Horario sin confirmar» sin botón; con sesión, «Estaba
@@ -144,16 +144,16 @@ async function panelCerrado(nav, nombre, t, vp) {
       people: 3, unconfirmed: true, confirmed_at: null, can_manage: true },
     confirm_business_hours: null, business_closures: [],
   }));
-  await p.goto(`${BASE}/panel#/estaba-cerrado`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/estaba-cerrado`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#cerrPuntual');
   const v = await p.locator('#view').innerText();
   ok(/Alguien encontró cerrado tu local el jueves a las 18:00\. ¿Está bien tu horario\?/.test(v) && /Horario sin confirmar/.test(v) && /3 personas desde que revisaste el horario/.test(v),
     `${nombre}/${t} panel Estaba cerrado: el aviso, el estado y cuántas personas`);
-  ok(await p.locator('a[href="#/ficha/horario"]').count() === 1, `${nombre}/${t} panel Estaba cerrado: «Horario»`);
+  ok(await p.locator('a[href="/panel/ficha/horario"]').count() === 1, `${nombre}/${t} panel Estaba cerrado: «Horario»`);
   await p.screenshot({ path: `${OUT}/web-panel-estaba-cerrado-${nombre}-${t}.png`, fullPage: true });
   await p.click('#cerrPuntual');
   await p.waitForTimeout(600);
-  ok(estado.llamadas.some(([fn]) => fn === 'confirm_business_hours') && /#\/cerrados/.test(p.url()), `${nombre}/${t} panel Estaba cerrado: «Era un cierre puntual» confirma y abre «Días cerrados»`);
+  ok(estado.llamadas.some(([fn]) => fn === 'confirm_business_hours') && /\/panel\/cerrados/.test(p.url()), `${nombre}/${t} panel Estaba cerrado: «Era un cierre puntual» confirma y abre «Días cerrados»`);
   ok(errores.length === 0, `${nombre}/${t} panel Estaba cerrado sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
 }
@@ -164,7 +164,7 @@ async function panelHorario(nav, nombre, t, vp) {
     confirm_business_hours: null,
     business_private: { tax_id: null },
   }));
-  await p.goto(`${BASE}/panel#/ficha/horario`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/ficha/horario`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#cerrBien');
   ok(/Alguien encontró cerrado tu local/.test(await p.locator('#view').innerText()), `${nombre}/${t} panel Horario: el aviso encima del editor`);
   await p.screenshot({ path: `${OUT}/web-panel-horario-aviso-${nombre}-${t}.png`, fullPage: true });

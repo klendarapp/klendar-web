@@ -4,7 +4,7 @@
 //
 //  1. Panel, «Menú del día»: si hoy el horario dice cerrado, «Hoy tu local
 //     sale cerrado en Klendar. ¿Abres hoy?» con «Sí, abro hoy» (al horario;
-//     con «Días cerrados», a #/cerrados) y «Seguir igualmente», que lo quita.
+//     con «Días cerrados», a /panel/cerrados) y «Seguir igualmente», que lo quita.
 //     Sin `closed_today`, nada.
 //  2. Tu cuenta, Ajustes → Notificaciones → Para ti: «Avísame si…» con la
 //     zona, las palabras, «Añadir palabra» (`add_alert_word`), quitar
@@ -143,12 +143,12 @@ const llamada = (estado, fn) => estado.llamadas.filter(([f]) => f === fn).map(([
 async function panel(nav, nombre, t, vp) {
   // 1. Menú del día, hoy cerrado por el horario
   let { ctx, p, errores } = await contexto(nav, vp);
-  await p.goto(`${BASE}/panel#/menu-del-dia`);
+  await p.goto(`${BASE}/panel/menu-del-dia`);
   await p.waitForSelector('#publicar', { timeout: 15000 });
   let txt = await p.locator('#view').innerText();
   ok(/Hoy tu local sale cerrado en Klendar\. ¿Abres hoy\?/.test(txt), `${nombre}/${t} menú: «¿Abres hoy?» arriba`);
   ok(/la ficha dice «Cerrado»/.test(txt), `${nombre}/${t} menú: por qué (el horario)`);
-  ok((await p.getAttribute('#mesaCerrado a.btn', 'href')) === '#/ficha/horario', `${nombre}/${t} menú: «Sí, abro hoy» lleva al horario`);
+  ok((await p.getAttribute('#mesaCerrado a.btn', 'href')) === '/panel/ficha/horario', `${nombre}/${t} menú: «Sí, abro hoy» lleva al horario`);
   await p.screenshot({ path: `${OUT}/panel-menu-cerrado-${nombre}-${t}.png`, fullPage: true });
   await p.click('#mesaSigue');
   ok(await p.locator('#mesaCerrado').isHidden(), `${nombre}/${t} menú: «Seguir igualmente» lo quita`);
@@ -159,17 +159,17 @@ async function panel(nav, nombre, t, vp) {
   ({ ctx, p, errores } = await contexto(nav, vp, { daily_menu_setup: {
     suggested: true, can_publish: true, closed_today: 'closure', last: null, live: null, plan: null,
     until: { lunch: { until: masHoras(3), at_close: false } } } }));
-  await p.goto(`${BASE}/panel#/menu-del-dia`);
+  await p.goto(`${BASE}/panel/menu-del-dia`);
   await p.waitForSelector('#publicar', { timeout: 15000 });
   txt = await p.locator('#view').innerText();
-  ok(/no se ve nada de tu local/.test(txt) && (await p.getAttribute('#mesaCerrado a.btn', 'href')) === '#/cerrados',
-    `${nombre}/${t} menú: con «Días cerrados», «Sí, abro hoy» va a #/cerrados`);
+  ok(/no se ve nada de tu local/.test(txt) && (await p.getAttribute('#mesaCerrado a.btn', 'href')) === '/panel/cerrados',
+    `${nombre}/${t} menú: con «Días cerrados», «Sí, abro hoy» va a /panel/cerrados`);
   await ctx.close();
 
   // …abierto: nada
   ({ ctx, p, errores } = await contexto(nav, vp, { daily_menu_setup: { suggested: true, can_publish: true, closed_today: null, last: null, live: null, plan: null,
     until: { lunch: { until: masHoras(3), at_close: true } } } }));
-  await p.goto(`${BASE}/panel#/menu-del-dia`);
+  await p.goto(`${BASE}/panel/menu-del-dia`);
   await p.waitForSelector('#publicar', { timeout: 15000 });
   ok(await p.locator('#mesaCerrado').count() === 0, `${nombre}/${t} menú: abierto hoy, sin aviso`);
   await ctx.close();

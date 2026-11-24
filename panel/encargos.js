@@ -1,10 +1,10 @@
 /* Panel del negocio: Encargos (migraciones 20261284000000 y …010 de la app).
  * Lo mismo que «Encargos» en «Mi negocio» de la app.
  *
- * - #/encargos: los encargos de un día, con la fila de días que tienen
+ * - /panel/encargos: los encargos de un día, con la fila de días que tienen
  *   alguno. Todo el equipo: Aceptar, Rechazar (con motivo), Listo (avisa al
  *   cliente), Recogido y No vino; llamar o escribir con `contact_details`.
- * - #/encargos-cosas: «Lo que se encarga» y su formulario (foto, nombre,
+ * - /panel/encargos-cosas: «Lo que se encarga» y su formulario (foto, nombre,
  *   descripción, precio orientativo, alérgenos —obligatorios en comida—,
  *   opciones, antelación, días y franjas o fechas, máximo por día, plazo
  *   para anular, +18; pausar y quitar). Propietario y encargado.
@@ -73,7 +73,7 @@ const ENC_DIAS = [[1, 'Lunes', 'Monday'], [2, 'Martes', 'Tuesday'], [3, 'Miérco
   [5, 'Viernes', 'Friday'], [6, 'Sábado', 'Saturday'], [7, 'Domingo', 'Sunday']];
 
 PAGES.encargos = async (v) => {
-  const dia = new URLSearchParams(location.hash.split('?')[1] || '').get('day');
+  const dia = new URLSearchParams(location.search).get('day');
   const d = await encRpc('business_preorders', { p_business: BIZ.id, ...(dia ? { p_day: dia } : {}) });
   const fila = (o) => {
     const quien = o.name || bi('Sin nombre', 'No name');
@@ -102,18 +102,18 @@ PAGES.encargos = async (v) => {
   const vivos = (d.orders || []).filter((o) => encVivo(o.status));
   const hechos = (d.orders || []).filter((o) => !encVivo(o.status));
   v.innerHTML = `<div class="page-head"><h1>${esc(bi('Encargos', 'Pre-orders'))}</h1>
-      <a class="btn" href="#/encargos-cosas">${esc(bi('Lo que se encarga', 'What can be pre-ordered'))}</a></div>
+      <a class="btn" href="/panel/encargos-cosas">${esc(bi('Lo que se encarga', 'What can be pre-ordered'))}</a></div>
     ${!d.enabled ? `<p class="muted">${esc(I18N.t('Encargos aún no está disponible.'))}</p>` : ''}
     ${d.pending > 0 ? `<p><b>${esc(bi(`${d.pending} por aceptar`, `${d.pending} to accept`))}</b></p>` : ''}
     ${d.blocked ? `<p class="card">${esc(I18N.t('Mientras tu negocio esté bloqueado por el pago, no recibe encargos nuevos. Los que ya tienes siguen aquí.'))}</p>` : ''}
-    <p class="chips">${dias.map((x) => `<a class="pill${x === d.day ? ' sel' : ''}" href="#/encargos?day=${esc(x)}" ${x === d.day ? 'aria-current="true"' : ''}>${esc(x === d.today ? bi('Hoy', 'Today') : encDia(x))}${cuenta[x] ? ` · ${cuenta[x]}` : ''}</a>`).join(' ')}
+    <p class="chips">${dias.map((x) => `<a class="pill${x === d.day ? ' sel' : ''}" href="/panel/encargos?day=${esc(x)}" ${x === d.day ? 'aria-current="true"' : ''}>${esc(x === d.today ? bi('Hoy', 'Today') : encDia(x))}${cuenta[x] ? ` · ${cuenta[x]}` : ''}</a>`).join(' ')}
       <label class="pill"><input type="date" id="encOtroDia" value="${esc(d.day)}" aria-label="${esc(bi('Otro día', 'Another day'))}"></label></p>
     ${!(d.orders || []).length ? `<p class="muted">${esc(bi('No hay encargos para este día.', 'No pre-orders for this day.'))}</p>` : ''}
     ${vivos.map(fila).join('')}
     ${hechos.length ? `<details><summary>${esc(bi(`Terminados (${hechos.length})`, `Finished (${hechos.length})`))}</summary>${hechos.map(fila).join('')}</details>` : ''}
     ${(d.orders || []).some((o) => o.contact) ? `<p class="muted">${esc(I18N.t('Úsalos solo para avisar de este encargo. Se dejan de ver 7 días después de la recogida.'))}</p>` : ''}
     <p class="muted">${esc(I18N.t('El cliente lo paga en tu local al recogerlo. El encargo es entre tu negocio y el cliente: Klendar no cobra ni interviene.'))}</p>`;
-  $('#encOtroDia', v)?.addEventListener('change', (e) => { if (e.target.value) location.hash = `#/encargos?day=${e.target.value}`; });
+  $('#encOtroDia', v)?.addEventListener('change', (e) => { if (e.target.value) go(`/panel/encargos?day=${e.target.value}`); });
   v.querySelectorAll('[data-enc]').forEach((b) => {
     b.onclick = async () => {
       const accion = b.dataset.enc;
@@ -157,7 +157,7 @@ PAGES['encargos-cosas'] = async (v) => {
   const linea = (x) => [bi(`${x?.orders || 0} encargos`, `${x?.orders || 0} pre-orders`), bi(`${x?.picked_up || 0} recogidos`, `${x?.picked_up || 0} picked up`),
     bi(`${x?.no_show || 0} no vinieron`, `${x?.no_show || 0} didn’t come`)].join(' · ');
   v.innerHTML = `<div class="page-head"><h1>${esc(bi('Lo que se encarga', 'What can be pre-ordered'))}</h1>
-      <a class="btn" href="#/encargos">${esc(bi('Encargos', 'Pre-orders'))}</a></div>
+      <a class="btn" href="/panel/encargos">${esc(bi('Encargos', 'Pre-orders'))}</a></div>
     <p class="muted">${esc(I18N.t('Lo que tus clientes pueden encargarte desde tu ficha para recogerlo aquí. Pagan al recogerlo.'))}</p>
     ${!d.enabled ? `<p>${esc(I18N.t('Encargos aún no está disponible.'))}</p>` : ''}
     ${s.all?.orders ? `<p><b>${esc(bi('Últimos 30 días:', 'Last 30 days:'))}</b> ${esc(linea(s.d30))}</p>` : ''}

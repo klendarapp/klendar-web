@@ -177,16 +177,16 @@ async function navegador() {
         ['cerrados', 'del 1 al 15 de agosto', 'panel-dias-cerrados'],
         ['rrpp', 'Lista de Laura · 4 personas', 'panel-rrpp-listas'],
       ]) {
-        await pg.goto(`${BASE}/panel#/${ruta}`);
+        await pg.goto(`${BASE}/panel/${ruta}`);
         await pg.waitForFunction((s) => document.querySelector('#view')?.innerText.includes(s), buscar, { timeout: 15000 }).catch(() => null);
-        ok((await texto(pg, '#view')).includes(buscar), `3. panel #/${ruta}: «${buscar}»`);
+        ok((await texto(pg, '#view')).includes(buscar), `3. panel /panel/${ruta}: «${buscar}»`);
         await pg.screenshot({ path: `${OUT}/${foto}.png`, fullPage: true });
       }
-      await pg.goto(`${BASE}/panel#/series`);
-      await pg.waitForSelector('#view a[href="#/publicar"]', { timeout: 15000 }).catch(() => null);
-      ok(await pg.locator('#view a[href="#/publicar"]').count() === 1, '3. panel series vacías: «Ver publicaciones»');
+      await pg.goto(`${BASE}/panel/series`);
+      await pg.waitForSelector('#view a[href="/panel/publicar"]', { timeout: 15000 }).catch(() => null);
+      ok(await pg.locator('#view a[href="/panel/publicar"]').count() === 1, '3. panel series vacías: «Ver publicaciones»');
       // La Ayuda, con el asistente apagado: nada.
-      await pg.goto(`${BASE}/panel#/ayuda`);
+      await pg.goto(`${BASE}/panel/ayuda`);
       await pg.waitForSelector('#view [data-asistente]', { state: 'attached' });
       await pg.waitForTimeout(800);
       ok(await pg.locator('#view [data-asistente]').isHidden(), '3. Ayuda del panel con el asistente apagado: sin entrada');
@@ -195,7 +195,7 @@ async function navegador() {
     }
     {
       const { ctx, pg, errores } = await contexto({ assistant_status: { available: true, signed_in: true, consent: true, asked: true, max_turns: 6, max_chars: 500 } });
-      await pg.goto(`${BASE}/panel#/ayuda`);
+      await pg.goto(`${BASE}/panel/ayuda`);
       await pg.waitForSelector('#view [data-asistente] .asis-entrada', { timeout: 15000 }).catch(() => null);
       ok(await pg.locator('#view [data-asistente] .asis-entrada').isVisible(), '3. Ayuda del panel con el asistente encendido: «Pregúntale al asistente» arriba');
       await pg.screenshot({ path: `${OUT}/panel-ayuda-asistente.png`, fullPage: true });

@@ -225,7 +225,7 @@ for (const [lang, titulo, cuerpo, fuera] of [
 {
   // El Resumen del panel: lo del negocio, arriba y por encima de lo demás.
   const { ctx, page, estado, errores } = await abre(nav, {});
-  await page.goto(`${BASE}/panel#/resumen`);
+  await page.goto(`${BASE}/panel/hoy`);
   await page.waitForSelector('.retenido-fotos', { timeout: 15000 }).catch(() => {});
   const t = await page.locator('.retenido', { has: page.locator('.retenido-fotos') }).innerText().catch(() => '');
   ok(t.includes('Lo estamos revisando') && t.includes('No se ha publicado'), 'panel: el mensaje en el Resumen', t || (await page.locator('body').innerText()).slice(0, 300));
@@ -269,7 +269,7 @@ for (const [lang, titulo, cuerpo, fuera] of [
   // El panel de verdad (publicación nueva → «Añadir foto o vídeo»): los fotogramas de
   // KFotogramas suben ANTES que el vídeo, con su misma base (FILTRO_MEDIOS §4).
   const { ctx, page, estado, errores } = await abre(nav, {});
-  await page.goto(`${BASE}/panel#/publicaciones/nueva-flash`);
+  await page.goto(`${BASE}/panel/publicaciones/nueva-flash`);
   await page.waitForSelector('#photos input[type=file]', { state: 'attached', timeout: 15000 }).catch(() => {});
   const listo = await page.evaluate(async () => {
     const input = document.querySelector('#photos input[type=file]');

@@ -145,7 +145,7 @@ const llamada = (estado, fn) => estado.llamadas.filter(([f]) => f === fn).map(([
 async function panel(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
   // 1. Menú del día
-  await p.goto(`${BASE}/panel#/menu-del-dia`);
+  await p.goto(`${BASE}/panel/menu-del-dia`);
   await p.waitForSelector('#publicar', { timeout: 15000 });
   let txt = await vista(p);
   ok(/Repetir el de ayer \(12,50/.test(txt), `${nombre}/${t} menú: «Repetir el de ayer (12,50 €)»`);
@@ -164,13 +164,13 @@ async function panel(nav, nombre, t, vp) {
   const pub = llamada(estado, 'publish_daily_menu')[0] || {};
   ok(pub.p_price_cents === 1390 && pub.p_note === 'Con vino' && pub.p_meal === 'both' && pub.p_reuse_photo === false,
     `${nombre}/${t} menú: publica 13,90 €, «Con vino», comida y cena (${JSON.stringify(pub)})`);
-  await p.goto(`${BASE}/panel#/menu-del-dia`);
+  await p.goto(`${BASE}/panel/menu-del-dia`);
   await p.waitForSelector('#repetir');
   await p.click('#repetir');
   await p.waitForTimeout(500);
   const rep = llamada(estado, 'publish_daily_menu').slice(-1)[0] || {};
   ok(rep.p_reuse_photo === true && rep.p_price_cents === 1250, `${nombre}/${t} menú: «Repetir el de ayer» con su foto`);
-  await p.goto(`${BASE}/panel#/menu-del-dia`);
+  await p.goto(`${BASE}/panel/menu-del-dia`);
   await p.waitForSelector('#planOn');
   await p.uncheck('input[name=dia][value="5"]');
   await p.waitForTimeout(400);
@@ -178,7 +178,7 @@ async function panel(nav, nombre, t, vp) {
   ok(JSON.stringify(plan.p_weekdays) === '[1,2,3,4]' && plan.p_at === '11:30', `${nombre}/${t} menú: «Todos los días» sin el viernes (${JSON.stringify(plan)})`);
 
   // 2. Wifi para clientes
-  await p.goto(`${BASE}/panel#/wifi-clientes`);
+  await p.goto(`${BASE}/panel/wifi-clientes`);
   await p.waitForSelector('#guardaWifi', { timeout: 15000 });
   txt = await vista(p);
   ok(/142 escaneos este mes/.test(txt), `${nombre}/${t} wifi: «142 escaneos este mes»`);
@@ -196,16 +196,16 @@ async function panel(nav, nombre, t, vp) {
   await p.screenshot({ path: `${OUT}/panel-wifi-clientes-${nombre}-${t}.png`, fullPage: true });
 
   // 3. Negocio (las baldosas), Hoy y Publicar (§4zzz-panelapp)
-  await p.goto(`${BASE}/panel#/negocio`);
+  await p.goto(`${BASE}/panel/negocio`);
   await p.waitForSelector('.neg-tiles', { timeout: 15000 });
-  ok(await p.locator('#g-en-el-local [data-neg="dailyMenu"][href="#/menu-del-dia"]').count() === 1, `${nombre}/${t} Negocio: la baldosa del Menú del día`);
-  ok(await p.locator('#g-en-el-local [data-neg="tableQr"][href="#/wifi-clientes"]').count() === 1, `${nombre}/${t} Negocio: la baldosa del wifi`);
-  await p.goto(`${BASE}/panel#/resumen`);
+  ok(await p.locator('#g-en-el-local [data-neg="dailyMenu"][href="/panel/menu-del-dia"]').count() === 1, `${nombre}/${t} Negocio: la baldosa del Menú del día`);
+  ok(await p.locator('#g-en-el-local [data-neg="tableQr"][href="/panel/wifi-clientes"]').count() === 1, `${nombre}/${t} Negocio: la baldosa del wifi`);
+  await p.goto(`${BASE}/panel/hoy`);
   await p.waitForSelector('.fila-inicio', { timeout: 15000 }).catch(() => null);
   txt = await vista(p);
   ok(/Menú del día · hasta las/.test(txt), `${nombre}/${t} resumen: fila del Menú del día`);
   // «¿Qué quieres publicar?», arriba de Publicar (antes, la ventana de «Crear»).
-  await p.goto(`${BASE}/panel#/publicar`);
+  await p.goto(`${BASE}/panel/publicar`);
   await p.waitForSelector('.crear .crear-op', { timeout: 15000 }).catch(() => null);
   if (await p.locator('.crear').count()) {
     ok(/Menú del día/.test(await p.locator('.crear').innerText()), `${nombre}/${t} crear: ofrece «Menú del día»`);
@@ -224,7 +224,7 @@ async function panel(nav, nombre, t, vp) {
   } else ok(false, `${nombre}/${t} crear: no sale «¿Qué quieres publicar?» en Publicar`);
 
   // 4. Tu ficha › Horario
-  await p.goto(`${BASE}/panel#/ficha/horario`);
+  await p.goto(`${BASE}/panel/ficha/horario`);
   await p.waitForSelector('#cocinaOn', { timeout: 15000 });
   ok(await p.locator('[data-cocina]').isHidden(), `${nombre}/${t} ficha: sin horario de cocina, plegado`);
   await p.check('#cocinaOn');
@@ -236,7 +236,7 @@ async function panel(nav, nombre, t, vp) {
   ok(k && k.p_hours && typeof k.p_hours === 'object', `${nombre}/${t} ficha: guarda el horario de cocina`);
 
   // 5. Cifras
-  await p.goto(`${BASE}/panel#/informe`);
+  await p.goto(`${BASE}/panel/informe`);
   await p.waitForSelector('#informeMesa', { timeout: 15000 }).catch(() => null);
   await p.waitForTimeout(500);
   ok(/142 escaneos este mes/.test(await vista(p)), `${nombre}/${t} cifras: «142 escaneos este mes»`);

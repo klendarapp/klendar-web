@@ -2,11 +2,11 @@
    y ONG). Lo mismo que la app (`lib/features/entities/`, migración
    20261219100000 de la app):
 
-   - El alta empieza con «¿Qué vas a dar de alta?» (`#/alta`): un local
-     (`#/alta/local`), eventos o actividades sin local fijo
-     (`#/alta/eventos`; los dos siguen en `#/alta/1…3`, en ficha.js) o un
+   - El alta empieza con «¿Qué vas a dar de alta?» (`/panel/alta`): un local
+     (`/panel/alta/local`), eventos o actividades sin local fijo
+     (`/panel/alta/eventos`; los dos siguen en `/panel/alta/1…3`, en ficha.js) o un
      ayuntamiento, asociación u ONG
-     (`#/alta/entidad/1…3`, aquí): la entidad (tipo, nombre oficial, CIF y
+     (`/panel/alta/entidad/1…3`, aquí): la entidad (tipo, nombre oficial, CIF y
      web oficial), la zona (el punto en el mapa, el municipio y, si quiere,
      el distrito o el barrio) y quién la da de alta (nombre, cargo, el
      documento que lo acredita y la declaración). Sin carta, horario,
@@ -15,7 +15,7 @@
      «¿Es tu negocio?» (`assets/cuenta/cuenta.js`).
    - Hasta que administración compruebe el documento no publica (la base
      tampoco lo deja: `entity_pending`).
-   - «Tu ficha › Cuenta de entidad» (`#/ficha/entidad`): un negocio ya dado
+   - «Tu ficha › Cuenta de entidad» (`/panel/ficha/entidad`): un negocio ya dado
      de alta la pide con el mismo documento (`apply_entity`), o la vuelve a
      pedir tras un rechazo; mientras se revisa, cómo va y «Retirar».
    - Su panel no enseña plan ni cuota, Fidelizar, bonos, sorteos, cupones,
@@ -253,13 +253,13 @@ function entElegir(v) {
     <p class="muted" style="max-width:640px">Elige lo que eres: el alta cambia para pedirte solo lo que hace falta.</p>
     ${otro ? '' : `<p class="muted" style="max-width:640px">${esc(I18N.t('¿Te han invitado al equipo de un negocio? Entonces no hace falta: entra con el mismo correo con el que te invitaron y aparecerá solo.'))}</p>`}
     <div class="crear-ops alta-elegir" style="max-width:640px">
-      ${op('#/alta/local', 'storefront', 'Un local', 'Bar, restaurante, tienda, gimnasio, peluquería, sala… Si tienes varios locales, los añades después.')}
-      ${op('#/alta/eventos', 'event', 'Organizo eventos o actividades', 'Fiestas, conciertos, festivales, mercadillos, promotoras, DJ o artistas, food trucks, clases o rutas… sin local fijo.')}
-      ${op('#/alta/entidad/1', 'entidad', 'Un ayuntamiento, asociación u ONG', 'Ayuntamiento, junta de distrito, asociación vecinal o de comerciantes, club deportivo, ONG u otra entidad sin ánimo de lucro. Publicáis eventos y campañas; antes comprobamos quiénes sois.')}
+      ${op('/panel/alta/local', 'storefront', 'Un local', 'Bar, restaurante, tienda, gimnasio, peluquería, sala… Si tienes varios locales, los añades después.')}
+      ${op('/panel/alta/eventos', 'event', 'Organizo eventos o actividades', 'Fiestas, conciertos, festivales, mercadillos, promotoras, DJ o artistas, food trucks, clases o rutas… sin local fijo.')}
+      ${op('/panel/alta/entidad/1', 'entidad', 'Un ayuntamiento, asociación u ONG', 'Ayuntamiento, junta de distrito, asociación vecinal o de comerciantes, club deportivo, ONG u otra entidad sin ánimo de lucro. Publicáis eventos y campañas; antes comprobamos quiénes sois.')}
     </div>`;
 }
 
-// ── El alta de una entidad (`#/alta/entidad/1…3`) ────────────────────────────
+// ── El alta de una entidad (`/panel/alta/entidad/1…3`) ────────────────────────────
 let ALTA_ENT = null;
 const entAltaNueva = () => ({
   kind: 'council', official_name: '', tax_id: '', website: '', city: '', area: '', punto: null,
@@ -286,7 +286,7 @@ async function entAlta(v, param) {
   if (!ALTA_ENT) ALTA_ENT = entAltaNueva();
   const A = ALTA_ENT;
   const paso = Math.min(3, Math.max(1, parseInt(param, 10) || 1));
-  for (let n = 1; n < paso; n++) if (entPasoIncompleto(n)) { location.hash = `#/alta/entidad/${n}`; return; }
+  for (let n = 1; n < paso; n++) if (entPasoIncompleto(n)) { go(`/panel/alta/entidad/${n}`); return; }
   // Los 18 años, al empezar: antes se sabía al enviar, después de rellenarlo
   // todo y subir el documento (§4zzz-propent). La base lo vuelve a mirar al
   // enviar (`adult_required`). Sin red, sigue (lo dirá la base, como antes).
@@ -300,7 +300,7 @@ async function entAlta(v, param) {
           <h1 id="entEdadT">Dar de alta una entidad</h1>
           <p>${esc(I18N.t(ENT_ERRORES.adult_required))}</p>
           <div class="vacio-botones">${fecha ? '' : `<a class="btn primary" href="${APP_URL}/cuenta/perfil">${esc(I18N.t('Poner mi fecha de nacimiento'))}</a>`}
-            <a class="btn" href="#/alta">Atrás</a></div></section>`;
+            <a class="btn" href="/panel/alta">Atrás</a></div></section>`;
         I18N.translate(v);
         return;
       }
@@ -336,14 +336,14 @@ async function entAlta(v, param) {
   if (paso === 2) activaDonde($('[data-punto-caja]', v), f, A);
   if (paso === 3) entActivaDocumento(v, A);
   // Del primer paso, otra vez a «¿Qué vas a dar de alta?» (sin perder nada).
-  $('[data-atras]', v).onclick = () => { entLee(f, A); location.hash = paso > 1 ? `#/alta/entidad/${paso - 1}` : '#/alta'; };
+  $('[data-atras]', v).onclick = () => { entLee(f, A); go(paso > 1 ? `/panel/alta/entidad/${paso - 1}` : '/panel/alta'); };
   f.onsubmit = async (e) => {
     e.preventDefault();
     entLee(f, A);
     $('#err', v).textContent = '';
     if (!entFaltan(f, A)) return;
     if (paso === 2 && !(await aseguraPunto($('[data-punto-caja]', v), f, A))) return;
-    if (paso < 3) { location.hash = `#/alta/entidad/${paso + 1}`; return; }
+    if (paso < 3) { go(`/panel/alta/entidad/${paso + 1}`); return; }
     if (!A.proof_path) { $('#err', v).textContent = I18N.t(ENT_ERRORES.proof_required); $('[data-doc-elegir]', v)?.focus(); return; }
     if (!marcaFaltan([
       [f.elements.ent_declaration, A.declaration ? null : I18N.t('Marca la declaración para enviarla.')],
@@ -369,7 +369,7 @@ async function entAlta(v, param) {
       $('.bizpick').hidden = false;
       renderBizPicker();
       toast('Solicitud enviada. Te avisamos cuando la revisemos.');
-      if (location.hash === '#/hoy') route(); else location.hash = '#/hoy';
+      if (aqui() === '/panel/hoy') route(); else go('/panel/hoy');
     } catch (e2) {
       $('#err', v).textContent = e2.yaDicho ? e2.message : I18N.t(friendly(e2.message));
       boton.disabled = false;
@@ -378,16 +378,16 @@ async function entAlta(v, param) {
   sinDobleEnvio(v);
   GUARDA = {
     sucia: () => !!ALTA_ENT && JSON.stringify({ ...ALTA_ENT, punto: null }) !== JSON.stringify(entAltaNueva()),
-    dentro: (h) => h.startsWith('#/alta'),
+    dentro: (h) => h.startsWith('/panel/alta'),
   };
 }
 
-// ── «Tu ficha › Cuenta de entidad» (`#/ficha/entidad`) ─────────────────────
+// ── «Tu ficha › Cuenta de entidad» (`/panel/ficha/entidad`) ─────────────────────
 async function entFicha(v, b) {
   await entCarga();
   const e = BIZ.entity || {};
   const a = e.application;
-  const cab = `<p class="crumbs"><a href="#/ficha">← ${esc(I18N.t('Tu ficha'))}</a></p>
+  const cab = `<p class="crumbs"><a href="/panel/ficha">← ${esc(I18N.t('Tu ficha'))}</a></p>
     <div class="page-head"><h1>${esc(I18N.t('Cuenta de entidad'))}</h1></div>`;
   const nota = (icon, titulo, texto, extra = '') => `<div class="card" style="max-width:680px"><h2 style="display:flex;gap:8px;align-items:center;margin:0 0 6px">${icono(icon)}<span>${esc(I18N.t(titulo))}</span></h2>
     <p class="muted" style="margin:0">${esc(texto)}</p>${extra}</div>`;
@@ -457,5 +457,5 @@ async function entFicha(v, b) {
 function entAvisoPendiente() {
   return `<div class="help"><b>${esc(I18N.t('Comprobando la entidad'))}</b>
     ${esc(I18N.t('Estamos mirando el documento; normalmente tardamos 24–48 h. Hasta que lo verifiquemos no se puede publicar, pero ya puedes completar la ficha.'))}
-    <p style="margin:8px 0 0"><a class="btn sm" href="#/ficha/entidad">${icono('documento')}${esc(I18N.t('Ver la solicitud'))}</a></p></div>`;
+    <p style="margin:8px 0 0"><a class="btn sm" href="/panel/ficha/entidad">${icono('documento')}${esc(I18N.t('Ver la solicitud'))}</a></p></div>`;
 }

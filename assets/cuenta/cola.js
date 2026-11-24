@@ -235,7 +235,7 @@ RUTAS.cola = async ([code]) => {
         icono: 'storefront', h: 'h1',
         titulo: EN ? `You're on the ${b.name} team` : `Eres del equipo de ${b.name}`,
         texto: t('La cola se lleva desde Mi negocio.'),
-        botones: `<a class="pill accent" href="/panel#/cola?biz=${esc(b.id)}">${esc(t('Ir a la cola'))}</a>`,
+        botones: `<a class="pill accent" href="/panel/cola?biz=${esc(b.id)}">${esc(t('Ir a la cola'))}</a>`,
       }));
       return;
     }

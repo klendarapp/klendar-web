@@ -49,7 +49,7 @@ ok('2. lista: «Nueva tarjeta» y el cartel solo con can_edit', lista.includes('
 const form = panel.slice(panel.indexOf('async function tarjetaForm'), panel.indexOf('async function tarjetaClientes'));
 ok('2. cambiar las reglas: el personal no entra', form.includes("if (!(d.can_edit ?? gestiona()))"));
 const gente = panel.slice(panel.indexOf('async function tarjetaClientes'), panel.indexOf('// Añadir a alguien: quien ya ha canjeado'));
-ok('2. tarjeta: «Editar» solo con can_edit', /\$\{edita \? `<a class="btn sm ghost" href="#\/sellos\/\$\{esc\(c\.id\)\}\/editar">Editar<\/a>` : ''\}/.test(gente));
+ok('2. tarjeta: «Editar» solo con can_edit', /\$\{edita \? `<a class="btn sm ghost" href="\/panel\/sellos\/\$\{esc\(c\.id\)\}\/editar">Editar<\/a>` : ''\}/.test(gente));
 ok('2. «Entregar el premio» y «Poner a 0», solo con can_edit',
   /\$\{edita \? `<div class="f full"><button class="btn primary" type="button" id="da"/.test(gente)
   && gente.includes("if (edita) $('#da', v).onclick") && gente.includes("if (edita) $('#cero', v).onclick"));

@@ -105,7 +105,7 @@ const PANEL = (x = {}, biz = {}) => ({
 
 async function sugerida(nav, n) {
   const { ctx, p, estado, errores } = await contexto(nav, { rpc: PANEL({ save_offer_rule: 'r1' }) });
-  await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/negocio`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.primeros [data-sug]');
   const v = await p.locator('.primeros').innerText();
   ok(await p.locator('.primeros [data-sug]').count() === 3, `${n}: tres sugerencias`);
@@ -135,7 +135,7 @@ async function sugerida(nav, n) {
 
 async function reglaFalla(nav, n) {
   const { ctx, p, estado } = await contexto(nav, { rpc: PANEL(), fallan: ['save_offer_rule'] });
-  await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/negocio`, { waitUntil: 'networkidle' });
   await p.click('.primeros [data-sug="0"]');
   await p.click('#modal button[type=submit]');
   await p.waitForTimeout(800);
@@ -145,13 +145,13 @@ async function reglaFalla(nav, n) {
 
 async function idiomas(nav, n) {
   const fr = await contexto(nav, { lang: 'fr', rpc: PANEL() });
-  await fr.p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+  await fr.p.goto(`${BASE}/panel/negocio`, { waitUntil: 'networkidle' });
   await fr.p.waitForSelector('.primeros [data-sug]');
   const v = await fr.p.locator('.primeros').innerText();
   ok(/Café et tartine pour 2,50\s€/.test(v) && /Ta première offre, qui se répète toute seule/.test(v), `${n}: en francés`);
   await fr.ctx.close();
   const bar = await contexto(nav, { categoria: CATS[1].id, rpc: PANEL() });
-  await bar.p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+  await bar.p.goto(`${BASE}/panel/negocio`, { waitUntil: 'networkidle' });
   await bar.p.waitForSelector('.primeros [data-sug]');
   const b = await bar.p.locator('.sug-lista').innerText();
   ok(/Tapa gratis con tu consumición/.test(b) && !/caña|cerveza|vino|copa|alcohol/i.test(b), `${n}: las de un bar, sin alcohol`);
@@ -167,7 +167,7 @@ async function sinSugerencias(nav, n) {
   ];
   for (const [nombre, rpc, conPasos] of casos) {
     const { ctx, p } = await contexto(nav, { rpc });
-    await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel/negocio`, { waitUntil: 'networkidle' });
     await p.waitForSelector('#view h1');
     ok(await p.locator('[data-sug]').count() === 0, `${n}: ${nombre}, sin sugerencias`);
     const pasos = await p.locator('.primeros').count();
@@ -179,15 +179,15 @@ async function sinSugerencias(nav, n) {
 
 async function formulario(nav, n) {
   const a = await contexto(nav, { rpc: PANEL() });
-  await a.p.goto(`${BASE}/panel#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
+  await a.p.goto(`${BASE}/panel/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
   await a.p.waitForSelector('#form');
   ok(await a.p.locator('.sug-caja [data-sug]').count() === 3, `${n}: sin nada publicado, en el formulario`);
-  await a.p.evaluate(() => { location.hash = '#/publicaciones/nueva-flash?idea=1'; });
+  await a.p.evaluate(() => { go('/panel/publicaciones/nueva-flash?idea=1'); });
   await a.p.waitForTimeout(800);
   ok(await a.p.locator('.sug-caja').count() === 0, `${n}: «Prefiero escribir otra», sin ellas`);
   await a.ctx.close();
   const b = await contexto(nav, { rpc: PANEL({ my_business_offer_counts: { total: 3, todas: 3, activa: 1 } }) });
-  await b.p.goto(`${BASE}/panel#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
+  await b.p.goto(`${BASE}/panel/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
   await b.p.waitForSelector('#form');
   ok(await b.p.locator('.sug-caja').count() === 0, `${n}: con publicaciones, sin ellas`);
   await b.ctx.close();
@@ -237,7 +237,7 @@ async function enlace(nav, n) {
   await a.ctx.close();
   const b = await contexto(nav, { rpc: PANEL({ my_businesses: [] }) });
   await b.p.goto(`${BASE}/alta`);
-  await b.p.waitForURL(/\/panel#\/alta/);
+  await b.p.waitForURL(/\/panel\/alta/);
   await b.p.waitForSelector('#view h1, #view h2');
   ok(true, `${n}: /alta con sesión, al alta`);
   await b.ctx.close();
@@ -249,16 +249,16 @@ async function fichaSitios(nav, n) {
   const FOTO = 'https://example.com/portada.jpg';
   const verificado = (x = {}, biz = {}) => PANEL({ my_business_offer_counts: { total: 3, todas: 3, activa: 1 }, ...x }, { verification_status: 'verified', ...biz });
   const casos = [
-    ['sin horario ni foto', {}, {}, 'es', /Completa tu ficha: añade el horario y una foto para salir antes en Sitios\./, '#/ficha'],
-    ['sin foto', { opening_hours: HORARIO }, {}, 'es', /Completa tu ficha: añade una foto para salir antes en Sitios\./, '#/ficha/fotos'],
-    ['sin horario (con una foto del local)', { gallery: [FOTO] }, {}, 'es', /Completa tu ficha: añade el horario para salir antes en Sitios\./, '#/ficha/horario'],
-    ['en francés', {}, {}, 'fr', /Complète ta fiche : ajoute tes horaires et une photo pour apparaître plus haut dans Lieux\./, '#/ficha'],
+    ['sin horario ni foto', {}, {}, 'es', /Completa tu ficha: añade el horario y una foto para salir antes en Sitios\./, '/panel/ficha'],
+    ['sin foto', { opening_hours: HORARIO }, {}, 'es', /Completa tu ficha: añade una foto para salir antes en Sitios\./, '/panel/ficha/fotos'],
+    ['sin horario (con una foto del local)', { gallery: [FOTO] }, {}, 'es', /Completa tu ficha: añade el horario para salir antes en Sitios\./, '/panel/ficha/horario'],
+    ['en francés', {}, {}, 'fr', /Complète ta fiche : ajoute tes horaires et une photo pour apparaître plus haut dans Lieux\./, '/panel/ficha'],
     ['completa', { opening_hours: HORARIO, cover_image_url: FOTO }, {}, 'es', null],
     ['empleado', {}, { role: 'staff' }, 'es', null],
   ];
   for (const [nombre, ficha, biz, lang, texto, href] of casos) {
     const { ctx, p, errores } = await contexto(nav, { lang, rpc: verificado({}, biz), ficha: { created_at: hace60, ...ficha } });
-    await p.goto(`${BASE}/panel/#/resumen`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel/hoy`, { waitUntil: 'networkidle' });
     await p.waitForSelector('#view h1');
     await p.waitForTimeout(400);
     const aviso = p.locator('.aviso-ficha-sitios');
@@ -273,9 +273,9 @@ async function fichaSitios(nav, n) {
   // Recién dado de alta y sin nada publicado: «Primeros pasos» (en Negocio)
   // ya lo dice; Hoy no repite el aviso.
   const { ctx, p } = await contexto(nav, { rpc: PANEL({}, { verification_status: 'verified' }) });
-  await p.goto(`${BASE}/panel/#/negocio`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/negocio`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.primeros');
-  await p.goto(`${BASE}/panel/#/hoy`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/hoy`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#view h1');
   await p.waitForTimeout(400);
   ok(await p.locator('.aviso-ficha-sitios').count() === 0, `${n}: con «Primeros pasos», sin el aviso`);

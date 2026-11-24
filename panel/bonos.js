@@ -1,10 +1,10 @@
 /* Panel del negocio: bonos pagados en el local (tanda B, migración
  * 20261202100000). Lo mismo que «Bonos» en «Mi negocio» de la app.
  *
- * - «Bonos» (#/bonos): los que vende el local («10 cafés por 12 €»), sus
+ * - «Bonos» (/panel/bonos): los que vende el local («10 cafés por 12 €»), sus
  *   cifras (vendidos y usos de 30 días, activos ahora) y, para propietario y
- *   encargado, crear, cambiar, pausar y quitar (#/bonos/nuevo, #/bonos/<id>)
- *   y la lista de vendidos (#/bonos/vendidos) con quién vendió y cada uso.
+ *   encargado, crear, cambiar, pausar y quitar (/panel/bonos/nuevo, /panel/bonos/<id>)
+ *   y la lista de vendidos (/panel/bonos/vendidos) con quién vendió y cada uso.
  *   El personal los ve para venderlos.
  * - En «Validar códigos», el QR de cliente (klendar.app/c/…): la persona,
  *   sus bonos de este negocio, «Descontar un uso» y «Cargar un bono», con
@@ -85,8 +85,8 @@ PAGES.bonos = async (v, param) => {
   const tt = d.totals || {};
   v.innerHTML = `
     <div class="page-head"><h1>Bonos</h1><span class="spacer"></span>
-      ${d.can_manage ? `<a class="btn sm ghost" href="#/bonos/vendidos">Bonos vendidos</a>
-      ${tipos.length >= 20 ? '<button class="btn sm primary" type="button" disabled>Crear un bono</button>' : '<a class="btn sm primary" href="#/bonos/nuevo">Crear un bono</a>'}` : ''}</div>
+      ${d.can_manage ? `<a class="btn sm ghost" href="/panel/bonos/vendidos">Bonos vendidos</a>
+      ${tipos.length >= 20 ? '<button class="btn sm primary" type="button" disabled>Crear un bono</button>' : '<a class="btn sm primary" href="/panel/bonos/nuevo">Crear un bono</a>'}` : ''}</div>
     ${d.can_manage && tipos.length >= 20 ? `<p class="muted">${esc(I18N.t(BONO_ERR.too_many_passes))}</p>` : ''}
     ${helpBox('¿Cómo funciona?', bi(
       `<p>Vende bonos en tu local («10 cafés por 12 €», «5 clases por 40 €»): <b>el cliente te paga a ti, como siempre</b>, y Klendar lleva la cuenta de los usos. Klendar no cobra nada.</p>
@@ -108,26 +108,26 @@ PAGES.bonos = async (v, param) => {
         <p class="muted">${esc(bonoValidez(t.valid_months))}</p>
         ${t.includes ? `<p class="muted">${esc(t.includes)}</p>` : ''}
         <p class="muted">${esc(bi(`${t.sold === 1 ? '1 vendido' : `${fmtNum(t.sold)} vendidos`} · ${t.active === 1 ? '1 activo' : `${fmtNum(t.active)} activos`}`, `${fmtNum(t.sold)} sold · ${fmtNum(t.active)} active`))}</p>`;
-      return d.can_manage ? `<a class="card tarjeta-sellos" href="#/bonos/${esc(t.id)}">${dentro}</a>` : `<div class="card tarjeta-sellos">${dentro}</div>`;
+      return d.can_manage ? `<a class="card tarjeta-sellos" href="/panel/bonos/${esc(t.id)}">${dentro}</a>` : `<div class="card tarjeta-sellos">${dentro}</div>`;
     }).join('')
     : `<div class="empty"><b>${esc(I18N.t('Aún no vendes bonos'))}</b><br>${esc(d.can_manage
       ? bi('Crea uno, por ejemplo «10 cafés por 12 €» o «5 clases por 40 €». Lo cobras tú en el local y Klendar lleva la cuenta de los usos.', 'Create one, for example “10 coffees for €12” or “5 classes for €40”. You charge for it at your venue and Klendar keeps count of the uses.')
       : I18N.t('Cuando quien lleva el negocio cree un bono, lo verás aquí para venderlo.'))}</div>`}
-    <p><a class="btn ghost envuelve" href="#/validar">${ms('qr_code_scanner')}Vender o usar un bono: Validar códigos</a></p>`;
+    <p><a class="btn ghost envuelve" href="/panel/validar">${ms('qr_code_scanner')}Vender o usar un bono: Validar códigos</a></p>`;
 };
 
 /** Crear (id null) o cambiar un bono. */
 async function bonoForm(v, id) {
-  if (!gestiona()) { location.hash = '#/bonos'; return; }
+  if (!gestiona()) { go('/panel/bonos'); return; }
   const d = await rpc('business_pass_types', { p_business: BIZ.id });
   const t = id ? (d.types || []).find((x) => x.id === id) : null;
-  if (id && !t) { location.hash = '#/bonos'; return; }
+  if (id && !t) { go('/panel/bonos'); return; }
   const meses = [1, 2, 3, 6, 12, 24];
   if (t?.valid_months && !meses.includes(t.valid_months)) meses.push(t.valid_months);
   const precio = t ? (t.price_cents / 100).toFixed(2).replace('.', I18N.lang === 'en' ? '.' : ',') : '';
   v.innerHTML = `
     <div class="page-head"><h1>${esc(I18N.t(t ? 'Editar el bono' : 'Crear un bono'))}</h1><span class="spacer"></span>
-      <a class="btn sm ghost" href="#/bonos">← Bonos</a></div>
+      <a class="btn sm ghost" href="/panel/bonos">← Bonos</a></div>
     <form class="card form" id="f-bono" novalidate>
       ${t?.sold ? `<p class="muted">${esc(bi(`Ya has vendido ${fmtNum(t.sold)}. Lo que cambies vale para los próximos: los vendidos siguen como se vendieron.`, `You've already sold ${fmtNum(t.sold)}. Changes apply to future sales: those sold stay as they were sold.`))}</p>` : ''}
       <label class="f"><span>Nombre</span><input name="name" maxlength="60" required placeholder="10 cafés" value="${esc(t?.name || '')}"></label>
@@ -170,7 +170,7 @@ async function bonoForm(v, id) {
         p_terms: f.terms.value.trim() || null,
       });
       toast(t ? 'Bono guardado. Lo ya vendido no cambia.' : 'Bono creado');
-      location.hash = '#/bonos';
+      go('/panel/bonos');
     } catch (e2) { err.textContent = e2.message; }
   };
   const pausa = $('#bono-pausa', v);
@@ -190,7 +190,7 @@ async function bonoForm(v, id) {
       try {
         await bonoRpc('delete_pass_type', { p_id: t.id });
         toast('Bono quitado');
-        location.hash = '#/bonos';
+        go('/panel/bonos');
       } catch (e) { toast(e.message, true); }
     };
   }
@@ -212,12 +212,12 @@ const bonosVendidosParte = (soloActivos, ultimo) => rpc('business_sold_passes', 
   p_business: BIZ.id, p_state: soloActivos ? 'active' : null, p_limit: BONOS_POR_PARTE, ...cursorDe(ultimo, 'sold_at'),
 }).then((x) => x || []);
 async function bonoVendidos(v, soloActivos = true, cargados = null, masPrevio = null) {
-  if (!gestiona()) { location.hash = '#/bonos'; return; }
+  if (!gestiona()) { go('/panel/bonos'); return; }
   // Al volver a pintar tras descontar o deshacer, los que ya se veían.
   const lista = cargados || await bonosVendidosParte(soloActivos, null);
   const hayMas = masPrevio ?? lista.length >= BONOS_POR_PARTE;
   v.innerHTML = `
-    <div class="page-head"><h1>Bonos vendidos</h1><span class="spacer"></span><a class="btn sm ghost" href="#/bonos">← Bonos</a></div>
+    <div class="page-head"><h1>Bonos vendidos</h1><span class="spacer"></span><a class="btn sm ghost" href="/panel/bonos">← Bonos</a></div>
     <!-- Un chip, sin «Todos» (Iván, 23-11): pulsado, los activos; sin
          pulsar, todos. -->
     <div class="pills" role="group" aria-label="${esc(I18N.t('Bonos vendidos'))}">
@@ -345,7 +345,7 @@ function bonoPintaCliente(caja) {
     // cargan bonos nuevos (la base tampoco deja), como la app.
     ? `<p class="muted">${esc(I18N.t('Con el negocio bloqueado o en pausa puedes descontar usos de los bonos que ya tiene la gente, pero no cargar bonos nuevos.'))}</p>`
     : (s.types || []).length ? `<button class="btn grande" type="button" id="bono-cargar">${esc(I18N.t('Cargar un bono'))}</button>`
-    : `<p class="muted">${esc(I18N.t('Este negocio aún no vende bonos.'))}</p>${s.can_manage ? `<a class="btn" href="#/bonos/nuevo">${esc(I18N.t('Crear un bono'))}</a>` : ''}`}
+    : `<p class="muted">${esc(I18N.t('Este negocio aún no vende bonos.'))}</p>${s.can_manage ? `<a class="btn" href="/panel/bonos/nuevo">${esc(I18N.t('Crear un bono'))}</a>` : ''}`}
     <p class="muted">${esc(I18N.t('El bono se paga en el local, como siempre: Klendar no cobra nada y solo lleva la cuenta de los usos.'))}</p>
   </div>`;
   const recarga = async () => {

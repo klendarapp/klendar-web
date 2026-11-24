@@ -180,7 +180,7 @@ const PAGINAS = [
   [FICHA, null], ['/agenda/madrid/', 'explorar'], ['/coleccion/finde/', 'explorar'],
   ['/para-negocios', ''], ['/precios', ''], ['/preguntas', ''], ['/prensa', ''], ['/aviso-legal', ''], ['/soporte', ''],
   ['/en', ''], ['/en/discover', 'descubre'], ['/en/explore', 'explorar'], ['/en/faq', ''],
-  ['/cuenta', 'cuenta'], ['/panel#/resumen', 'cuenta'],
+  ['/cuenta', 'cuenta'], ['/panel/hoy', 'cuenta'],
 ];
 
 const NAVS = (process.env.NAVS || 'chromium,webkit').split(',');

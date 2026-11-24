@@ -125,7 +125,7 @@ async function contexto(nav, { lang = 'es', rpc = {}, leer = () => ({ ok: true, 
 }
 
 const nueva = async (p) => {
-  await p.goto(`${BASE}/panel#/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/publicaciones/nueva-flash`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[name=title]');
 };
 const abreFuentes = async (p) => {
@@ -143,7 +143,7 @@ const estado2 = { on: false };
   await nueva(p);
   await p.waitForTimeout(300);
   ok(await p.locator('#fotoCta').count() === 0, 'apagado: en el formulario no sale');
-  await p.goto(`${BASE}/panel#/carta`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/carta`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#add-sec');
   ok(await p.locator('#foto-carta').count() === 0, 'apagado: en la carta no sale');
   ok(estado.lecturas.length === 0, 'apagado: no se llama a nadie');
@@ -214,7 +214,7 @@ const estado2 = { on: false };
   ok(estado.subidas.length === 1, 'usar la foto como imagen: se sube solo entonces');
   await p.click('#btnPublicar');
   await p.click('#pubAhora');
-  await p.waitForFunction(() => location.hash.includes('publicaciones') && !location.hash.includes('nueva'), null, { timeout: 8000 }).catch(() => {});
+  await p.waitForFunction(() => location.pathname.includes('publicaciones') && !location.pathname.includes('nueva'), null, { timeout: 8000 }).catch(() => {});
   ok(estado.insertadas.length === 1 && estado.insertadas[0].status === 'active' && estado.insertadas[0].title === OFERTA_LEIDA.title, 'lo publica el dueño, con «Publicar»');
   const regla = estado.llamadas.find(([f]) => f === 'save_offer_rule');
   ok(regla?.[1]?.p_offer === OFERTA && JSON.stringify(regla?.[1]?.p_weekdays) === '[1,2]' && regla?.[1]?.p_start_time === '08:00' && regla?.[1]?.p_duration_min === 180, 'la repetición, al publicar');
@@ -280,7 +280,7 @@ for (const [why, frase] of [['nothing', /No vemos ningún cartel/], ['cap', /Est
     rpc: { photo_fill_status: estadoFoto() },
     leer: (_b, n) => (n === 2 ? { ok: false, why: 'unreadable' } : { ok: true, kind: 'menu', read: CARTA_LEIDA }),
   });
-  await p.goto(`${BASE}/panel#/carta`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/carta`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#foto-carta');
   await p.click('#foto-carta');
   await p.waitForSelector('.foto-fuentes');
@@ -320,7 +320,7 @@ for (const [why, frase] of [['nothing', /No vemos ningún cartel/], ['cap', /Est
 // Sin nada leído: de vuelta a las fotos, con el mensaje.
 {
   const { ctx, p, errores } = await contexto(nav, { rpc: { photo_fill_status: estadoFoto() }, leer: () => ({ ok: false, why: 'cap' }) });
-  await p.goto(`${BASE}/panel#/carta`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/carta`, { waitUntil: 'networkidle' });
   await p.click('#foto-carta');
   await p.waitForSelector('.foto-fuentes');
   await p.locator('.foto-fuentes input[type=file]').last().setInputFiles(FOTO);

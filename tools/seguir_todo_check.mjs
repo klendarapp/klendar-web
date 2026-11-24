@@ -219,7 +219,7 @@ for (const [motor, tipo] of [['chromium', pw.chromium], ['webkit', pw.webkit]].f
         follow_search: [F1, ALONSO],
         set_business_broadcast_rule: { ok: true, changed: 2 },
       });
-      await p.goto(`${BASE}/panel#/partidos`, { waitUntil: 'networkidle' });
+      await p.goto(`${BASE}/panel/partidos`, { waitUntil: 'networkidle' });
       await p.waitForSelector('#ptSiempreMas');
       ok(/Poner siempre…/.test(await p.locator('#ptSiempreMas').innerText()), `${motor} ${t} panel: «Poner siempre…» aunque aún no haya reglas`);
       await p.locator('.pt-mas summary').first().click();

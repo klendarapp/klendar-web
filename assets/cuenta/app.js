@@ -705,14 +705,15 @@ const vuelve = (siguiente) => { irA(siguiente || '', { repinta: true }); };
 const destinoTrasEntrar = () => rutaInterna(new URLSearchParams(location.search).get('destino'));
 
 /** Una dirección de vuelta (`?destino=`, `?volver=`) de esta misma web y sin
- * datos: `/panel` o `/cuenta`, como mucho `?lang=`/`?alta=` y una ruta (del
- * hash en el panel: `/panel#/validar`, `/panel#/publicaciones/<id>`; de la
- * dirección en «Tu cuenta»: `/cuenta/ajustes`) con los parámetros de
- * `VUELTA_HASH`, cada uno con su forma: el código de un QR escaneado sin
- * sesión, `?biz=`, «Crear a partir de esta», ampliar, el día del
- * calendario… (los mismos que deja pasar `rutaDeVuelta()` del panel). Otra
- * web, `//…`, tokens o correos en el hash: fuera. '' = no hay a dónde volver. */
-const VUELTA_HASH = {
+ * datos: `/panel` o `/cuenta`, como mucho una ruta (`/panel/validar`,
+ * `/panel/publicaciones/<id>`, `/cuenta/ajustes`), `?lang=`/`?alta=` y los
+ * parámetros de `VUELTA_PARAMS`, cada uno con su forma: el código de un QR
+ * escaneado sin sesión, `?biz=`, «Crear a partir de esta», ampliar, el día
+ * del calendario… (los mismos que deja pasar `rutaDeVuelta()` del panel).
+ * Otra web, `//…`, tokens o correos: fuera. El `#` ya no lleva a ninguna
+ * pantalla (el panel va sin él desde el 24-11, §4zzz-panellimpio): se quita.
+ * '' = no hay a dónde volver. */
+const VUELTA_PARAMS = {
   biz: /^[0-9a-f-]{36}$/i,
   code: /^[0-9a-f]{8,64}$/i,
   from: /^[0-9a-f-]{36}$/i,
@@ -728,38 +729,25 @@ const VUELTA_HASH = {
 };
 function rutaInterna(v) {
   const s = String(v || '');
-  // `/panel`, `/cuenta/ajustes`… y también las de antes del 11-11, con barra
-  // (`/panel/`, `/cuenta/`: enlaces ya enviados), que vuelven sin ella.
+  // `/panel`, `/panel/validar`, `/cuenta/ajustes`… y también las de antes del
+  // 11-11, con barra (`/panel/`, `/cuenta/`: enlaces ya enviados), que vuelven sin ella.
   if (!/^\/(panel|cuenta)([/?#]|$)/.test(s)) return '';
   let u;
   try { u = new URL(s, location.origin); } catch { return ''; }
   const camino = u.pathname.replace(/\/+$/, '');
-  if (u.origin !== location.origin || !/^\/(panel|cuenta(\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2})?)$/.test(camino)) return '';
+  if (u.origin !== location.origin || !/^\/(panel|cuenta)(\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2})?$/.test(camino)) return '';
   const q = new URLSearchParams();
-  if (camino.startsWith('/cuenta')) {
-    for (const [k, re] of Object.entries(VUELTA_HASH)) {
-      const x = u.searchParams.get(k);
-      if (x && re.test(x)) q.set(k, x);
-    }
+  for (const [k, re] of Object.entries(VUELTA_PARAMS)) {
+    const x = u.searchParams.get(k);
+    if (x && re.test(x)) q.set(k, x);
   }
   for (const k of ['lang', 'alta']) {
     const x = u.searchParams.get(k);
     if (x != null && /^[a-z0-9]{1,5}$/i.test(x)) q.set(k, x);
   }
-  const [h, hq] = u.hash.split('?');
-  let hash = '';
-  if (/^#\/[a-z0-9-]{1,30}(\/[A-Za-z0-9-]{1,40}){0,2}$/.test(h || '')) {
-    const dentro = new URLSearchParams(hq || '');
-    const fuera = new URLSearchParams();
-    for (const [k, re] of Object.entries(VUELTA_HASH)) {
-      const x = dentro.get(k);
-      if (x && re.test(x)) fuera.set(k, x);
-    }
-    hash = h + (fuera.toString() ? `?${fuera}` : '');
-  }
-  return `${camino}${q.toString() ? `?${q}` : ''}${hash}`;
+  return `${camino}${q.toString() ? `?${q}` : ''}`;
 }
-const vieneDelPanel = () => /^\/panel([?#]|$)/.test(destinoTrasEntrar());
+const vieneDelPanel = () => /^\/panel([/?]|$)/.test(destinoTrasEntrar());
 const trasEntrar = (siguiente) => {
   const d = destinoTrasEntrar();
   const v = tomaVuelta();
@@ -1062,7 +1050,7 @@ RUTAS[''] = async () => {
       <h2 class="seccion-t">${esc(t('Negocio'))}</h2>
       <div class="lista">
         ${fila({ href: '/panel', icono: 'storefront', titulo: t('Mi negocio'), detalle: t('Publicaciones, cifras, equipo') })}
-        ${fila({ href: '/panel#/validar', icono: 'qr_code_scanner', titulo: t('Validar códigos'), detalle: t('Escanea los códigos de tus clientes') })}
+        ${fila({ href: '/panel/validar', icono: 'qr_code_scanner', titulo: t('Validar códigos'), detalle: t('Escanea los códigos de tus clientes') })}
       </div>` : `
       <a class="invitacion" href="/panel">
         <span class="inv-ic">${ic('storefront')}</span>

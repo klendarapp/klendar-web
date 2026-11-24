@@ -124,7 +124,7 @@ async function contexto(nav, { rpc = {}, leer = () => ({ ok: true, source: 'link
 }
 
 const nuevo = async (p) => {
-  await p.goto(`${BASE}/panel#/publicaciones/nuevo-evento`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/publicaciones/nuevo-evento`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[name=title]');
 };
 const elige = async (p, de) => {
@@ -233,7 +233,7 @@ const nav = await chromium.launch();
   await p.screenshot({ path: `${OUT}/web-evento-1-de-2.png`, fullPage: true });
   // «Saltar este»: el siguiente, ya relleno, sin publicar el primero.
   await p.click('#fotoSaltar');
-  await p.waitForFunction(() => location.hash.includes('cola=2'));
+  await p.waitForFunction(() => location.search.includes('cola=2'));
   await p.waitForFunction(() => /Evento 2 de 2/.test(document.querySelector('.foto-hecho')?.innerText || ''), null, { timeout: 8000 }).catch(() => {});
   ok(await p.inputValue('[name=title]') === AGENDA[1].title, 'saltar: el segundo, ya relleno');
   ok(/Evento 2 de 2/.test(await p.locator('.foto-hecho').innerText()), 'saltar: «Evento 2 de 2»');

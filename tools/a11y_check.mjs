@@ -67,7 +67,7 @@ const PUBLICAS = [
 const CON_SESION = [
   '/cuenta', '/cuenta/planes', '/cuenta/codigos', '/cuenta/sellos', '/cuenta/favoritos', '/cuenta/ajustes',
   '/cuenta/notificaciones', '/cuenta/tus-datos', '/cuenta/amigos',
-  '/panel#/hoy', '/panel#/publicar', '/panel#/negocio', '/panel#/ficha', '/panel#/validar', '/panel#/ayuda',
+  '/panel/hoy', '/panel/publicar', '/panel/negocio', '/panel/ficha', '/panel/validar', '/panel/ayuda',
 ];
 // El admin (parte 2, 19-11-2026), con una sesión de administradora de mentira:
 // cada pantalla del menú, con las listas vacías (lo que no se contesta, `[]`).

@@ -174,7 +174,7 @@ async function prueba(nav, nombre, t, vp) {
   // 1. Panel: tope de personas y por qué se cierra.
   {
     const { ctx, p, estado, errores } = await contexto(nav, vp);
-    await p.goto(`${BASE}/panel#/momento`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel/momento`, { waitUntil: 'networkidle' });
     await p.waitForSelector('#momentoForm');
     await p.check('input[name=kind][value=gift]');
     await p.fill('input[name=gift]', 'Postre invitado');
@@ -196,7 +196,7 @@ async function prueba(nav, nombre, t, vp) {
   }
   {
     const { ctx, p, estado, errores } = await contexto(nav, vp);
-    await p.goto(`${BASE}/panel#/momento`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel/momento`, { waitUntil: 'networkidle' });
     await p.waitForSelector('#momentoForm');
     await p.check('input[name=kind][value=gift]');
     await p.fill('input[name=gift]', 'Postre invitado');
@@ -260,7 +260,7 @@ async function prueba(nav, nombre, t, vp) {
   // 3. Panel › Validar: entrada nominativa, foto, veces aquí y una captura.
   {
     const { ctx, p, estado, errores } = await contexto(nav, vp);
-    await p.goto(`${BASE}/panel#/validar`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel/validar`, { waitUntil: 'networkidle' });
     await p.waitForSelector('#code');
     const tk = tokenEntrada();
     await p.fill('#code', tk);
@@ -289,7 +289,7 @@ async function prueba(nav, nombre, t, vp) {
   // 4. Panel › nuevo evento: «Entradas».
   {
     const { ctx, p, errores } = await contexto(nav, vp, { rol: 'owner' });
-    await p.goto(`${BASE}/panel#/publicaciones/nuevo-evento`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel/publicaciones/nuevo-evento`, { waitUntil: 'networkidle' });
     await p.waitForSelector('#bPlazas summary', { timeout: 15000 });
     await p.click('#bPlazas summary');
     const reserva = p.locator('[name=reservations_enabled]');

@@ -1,16 +1,16 @@
 /* «Qué pedir aquí», momentos del día y festivos en el panel (migraciones
  * 20261233100000–03 de la app), como la app:
  *
- *   · `#/ficha/que-pedir`: 2 o 3 cosas estrella con una línea y una foto
+ *   · `/panel/ficha/que-pedir`: 2 o 3 cosas estrella con una línea y una foto
  *     opcionales; con carta, se pueden elegir de ella
  *     (`set_business_highlights`).
  *   · «Cómo es tu local»: los momentos del día (`set_business_moments`), en
  *     ficha.js con `pedMomentosHtml`.
- *   · «Días cerrados» (`#/cerrados`): debajo, «Días con otro horario»
+ *   · «Días cerrados» (`/panel/cerrados`): debajo, «Días con otro horario»
  *     (`save_business_day_hours`, `delete_business_day_hours`).
  *   · El resumen: «¿Abres el 1 de noviembre?» con «Horario normal», «Otro
  *     horario» y «Cerrado» (`business_holiday_questions`, `answer_holiday`).
- *     `#/festivo/<día>` desde el aviso.
+ *     `/panel/festivo/<día>` desde el aviso.
  *
  * Comparte ámbito con panel.js: nombres que empiezan por `ped`. */
 'use strict';
@@ -54,7 +54,7 @@ async function pedQuePedir(v, carta) {
   let inicial = '';
 
   const pinta = () => {
-    v.innerHTML = `<p class="crumbs"><a href="#/ficha">← ${esc(I18N.t('Tu ficha'))}</a></p>
+    v.innerHTML = `<p class="crumbs"><a href="/panel/ficha">← ${esc(I18N.t('Tu ficha'))}</a></p>
       <div class="page-head"><h1>${esc(I18N.t('Qué pedir aquí'))}</h1></div>
       ${helpBox(I18N.t('¿Cómo funciona?'), `<p>${esc(I18N.t('Las 2 o 3 cosas que no hay que perderse. Salen en tu ficha y la gente las encuentra al buscar («croquetas»), aunque no tengas planes publicados.'))}</p>`)}
       <form id="qp" class="form ped-form" novalidate>
@@ -142,7 +142,7 @@ async function pedQuePedir(v, carta) {
       inicial = valor();
       GUARDA = null;
       toast(r.review ? 'Guardado. Revisaremos un texto que puede no cumplir las Normas de la comunidad.' : 'Guardado');
-      location.hash = '#/ficha';
+      go('/panel/ficha');
     };
   };
   pinta();
@@ -228,18 +228,18 @@ async function pedFestivo(caja) {
   caja.replaceChildren(pedTarjetaFestivo(q, () => pedFestivo(caja)));
 }
 
-/** `#/festivo/<día>`: desde el aviso. */
+/** `/panel/festivo/<día>`: desde el aviso. */
 PAGES.festivo = async (v, dia) => {
   const lista = await rpc('business_holiday_questions', { p_business: BIZ.id }).catch(() => []);
   const q = (Array.isArray(lista) ? lista : []).find((x) => x.day === dia);
   v.innerHTML = `<div class="page-head"><h1>${esc(I18N.t('Festivo'))}</h1></div>`;
   if (q) {
-    v.appendChild(pedTarjetaFestivo(q, () => { location.hash = '#/hoy'; }));
+    v.appendChild(pedTarjetaFestivo(q, () => { go('/panel/hoy'); }));
     return;
   }
   v.insertAdjacentHTML('beforeend', `<section class="vacio"><h2>${esc(I18N.t('Ya está contestado'))}</h2>
     <p class="muted">${esc(I18N.t('Puedes cambiarlo en «Días cerrados».'))}</p>
-    <div class="vacio-botones"><a class="btn primary" href="#/cerrados">${esc(I18N.t('Días cerrados'))}</a></div></section>`);
+    <div class="vacio-botones"><a class="btn primary" href="/panel/cerrados">${esc(I18N.t('Días cerrados'))}</a></div></section>`);
 };
 
 // «Días cerrados» con «Días con otro horario» y un solo «Añadir…» va en

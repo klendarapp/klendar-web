@@ -8,10 +8,10 @@
 //       Explorar sin el acceso a «Sorteos»; el sitemap de negocios sin
 //       sorteos;
 //     · encendido: /sorteos es la lista y Explorar tiene el acceso.
-//  2. «Tu cuenta»: apagado, #/sorteos y /cuenta/sorteo/<id> con el mismo vacío; la
+//  2. «Tu cuenta»: apagado, /panel/sorteos y /cuenta/sorteo/<id> con el mismo vacío; la
 //     bandeja pide sin los avisos de sorteos (`kind=neq.giveaway`) y los
 //     ajustes de notificaciones no tienen «Sorteos»; encendido, sí.
-//  3. Panel: apagado, #/sorteos dice que no están disponibles con «Volver al
+//  3. Panel: apagado, /panel/sorteos dice que no están disponibles con «Volver al
 //     resumen» y Fidelizar no tiene la tarjeta; encendido, sí.
 //  4. Admin › Configuración › «Sorteos»: por qué están apagados, y encender
 //     pide confirmación y guarda `{enabled, platforms}`.
@@ -97,7 +97,7 @@ async function contexto(nav, vp, giveaways, rpc) {
     ...rpc,
   } };
   await ctx.route(`${SUPA}/**`, supabaseFalso(estado));
-  // La lista pública de «En los que participas» (adonde lleva #/sorteos
+  // La lista pública de «En los que participas» (adonde lleva /panel/sorteos
   // encendido): no hace falta pintarla, solo ver que se llega.
   await ctx.route(/\/sorteos\?mios=1/, (r) => r.fulfill({ status: 200, contentType: 'text/html', body: '<p>lista</p>' }));
   const p = await ctx.newPage();
@@ -119,7 +119,7 @@ async function cuenta(nav, nombre, t, vp) {
   await p.goto(`${BASE}/cuenta/sorteos`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
   let txt = await vista(p);
-  ok(/Por ahora no hay sorteos en Klendar/.test(txt) && await p.locator('#view a[href="/descubre"]').count() === 1, `${nombre}/${t} cuenta apagado: #/sorteos, vacío con «Ir a Descubre»`);
+  ok(/Por ahora no hay sorteos en Klendar/.test(txt) && await p.locator('#view a[href="/descubre"]').count() === 1, `${nombre}/${t} cuenta apagado: /panel/sorteos, vacío con «Ir a Descubre»`);
   ok(await sinScroll(p), `${nombre}/${t} cuenta apagado: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/cuenta-sorteos-apagados-${nombre}-${t}.png`, fullPage: true });
   await p.goto(`${BASE}/cuenta/sorteo/${GID}`);
@@ -144,7 +144,7 @@ async function cuenta(nav, nombre, t, vp) {
   ok(estado.avisos.length > 0 && !estado.avisos.some((q) => /neq\.giveaway/.test(q)), `${nombre}/${t} cuenta encendido: la bandeja entera`);
   await p.goto(`${BASE}/cuenta/sorteos`);
   await p.waitForURL(/\/sorteos\?mios=1/);
-  ok(true, `${nombre}/${t} cuenta encendido: #/sorteos lleva a «En los que participas»`);
+  ok(true, `${nombre}/${t} cuenta encendido: /panel/sorteos lleva a «En los que participas»`);
   ok(errores.length === 0, `${nombre}/${t} cuenta encendido: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 }
@@ -169,29 +169,29 @@ const PANEL = {
 };
 async function panel(nav, nombre, t, vp) {
   let { ctx, p, estado, errores } = await contexto(nav, vp, OFF, PANEL);
-  await p.goto(`${BASE}/panel#/sorteos`);
+  await p.goto(`${BASE}/panel/sorteos`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
-  ok(/Lo demás de Fidelizar funciona como siempre/.test(await vista(p)) && await p.locator('#view a[href="#/hoy"]').count() === 1, `${nombre}/${t} panel apagado: #/sorteos con «Volver al resumen»`);
+  ok(/Lo demás de Fidelizar funciona como siempre/.test(await vista(p)) && await p.locator('#view a[href="/panel/hoy"]').count() === 1, `${nombre}/${t} panel apagado: /panel/sorteos con «Volver al resumen»`);
   ok(!estado.llamadas.some(([f]) => f === 'business_giveaways'), `${nombre}/${t} panel apagado: no pide los sorteos`);
   ok(await sinScroll(p), `${nombre}/${t} panel apagado: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/panel-sorteos-apagados-${nombre}-${t}.png`, fullPage: true });
-  await p.goto(`${BASE}/panel#/sorteos/nuevo`);
+  await p.goto(`${BASE}/panel/sorteos/nuevo`);
   await p.waitForFunction(() => /Los sorteos no están disponibles/.test(document.querySelector('#view')?.innerText || ''));
-  ok(await p.locator('#view form').count() === 0, `${nombre}/${t} panel apagado: #/sorteos/nuevo sin formulario`);
-  await p.goto(`${BASE}/panel#/fidelizar`);
+  ok(await p.locator('#view form').count() === 0, `${nombre}/${t} panel apagado: /panel/sorteos/nuevo sin formulario`);
+  await p.goto(`${BASE}/panel/fidelizar`);
   await p.waitForSelector('.fiel-lista');
-  ok(await p.locator('a[href="#/sorteos"]').count() === 0 && !/Sorteos/.test(await vista(p)), `${nombre}/${t} panel apagado: Fidelizar sin «Sorteos»`);
+  ok(await p.locator('a[href="/panel/sorteos"]').count() === 0 && !/Sorteos/.test(await vista(p)), `${nombre}/${t} panel apagado: Fidelizar sin «Sorteos»`);
   await p.screenshot({ path: `${OUT}/panel-fidelizar-apagados-${nombre}-${t}.png`, fullPage: true });
   ok(errores.length === 0, `${nombre}/${t} panel apagado: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 
   ({ ctx, p, estado, errores } = await contexto(nav, vp, ON, PANEL));
-  await p.goto(`${BASE}/panel#/fidelizar`);
-  await p.waitForSelector('.fiel-lista a[href="#/sorteos"]');
+  await p.goto(`${BASE}/panel/fidelizar`);
+  await p.waitForSelector('.fiel-lista a[href="/panel/sorteos"]');
   ok(/1 sorteo abierto/.test(await vista(p)), `${nombre}/${t} panel encendido: Fidelizar con «Sorteos · 1 sorteo abierto»`);
-  await p.goto(`${BASE}/panel#/sorteos`);
+  await p.goto(`${BASE}/panel/sorteos`);
   await p.waitForFunction(() => /Crear un sorteo/.test(document.querySelector('#view')?.innerText || ''));
-  ok(estado.llamadas.some(([f]) => f === 'business_giveaways'), `${nombre}/${t} panel encendido: #/sorteos, la lista de siempre`);
+  ok(estado.llamadas.some(([f]) => f === 'business_giveaways'), `${nombre}/${t} panel encendido: /panel/sorteos, la lista de siempre`);
   ok(errores.length === 0, `${nombre}/${t} panel encendido: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 }

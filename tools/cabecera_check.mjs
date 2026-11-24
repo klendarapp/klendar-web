@@ -205,7 +205,7 @@ for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
     await cabeceraBien(p2, 'header.top', `${t} Tu cuenta (rueda):`);
     await p2.screenshot({ path: `${OUT}/cabecera-${nombre}-${forma}-cuenta.png` });
     {
-      await p2.goto(`${BASE}/panel#/resumen`);
+      await p2.goto(`${BASE}/panel/hoy`);
       await p2.waitForSelector('.topbar', { state: 'attached' });
       await p2.waitForTimeout(1500);
       await relleno('#view');

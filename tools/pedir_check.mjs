@@ -2,14 +2,14 @@
 // local (tanda D), con un Supabase de mentira: no toca dev.
 //
 //  1. Panel, «Tu ficha»: la fila «Qué pedir aquí» con lo puesto; su pantalla
-//     (`#/ficha/que-pedir`): escribir, «Elegir de la carta» y guardar con
+//     (`/panel/ficha/que-pedir`): escribir, «Elegir de la carta» y guardar con
 //     `set_business_highlights`; un nombre de una letra no se manda.
 //  2. Panel, «Cómo es tu local»: los momentos del día y
 //     `set_business_moments` al guardar.
 //  3. Panel, «Días cerrados»: «Días con otro horario» (lista y
 //     `save_business_day_hours`).
 //  4. Panel, resumen: «¿Abres el …?» con «Horario normal», «Otro horario» y
-//     «Cerrado» (`answer_holiday`); `#/festivo/<día>`.
+//     «Cerrado» (`answer_holiday`); `/panel/festivo/<día>`.
 //  5. La ficha pública (`/b/`, las Functions de verdad): «Qué pedir aquí»,
 //     los momentos en «El sitio», «Abre el festivo del …» y «Abierto» con un
 //     día con otro horario aunque la semana diga cerrado.
@@ -155,13 +155,13 @@ async function panel(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
   const hoy = hoyMadrid();
   // 1. Tu ficha
-  await p.goto(`${BASE}/panel#/ficha`);
+  await p.goto(`${BASE}/panel/ficha`);
   await p.waitForSelector('.indice', { timeout: 15000 });
   let txt = await vista(p);
   if (process.env.DEPURA) console.log(txt.slice(0, 1500));
   ok(/Qué pedir aquí/.test(txt) && /Croquetas de jamón · Tarta de queso/.test(txt), `${nombre}/${t} ficha: fila «Qué pedir aquí» con lo puesto`);
   ok(/Vermut/.test(txt), `${nombre}/${t} ficha: «Cómo es tu local» dice el momento`);
-  await p.goto(`${BASE}/panel#/ficha/que-pedir`);
+  await p.goto(`${BASE}/panel/ficha/que-pedir`);
   await p.waitForSelector('#qp', { timeout: 15000 });
   ok(await p.locator('[data-i]').count() === 2, `${nombre}/${t} qué pedir: las dos cosas guardadas`);
   await p.screenshot({ path: `${OUT}/panel-que-pedir-${nombre}-${t}.png`, fullPage: true });
@@ -181,7 +181,7 @@ async function panel(nav, nombre, t, vp) {
   ok(Array.isArray(g.p_items) && g.p_items.length === 3 && g.p_items[2].title === 'Bravas' && g.p_items[2].note === 'Con alioli'
     && g.p_items[2].menu_item_id === CARTA[0].items[0].id, `${nombre}/${t} qué pedir: guarda las tres (${JSON.stringify(g.p_items)})`);
   // 2. Cómo es tu local
-  await p.goto(`${BASE}/panel#/ficha/local`);
+  await p.goto(`${BASE}/panel/ficha/local`);
   await p.waitForSelector('[name=momento]', { timeout: 15000 });
   ok(await p.locator('[name=momento][value=vermouth]').isChecked(), `${nombre}/${t} local: «Vermut» marcado`);
   await p.locator('[name=momento][value=drinks]').check({ force: true });
@@ -193,7 +193,7 @@ async function panel(nav, nombre, t, vp) {
   // 3. Días cerrados. Desde 5362544 (22-10, como la app) no hay dos
   // formularios siempre abiertos (#fOtro): un solo «Añadir…» que pregunta
   // «Cerrar unos días» o «Abrir con otro horario», cada uno en su diálogo.
-  await p.goto(`${BASE}/panel#/cerrados`);
+  await p.goto(`${BASE}/panel/cerrados`);
   await p.waitForSelector('#anadirCierre', { timeout: 15000 });
   txt = await vista(p);
   ok(/Días con otro horario/.test(txt) && /10:00–14:00 · Nuestra Señora de la Almudena/.test(txt), `${nombre}/${t} días cerrados: el día con otro horario`);
@@ -211,7 +211,7 @@ async function panel(nav, nombre, t, vp) {
   const d = llamada(estado, 'save_business_day_hours').slice(-1)[0] || {};
   ok(d.p_day === masDias(hoy, 20) && JSON.stringify(d.p_hours) === '[["11:00","15:00"]]', `${nombre}/${t} días cerrados: guarda el día con otro horario (${JSON.stringify(d)})`);
   // 4. Resumen: el festivo
-  await p.goto(`${BASE}/panel#/resumen`);
+  await p.goto(`${BASE}/panel/hoy`);
   await p.waitForSelector('.ped-festivo', { timeout: 15000 });
   txt = await p.locator('.ped-festivo').innerText();
   ok(/¿Abres el /.test(txt) && /Fiesta de prueba · Faltan 3 días/.test(txt) && /Horario normal \(13:00–16:00\)/.test(txt), `${nombre}/${t} resumen: «¿Abres el …?»`);
@@ -222,12 +222,12 @@ async function panel(nav, nombre, t, vp) {
   await p.waitForTimeout(500);
   const a = llamada(estado, 'answer_holiday').slice(-1)[0] || {};
   ok(a.p_answer === 'closed' && a.p_day === masDias(hoy, 3), `${nombre}/${t} resumen: «Cerrado» contesta (${JSON.stringify(a)})`);
-  await p.goto(`${BASE}/panel#/festivo/${masDias(hoy, 3)}`);
+  await p.goto(`${BASE}/panel/festivo/${masDias(hoy, 3)}`);
   await p.waitForSelector('.ped-festivo', { timeout: 15000 });
-  ok(true, `${nombre}/${t} #/festivo: la pregunta del aviso`);
-  await p.goto(`${BASE}/panel#/festivo/${masDias(hoy, 30)}`);
+  ok(true, `${nombre}/${t} /panel/festivo: la pregunta del aviso`);
+  await p.goto(`${BASE}/panel/festivo/${masDias(hoy, 30)}`);
   await p.waitForSelector('.vacio', { timeout: 15000 });
-  ok(/Ya está contestado/.test(await vista(p)), `${nombre}/${t} #/festivo: ya contestado`);
+  ok(/Ya está contestado/.test(await vista(p)), `${nombre}/${t} /panel/festivo: ya contestado`);
   ok(errores.length === 0, `${nombre}/${t} panel: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 }

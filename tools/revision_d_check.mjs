@@ -130,7 +130,7 @@ async function validar(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contexto(nav, vp, {
     rpc: { validate_redemption: (b) => (b.p_code === 'abcdef12' ? { ok: false, error: 'team_code' } : { ok: false, error: 'invalid_code' }) },
   });
-  await p.goto(`${BASE}/panel#/validar`);
+  await p.goto(`${BASE}/panel/validar`);
   await p.waitForSelector('#code');
   const valida = async (texto) => { await p.fill('#code', texto); await p.click('#go'); await p.waitForTimeout(500); return p.locator('#result').innerText(); };
   let r = await valida('https://otra-web.com/r/abcdef12');
@@ -152,7 +152,7 @@ async function validar(nav, nombre, t, vp) {
   await ctx.close();
   // En alemán.
   const de = await contexto(nav, vp, { idioma: 'de', rpc: { validate_redemption: { ok: false, error: 'team_code' } } });
-  await de.p.goto(`${BASE}/panel#/validar`);
+  await de.p.goto(`${BASE}/panel/validar`);
   await de.p.waitForSelector('#code');
   await de.p.waitForTimeout(800);
   await de.p.fill('#code', 'https://otra-web.com/x');
@@ -181,7 +181,7 @@ async function equipo(nav, nombre, t, vp) {
       business_invites_list: [],
     },
   });
-  await p.goto(`${BASE}/panel#/equipo`);
+  await p.goto(`${BASE}/panel/equipo`);
   await p.waitForSelector('[data-remove]');
   ok(await p.locator(`[data-user="${U}"], [data-remove="${U}"]`).count() === 0, `${nombre}/${t} equipo: el encargado no puede cambiarse ni quitarse`);
   ok(await p.locator('[data-remove="f0000000-0000-4000-8000-000000000003"]').count() === 1, `${nombre}/${t} equipo: a los demás, sí`);
@@ -193,7 +193,7 @@ async function equipo(nav, nombre, t, vp) {
 async function cerrarHoy(nav, nombre, t, vp) {
   for (const [hora, espera, txt] of [['2026-10-22T00:30:00Z', '2026-10-22T03:00:00.000Z', 'de madrugada (2:30)'], ['2026-10-22T12:00:00Z', '2026-10-23T03:00:00.000Z', 'a las 14:00']]) {
     const { ctx, p, estado, errores } = await contexto(nav, vp, { hora, rpc: { set_business_pause: null } });
-    await p.goto(`${BASE}/panel#/resumen`);
+    await p.goto(`${BASE}/panel/hoy`);
     await p.waitForSelector('#pausa');
     await p.click('#pausa');
     await p.waitForTimeout(600);
@@ -211,7 +211,7 @@ async function bonosParado(nav, nombre, t, vp) {
     types: [{ id: 't1', name: '10 cafés', uses: 10, price_cents: 1200 }] };
   for (const blocked of [true, false]) {
     const { ctx, p, errores } = await contexto(nav, vp, { blocked, rpc: { pass_scan: scan } });
-    await p.goto(`${BASE}/panel#/validar`);
+    await p.goto(`${BASE}/panel/validar`);
     await p.waitForSelector('#code');
     await p.fill('#code', '0123456789abcdef.1234567890.0123456789ab');
     await p.click('#go');
@@ -236,13 +236,13 @@ async function topes(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contexto(nav, vp, {
     rpc: { business_giveaways: { can_manage: true, giveaways: [g(1), g(2), g(3)] }, business_pass_types: { can_manage: true, types: Array.from({ length: 20 }, (_, i) => ty(i)), totals: {} } },
   });
-  await p.goto(`${BASE}/panel#/sorteos`);
+  await p.goto(`${BASE}/panel/sorteos`);
   await p.waitForSelector('.page-head');
-  ok(await p.locator('.page-head button[disabled]', { hasText: 'Crear un sorteo' }).count() === 1 && await p.locator('a[href="#/sorteos/nuevo"]').count() === 0
+  ok(await p.locator('.page-head button[disabled]', { hasText: 'Crear un sorteo' }).count() === 1 && await p.locator('a[href="/panel/sorteos/nuevo"]').count() === 0
     && /Puedes tener 3 sorteos abiertos a la vez/.test(await vista(p)), `${nombre}/${t} 3 sorteos abiertos: «Crear un sorteo» desactivado y por qué`);
-  await p.goto(`${BASE}/panel#/bonos`);
+  await p.goto(`${BASE}/panel/bonos`);
   await p.waitForSelector('.kpis');
-  ok(await p.locator('.page-head button[disabled]', { hasText: 'Crear un bono' }).count() === 1 && await p.locator('a[href="#/bonos/nuevo"]').count() === 0
+  ok(await p.locator('.page-head button[disabled]', { hasText: 'Crear un bono' }).count() === 1 && await p.locator('a[href="/panel/bonos/nuevo"]').count() === 0
     && /Como mucho 20 bonos/.test(await vista(p)), `${nombre}/${t} 20 bonos: «Crear un bono» desactivado y por qué`);
   ok(errores.length === 0, `${nombre}/${t} topes sin errores JS ${errores.join(' | ')}`);
   await ctx.close();
@@ -253,18 +253,18 @@ async function listas(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contexto(nav, vp, { rol: 'staff', rpc: { door_list: { ok: true, items: [] } } });
   // En Negocio › Agenda y equipo, la baldosa «Listas» (antes, en «Lo
   // esencial» del resumen; §4zzz-panelapp).
-  await p.goto(`${BASE}/panel#/negocio`);
+  await p.goto(`${BASE}/panel/negocio`);
   await p.waitForSelector('.neg-tiles');
-  const enlace = p.locator('[data-neg="door"][href="#/validar?listas=1"]');
+  const enlace = p.locator('[data-neg="door"][href="/panel/validar?listas=1"]');
   ok(await enlace.count() === 1 && /Listas de esta noche/.test(await enlace.getAttribute('aria-label')), `${nombre}/${t} empleado: «Listas» (de esta noche) en Negocio`);
   await enlace.click();
   await p.waitForSelector('#code');
   await p.waitForTimeout(800);
   ok(/Nadie se ha apuntado aún esta noche/.test(await vista(p)), `${nombre}/${t} empleado sin nadie apuntado: lo dice`);
   // Validar a secas (sin venir de ahí): sin la caja vacía.
-  await p.goto(`${BASE}/panel#/hoy`);
+  await p.goto(`${BASE}/panel/hoy`);
   await p.waitForSelector('#view h1');
-  await p.goto(`${BASE}/panel#/validar`);
+  await p.goto(`${BASE}/panel/validar`);
   await p.waitForSelector('#code');
   await p.waitForTimeout(800);
   ok(!/Nadie se ha apuntado aún esta noche/.test(await vista(p)), `${nombre}/${t} «Validar códigos» a secas: sin la caja vacía`);
@@ -275,7 +275,7 @@ async function listas(nav, nombre, t, vp) {
 // ── 8. «Primera visita» y RRPP ──────────────────────────────────────────────
 async function primeraVisita(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contexto(nav, vp, { rpc: { business_promoters_list: [{ id: 'r1', name: 'Rafa', status: 'active' }] } });
-  await p.goto(`${BASE}/panel#/publicaciones/nueva-flash`);
+  await p.goto(`${BASE}/panel/publicaciones/nueva-flash`);
   await p.waitForSelector('#primeraRow', { state: 'attached' });
   const visible = () => p.locator('#primeraRow').evaluate((el) => !el.hidden);
   ok(await visible(), `${nombre}/${t} formulario: «Primera visita» con «Todo el mundo»`);
@@ -295,14 +295,14 @@ async function entidad(nav, nombre, t, vp) {
   // Lo que pide cada herramienta al abrirse (pedidos usa lo mismo que el resumen).
   const PIDE = { aforo: 'capacity_status', 'wifi-clientes': 'business_table_qr', 'menu-del-dia': 'daily_menu_setup', pedidos: null };
   const { ctx, p, estado, errores } = await contexto(nav, vp, { rpc: { my_entity_application: { entity_kind: 'association', can_apply: false, why: null, application: null } } });
-  await p.goto(`${BASE}/panel#/resumen`);
+  await p.goto(`${BASE}/panel/hoy`);
   await p.waitForSelector('#view h1, #view .page-head');
   for (const r of ['aforo', 'wifi-clientes', 'menu-del-dia', 'pedidos']) {
-    await p.goto(`${BASE}/panel#/${r}`);
+    await p.goto(`${BASE}/panel/${r}`);
     await p.waitForTimeout(900);
     // Vuelve a Hoy (la dirección lo dice) sin abrir la herramienta.
-    const hoy = await p.evaluate(() => location.hash) === '#/hoy' && await p.locator('#view .hoy-cab').count() === 1;
-    ok(hoy && (!PIDE[r] || llamadas(estado, PIDE[r]).length === 0), `${nombre}/${t} entidad: #/${r} vuelve a Hoy${PIDE[r] ? ` (sin pedir ${PIDE[r]})` : ''}`);
+    const hoy = await p.evaluate(() => location.pathname + location.search) === '/panel/hoy' && await p.locator('#view .hoy-cab').count() === 1;
+    ok(hoy && (!PIDE[r] || llamadas(estado, PIDE[r]).length === 0), `${nombre}/${t} entidad: /panel/${r} vuelve a Hoy${PIDE[r] ? ` (sin pedir ${PIDE[r]})` : ''}`);
   }
   ok(errores.length === 0, `${nombre}/${t} entidad sin errores JS ${errores.join(' | ')}`);
   await ctx.close();

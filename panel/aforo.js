@@ -1,13 +1,13 @@
 /* Panel del negocio: «Aforo en directo» (migración 20261234100000 de la app).
  * Lo mismo que la app:
  *
- * - #/aforo: la pantalla de la puerta. La cifra grande («86 / 120») y el
+ * - /panel/aforo: la pantalla de la puerta. La cifra grande («86 / 120») y el
  *   nivel del contador, dos botones enormes e iguales (−1 y +1, en tinta),
  *   lo que ve la gente en la ficha, «Esta noche…», cuántas personas esperan
  *   que haya sitio, los eventos de hoy y «Poner a 0». Cualquiera del equipo
  *   (también un empleado, varios a la vez: se pone al día cada 4 s mientras
  *   está abierta y la pestaña se ve).
- * - #/aforo/ajustes: activar, aforo máximo, porcentajes y «Enseñar en mi
+ * - /panel/aforo/ajustes: activar, aforo máximo, porcentajes y «Enseñar en mi
  *   ficha si hay sitio» (encendido de serie; apagado, el contador es solo del
  *   equipo y la base no enseña nada fuera). Propietario o encargado; un
  *   empleado va a la puerta.
@@ -116,7 +116,7 @@ PAGES.aforo = async (v, param) => {
   if (param === 'ajustes') return afdAjustes(v);
   let st = await rpc('capacity_status', { p_business: BIZ.id });
   if (!st) throw new Error('not_authorized');
-  if (st.organizer) { location.replace('#/hoy'); return; }
+  if (st.organizer) { go('/panel/hoy', true); return; }
   const puedeAjustar = st.can_edit === true;
   if (!st.enabled || !(Number(st.max) > 0)) {
     // Apagado: la pantalla vacía de siempre, centrada y con salida.
@@ -124,15 +124,15 @@ PAGES.aforo = async (v, param) => {
       <section class="vacio"><h2>${esc(bi('El aforo en directo está apagado', 'Live capacity is off'))}</h2>
         <p>${esc(bi('Cuenta en la puerta con +1 y −1, y «¿Hay sitio ahora?» se pone solo. Por ejemplo: «32 de 60». Actívalo y pon cuántas personas caben.', 'Count at the door with +1 and −1, and “Room right now?” updates itself. For example: “32 of 60”. Turn it on and say how many people fit.'))}</p>
         <div class="vacio-botones">${puedeAjustar
-    ? `<a class="btn primary" href="#/aforo/ajustes">${esc(bi('Activar', 'Turn on'))}</a>`
-    : `<a class="btn" href="#/hoy">${esc(bi('Volver a Hoy', 'Back to Today'))}</a>`}</div>
+    ? `<a class="btn primary" href="/panel/aforo/ajustes">${esc(bi('Activar', 'Turn on'))}</a>`
+    : `<a class="btn" href="/panel/hoy">${esc(bi('Volver a Hoy', 'Back to Today'))}</a>`}</div>
         ${puedeAjustar ? '' : `<p class="muted">${esc(bi('Lo activa el propietario o un encargado.', 'The owner or a manager turns it on.'))}</p>`}</section>`;
     return;
   }
 
   v.innerHTML = `<div class="afd">
     <div class="page-head"><h1>${esc(bi('Aforo en directo', 'Live capacity'))}</h1><span class="spacer"></span>
-      ${puedeAjustar ? `<a class="btn sm ghost" href="#/aforo/ajustes" aria-label="${esc(bi('Ajustes del aforo', 'Capacity settings'))}" title="${esc(bi('Ajustes del aforo', 'Capacity settings'))}">${icono('ajustesAforo')}<span class="afd-ajustes-txt">${esc(bi('Ajustes del aforo', 'Capacity settings'))}</span></a>` : ''}</div>
+      ${puedeAjustar ? `<a class="btn sm ghost" href="/panel/aforo/ajustes" aria-label="${esc(bi('Ajustes del aforo', 'Capacity settings'))}" title="${esc(bi('Ajustes del aforo', 'Capacity settings'))}">${icono('ajustesAforo')}<span class="afd-ajustes-txt">${esc(bi('Ajustes del aforo', 'Capacity settings'))}</span></a>` : ''}</div>
     <section class="afd-puerta" aria-labelledby="afdCifra">
       <p class="afd-cifra" id="afdCifra" aria-live="polite" aria-atomic="true"><b id="afdN"></b><span class="afd-max"> / ${esc(fmtNum(st.max))}</span></p>
       <p class="afd-nivel" id="afdNivel"></p>
@@ -320,11 +320,11 @@ PAGES.aforo = async (v, param) => {
 async function afdAjustes(v) {
   const st = await rpc('capacity_status', { p_business: BIZ.id });
   if (!st) throw new Error('not_authorized');
-  if (st.organizer) { location.replace('#/hoy'); return; }
-  if (!(st.can_edit === true)) { location.replace('#/aforo'); return; }
+  if (st.organizer) { go('/panel/hoy', true); return; }
+  if (!(st.can_edit === true)) { go('/panel/aforo', true); return; }
   const casiTxt = (n) => bi(`Por debajo del ${n} %, «Hay sitio».`, `Below ${n}%, “There’s room”.`);
   v.innerHTML = `
-    <p class="crumbs"><a class="link" href="#/aforo">${esc(bi('Aforo en directo', 'Live capacity'))}</a></p>
+    <p class="crumbs"><a class="link" href="/panel/aforo">${esc(bi('Aforo en directo', 'Live capacity'))}</a></p>
     <div class="page-head"><h1>${esc(bi('Ajustes del aforo', 'Capacity settings'))}</h1></div>
     <form class="form afd-form" id="afdForm" novalidate>
       <label class="f full casilla"><input type="checkbox" name="on" ${st.enabled ? 'checked' : ''}>
@@ -376,7 +376,7 @@ async function afdAjustes(v) {
     try {
       await rpc('set_capacity_settings', { p_business: BIZ.id, p_enabled: on, p_max: max, p_almost: casi, p_full: lleno, p_show: el.show.checked });
       toast(bi('Guardado', 'Saved'));
-      location.hash = on ? '#/aforo' : '#/negocio/en-el-local';
+      go(on ? '/panel/aforo' : '/panel/negocio/en-el-local');
     } catch (x) {
       const c = String(x.clave || x.message);
       if (c.includes('invalid_max')) err('max', afdError(c));

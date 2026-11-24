@@ -206,16 +206,16 @@ async function tarjeta(nav, nombre, t, vp) {
     const { ctx, p, errores } = await contexto(nav, vp, rpcPanel({ available }));
     // Negocio › En el local (antes, la tarjeta de «Más herramientas";
     // §4zzz-panelapp): como la app, sin baldosa hasta que se pueda activar.
-    await p.goto(`${BASE}/panel#/negocio`);
+    await p.goto(`${BASE}/panel/negocio`);
     await p.waitForSelector('.neg-tiles');
     const baldosa = p.locator('[data-neg="orders"]');
     if (!available) {
       ok(await baldosa.count() === 0, `${nombre}/${t} Negocio hasta el 4-11: sin la baldosa «Pedido listo»`);
     } else {
-      ok(await p.locator('[data-neg="orders"][href="#/pedidos"]').count() === 1,
+      ok(await p.locator('[data-neg="orders"][href="/panel/pedidos"]').count() === 1,
         `${nombre}/${t} Negocio pasado el 4-11: la baldosa «Pedido listo» lleva a activarlo`);
     }
-    await p.goto(`${BASE}/panel#/pedidos`);
+    await p.goto(`${BASE}/panel/pedidos`);
     await p.waitForSelector('.listo-apagado');
     const v = await p.locator('#view').innerText();
     if (!available) {

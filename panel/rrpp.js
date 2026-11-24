@@ -4,9 +4,9 @@
  * Un RRPP trae gente con su enlace o su QR (klendar.app/rp/<código>) y solo
  * ve su lista; no es del equipo ni cambia nada del negocio. Aquí:
  *
- * - #/rrpp: los RRPP y las invitaciones pendientes, «Invitar a un RRPP» y
+ * - /panel/rrpp: los RRPP y las invitaciones pendientes, «Invitar a un RRPP» y
  *   las cifras de todos (7, 30 o 90 días) con «Exportar CSV».
- * - #/rrpp/<id>: la ficha de uno: estado (pausar, reanudar, quitar), sus
+ * - /panel/rrpp/<id>: la ficha de uno: estado (pausar, reanudar, quitar), sus
  *   enlaces con QR, sus cifras por noche y la lista de una noche.
  * - «Validar códigos»: «Buscar en las listas de esta noche» (`rrppPuerta`) y
  *   «Lista de …» en lo validado (`rrppListaDe`).
@@ -137,7 +137,7 @@ function rrppEstadoCodigo(status, at) {
 const RRPP_NOTA = () => bi('Solo cuenta como asistencia lo validado en la puerta. Lo que pagues a tus RRPP lo gestionas fuera de Klendar; tú eres responsable de tus RRPP.',
   "Only codes validated at the door count as attendance. Anything you pay your promoters is handled outside Klendar; you're responsible for your promoters.");
 
-// ── #/rrpp: la lista y las cifras de todos ───────────────────────────────────
+// ── /panel/rrpp: la lista y las cifras de todos ───────────────────────────────────
 let RRPP_DIAS = 30;
 
 PAGES.rrpp = async (v, param) => {
@@ -164,13 +164,13 @@ PAGES.rrpp = async (v, param) => {
       cols: [
         { h: bi('RRPP', 'Promoter'), r: (p) => (p.status === 'invited'
           ? `<b class="title">${esc(p.email || '')}</b><span class="sub">${rrppEstado(p)}</span>`
-          : `${rrppAvatar(p)}<a class="title" href="#/rrpp/${esc(p.id)}"><b>${esc(rrppNombre(p))}</b></a><span class="sub">${rrppEstado(p)}</span>`) },
+          : `${rrppAvatar(p)}<a class="title" href="/panel/rrpp/${esc(p.id)}"><b>${esc(rrppNombre(p))}</b></a><span class="sub">${rrppEstado(p)}</span>`) },
         { h: bi('Apuntados', 'Signed up'), num: true, r: (p) => (p.status === 'invited' ? '—' : fmtNum(p.signed_30)) },
         { h: bi('Han entrado', 'Got in'), num: true, r: (p) => (p.status === 'invited' ? '—' : fmtNum(p.entered_30)) },
         { h: bi('Enlaces', 'Links'), num: true, r: (p) => (p.status === 'invited' ? '—' : fmtNum(p.links)) },
         { h: '', r: (p) => (p.status === 'invited'
           ? `<div class="actions"><button class="btn sm ghost" type="button" data-rrpp-cancela="${esc(p.id)}">${esc(bi('Cancelar la invitación', 'Cancel the invitation'))}</button></div>`
-          : `<div class="actions"><a class="btn sm" href="#/rrpp/${esc(p.id)}">${esc(bi('Abrir', 'Open'))}</a></div>`) },
+          : `<div class="actions"><a class="btn sm" href="/panel/rrpp/${esc(p.id)}">${esc(bi('Abrir', 'Open'))}</a></div>`) },
       ],
       rows: filas,
       empty: bi('Aún no tienes RRPP. Invita a alguien por su correo: tendrá su enlace y su QR para traer gente, y solo verá su lista.', "You don't have any promoters yet. Invite someone by email: they'll get their own link and QR code to bring people in, and they'll only see their own list."),
@@ -179,7 +179,7 @@ PAGES.rrpp = async (v, param) => {
 
     <div class="card">
       <div class="rrpp-cab-card"><h2>${esc(bi('Ofertas para tus RRPP', 'Offers for your promoters'))}</h2><span class="spacer"></span>
-        <a class="btn sm" href="#/publicaciones/nueva-flash?rrpp=1">${esc(bi('Nueva oferta para RRPP', 'New offer for promoters'))}</a></div>
+        <a class="btn sm" href="/panel/publicaciones/nueva-flash?rrpp=1">${esc(bi('Nueva oferta para RRPP', 'New offer for promoters'))}</a></div>
       ${rrppOfertasHtml(ofertas?.offers || [], bi('Aún no tienes ofertas para tus RRPP. Solo se ven con el enlace de uno de tus RRPP.',
         "You don't have any offers for your promoters yet. They can only be seen through one of your promoters' links."))}
     </div>
@@ -198,7 +198,7 @@ PAGES.rrpp = async (v, param) => {
       </div>
       ${cifras.length ? `<div style="margin-top:12px">${table({
         cols: [
-          { h: bi('RRPP', 'Promoter'), r: (p) => `${rrppAvatar(p)}<a class="title" href="#/rrpp/${esc(p.id)}"><b>${esc(rrppNombre(p))}</b></a>${p.status !== 'active' ? `<span class="sub">${rrppEstado(p)}</span>` : ''}` },
+          { h: bi('RRPP', 'Promoter'), r: (p) => `${rrppAvatar(p)}<a class="title" href="/panel/rrpp/${esc(p.id)}"><b>${esc(rrppNombre(p))}</b></a>${p.status !== 'active' ? `<span class="sub">${rrppEstado(p)}</span>` : ''}` },
           { h: bi('Apuntados', 'Signed up'), num: true, r: (p) => fmtNum(p.signed) },
           { h: bi('Han entrado', 'Got in'), num: true, r: (p) => fmtNum(p.entered) },
           { h: bi('Conversión', 'Conversion'), num: true, r: (p) => rrppPct(p.entered, p.signed) },
@@ -276,7 +276,7 @@ PAGES.rrpp = async (v, param) => {
   };
 };
 
-// ── #/rrpp/<id>: la ficha de un RRPP ─────────────────────────────────────────
+// ── /panel/rrpp/<id>: la ficha de un RRPP ─────────────────────────────────────────
 // ── Cuándo funciona la lista ────────────────────────────────────────────────
 // Como el horario del local: {"5": [["22:00", "03:00"]], …} (lunes = 1). Aquí
 // se elige un tramo, el mismo en los días marcados. null = el de serie
@@ -418,7 +418,7 @@ function rrppOfertasHtml(lista, vacio) {
           data-cupo-general="${o.quota ?? ''}" data-cupo-propio="${p.custom ? esc(cupo ?? '') : ''}" title="${esc(bi('Cambiar el cupo', 'Change the limit'))}">${esc(txt + propio)}</button>`;
       }).join('<br>')
         : esc(bi('Ningún RRPP la tiene todavía', 'No promoter has it yet'))) },
-      { h: '', r: (o) => `<div class="actions"><a class="btn sm" href="#/publicaciones/${esc(o.id)}">${esc(bi('Abrir', 'Open'))}</a></div>` },
+      { h: '', r: (o) => `<div class="actions"><a class="btn sm" href="/panel/publicaciones/${esc(o.id)}">${esc(bi('Abrir', 'Open'))}</a></div>` },
     ],
     rows: lista,
   });
@@ -453,12 +453,12 @@ document.addEventListener('click', async (e) => {
 
 // ── La ficha de un RRPP ─────────────────────────────────────────────────────
 async function rrppFicha(v, id, noche = null) {
-  if (!/^[0-9a-f-]{36}$/i.test(id || '')) { location.hash = '#/rrpp'; return; }
+  if (!/^[0-9a-f-]{36}$/i.test(id || '')) { go('/panel/rrpp'); return; }
   let r;
   try {
     r = rrppOk(await rpc('promoter_report', { p_business: BIZ.id, p_from: null, p_to: null, p_promoter: id, p_night: noche }));
   } catch (e) {
-    if (e.clave === 'not_found' || e.clave === 'not_authorized') { location.hash = '#/rrpp'; return; }
+    if (e.clave === 'not_found' || e.clave === 'not_authorized') { go('/panel/rrpp'); return; }
     throw e;
   }
   const p = r.promoter || {};
@@ -474,7 +474,7 @@ async function rrppFicha(v, id, noche = null) {
   const dentro = deEsa ? deEsa.entered : lista.filter((x) => x.status === 'validated').length;
 
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/rrpp">${esc(bi('← RRPP', '← Promoters'))}</a><h1>${esc(nombre)}</h1></div>
+    <div class="page-head"><a class="btn sm ghost" href="/panel/rrpp">${esc(bi('← RRPP', '← Promoters'))}</a><h1>${esc(nombre)}</h1></div>
     <div class="card rrpp-ficha-cab">
       ${rrppAvatar(p)}
       <div class="rrpp-ficha-t">
@@ -573,7 +573,7 @@ async function rrppFicha(v, id, noche = null) {
       try {
         rrppOk(await rpc('set_promoter_status', { p_promoter: id, p_status: nuevo }));
         toast(bi('Hecho', 'Done'));
-        if (nuevo === 'removed') { location.hash = '#/rrpp'; return; }
+        if (nuevo === 'removed') { go('/panel/rrpp'); return; }
         repinta();
       } catch (e) { toast(rrppError(e), true); }
     };

@@ -15,13 +15,14 @@
 //     y «Publicaciones» con sus chips, sin «Nueva oferta» arriba.
 //  5. Negocio: los grupos y sus baldosas en el orden de la app (la
 //     pegatina de escaparate junto al cartel del local, §4zzz-cartel);
-//     `#/negocio/<grupo>` baja a ese grupo; una pantalla de dentro marca su
+//     `/panel/negocio/<grupo>` baja a ese grupo; una pantalla de dentro marca su
 //     sección y su grupo.
 //  6. El personal: tres secciones (sin Publicar), sin importes ni lo de
 //     gestión en Negocio, «Fidelizar» entero y «Listas».
 //  7. Una entidad: «Entidad», sin «Que vuelvan», «Pantallas y gente».
-//  8. Direcciones viejas: #/resumen, #/publicaciones (con ?estado=),
-//     #/herramientas y ?biz= de un aviso.
+//  8. Direcciones sin `#` (§4zzz-panellimpio): /panel abre Hoy,
+//     /panel/publicaciones (con ?estado=) es Publicar y ?biz= de un aviso.
+//     Atrás, adelante, recargar, la barra final y `#/x`: tools/panel_rutas_check.mjs.
 //  9. Parado (bloqueado): Hoy con el aviso; Negocio con «Tu plan», lo
 //     delicado y nada más.
 // 10. Peticiones al entrar en Hoy: `business_today` sí; las dos del menú de
@@ -114,14 +115,14 @@ async function abre({ w = 1440, h = 900, ...op } = {}, ruta = 'hoy', peticiones 
   const p = await ctx.newPage();
   const errores = [];
   p.on('pageerror', (e) => errores.push(e.message));
-  await p.goto(`${web.BASE}/panel#/${ruta}`);
+  await p.goto(`${web.BASE}/panel${ruta ? `/${ruta}` : ''}`);
   await p.waitForSelector('#view h1', { timeout: 15000 });
   await p.waitForTimeout(900);
   return { ctx, p, errores };
 }
 const textos = (p, sel) => p.$$eval(sel, (es) => es.filter((e) => e.offsetParent !== null || getComputedStyle(e).position === 'fixed').map((e) => e.textContent.trim()));
 const visible = (p, sel) => p.$eval(sel, (e) => getComputedStyle(e).display !== 'none' && getComputedStyle(e).visibility !== 'hidden' && e.getBoundingClientRect().width > 0).catch(() => false);
-const hash = (p) => p.evaluate(() => location.hash);
+const hash = (p) => p.evaluate(() => location.pathname + location.search);
 
 // ── 1 y 2. Menú lateral o barra de abajo, según el tamaño ─────────────────
 for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet horizontal', 1180, 820, true], ['tablet vertical', 820, 1180, false], ['móvil', 390, 844, false]]) {
@@ -131,16 +132,16 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   if (lateral) {
     ok(JSON.stringify(await textos(p, '#nav > a.nav > span:last-child')) === JSON.stringify(['Hoy', 'Validar', 'Publicar', 'Negocio']), `${nombre}: las cuatro, en el orden de la app`);
     ok(JSON.stringify(await textos(p, '#nav .nav-sub a')) === JSON.stringify(['Tu ficha', 'Que vuelvan', 'En el local', 'Agenda y equipo', 'Cifras, plan y ayuda']), `${nombre}: los grupos de Negocio, en orden`);
-    ok(await p.$eval('#nav a[href="#/hoy"]', (a) => a.getAttribute('aria-current')) === 'page', `${nombre}: Hoy marcada como la página`);
+    ok(await p.$eval('#nav a[href="/panel/hoy"]', (a) => a.getAttribute('aria-current')) === 'page', `${nombre}: Hoy marcada como la página`);
   } else {
     ok(JSON.stringify(await textos(p, '#tabbar a > span:last-child')) === JSON.stringify(['Hoy', 'Validar', 'Publicar', 'Negocio']), `${nombre}: la barra con las cuatro`);
     ok(!(await p.$('#masBtn')) && !(await p.$('#menuBtn')), `${nombre}: sin «Más» ni «Menú»`);
     const sobra = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     ok(sobra <= 1, `${nombre}: sin desplazamiento de lado (${sobra} px)`);
     // Cambiar de sección con la barra.
-    await p.click('#tabbar a[href="#/negocio"]');
+    await p.click('#tabbar a[href="/panel/negocio"]');
     await p.waitForSelector('.neg-tiles');
-    ok(await p.$eval('#tabbar a[href="#/negocio"]', (a) => a.getAttribute('aria-current')) === 'page', `${nombre}: la barra marca Negocio`);
+    ok(await p.$eval('#tabbar a[href="/panel/negocio"]', (a) => a.getAttribute('aria-current')) === 'page', `${nombre}: la barra marca Negocio`);
   }
   // Dentro del panel, solo el menú del negocio (§4zzz-tabletojo): ni las
   // pestañas de cliente ni «Para negocios» ni tu cuenta; «Volver a Klendar»,
@@ -185,14 +186,14 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(/Para hoy/.test(t) && /Lo último validado/.test(t), 'Hoy: «Para hoy» y «Lo último validado»');
   ok(!!(await p.$('#pausa')), 'Hoy: «Cerrar por hoy» junto al día');
   ok(!/Crear|Últimas publicaciones|Más herramientas|Lo esencial|Salir del equipo/.test(t), 'Hoy: sin lo que se ha ido a otra sección');
-  ok(await p.$eval('a[href="#/validar?recientes=1"]', (a) => !!a).catch(() => false), 'Hoy: «Ver todos» lleva a Validar › Últimos validados');
+  ok(await p.$eval('a[href="/panel/validar?recientes=1"]', (a) => !!a).catch(() => false), 'Hoy: «Ver todos» lleva a Validar › Últimos validados');
   ok(peticiones.includes('rpc/business_today'), 'Hoy: pide business_today');
   ok(!peticiones.includes('rpc/before_closing_setup') && !peticiones.includes('rpc/business_broadcast_week'), 'Hoy: sin las dos peticiones del menú de antes');
   ok(!peticiones.includes('rpc/business_stats') && !peticiones.includes('rpc/business_loyalty') && !peticiones.includes('rpc/my_business_offers_page'), 'Hoy: sin lo del resumen de antes (stats, loyalty, publicaciones)');
   console.log(`   peticiones al entrar en Hoy: ${peticiones.length} (${[...new Set(peticiones)].join(', ')})`);
   // El resumen de antes pedía 36 al entrar (23-11, con estos mismos datos).
   ok(peticiones.length <= 26, `Hoy: menos peticiones que el resumen de antes (${peticiones.length}; antes, 36)`);
-  await p.click('a[href="#/validar?recientes=1"]');
+  await p.click('a[href="/panel/validar?recientes=1"]');
   await p.waitForSelector('#recientesT');
   await p.waitForTimeout(500);
   ok(await p.evaluate(() => document.activeElement?.id === 'recientesT'), 'Validar: «Ver todos» deja el foco en «Últimos validados»');
@@ -207,7 +208,7 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok((await p.$$eval('.crear > .crear-ops > .crear-op', (es) => es.length)) === 4, 'Publicar: las cuatro de siempre');
   ok(!!(await p.$('details.crear-mas')), 'Publicar: «Más formas de publicar ▾»');
   ok(await p.$eval('#pubsT', (e) => e.textContent.trim()) === 'Publicaciones', 'Publicar: «Publicaciones» debajo');
-  ok(!(await p.$('.page-head a[href="#/publicaciones/nueva-flash"]')), 'Publicar: sin «Nueva oferta» arriba (un solo camino)');
+  ok(!(await p.$('.page-head a[href="/panel/publicaciones/nueva-flash"]')), 'Publicar: sin «Nueva oferta» arriba (un solo camino)');
   ok((await p.$$eval('#filtroArch button', (es) => es.map((b) => b.textContent))).every((x) => !/^Tod[ao]s?\b/.test(x)), 'Publicar: chips sin «Todas»');
   // «Imprimir cartel» (§4zzz-cartel): a la página de la web, en otra pestaña;
   // una exclusiva o una +18, sin enlace (el botón dice por qué).
@@ -234,8 +235,8 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   await p.waitForSelector('.neg-tiles');
   await p.waitForTimeout(600);
   ok(JSON.stringify(await textos(p, '.neg-grupo > h2')) === JSON.stringify(['Tu ficha', 'Que vuelvan', 'En el local', 'Agenda y equipo', 'Cifras, plan y ayuda', 'Zona delicada · solo el propietario']), 'Negocio: los grupos de la app, en orden');
-  ok(await p.evaluate(() => document.activeElement?.id === 'gt-en-el-local'), 'Negocio: #/negocio/en-el-local baja a su grupo');
-  ok(await p.$eval('#nav .nav-sub a[href="#/negocio/en-el-local"]', (a) => a.getAttribute('aria-current')) === 'page', 'Negocio: el grupo, marcado en el menú');
+  ok(await p.evaluate(() => document.activeElement?.id === 'gt-en-el-local'), 'Negocio: /panel/negocio/en-el-local baja a su grupo');
+  ok(await p.$eval('#nav .nav-sub a[href="/panel/negocio/en-el-local"]', (a) => a.getAttribute('aria-current')) === 'page', 'Negocio: el grupo, marcado en el menú');
   const ficha = await textos(p, '#g-tu-ficha .neg-tile > span:last-child');
   ok(JSON.stringify(ficha.slice(0, 3)) === JSON.stringify(['Editar ficha', 'Cómo se ve ↗', 'Horario']), 'Negocio: Tu ficha empieza como la app');
   ok(await p.$eval('#g-tu-ficha [data-neg="viewPublic"]', (a) => a.target === '_blank' && /otra pestaña/.test(a.getAttribute('aria-label'))), 'Negocio: «Cómo se ve» dice que se abre en otra pestaña');
@@ -250,10 +251,10 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(await p.$eval('#modal', (d) => d.open && /widget\.js/.test(d.textContent)), 'Negocio: «En tu web» abre la línea para pegar');
   await p.keyboard.press('Escape');
   // Una pantalla de dentro marca su sección y su grupo.
-  await p.evaluate(() => { location.hash = '#/sellos'; });
+  await p.evaluate(() => { go('/panel/sellos'); });
   await p.waitForTimeout(800);
-  ok(await p.$eval('#nav a[href="#/negocio"]', (a) => a.getAttribute('aria-current')) === 'true', 'Sellos: Negocio marcada como sección');
-  ok(await p.$eval('#nav .nav-sub a[href="#/negocio/que-vuelvan"]', (a) => a.getAttribute('aria-current')) === 'true', 'Sellos: «Que vuelvan» marcado');
+  ok(await p.$eval('#nav a[href="/panel/negocio"]', (a) => a.getAttribute('aria-current')) === 'true', 'Sellos: Negocio marcada como sección');
+  ok(await p.$eval('#nav .nav-sub a[href="/panel/negocio/que-vuelvan"]', (a) => a.getAttribute('aria-current')) === 'true', 'Sellos: «Que vuelvan» marcado');
   await ctx.close();
 }
 
@@ -263,7 +264,7 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(JSON.stringify(await textos(p, '#tabbar a > span:last-child')) === JSON.stringify(['Hoy', 'Validar', 'Negocio']), 'Personal: tres secciones, sin Publicar');
   ok(!/€/.test(await p.$eval('#view', (e) => e.innerText)), 'Personal: Hoy sin importes');
   ok(!(await p.$('#pausa')), 'Personal: sin «Cerrar por hoy»');
-  await p.evaluate(() => { location.hash = '#/negocio'; });
+  await p.evaluate(() => { go('/panel/negocio'); });
   await p.waitForSelector('.neg-tiles');
   await p.waitForTimeout(500);
   const claves = await p.$$eval('[data-neg]', (es) => es.map((e) => e.dataset.neg));
@@ -271,12 +272,12 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(claves.includes('loyalty') && claves.includes('door'), 'Personal: «Fidelizar» entero y «Listas»');
   ok(await p.$$eval('.neg-grupo > h2', (es) => es.some((e) => e.textContent.trim() === 'Cifras y ayuda')), 'Personal: «Cifras y ayuda» (sin plan)');
   ok(!!(await p.$('#salir-equipo')) && await visible(p, '.neg-sesion'), 'Personal: «Salir del equipo» y, en el móvil, «Cerrar sesión»');
-  await p.evaluate(() => { location.hash = '#/publicar'; });
+  await p.evaluate(() => { go('/panel/publicar'); });
   await p.waitForTimeout(900);
-  ok(!(await p.$('.crear')), 'Personal: #/publicar, la lista sin «¿Qué quieres publicar?»');
-  await p.evaluate(() => { location.hash = '#/equipo'; });
+  ok(!(await p.$('.crear')), 'Personal: /panel/publicar, la lista sin «¿Qué quieres publicar?»');
+  await p.evaluate(() => { go('/panel/equipo'); });
   await p.waitForTimeout(600);
-  ok(await p.$eval('#view', (e) => /propietario o de un encargado/.test(e.innerText)) && !!(await p.$('a[href="#/hoy"]')), 'Personal: lo de gestión, con el aviso y «Ir a Hoy»');
+  ok(await p.$eval('#view', (e) => /propietario o de un encargado/.test(e.innerText)) && !!(await p.$('a[href="/panel/hoy"]')), 'Personal: lo de gestión, con el aviso y «Ir a Hoy»');
   await ctx.close();
 }
 
@@ -286,7 +287,7 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   ok(JSON.stringify(await textos(p, '#nav > a.nav > span:last-child')) === JSON.stringify(['Hoy', 'Validar', 'Publicar', 'Entidad']), 'Entidad: la sección se llama «Entidad»');
   ok(await p.$eval('#view', (e) => /Lo próximo/.test(e.innerText)), 'Entidad: Hoy con «Lo próximo»');
   ok(!(await p.$('#pausa')), 'Entidad: sin «Cerrar por hoy»');
-  await p.evaluate(() => { location.hash = '#/negocio'; });
+  await p.evaluate(() => { go('/panel/negocio'); });
   await p.waitForSelector('.neg-tiles');
   await p.waitForTimeout(500);
   const grupos = await textos(p, '.neg-grupo > h2');
@@ -296,22 +297,20 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
   await ctx.close();
 }
 
-// ── 8. Direcciones viejas ────────────────────────────────────────────────────
+// ── 8. Direcciones (sin `#` desde el 24-11, §4zzz-panellimpio) ─────────────
 {
-  const { ctx, p } = await abre({}, 'resumen');
-  ok(await hash(p) === '#/hoy', '#/resumen → #/hoy');
-  await p.evaluate(() => { location.hash = '#/publicaciones?estado=borrador'; });
+  const { ctx, p } = await abre({}, '');
+  ok(await hash(p) === '/panel' && !!(await p.$('#view .hoy-cab')), '/panel abre Hoy y se queda en /panel');
+  await p.evaluate(() => { go('/panel/publicaciones?estado=borrador'); });
   await p.waitForTimeout(900);
-  ok(await hash(p) === '#/publicar?estado=borrador', '#/publicaciones?estado=… → #/publicar?estado=…');
-  await p.evaluate(() => { location.hash = '#/herramientas'; });
+  ok(await hash(p) === '/panel/publicar?estado=borrador', '/panel/publicaciones?estado=… → /panel/publicar?estado=…');
+  await p.evaluate(() => { go('/panel/publicaciones/nueva-flash'); });
   await p.waitForTimeout(900);
-  ok(await hash(p) === '#/negocio', '#/herramientas → #/negocio');
-  await p.evaluate(() => { location.hash = '#/publicaciones/nueva-flash'; });
-  await p.waitForTimeout(900);
-  ok(await hash(p) === '#/publicaciones/nueva-flash' && await p.$eval('#nav a[href="#/publicar"]', (a) => a.getAttribute('aria-current')) === 'true', 'Nueva oferta: se queda y marca Publicar');
+  ok(await hash(p) === '/panel/publicaciones/nueva-flash' && await p.$eval('#nav a[href="/panel/publicar"]', (a) => a.getAttribute('aria-current')) === 'true', 'Nueva oferta: se queda y marca Publicar');
+  ok(!new URL(p.url()).hash, 'sin `#` en la barra');
   await ctx.close();
-  const otro = await abre({}, `resumen?biz=${BIZ2}`);
-  ok((await hash(otro.p)).startsWith('#/hoy') && await otro.p.$eval('#bizSelect', (s) => s.value) === BIZ2, '#/resumen?biz= (un aviso): Hoy del otro local');
+  const otro = await abre({}, `hoy?biz=${BIZ2}`);
+  ok((await hash(otro.p)).startsWith('/panel/hoy') && await otro.p.$eval('#bizSelect', (s) => s.value) === BIZ2, '/panel/hoy?biz= (un aviso): Hoy del otro local');
   await otro.ctx.close();
 }
 
@@ -319,13 +318,13 @@ for (const [nombre, w, h, lateral] of [['escritorio', 1440, 900, true], ['tablet
 {
   const { ctx, p } = await abre({ bloqueado: true }, 'hoy');
   ok(JSON.stringify(await textos(p, '#nav > a.nav > span:last-child')) === JSON.stringify(['Hoy', 'Validar', 'Publicar', 'Negocio']) && !(await p.$('#nav .nav-sub')), 'Parado: las cuatro, sin los grupos');
-  await p.evaluate(() => { location.hash = '#/negocio'; });
+  await p.evaluate(() => { go('/panel/negocio'); });
   await p.waitForTimeout(900);
   const claves = await p.$$eval('[data-neg]', (es) => es.map((e) => e.dataset.neg));
   ok(JSON.stringify(claves) === JSON.stringify(['plan', 'help']) && !!(await p.$('#g-delicado')), `Parado: Negocio con «Tu plan», la ayuda y lo delicado (${claves.join(', ')})`);
-  await p.evaluate(() => { location.hash = '#/sellos'; });
+  await p.evaluate(() => { go('/panel/sellos'); });
   await p.waitForTimeout(700);
-  ok(await hash(p) === '#/hoy', 'Parado: lo demás lleva a Hoy');
+  ok(await hash(p) === '/panel/hoy', 'Parado: lo demás lleva a Hoy');
   await ctx.close();
 }
 

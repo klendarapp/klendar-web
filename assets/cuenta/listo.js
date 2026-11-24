@@ -126,7 +126,7 @@ RUTAS.listo = async ([code]) => {
         icono: 'storefront', h: 'h1',
         titulo: EN ? `You're on the ${b.name} team` : t(`Eres del equipo de ${b.name}`),
         texto: t('Los pedidos se llevan desde «Pedidos de hoy», en Mi negocio.'),
-        botones: `<a class="pill accent" href="/panel#/pedidos?biz=${esc(b.id)}">${esc(t('Ir a Pedidos de hoy'))}</a>`,
+        botones: `<a class="pill accent" href="/panel/pedidos?biz=${esc(b.id)}">${esc(t('Ir a Pedidos de hoy'))}</a>`,
       }));
       return;
     }

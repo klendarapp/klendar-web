@@ -265,7 +265,7 @@ async function panel(nav, nombre, t, vp) {
       business_question_counts: { unanswered: 0, answered: 0, hidden: 0, can_answer: true, available },
       business_questions_inbox: [],
     });
-    await p.goto(`${BASE}/panel#/preguntas`, { waitUntil: 'networkidle' });
+    await p.goto(`${BASE}/panel/preguntas`, { waitUntil: 'networkidle' });
     await p.waitForFunction(() => /Sin contestar/.test(document.querySelector('#view')?.innerText || ''));
     const v = await p.locator('#view').innerText();
     if (!available) {

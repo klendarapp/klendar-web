@@ -1,7 +1,7 @@
 /* «Estaba cerrado» en el panel (migración 20261229100000 de la app), como
  * la app:
  *
- *   · `#/estaba-cerrado` (desde la notificación): cuándo lo encontraron
+ *   · `/panel/estaba-cerrado` (desde la notificación): cuándo lo encontraron
  *     cerrado (nunca quién), «Horario» y «Era un cierre puntual».
  *   · En «Tu ficha › Horario», el aviso con «Está bien así»; guardar el
  *     horario también cuenta como revisarlo.
@@ -34,7 +34,7 @@ PAGES['estaba-cerrado'] = async (v) => {
     : bi('Nadie lo ha encontrado cerrado en los últimos 14 días.', 'Nobody has found it closed in the last 14 days.'))}</h2>
       <p class="muted">${esc(c.unconfirmed ? cerrSinConfirmar() : cerrRegla())}</p>
       ${c.can_manage ? `<div class="cerr-dos">
-        <a class="btn" href="#/ficha/horario">${esc(bi('Horario', 'Opening hours'))}</a>
+        <a class="btn" href="/panel/ficha/horario">${esc(bi('Horario', 'Opening hours'))}</a>
         <button type="button" class="btn" id="cerrPuntual">${esc(bi('Era un cierre puntual', 'It was a one-off'))}</button>
       </div>` : ''}
     </div>
@@ -48,7 +48,7 @@ PAGES['estaba-cerrado'] = async (v) => {
     try {
       await rpc('confirm_business_hours', { p_business: BIZ.id });
       toast(bi('Horario revisado', 'Opening hours checked'));
-      location.hash = '#/cerrados';
+      go('/panel/cerrados');
     } catch (e) { toast(friendly(e.message), true); }
   };
 };

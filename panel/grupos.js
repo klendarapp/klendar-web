@@ -1,4 +1,4 @@
-/* Panel del negocio: «Grupos y empresas» (#/grupos; tanda C, migración
+/* Panel del negocio: «Grupos y empresas» (/panel/grupos; tanda C, migración
  * 20261208100000_grupos_y_empresas de la app). Lo mismo que Mi negocio ›
  * Clientes › «Grupos y empresas» en la app. Solo propietario o encargado
  * (`SOLO_GESTION` en panel.js; la base también lo exige).

@@ -846,16 +846,16 @@ async function sugerenciasDelNegocio() {
 }
 /** Lo que falta de la ficha, como en la app (`_FirstSteps.items`). */
 function fichaFaltan(f) {
-  const out = [{ titulo: 'Pon tu logo y una foto', href: '#/ficha/fotos', hecho: !!f.logo_url && !!f.cover_image_url }];
+  const out = [{ titulo: 'Pon tu logo y una foto', href: '/panel/ficha/fotos', hecho: !!f.logo_url && !!f.cover_image_url }];
   if (!esOrganizador() && !esEntidad()) {
-    out.push({ titulo: 'Pon tu horario', href: '#/ficha/horario', hecho: !!f.opening_hours && Object.keys(f.opening_hours).length > 0 });
-    out.push({ titulo: 'Añade fotos del local', href: '#/ficha/fotos', hecho: (f.gallery || []).length >= 2 });
+    out.push({ titulo: 'Pon tu horario', href: '/panel/ficha/horario', hecho: !!f.opening_hours && Object.keys(f.opening_hours).length > 0 });
+    out.push({ titulo: 'Añade fotos del local', href: '/panel/ficha/fotos', hecho: (f.gallery || []).length >= 2 });
     const hecho = !!f.menu_url || (f.menu_images || []).length > 0;
     // La carta, con el nombre de su tipo; a un tipo sin carta (un
     // ayuntamiento) no se le pide, salvo que ya tenga algo (Iván, 18-11).
     if (hecho || cartaEncaja(f.category_id)) {
       out.push({ titulo: segunCarta([bi('Sube tu carta', 'Upload your menu'), bi('Pon tus servicios y precios', 'Add your services and prices'), bi('Pon tus productos y precios', 'Add your products and prices'), bi('Pon tus precios y tarifas', 'Add your prices and rates')], tipoCarta(f.category_id)),
-      href: '#/carta', hecho });
+      href: '/panel/carta', hecho });
     }
   }
   return out;
@@ -873,10 +873,10 @@ function fichaSitiosFalta(f) {
 /** El aviso discreto (en tinta, sin coral) con el botón a lo que falta. */
 function avisoFichaSitios(falta) {
   const [texto, href] = falta === 'ambos'
-    ? ['Completa tu ficha: añade el horario y una foto para salir antes en Sitios.', '#/ficha']
+    ? ['Completa tu ficha: añade el horario y una foto para salir antes en Sitios.', '/panel/ficha']
     : falta === 'horario'
-      ? ['Completa tu ficha: añade el horario para salir antes en Sitios.', '#/ficha/horario']
-      : ['Completa tu ficha: añade una foto para salir antes en Sitios.', '#/ficha/fotos'];
+      ? ['Completa tu ficha: añade el horario para salir antes en Sitios.', '/panel/ficha/horario']
+      : ['Completa tu ficha: añade una foto para salir antes en Sitios.', '/panel/ficha/fotos'];
   return `<div class="help aviso-ficha-sitios">${esc(I18N.t(texto))}
     <p style="margin:8px 0 0"><a class="btn sm" href="${href}">${ms('storefront')}${esc(I18N.t('Completar la ficha'))}</a></p></div>`;
 }
@@ -1019,9 +1019,9 @@ const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados
 /** A dónde volver después de entrar o de aceptar los términos: la página del
  * panel con lo que traía (el código de un QR escaneado sin sesión, «Crear a
  * partir de esta», ampliar una oferta, el día del calendario…) y nada más.
- * El hash puede traer de todo (un `#access_token=…` de un enlace de acceso)
- * y viajaba entero en `?volver=`: solo pasan las pantallas del panel y los
- * parámetros de esta lista, cada uno con su forma. Siempre dentro de /panel/. */
+ * La dirección puede traer de todo (un `?email=` escrito a mano) y viajaba
+ * entera en `?volver=`: solo pasan las pantallas del panel y los parámetros
+ * de esta lista, cada uno con su forma. Siempre dentro de /panel. */
 const VUELTA_PARAMS = {
   biz: /^[0-9a-f-]{36}$/i,
   code: /^[0-9a-f]{8,64}$/i,
@@ -1037,24 +1037,23 @@ const VUELTA_PARAMS = {
   editar: /^1$/,
 };
 function rutaDeVuelta() {
-  const [h, q] = location.hash.split('?');
-  const pagina = (/^#\/([a-z0-9-]{1,30})(\/[A-Za-z0-9-]{1,40}){0,2}$/.exec(h || '') || [])[1];
+  // `/panel/<pantalla>` y hasta dos trozos más (`/panel/sellos/<id>/editar`).
+  const m = /^\/panel\/([a-z0-9-]{1,30})((\/[A-Za-z0-9-]{1,40}){0,2})$/.exec(location.pathname);
   // rrpp.js, series.js, partidos.js, bonos.js, sorteos.js, grupos.js y
   // cola.js se cargan después: sus pantallas también valen.
-  const conocida = pagina && (Object.hasOwn(PAGES, pagina) || ['rrpp', 'series', 'partidos', 'bonos', 'sorteos', 'grupos', 'cola', 'pedidos', 'fidelizar', 'cupon', 'habituales'].includes(pagina));
-  let hash = '';
-  if (conocida) {
-    const dentro = new URLSearchParams(q || '');
-    const fuera = new URLSearchParams();
+  const conocida = m && (Object.hasOwn(PAGES, m[1]) || ['rrpp', 'series', 'partidos', 'bonos', 'sorteos', 'grupos', 'cola', 'pedidos', 'fidelizar', 'cupon', 'habituales'].includes(m[1]));
+  const dentro = new URLSearchParams(location.search);
+  const fuera = new URLSearchParams();
+  if (dentro.has('alta')) fuera.set('alta', '1');
+  // `/panel` (Hoy) también lleva los suyos (`/panel?biz=…`).
+  if (conocida || location.pathname === '/panel') {
     for (const [k, re] of Object.entries(VUELTA_PARAMS)) {
       const val = dentro.get(k);
       if (val && re.test(val)) fuera.set(k, val);
     }
-    const resto = fuera.toString();
-    hash = h + (resto ? `?${resto}` : '');
   }
-  const alta = new URLSearchParams(location.search).has('alta') ? '?alta=1' : '';
-  return `/panel${alta}${hash}`;
+  const resto = fuera.toString();
+  return `${conocida ? `/panel/${m[1]}${m[2]}` : '/panel'}${resto ? `?${resto}` : ''}`;
 }
 
 /** Los códigos guardados sin conexión son de quien tenía la sesión: al salir
@@ -1188,15 +1187,17 @@ async function boot() {
   BIZZES = negocios.v;
   // Quien llega del registro de negocio trae ?alta=1: se limpia la dirección.
   if (new URLSearchParams(location.search).has('alta')) {
-    // Con `#/alta/…` (klendar.app/alta, el QR de la visita) se queda ahí,
-    // también si ya lleva otros locales.
-    const aAlta = location.hash.startsWith('#/alta') ? location.hash : '';
-    history.replaceState(null, '', `${location.pathname}${aAlta || (BIZZES.length ? '' : '#/alta')}`);
+    // En `/panel/alta/…` (el QR de la visita) se queda ahí, también si ya
+    // lleva otros locales; sin negocios, al alta (`/panel/alta`).
+    const q = new URLSearchParams(location.search);
+    q.delete('alta');
+    const camino = currentRoute()[0] === 'alta' || BIZZES.length ? location.pathname : '/panel/alta';
+    history.replaceState(null, '', `${camino}${q.toString() ? `?${q}` : ''}`);
   }
   if (!BIZZES.length) return noBusiness();
   const saved = lsGet('klendar.biz');
   // ?biz= (desde un aviso de otro de tus locales) manda sobre el último usado.
-  const pedido = new URLSearchParams(location.hash.split('?')[1] || '').get('biz');
+  const pedido = new URLSearchParams(location.search).get('biz');
   BIZ = BIZZES.find((b) => b.id === pedido) || BIZZES.find((b) => b.id === saved) || BIZZES[0];
   if (pedido && BIZ.id === pedido) lsSet('klendar.biz', BIZ.id);
   await preparaNegocio();
@@ -1262,7 +1263,7 @@ function renderBizPicker() {
       const elegido = sel.value;
       if (elegido === '__nuevo') {
         sel.value = BIZ.id;
-        location.hash = '#/alta';
+        go('/panel/alta');
         return;
       }
       if (!await puedeSalir()) { sel.value = BIZ.id; return; }
@@ -1271,7 +1272,11 @@ function renderBizPicker() {
       for (const otro of $$('#bizSelect, #bizTop')) otro.value = BIZ.id;
       await preparaNegocio();
       const [pag, param] = currentRoute();
-      if (param) { location.hash = `#/${pag}`; return; }
+      if (param) { go(`/panel/${pag}`); return; }
+      // El `?biz=` de la dirección era del otro local: fuera (al recargar,
+      // manda el elegido, que se recuerda en `klendar.biz`).
+      const q = new URLSearchParams(location.search);
+      if (q.has('biz')) { q.delete('biz'); history.replaceState(null, '', `${location.pathname}${q.toString() ? `?${q}` : ''}`); }
       route();
     };
   }
@@ -1388,9 +1393,8 @@ const icono = (n) => (SVG[n] ? svg(n) : ms(n));
 // «Lo esencial», «Más herramientas», «Tu negocio»… y una barra «Lo
 // principal» distinta en el móvil.
 //
-// Cada pantalla de siempre sigue en su dirección (`#/ficha`, `#/sellos`…) y
-// marca su sección y su grupo; las direcciones viejas (`#/resumen`,
-// `#/publicaciones`, `#/herramientas`) llevan a su sitio nuevo (`ALIAS`).
+// Cada pantalla de siempre sigue en su dirección (`/panel/ficha`,
+// `/panel/sellos`…) y marca su sección y su grupo.
 const SECCIONES = [
   ['hoy', 'today', 'Hoy'],
   ['validar', 'qr_code_scanner', 'Validar'],
@@ -1398,7 +1402,7 @@ const SECCIONES = [
   ['negocio', 'storefront', 'Negocio'],
 ];
 /** Los grupos de Negocio, en el orden de la app (`BizToolSection`): su
- * dirección (`#/negocio/<grupo>`) y las pantallas que cuentan como suyas
+ * dirección (`/panel/negocio/<grupo>`) y las pantallas que cuentan como suyas
  * (para marcarlo en el menú). Lo delicado y «Salir del equipo» van al final
  * de Negocio, sin entrada propia (como la app). */
 const GRUPOS_NEGOCIO = [
@@ -1408,10 +1412,6 @@ const GRUPOS_NEGOCIO = [
   ['agenda-y-equipo', ['series', 'calendario', 'equipo', 'rrpp']],
   ['cifras', ['informe', 'plan', 'ayuda']],
 ];
-/** Las direcciones de antes de las cuatro secciones (correos, avisos,
- * marcadores): se cambian por la nueva sin dejar la vieja en el historial.
- * `#/publicaciones` (sin más) es Publicar: lo mira `route`. */
-const ALIAS = { resumen: 'hoy', herramientas: 'negocio' };
 /** La sección de una pantalla. Lo de publicar es de Publicar para quien
  * gestiona; el personal no tiene Publicar (la lista de lo publicado, de solo
  * mirar, cuelga de Hoy, como «Ver todo» de la app). */
@@ -1461,7 +1461,7 @@ function pintaSoloGestion(v) {
   v.innerHTML = `<section class="vacio" aria-labelledby="soloGestionT">
       <span class="vacio-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg></span>
       <h1 id="soloGestionT">Esta sección es del propietario o de un encargado</h1>
-      <div class="vacio-botones"><a class="btn primary" href="#/hoy">Ir a Hoy</a></div></section>`;
+      <div class="vacio-botones"><a class="btn primary" href="/panel/hoy">Ir a Hoy</a></div></section>`;
   I18N.translate(v);
 }
 
@@ -1481,19 +1481,56 @@ function renderNav(current) {
     const [ic, txt] = nombreSeccion(s);
     const on = sec === s[0];
     const portada = on && current === s[0] && !(s[0] === 'negocio' && param);
-    const a = `<a class="nav${on ? ' on' : ''}" href="#/${s[0]}"${marca(on, portada ? 'page' : 'true')}>${icono(ic)}<span>${esc(txt)}</span></a>`;
+    const a = `<a class="nav${on ? ' on' : ''}" href="/panel/${s[0]}"${marca(on, portada ? 'page' : 'true')}>${icono(ic)}<span>${esc(txt)}</span></a>`;
     if (s[0] !== 'negocio' || !grupos.length) return a;
-    return `${a}<ul class="nav-sub" aria-label="${esc(txt)}">${grupos.map(([g, titulo]) => `<li><a href="#/negocio/${g}"${grupo === g
+    return `${a}<ul class="nav-sub" aria-label="${esc(txt)}">${grupos.map(([g, titulo]) => `<li><a href="/panel/negocio/${g}"${grupo === g
       ? ` class="on"${marca(true, current === 'negocio' ? 'page' : 'true')}` : ''}>${esc(titulo)}</a></li>`).join('')}</ul>`;
   }).join('');
   $('#tabbar').innerHTML = secs.map((s) => {
     const [ic, txt] = nombreSeccion(s);
     const on = sec === s[0];
-    return `<a href="#/${s[0]}"${on ? ' class="on"' : ''}${marca(on, current === s[0] ? 'page' : 'true')}>${icono(ic)}<span>${esc(txt)}</span></a>`;
+    return `<a href="/panel/${s[0]}"${on ? ' class="on"' : ''}${marca(on, current === s[0] ? 'page' : 'true')}>${icono(ic)}<span>${esc(txt)}</span></a>`;
   }).join('');
   $('#tabbar').style.setProperty('--n', String(secs.length));
 }
-const currentRoute = () => (location.hash.replace(/^#\/?/, '').split('?')[0] || 'hoy').split('/');
+// ── Direcciones ─────────────────────────────────────────────────────────────
+// Sin `#` (Iván, 24-11; RUNBOOK §4zzz-panellimpio), como el admin: `/panel` es
+// Hoy y cada pantalla va en su ruta (`/panel/validar`, `/panel/sellos/<id>`,
+// `/panel/publicar?estado=draft`). El servidor sirve esta misma página en
+// todas (functions/_lib/panel.js, `SECCIONES_PANEL`). Los enlaces de dentro
+// se abren sin recargar (`go`, con `history.pushState`) y «Atrás» y
+// «Adelante» vuelven a pintar (`popstate`). Los enlaces viejos con almohadilla
+// (`/panel#/validar`) ya no llevan a ningún apartado: el `#` se quita de la
+// barra sin moverse de donde se está.
+const currentRoute = () => (location.pathname.replace(/^\/panel\/?/, '').replace(/\/+$/, '') || 'hoy').split('/');
+/** ¿Es `ruta` (sin `?`) una pantalla del panel? (`/panel`, `/panel/sellos/x`). */
+const esPantalla = (ruta) => ruta === '/panel' || (/^\/panel\/[a-z0-9-]+(\/[^/]+)*$/.test(ruta) && Object.hasOwn(PAGES, ruta.split('/')[2]));
+/** Lo que se está viendo: la ruta con su `?…` (sin el `#`). */
+const aqui = () => location.pathname + location.search;
+const sinAlmohadilla = () => {
+  if (location.hash || location.href.endsWith('#')) history.replaceState(history.state, '', aqui());
+};
+sinAlmohadilla();
+/** `destino` (ruta y `?…`) con el `?lang=` de ahora, si lo hay y no lleva otro. */
+function conIdioma(destino) {
+  const u = new URL(destino, location.origin);
+  const lang = new URLSearchParams(location.search).get('lang');
+  if (lang && !u.searchParams.has('lang')) u.searchParams.set('lang', lang);
+  return u.pathname + u.search;
+}
+/** Cambia la dirección sin pintar nada ni dejar la de antes en «Atrás». */
+function cambiaDireccion(destino) { history.replaceState(null, '', conIdioma(destino)); }
+/** A otra pantalla del panel (`/panel/sellos/x`, `/panel/publicar?estado=draft`),
+ * sin recargar. Con `reemplaza`, sin dejar la de ahora en «Atrás». A la misma
+ * en la que se está, nada (como un `#` igual al de antes). Se pinta justo
+ * después, como el `hashchange` de antes. El `?lang=` de un correo se queda
+ * (si no, al recargar cambiaría el idioma). */
+function go(destino, reemplaza = false) {
+  const nueva = conIdioma(destino);
+  if (nueva === aqui() && !location.hash) return;
+  history[reemplaza ? 'replaceState' : 'pushState'](null, '', nueva);
+  setTimeout(cambiaDePantalla, 0);
+}
 const PAGES = {};
 // Cada pintada lleva su número: si mientras carga una se pide otra (cambiar
 // de negocio y de pantalla seguido), lo que termine tarde no pisa ni saca
@@ -1553,10 +1590,11 @@ const SOLO_GESTION = ['carta', 'novedades', 'mensajes', 'ficha', 'cerrados', 'eq
 
 // ── Salir con cambios sin guardar ───────────────────────────────────────────
 // Una vista con cambios se apunta aquí: si se va a otra pantalla, se vuelve
-// a la de antes y se pregunta. `dentro(hash)` dice qué rutas no cuentan como
+// a la de antes y se pregunta. `dentro(ruta)` dice qué rutas no cuentan como
 // salir (los pasos del alta entre sí).
 let GUARDA = null;
-let HASH_ANTES = location.hash;
+/** La dirección de la pantalla pintada (para volver a ella si no se sale). */
+let RUTA_ANTES = aqui();
 async function confirmaSalir() {
   return confirmDlg(I18N.t('¿Salir sin guardar?'), I18N.t('Hay cambios que todavía no has guardado.'),
     { submit: I18N.t('Salir sin guardar'), danger: true });
@@ -1566,13 +1604,13 @@ window.addEventListener('beforeunload', (e) => {
 });
 /** El enrutador pregunta aquí antes de pintar otra pantalla. */
 async function puedeSalir() {
-  const destino = location.hash;
-  if (!GUARDA || !GUARDA.sucia() || (GUARDA.dentro && GUARDA.dentro(destino))) { HASH_ANTES = destino; return true; }
+  const destino = aqui();
+  if (!GUARDA || !GUARDA.sucia() || (GUARDA.dentro && GUARDA.dentro(destino))) { RUTA_ANTES = destino; return true; }
   // Se vuelve a la pantalla de antes sin pintarla otra vez y se pregunta.
-  history.replaceState(null, '', HASH_ANTES || '#/hoy');
+  history.replaceState(null, '', RUTA_ANTES || '/panel');
   if (!(await confirmaSalir())) return false;
   GUARDA = null;
-  HASH_ANTES = destino;
+  RUTA_ANTES = destino;
   history.replaceState(null, '', destino);
   return true;
 }
@@ -1586,16 +1624,12 @@ async function route() {
   // Con la barra de abajo del móvil, que el formulario de publicación esconde.
   document.body.classList.remove('con-barra-pub');
   let [page, param] = currentRoute();
-  // Las direcciones de antes de las cuatro secciones (`#/resumen`,
-  // `#/publicaciones`, `#/herramientas`, también con `?biz=` o `?estado=`
-  // de un correo o un aviso): a la nueva, con lo que lleven detrás.
-  const nueva = ALIAS[page] || (page === 'publicaciones' && !param ? 'publicar' : null);
-  if (nueva) {
-    const resto = location.hash.replace(/^#\/?[^?]*/, '');
-    page = nueva;
-    param = undefined;
-    history.replaceState(null, '', `#/${nueva}${resto}`);
-    HASH_ANTES = location.hash;
+  // `/panel/publicaciones` (sin más, también con `?estado=`) es Publicar: a
+  // su dirección, con lo que lleve detrás.
+  if (page === 'publicaciones' && !param) {
+    page = 'publicar';
+    history.replaceState(null, '', `/panel/publicar${location.search}`);
+    RUTA_ANTES = aqui();
   }
   const pedida = page;
   // Un empleado que llega por un enlace a algo del propietario o de un
@@ -1613,13 +1647,13 @@ async function route() {
   if (esOrganizador() && SIN_LOCAL_FIJO.includes(page)) page = 'hoy';
   if (typeof esEntidad === 'function' && esEntidad() && SIN_ENTIDAD.includes(page)) page = 'hoy';
   // Lo que este papel no abre lleva a Hoy y la dirección lo dice (antes
-  // se quedaba, por ejemplo, en #/sellos con el resumen pintado).
-  if (page !== pedida) { param = undefined; history.replaceState(null, '', '#/hoy'); HASH_ANTES = '#/hoy'; }
+  // se quedaba, por ejemplo, en /panel/sellos con el resumen pintado).
+  if (page !== pedida) { param = undefined; cambiaDireccion('/panel/hoy'); RUTA_ANTES = aqui(); }
   // Parado (bloqueado o en pausa): lo demás lleva a Hoy, que lo explica.
   if (bloqueado() && !RUTAS_BLOQUEO.includes(page)) {
     page = 'hoy';
     param = undefined;
-    if (location.hash && !/^#\/?(hoy)?(\?|$)/.test(location.hash)) history.replaceState(null, '', '#/hoy');
+    if (!['/panel', '/panel/hoy'].includes(location.pathname)) { cambiaDireccion('/panel/hoy'); RUTA_ANTES = aqui(); }
   }
   renderNav(page);
   // Si el foco se ha quedado sin sitio (el menú se repinta), pasa a la
@@ -1655,7 +1689,8 @@ async function route() {
   }
 }
 let FOCO_AL_TITULO = false;
-window.addEventListener('hashchange', async () => {
+/** Ha cambiado la dirección (`go`, «Atrás», «Adelante»): se pinta la pantalla nueva. */
+async function cambiaDePantalla() {
   // Un diálogo abierto (con «Atrás» del navegador, un enlace…) se cierra
   // como con «Cancelar»: si no, se quedaba encima con lo de la pantalla
   // anterior.
@@ -1666,9 +1701,28 @@ window.addEventListener('hashchange', async () => {
   }
   if (!(await puedeSalir())) return;
   FOCO_AL_TITULO = true; route();
+}
+window.addEventListener('popstate', () => {
+  sinAlmohadilla();
+  // Solo ha cambiado el `#` (escrito a mano): se quita y nada más.
+  if (aqui() === RUTA_ANTES) return;
+  cambiaDePantalla();
+});
+// Un `#…` escrito a mano en la barra no lleva a ningún sitio: se quita.
+window.addEventListener('hashchange', sinAlmohadilla);
+// Los enlaces a pantallas del panel, sin recargar la página (con Ctrl, Mayús,
+// la rueda o «Abrir en otra pestaña», como cualquier enlace).
+document.addEventListener('click', (e) => {
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  const a = e.target.closest?.('a[href]');
+  if (!a || (a.target && a.target !== '_self') || a.hasAttribute('download') || a.getAttribute('href').startsWith('#')) return;
+  const u = new URL(a.href, location.href);
+  if (u.origin !== location.origin || !esPantalla(u.pathname)) return;
+  e.preventDefault();
+  go(u.pathname + u.search);
 });
 
-// El alta (`#/alta/1…3`) y «Tu ficha» (`#/ficha/…`) están en ficha.js.
+// El alta (`/panel/alta/1…3`) y «Tu ficha» (`/panel/ficha/…`) están en ficha.js.
 
 // ── Los avisos de arriba de Hoy ─────────────────────────────────────────────
 /** En revisión o rechazado: qué pasa y cómo escribirnos, como en la app. Si
@@ -1686,7 +1740,7 @@ function avisoVerificacion() {
     <p style="margin:8px 0 0"><a class="btn sm" href="mailto:info@klendar.app?subject=${asunto}&body=${cuerpo}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>
       ${rechazado && gestiona() && BIZ.entity?.application?.status === 'rejected'
     // Una entidad rechazada lo vuelve a pedir con otro documento.
-    ? `<a class="btn sm primary" href="#/ficha/entidad">${esc(I18N.t('Volver a pedirlo'))}</a>`
+    ? `<a class="btn sm primary" href="/panel/ficha/entidad">${esc(I18N.t('Volver a pedirlo'))}</a>`
     : rechazado && gestiona() ? `<button class="btn sm primary" type="button" id="otra-revision">${ms('check')}${esc(I18N.t('Pedir otra revisión'))}</button>` : ''}</p></div>`;
 }
 
@@ -1741,7 +1795,7 @@ function avisoCondiciones(t) {
     <p class="muted" style="margin:6px 0 0">${esc(cuando + otros)}</p>
     <p style="margin:8px 0 0"><a class="link" href="${esc(url)}" target="_blank" rel="noopener">${esc(I18N.t('Ver las condiciones'))}</a>
       &nbsp;·&nbsp; <a class="link" href="${esc(url)}#historial" target="_blank" rel="noopener">${esc(I18N.t('Historial de cambios'))}</a></p>
-    <p class="botones-iguales" style="margin:10px 0 0"><a class="btn sm" href="#/baja">${esc(I18N.t(ent ? 'Dar de baja la entidad' : 'Dar de baja el negocio'))}</a>
+    <p class="botones-iguales" style="margin:10px 0 0"><a class="btn sm" href="/panel/baja">${esc(I18N.t(ent ? 'Dar de baja la entidad' : 'Dar de baja el negocio'))}</a>
       <button class="btn sm" type="button" id="condiciones-ok">${esc(I18N.t('Entendido'))}</button></p></div>`;
 }
 
@@ -1758,7 +1812,7 @@ function avisoCerrado() {
 /** Pago pendiente del plan (aún en el margen): una línea y a «Tu plan». */
 function avisoCobro() {
   return `<div class="help"><b>${esc(bi('Pago pendiente del plan.', 'Plan payment due.'))}</b>
-    <a href="#/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
+    <a href="/panel/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
 }
 
 /** El correo a soporte con el negocio dentro (un recibo devuelto se arregla
@@ -1831,7 +1885,7 @@ const colaBloqueo = () => bi('Tus publicaciones no se ven y no puedes publicar n
 function botonBloqueo(cause) {
   if (cause === 'dispute') return `<a class="btn primary" href="${esc(correoCobro())}">${ms('mail')}${esc(bi('Escríbenos', 'Write to us'))}</a>`;
   const pagar = cause === 'period' || cause === 'unpaid';
-  return `<a class="btn primary" href="#/plan">${ms('credit_card')}${esc(pagar ? bi('Pagar el plan', 'Pay for the plan') : bi('Elegir tu plan', 'Choose your plan'))}</a>`;
+  return `<a class="btn primary" href="/panel/plan">${ms('credit_card')}${esc(pagar ? bi('Pagar el plan', 'Pay for the plan') : bi('Elegir tu plan', 'Choose your plan'))}</a>`;
 }
 
 /** Antes del bloqueo (7 días, `block_soon`): un aviso arriba, el único, con
@@ -1842,7 +1896,7 @@ function avisoBloqueoPronto(bill) {
   const dispute = bill.block_kind === 'dispute' || bill.dispute;
   const boton = !esPropietario() ? ''
     : dispute ? `<a class="btn sm primary" href="${esc(correoCobro())}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>`
-      : `<a class="btn sm primary" href="#/plan">${ms('credit_card')}${esc(bi('Pagar', 'Pay'))}</a>`;
+      : `<a class="btn sm primary" href="/panel/plan">${ms('credit_card')}${esc(bi('Pagar', 'Pay'))}</a>`;
   return `<div class="help aviso-cobro"><b>${esc(bi(`Tu negocio se bloquea el ${dia}.`, `Your business will be blocked on ${dia}.`))}</b>
     ${esc(motivoBloqueo(bill.block_kind, false))} ${esc(dispute
     ? bi('Escríbenos a info@klendar.app para ponerlo al día. Si no, tus publicaciones dejarán de verse y solo podrás validar los códigos y bonos que ya tiene la gente. No se borra nada.',
@@ -1868,7 +1922,7 @@ function avisoGratisFin(sub) {
   const dia = diaLargoFecha(sub.period_end);
   return `<div class="help aviso-cobro">${esc(bi(`Tu «Gratis de lanzamiento» termina el ${dia}. Después, para seguir hay que pagar el plan; si no, el negocio quedará bloqueado (no se borra nada).`,
     `Your free launch period ends on ${dia}. After that, to carry on the plan has to be paid; otherwise the business will be blocked (nothing is deleted).`))}
-    ${esPropietario() ? `<p style="margin:8px 0 0"><a class="btn sm" href="#/plan">${ms('credit_card')}${esc(bi('Ver tu plan', 'See your plan'))}</a></p>` : ''}</div>`;
+    ${esPropietario() ? `<p style="margin:8px 0 0"><a class="btn sm" href="/panel/plan">${ms('credit_card')}${esc(bi('Ver tu plan', 'See your plan'))}</a></p>` : ''}</div>`;
 }
 
 /** El negocio parado: bloqueado por no pagar o en pausa por cierre. Lo único
@@ -1912,7 +1966,7 @@ function avisoParado(bill) {
     : !dueno ? `<p class="muted small" style="margin:0">${esc(I18N.t('Solo el propietario del negocio puede pagar el plan.'))}</p>`
       : causa ? botonBloqueo(bill.block_cause)
         : dispute ? `<a class="btn primary" href="${esc(correoCobro())}">${ms('mail')}${esc(I18N.t('Escribir a soporte'))}</a>`
-          : `<a class="btn primary" href="#/plan">${ms('credit_card')}${esc(bi('Pagar', 'Pay'))}</a>`;
+          : `<a class="btn primary" href="/panel/plan">${ms('credit_card')}${esc(bi('Pagar', 'Pay'))}</a>`;
   // Con la causa, la cola ya dice que se puede seguir validando.
   return `<div class="card aviso-parado" role="status">
     <h2>${ms(pausa ? 'event_busy' : 'lock_clock')} ${esc(titulo)}</h2>
@@ -2001,7 +2055,7 @@ function lineaDelDia(o, { conDia = false } = {}) {
   const cuando = conDia
     ? new Date(ini).toLocaleString(LOC(), { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', timeZone: TZ })
     : `${fmtHora(ini)}${fin ? `–${fmtHora(fin)}` : ''}`;
-  const href = gestiona() ? `#/publicaciones/${o.id}` : evento && o.reservations_enabled ? `#/asistentes/${o.id}` : '';
+  const href = gestiona() ? `/panel/publicaciones/${o.id}` : evento && o.reservations_enabled ? `/panel/asistentes/${o.id}` : '';
   const dentro = `<span class="hoy-linea-t"><b class="title" translate="no">${esc(o.title)}</b>
       <small>${esc(cuando)} · ${etiquetaEstado(o)}${etiquetaOculta(o)}</small></span>${cifrasRapidas(o)}`;
   return href ? `<li><a class="hoy-linea" href="${esc(href)}">${dentro}${ms('chevron_right')}</a></li>`
@@ -2065,7 +2119,7 @@ PAGES.hoy = async (v) => {
         <p class="muted" style="margin:4px 0 0">${esPropietario()
           ? esc(I18N.t('Ahora mismo no se ve nada de tu negocio. Lo abres de nuevo cuando quieras.'))
           : esc(I18N.t('Solo el propietario puede abrirlo de nuevo.'))}</p></div>
-        ${esPropietario() ? '<a class="btn primary" href="#/baja">Abrir de nuevo</a>' : ''}</div>` : '';
+        ${esPropietario() ? '<a class="btn primary" href="/panel/baja">Abrir de nuevo</a>' : ''}</div>` : '';
   // Pendiente de verificación con otro aviso más grave arriba: en una línea,
   // que se vea igual (como Hoy en la app; §4zzz-propent).
   const avisoEsVerif = !cerradoDeVerdad && !condiciones && !(pausado() && !cerradoIndef())
@@ -2101,7 +2155,7 @@ PAGES.hoy = async (v) => {
       ${cifra(nVi, null, nVi === 1 ? bi('vista hoy', 'view today') : bi('vistas hoy', 'views today'))}
       ${conReserva.length ? cifra(cogidas, aforo, bi('reservas de hoy', 'reservations today')) : ''}</section>`;
     const verTodo = ent && prox.length >= 5
-      ? `<a class="linkbtn" href="#/publicar">${esc(bi('Ver todo', 'See all'))}</a>` : '';
+      ? `<a class="linkbtn" href="/panel/publicar">${esc(bi('Ver todo', 'See all'))}</a>` : '';
     delDia = `
       ${hoyL.length ? `<section class="hoy-bloque" aria-labelledby="hoyParaHoy">${tituloHoy('hoyParaHoy', bi('Para hoy', 'For today'))}
         <ul class="hoy-lineas card">${hoyL.map((o) => lineaDelDia(o)).join('')}</ul></section>` : ''}
@@ -2109,8 +2163,8 @@ PAGES.hoy = async (v) => {
         ${prox.length ? `<ul class="hoy-lineas card">${prox.map((o) => lineaDelDia(o, { conDia: true })).join('')}</ul>`
           : `<p class="muted">${esc(bi('No tienes nada publicado para los próximos días.', 'You have nothing published for the coming days.'))}</p>`}</section>` : ''}
       ${recientes.length ? `<section class="hoy-bloque" aria-labelledby="hoyUltimo">${tituloHoy('hoyUltimo', bi('Lo último validado', 'Latest validated'),
-        `<a class="linkbtn" href="#/validar?recientes=1">${esc(bi('Ver todos', 'See all'))}</a>`)}
-        <ul class="hoy-lineas card">${recientes.map((r) => `<li><a class="hoy-linea" href="#/validar?recientes=1"><span class="hoy-linea-t"><b class="title" translate="no">${esc(r.title || queValidado(r))}</b>
+        `<a class="linkbtn" href="/panel/validar?recientes=1">${esc(bi('Ver todos', 'See all'))}</a>`)}
+        <ul class="hoy-lineas card">${recientes.map((r) => `<li><a class="hoy-linea" href="/panel/validar?recientes=1"><span class="hoy-linea-t"><b class="title" translate="no">${esc(r.title || queValidado(r))}</b>
           <small>${esc([fmtHora(r.at), queValidado(r), entranTxt(r)].filter(Boolean).join(' · '))}${etiquetaDeshecha(r)}</small></span>${ms('chevron_right')}</a></li>`).join('')}</ul></section>` : ''}`;
     // Sin nada del día en ninguna parte (una entidad tiene «Lo próximo»,
     // que ya dice si no hay nada): lo que saldrá aquí.
@@ -2283,7 +2337,7 @@ PAGES.publicaciones = async (v, param) => {
   }
   // «Crear a partir de esta» (?from=) y «Repetir mañana» (?from=&repeat=1),
   // como en la app.
-  const q = new URLSearchParams(location.hash.split('?')[1] || '');
+  const q = new URLSearchParams(location.search);
   const desde = q.get('from') ? { from: q.get('from'), repeat: q.get('repeat') === '1' } : null;
   if (q.get('rrpp') === '1') { const d = desde || {}; d.rrpp = true; return offerForm(v, null, param === 'nuevo-evento' ? 'future_event' : 'flash_offer', d.from ? d : { rrpp: true }); }
   if (param === 'nueva-flash') return offerForm(v, null, 'flash_offer', desde);
@@ -2305,14 +2359,14 @@ PAGES.publicaciones = async (v, param) => {
 // mirar, como «Ver todo» en la app. Parado, solo el aviso (como la app).
 PAGES.publicar = async (v) => {
   if (bloqueado()) {
-    if (!gestiona()) { location.replace('#/hoy'); return; }
+    if (!gestiona()) { go('/panel/hoy', true); return; }
     v.innerHTML = `<div class="page-head"><h1>${esc(bi('Publicar', 'Publish'))}</h1></div>${avisoParado(cobro())}`;
     activaParado(v);
     return;
   }
   // Por partes: los recuentos de cada estado los da la base y la lista llega
   // de 24 en 24, ya filtrada («Ver más» al final).
-  const qf = new URLSearchParams(location.hash.split('?')[1] || '').get('estado');
+  const qf = new URLSearchParams(location.search).get('estado');
   // Los chips pulsados (varios a la vez); `?estado=` entra con uno.
   const elegidos = new Set(FILTROS_PUB.some(([k]) => k === qf) ? [qf] : []);
   const pulsados = () => FILTROS_PUB.map(([k]) => k).filter((k) => elegidos.has(k));
@@ -2365,7 +2419,7 @@ PAGES.publicar = async (v) => {
     const reglas = (await rpc('my_offer_rules', { p_business: BIZ.id })) || [];
     if (!$('#rules')) return;
     $('#rules').innerHTML = reglas.length ? `<p class="muted small">${esc(bi(`${reglas.length === 1 ? '1 publicación se repite sola' : `${reglas.length} publicaciones se repiten solas`}: las ves en «Series y repeticiones».`,
-      `${reglas.length === 1 ? '1 publication repeats' : `${reglas.length} publications repeat`} automatically: see them in “Series and repeats”.`))} <a class="link" href="#/series">${esc(bi('Abrir', 'Open'))}</a></p>` : '';
+      `${reglas.length === 1 ? '1 publication repeats' : `${reglas.length} publications repeat`} automatically: see them in “Series and repeats”.`))} <a class="link" href="/panel/series">${esc(bi('Abrir', 'Open'))}</a></p>` : '';
   };
 
   async function repetirDialogo(offerId) {
@@ -2575,10 +2629,10 @@ PAGES.publicar = async (v) => {
   if (gestiona() && window.KAyudas && BIZ.verification_status !== 'rejected') KAyudas.tarjeta($('#ideasIA', v));
   if (gestiona()) renderRules().catch((e) => toast(friendly(e.message), true));
   // Desde el aviso «tu oferta termina en 1 h» (Tu cuenta → notificaciones).
-  const qx = new URLSearchParams(location.hash.split('?')[1] || '');
+  const qx = new URLSearchParams(location.search);
   const aAmpliar = qx.get('extend') && (offers.find((x) => x.id === qx.get('extend')) || await miPublicacion(qx.get('extend')).catch(() => null));
   if (aAmpliar) {
-    history.replaceState(null, '', `${location.pathname}#/publicar`);
+    cambiaDireccion('/panel/publicar');
     ampliarDialogo(aAmpliar);
   }
 };
@@ -2628,9 +2682,9 @@ const tarjetaPanel = (o, opts = {}) => KT.tarjeta(conNegocio(o), I18N.lang, { tz
  * publica (o si está archivada), a su ficha. Una oferta de RRPP no tiene
  * ficha pública (sin el enlace de un RRPP no se abre): a la sección RRPP,
  * con sus enlaces, o se queda en Publicaciones. */
-const hrefPub = (o) => (gestiona() && o.status !== 'archived' ? `#/publicaciones/${o.id}`
+const hrefPub = (o) => (gestiona() && o.status !== 'archived' ? `/panel/publicaciones/${o.id}`
   : o.audience !== 'promoters' ? `/o/${o.id}`
-    : gestiona() ? '#/rrpp' : '#/publicar');
+    : gestiona() ? '/panel/rrpp' : '/panel/publicar');
 /** Los vídeos de las tarjetas: el primer fotograma (o la portada) y, si
  * `mover`, en marcha y en silencio (nunca con «reducir movimiento»). */
 function activaVideos(caja, mover = false) {
@@ -2722,8 +2776,8 @@ function accionesPub(o) {
   // Crear a partir de esta · Repetir mañana / Repetir · Ampliar 1 h · Repetir
   // cada semana… · Serie… · Publicar en otros locales… · Compartir en
   // historias · Imprimir cartel · Borrar.
-  const crear = `#/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}`;
-  const asistentes = o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="#/asistentes/${esc(o.id)}">Asistentes</a>` : '';
+  const crear = `/panel/publicaciones/${o.kind === 'flash_offer' ? 'nueva-flash' : 'nuevo-evento'}?from=${esc(o.id)}`;
+  const asistentes = o.kind === 'future_event' && o.reservations_enabled ? `<a class="btn sm ghost" href="/panel/asistentes/${esc(o.id)}">Asistentes</a>` : '';
   const cifras = `<button type="button" class="btn sm ghost" data-act="stats" data-id="${esc(o.id)}">Cifras</button>`;
   // Archivada: solo sus cifras y, a quien publica, crear otra igual.
   if (o.status === 'archived') {
@@ -2747,7 +2801,7 @@ function accionesPub(o) {
   // día de la semana siguiente a la misma hora.
   const repetir = estadoPub(o) === 'agotada' || estadoPub(o) === 'terminada' || estadoPub(o) === 'cancelada';
   return `<div class="actions">
-    <a class="btn sm" href="#/publicaciones/${esc(o.id)}">Editar</a>
+    <a class="btn sm" href="/panel/publicaciones/${esc(o.id)}">Editar</a>
     ${cifras}
     ${asistentes}
     ${sePuedePausar(o) ? `<button type="button" class="btn sm ghost" data-act="pause" data-id="${esc(o.id)}">Pausar</button>` : o.status === 'draft' && !(finDe(o) && new Date(finDe(o)) < new Date()) ? `<button type="button" class="btn sm ghost" data-act="activate" data-id="${esc(o.id)}">Activar</button>` : ''}
@@ -2985,14 +3039,14 @@ async function offerForm(v, id, kindDefault, desde = null) {
     ...(desde?.rrpp ? { audience: 'promoters' } : {}),
     // Desde «Fidelizar» › «Crear una exclusiva» (?exclusiva=1): solo para
     // quien te tiene en favoritos (se cambia a clientes en «Más opciones»).
-    ...(!desde && /[?&]exclusiva=1/.test(location.hash) ? { audience: 'favorites' } : {}) };
+    ...(!desde && /[?&]exclusiva=1/.test(location.search) ? { audience: 'favorites' } : {}) };
   // La vista previa usa la portada del local si la publicación no trae fotos.
   await portadaNegocio();
   if (id) {
     // Un enlace viejo o de otro de tus negocios: a la lista, como el cartel
     // y los asistentes (antes salía «Editar» con el formulario en blanco).
     const mia = await miPublicacion(id);
-    if (!mia) { location.replace('#/publicar'); return; }
+    if (!mia) { go('/panel/publicar', true); return; }
     o = mia;
   } else if (!desde?.from) {
     // Como la app: una oferta empieza ya y dura 3 h; un evento, mañana
@@ -3000,7 +3054,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     // Desde el calendario (?dia=AAAA-MM-DD), ese día: la oferta a las 18:00
     // (o ya, si es hoy) y el evento a las 20:00, en la hora del local.
     const ahora = new Date(); ahora.setSeconds(0, 0);
-    const pedido = (/[?&]dia=(\d{4}-\d{2}-\d{2})\b/.exec(location.hash) || [])[1];
+    const pedido = (/[?&]dia=(\d{4}-\d{2}-\d{2})\b/.exec(location.search) || [])[1];
     const enDia = pedido && pedido > KZ.hoy(TZ) ? pedido.split('-').map(Number) : null;
     if (o.kind === 'flash_offer') {
       const ini = enDia ? KZ.instante(TZ, enDia[0], enDia[1], enDia[2], 18) : ahora;
@@ -3057,7 +3111,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // «Oferta para el partido» (Partidos que pones, `?partido=<id>`): la oferta
   // flash ya rellena con el partido, de 30 min antes al final de la emisión.
   // Al guardarla se une a él (`set_business_broadcast_offer`).
-  const partidoId = !id && !desde?.from ? (/[?&]partido=([0-9a-f-]{36})(?:&|$)/i.exec(location.hash) || [])[1] : null;
+  const partidoId = !id && !desde?.from ? (/[?&]partido=([0-9a-f-]{36})(?:&|$)/i.exec(location.search) || [])[1] : null;
   const partido = partidoId ? await rpc('broadcast_basic', { p_broadcast: partidoId, p_lang: I18N.lang }).catch(() => null) : null;
   if (partido?.id) {
     const SPx = globalThis.KlendarEmisiones.t(I18N.lang);
@@ -3154,7 +3208,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // de dos toques (alta rápida, 2026-11-05). «Prefiero escribir otra»
   // (`?idea=1`) ya ha elegido el formulario.
   let sugForm = [];
-  if (!id && !desde && !partido?.id && kind === 'flash_offer' && !esOrganizador() && !esEntidad() && !/[?&](idea|primera|exclusiva|partido)=/.test(location.hash)) {
+  if (!id && !desde && !partido?.id && kind === 'flash_offer' && !esOrganizador() && !esEntidad() && !/[?&](idea|primera|exclusiva|partido)=/.test(location.search)) {
     const c = await rpc('my_business_offer_counts', { p_business: BIZ.id }).catch(() => null);
     if (c && !Number(c.total)) sugForm = await sugerenciasDelNegocio();
   }
@@ -3202,7 +3256,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           </div>
         </fieldset>`;
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicar">← Volver</a><h1 id="pubTitulo">${esc(titulo())}</h1><span class="spacer"></span>
+    <div class="page-head"><a class="btn sm ghost" href="/panel/publicar">← Volver</a><h1 id="pubTitulo">${esc(titulo())}</h1><span class="spacer"></span>
       <details class="mas tpl-menu"><summary class="btn sm ghost">Tus plantillas</summary>
         <div class="mas-menu" role="menu">
           <button type="button" role="menuitem" id="usarTpl">Usar una plantilla…</button>
@@ -3340,7 +3394,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
           <p class="hint" id="audAyuda" ${['all', 'promoters'].includes(o.audience || 'all') ? 'hidden' : ''}>Los demás ven que es exclusiva, sin el beneficio.</p>
           ${rrppHtml.quien}
         </fieldset>
-        <label class="opcion bl-fila solo-negocio" id="primeraRow"${(o.audience || 'all') === 'promoters' ? ' hidden' : ''}><input type="checkbox" name="first_visit" ${o.style?.first_visit === true || /[?&]primera=1\b/.test(location.hash) ? 'checked' : ''}><span><b>${esc(bi('Solo para quien viene por primera vez', 'First-time visitors only'))}</b><br><small class="muted">${esc(bi('Solo la podrá sacar quien no haya canjeado nunca nada en tu negocio. Tu equipo no cuenta.', "Only people who have never redeemed anything at your business can get it. Your team doesn't count."))}</small></span></label>
+        <label class="opcion bl-fila solo-negocio" id="primeraRow"${(o.audience || 'all') === 'promoters' ? ' hidden' : ''}><input type="checkbox" name="first_visit" ${o.style?.first_visit === true || /[?&]primera=1\b/.test(location.search) ? 'checked' : ''}><span><b>${esc(bi('Solo para quien viene por primera vez', 'First-time visitors only'))}</b><br><small class="muted">${esc(bi('Solo la podrá sacar quien no haya canjeado nunca nada en tu negocio. Tu equipo no cuenta.', "Only people who have never redeemed anything at your business can get it. Your team doesn't count."))}</small></span></label>
         <div class="bl-fila">
           <p class="etq">${esc(MK.cardTitle)}</p>
           ${eligeVarios('card_requirements', KMp.CARDS.map((c) => [c, MK.card[c]]), o.card_requirements, MK.cardTitle)}
@@ -3573,7 +3627,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   // La ayuda de «Quién la ve» solo hace falta si no es para todo el mundo.
   // Una exclusiva recién pedida desde «Fidelizar»: «Más opciones» abierto,
   // para ver a quién va.
-  if (!id && /[?&]exclusiva=1/.test(location.hash) && $('#bMas', v)) $('#bMas', v).open = true;
+  if (!id && /[?&]exclusiva=1/.test(location.search) && $('#bMas', v)) $('#bMas', v).open = true;
   $$('[name=audience]', v).forEach((r) => {
     r.addEventListener('change', () => {
       $('#audAyuda', v).hidden = ['all', 'promoters'].includes(val('audience') || 'all');
@@ -3755,7 +3809,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
   });
   let estilo = limpiaEstilo(o.style);
   // Desde «Fidelizar» › «Crear oferta de primera visita» (?primera=1).
-  if (!id && /[?&]primera=1\b/.test(location.hash)) estilo.first_visit = true;
+  if (!id && /[?&]primera=1\b/.test(location.search)) estilo.first_visit = true;
   /** Lo que se guarda en `offers.style`: el sello solo en una oferta. */
   const estiloJson = () => ({
     template: estilo.template,
@@ -4055,7 +4109,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     renderPhotos(); pintaTipo(); syncKind(); syncDiscount(); pintaEstilo();
   };
   $$('[data-idea]', v).forEach((b) => { b.onclick = () => { aplicarIdea(ideas[+b.dataset.idea]); toast('Idea aplicada: repasa precio y hora'); }; });
-  sugActiva(v, sugForm, () => { GUARDA = null; location.hash = '#/publicar'; });
+  sugActiva(v, sugForm, () => { GUARDA = null; go('/panel/publicar'); });
   // Ayudas de IA (panel/ayudas.js): la idea que ha tocado el dueño y la categoría y etiquetas propuestas.
   const ideaIA = !id && !desde && window.KAyudas ? KAyudas.tomaIdea() : null;
   if (ideaIA) {
@@ -4079,7 +4133,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
     $('#ideaIA', v).innerHTML = `<div class="foto-caja" role="status"><p class="foto-tit">${esc(I18N.t('Idea propuesta con IA'))}</p>
       <p class="hint">${esc(I18N.t('Revísala, pon el precio y mira el día: no se publica nada sin ti.'))}</p></div>`;
   }
-  if (!id && !desde && !/[?&]rrpp=1\b/.test(location.hash) && window.KAyudas) {
+  if (!id && !desde && !/[?&]rrpp=1\b/.test(location.search) && window.KAyudas) {
     KAyudas.formulario($('#aiSugiere', v), {
       campo, pon, val,
       marcas: MK,
@@ -4515,7 +4569,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
       // Guardado: ya no hay nada que perder al salir.
       GUARDA = null;
       // Varios eventos de un enlace o un texto (panel/enlace.js): el siguiente, ya relleno.
-      location.hash = partido?.id ? '#/partidos' : (window.KEnlaceRellena?.siguiente() || '#/publicar');
+      go(partido?.id ? '/panel/partidos' : (window.KEnlaceRellena?.siguiente() || '/panel/publicar'));
     } catch (err) {
       // El aforo no baja de lo ya reservado o usado: la base dice cuánto es.
       const msg = String(err.message || '');
@@ -4628,12 +4682,12 @@ async function offerForm(v, id, kindDefault, desde = null) {
   pintaBarra();
   pintaFinAuto();
   // La del partido vuelve a «Partidos que pones».
-  if (partido?.id) { const atras = $('.page-head a.btn', v); if (atras) atras.setAttribute('href', '#/partidos'); }
+  if (partido?.id) { const atras = $('.page-head a.btn', v); if (atras) atras.setAttribute('href', '/panel/partidos'); }
   // Desde «Primeros pasos»: ya rellena con la primera de su gremio.
-  if (!id && /[?&]idea=1\b/.test(location.hash) && ideas.length) aplicarIdea(ideas[0]);
+  if (!id && /[?&]idea=1\b/.test(location.search) && ideas.length) aplicarIdea(ideas[0]);
   // Desde «Antes de cerrar» la primera vez: con esa idea (aunque su gremio
   // no la tenga).
-  if (!id && /[?&]idea=before_closing\b/.test(location.hash)) {
+  if (!id && /[?&]idea=before_closing\b/.test(location.search)) {
     const IDEAS = window.KLENDAR_IDEAS || { general: [], bySlug: {} };
     const idea = ideas.find((t) => t.beforeClosing)
       || Object.values(IDEAS.bySlug).flat().find((t) => t.beforeClosing);
@@ -4650,7 +4704,7 @@ async function offerForm(v, id, kindDefault, desde = null) {
 // El mes con lo que tiene el negocio (puntos como en Explorar: eventos en
 // coral, ofertas en ámbar) y, al lado (debajo en el móvil), lo del día
 // elegido con la misma fila que la agenda de la web, su estado y «Crear este
-// día». Todo en la hora del local. #/calendario/AAAA-MM-DD abre ese día.
+// día». Todo en la hora del local. /panel/calendario/AAAA-MM-DD abre ese día.
 // Cuenta todo lo que no está archivado: también borradores y programadas
 // (el negocio planifica con ellas), cada una con su etiqueta.
 const dosCifras = (n) => String(n).padStart(2, '0');
@@ -4714,13 +4768,13 @@ PAGES.calendario = async (v, param) => {
       const puntos = lista.length ? `<span class="cal-puntos" aria-hidden="true">${ev ? '<i class="pe"></i>' : ''}${fl ? '<i class="pf"></i>' : ''}</span>` : '';
       const cls = `cal-dia${iso === hoy ? ' hoy' : ''}${iso === dia ? ' sel' : ''}${iso < hoy ? ' pasado' : ''}`;
       const etiqueta = `${largo(iso)}: ${lista.length ? cuantas(lista.length) : bi('nada', 'nothing')}`;
-      celdas.push(`<a class="${cls}" href="#/calendario/${iso}" data-dia="${iso}" aria-label="${esc(etiqueta)}"${iso === dia ? ' aria-current="date"' : ''}>${d}${puntos}</a>`);
+      celdas.push(`<a class="${cls}" href="/panel/calendario/${iso}" data-dia="${iso}" aria-label="${esc(etiqueta)}"${iso === dia ? ' aria-current="date"' : ''}>${d}${puntos}</a>`);
     }
     const delDia = porDia.get(dia) || [];
     const proximo = delDia.length ? null : await siguienteDe(dia);
     const crear = gestiona() ? `<div class="actions cal-crear">
-        ${esEntidad() ? '' : `<a class="btn sm" href="#/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta este día'))}</a>`}
-        <a class="btn sm" href="#/publicaciones/nuevo-evento?dia=${dia}">${ms('event')}${esc(I18N.t('Evento este día'))}</a></div>` : '';
+        ${esEntidad() ? '' : `<a class="btn sm" href="/panel/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta este día'))}</a>`}
+        <a class="btn sm" href="/panel/publicaciones/nuevo-evento?dia=${dia}">${ms('event')}${esc(I18N.t('Evento este día'))}</a></div>` : '';
     $('#cal', v).innerHTML = `
       <section class="cal-mes" aria-labelledby="calTitulo">
         <div class="cal-cab">
@@ -4741,7 +4795,7 @@ PAGES.calendario = async (v, param) => {
         </div>
         ${delDia.length
           ? `<div class="tj-filas">${delDia.map((o) => `<div class="cal-item">${tarjetaPanel(o, { forma: 'fila', h: 'h3', href: hrefPub(o) })}<p class="cal-item-estado">${estadoPub(o) === 'activa' ? '' : etiquetaEstado(o)}</p></div>`).join('')}</div>`
-          : `<p class="muted cal-nada">${esc(I18N.t(dia < hoy ? 'Ese día no tuviste nada publicado.' : 'Aún no tienes nada para ese día.'))}${proximo ? `<br><a href="#/calendario/${proximo}" data-dia="${proximo}">${esc(bi(`Lo siguiente: ${rel(proximo) || largo(proximo)}`, `Next up: ${rel(proximo) || largo(proximo)}`))} →</a>` : ''}</p>`}
+          : `<p class="muted cal-nada">${esc(I18N.t(dia < hoy ? 'Ese día no tuviste nada publicado.' : 'Aún no tienes nada para ese día.'))}${proximo ? `<br><a href="/panel/calendario/${proximo}" data-dia="${proximo}">${esc(bi(`Lo siguiente: ${rel(proximo) || largo(proximo)}`, `Next up: ${rel(proximo) || largo(proximo)}`))} →</a>` : ''}</p>`}
         ${dia >= hoy ? crear : ''}
       </section>`;
     I18N.translate($('#cal', v));
@@ -4752,7 +4806,7 @@ PAGES.calendario = async (v, param) => {
         dia = a.dataset.dia;
         mes = dia.slice(0, 7);
         // Sin «hashchange»: no se vuelve a pedir nada, pero el enlace vale.
-        history.replaceState(null, '', `${location.pathname}${location.search}#/calendario/${dia}`);
+        history.replaceState(null, '', `/panel/calendario/${dia}${location.search}`);
         pinta('dia').catch((e) => toast(friendly(e.message), true));
       };
     });
@@ -4773,7 +4827,7 @@ PAGES.calendario = async (v, param) => {
       $(`[data-mes="${enfocar.slice(3)}"]`, v)?.focus();
     }
   };
-  $('#calHoy', v).onclick = () => { dia = hoy; mes = hoy.slice(0, 7); history.replaceState(null, '', `${location.pathname}${location.search}#/calendario/${dia}`); pinta('dia').catch((e) => toast(friendly(e.message), true)); };
+  $('#calHoy', v).onclick = () => { dia = hoy; mes = hoy.slice(0, 7); history.replaceState(null, '', `/panel/calendario/${dia}${location.search}`); pinta('dia').catch((e) => toast(friendly(e.message), true)); };
   await pinta();
 };
 
@@ -4787,7 +4841,7 @@ PAGES['antes-de-cerrar'] = async (v) => {
   let s = await rpc('before_closing_setup', { p_business: BIZ.id });
   ANTES = s;
   if (!s?.last) {
-    location.replace('#/publicaciones/nueva-flash?idea=before_closing');
+    go('/panel/publicaciones/nueva-flash?idea=before_closing', true);
     return;
   }
   const u = s.last;
@@ -4820,7 +4874,7 @@ PAGES['antes-de-cerrar'] = async (v) => {
       <label class="f"><span>${esc(bi('Recogida desde', 'Pick-up from'))}</span><input type="time" id="desde" value="${esc(hhmm(s.window.from))}"></label>
       <p class="hint" id="ventana">${esc(ventana())}</p>
       <button class="btn primary grande" type="button" id="publicaAntes">${esc(I18N.t('Publicar'))}</button>
-      <p style="margin:10px 0 0;text-align:center"><a class="link" href="#/publicaciones/nueva-flash?from=${esc(u.id)}">${esc(bi('Cambiar más cosas', 'Change more details'))}</a></p>
+      <p style="margin:10px 0 0;text-align:center"><a class="link" href="/panel/publicaciones/nueva-flash?from=${esc(u.id)}">${esc(bi('Cambiar más cosas', 'Change more details'))}</a></p>
     </div>
     <div class="card"><h2>${esc(bi('Recordármelo cada día', 'Remind me every day'))}</h2>
       <label class="opcion"><input type="checkbox" id="recOn" ${s.reminder_at ? 'checked' : ''}><span id="recTxt"></span></label>
@@ -4861,7 +4915,7 @@ PAGES['antes-de-cerrar'] = async (v) => {
         return;
       }
       toast(bi('Publicada: ya sale en Descubre con el sello «Antes de cerrar».', 'Posted: it’s on Discover now with the “Before closing” badge.'));
-      location.hash = '#/publicar';
+      go('/panel/publicar');
     } catch (err) {
       toast(friendly(err.message), true);
     } finally { b.disabled = false; }
@@ -5219,7 +5273,7 @@ PAGES.validar = async (v) => {
     <div class="scan-box">
       <div class="validar-dos">
         <button class="btn" id="camara" type="button">${ms('photo_camera')}Escanear con la cámara</button>
-        <a class="btn" href="#/momento">${ms('volunteer_activism')}Dar en el momento</a>
+        <a class="btn" href="/panel/momento">${ms('volunteer_activism')}Dar en el momento</a>
       </div>
       <div id="listoEntrada"></div>
       <div class="camara" id="camara-caja" hidden><video id="video" muted playsinline></video><span class="mira" aria-hidden="true"></span></div>
@@ -5510,9 +5564,9 @@ PAGES.validar = async (v) => {
   // Las listas de los RRPP de esta noche (panel/rrpp.js): validar desde la
   // fila es lo mismo que el escáner.
   // Desde «Listas de esta noche» (Lo esencial de un empleado,
-  // `#/validar?listas=1`): sin nadie apuntado, lo dice en vez de no enseñar
+  // `/panel/validar?listas=1`): sin nadie apuntado, lo dice en vez de no enseñar
   // nada (como la app), y lleva hasta ahí.
-  const conListas = new URLSearchParams(location.hash.split('?')[1] || '').get('listas') === '1';
+  const conListas = new URLSearchParams(location.search).get('listas') === '1';
   const cajaListas = $('#puertaRrpp');
   rrppPuerta(cajaListas, (res) => {
     pintaResultado(res, res.ok ? 'ok' : 'bad');
@@ -5529,17 +5583,17 @@ PAGES.validar = async (v) => {
   // Desde klendar.app/r/<código> (el QR escaneado con la cámara del móvil,
   // sin la app): el código llega puesto y se enseña qué es; se valida con el
   // botón «Validar». La cámara de aquí sí valida directamente.
-  const desdeQr = new URLSearchParams(location.hash.split('?')[1] || '').get('code');
+  const desdeQr = new URLSearchParams(location.search).get('code');
   // Desde klendar.app/c/<…> (el QR de cliente leído con la cámara del móvil):
   // sus bonos, al momento.
-  const cliente = new URLSearchParams(location.hash.split('?')[1] || '').get('cliente');
+  const cliente = new URLSearchParams(location.search).get('cliente');
   if (cliente && bonoToken(cliente)) {
-    history.replaceState(null, '', `${location.pathname}#/validar`);
+    cambiaDireccion('/panel/validar');
     bonoCliente($('#result'), cliente);
   }
   if (desdeQr && (/^[0-9a-f]{8,64}$/i.test(desdeQr) || NOMINATIVA_RE.test(desdeQr.toLowerCase()))) {
     $('#code').value = desdeQr;
-    history.replaceState(null, '', `${location.pathname}#/validar`);
+    cambiaDireccion('/panel/validar');
     mira(desdeQr);
   }
 
@@ -5574,9 +5628,9 @@ PAGES.validar = async (v) => {
     };
   }
   await loadRecent();
-  // Desde «Lo último validado» de Hoy (`#/validar?recientes=1`): baja a
+  // Desde «Lo último validado» de Hoy (`/panel/validar?recientes=1`): baja a
   // «Últimos validados» con el foco en su título.
-  if (new URLSearchParams(location.hash.split('?')[1] || '').get('recientes') === '1') {
+  if (new URLSearchParams(location.search).get('recientes') === '1') {
     const t = $('#recientesT', v);
     if (t) {
       requestAnimationFrame(() => {
@@ -5603,7 +5657,7 @@ function botonesContacto(c, nombre) {
 // ── Asistentes de un evento ─────────────────────────────────────────────────
 PAGES.asistentes = async (v, offerId) => {
   // Sin evento (enlace cortado o escrito a mano): a Publicaciones, no a un error.
-  if (!offerId) { location.hash = '#/publicar'; return; }
+  if (!offerId) { go('/panel/publicar'); return; }
   // Por partes (50 y «Ver más») y con la búsqueda en la base; las cuentas,
   // con todos (`offer_attendees_summary`).
   const POR = 50;
@@ -5663,7 +5717,7 @@ PAGES.asistentes = async (v, offerId) => {
       ${nombresEspera ? `<ol class="lista-espera">${nombresEspera.map((p) => `<li><b>${esc(p.name || I18N.t('Invitada'))}</b>${p.notified_until
         ? ` <span class="muted">· ${esc(bi(`Plaza guardada hasta las ${fmtHora(p.notified_until)}`, `Place held until ${fmtHora(p.notified_until)}`))}</span>` : ''}${resumen?.contact ? botonesContacto(p, p.name || I18N.t('Invitada')) : ''}</li>`).join('')}</ol>` : ''}</div>`;
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/publicar">← Volver</a><h1>Asistentes</h1><span class="spacer"></span>
+    <div class="page-head"><a class="btn sm ghost" href="/panel/publicar">← Volver</a><h1>Asistentes</h1><span class="spacer"></span>
       <button class="btn sm ghost" id="csv">Exportar CSV</button></div>
     <div class="card"><h2>${esc(offer?.title || '')}</h2>
       <p class="muted" style="margin:0">${esc(bi(
@@ -5771,10 +5825,10 @@ PAGES.asistentes = async (v, offerId) => {
 // Hasta cinco por local, cada una con su nombre, su meta, su premio y lo que
 // da sello. Lo mismo que «Tarjetas de sellos» en la app, con las mismas
 // funciones de la base y las mismas palabras.
-//   #/sellos            la lista
-//   #/sellos/nueva      crear una
-//   #/sellos/<id>       cómo va y quién la lleva (añadir, quitar, premio, a 0)
-//   #/sellos/<id>/editar
+//   /panel/sellos            la lista
+//   /panel/sellos/nueva      crear una
+//   /panel/sellos/<id>       cómo va y quién la lleva (añadir, quitar, premio, a 0)
+//   /panel/sellos/<id>/editar
 const FILTROS_SELLO = [
   ['all', 'Todas las publicaciones'],
   ['flash_offer', 'Solo ofertas'],
@@ -5864,7 +5918,7 @@ PAGES.sellos = async (v, param) => {
   const edita = d.can_edit ?? gestiona();
   v.innerHTML = `
     <div class="page-head"><h1>Tarjetas de sellos</h1><span class="spacer"></span>
-      ${esOrganizador() || !edita ? '' : '<a class="btn sm ghost" href="#/cartel-local">Imprimir el cartel del local</a>'}
+      ${esOrganizador() || !edita ? '' : '<a class="btn sm ghost" href="/panel/cartel-local">Imprimir el cartel del local</a>'}
       ${edita ? `<button class="btn sm primary" type="button" id="nueva" ${lleno ? 'disabled' : ''}>Nueva tarjeta</button>` : ''}</div>
     ${helpBox('¿Cómo funciona?', bi(`<p>Cada tarjeta tiene su meta, su premio y lo que da sello: todas las publicaciones, solo las ofertas, solo los eventos, ciertas categorías o ciertas publicaciones. Cuando validas un código, <b>cada tarjeta encendida que encaje da su sello</b>, como mucho uno al día por persona y tarjeta.</p>
       <p>Si marcas <b>«También por visita con el QR del local»</b>, quien escanee el cartel del local en tu negocio se lleva además un sello, con el mismo tope de uno al día.</p>
@@ -5874,7 +5928,7 @@ PAGES.sellos = async (v, param) => {
       <p>The reward is another code you validate the same way, or you hand it over yourself from the card's customer list, where you can also add or remove stamps and reset it to 0. If you turn a card off, <b>nobody loses the stamps they have</b>.</p>`))}
     ${lleno && edita ? `<p class="muted">${esc(bi(`Ya tienes ${d.max}, el máximo. Borra o cambia alguna para crear otra.`, `You already have ${d.max}, the maximum. Delete or change one to create another.`))}</p>` : ''}
     ${cards.length ? cards.map((c) => `
-      <a class="card tarjeta-sellos" href="#/sellos/${esc(c.id)}">
+      <a class="card tarjeta-sellos" href="/panel/sellos/${esc(c.id)}">
         <div class="ts-top"><h2>${esc(c.name)}</h2>${estadoTarjeta(c)}<span class="ms" aria-hidden="true">chevron_right</span></div>
         <p class="ts-meta"><b>${esc(metaPremio(c))}</b></p>
         <p class="muted">${esc(filtroSellos(c, d.offers))}</p>
@@ -5891,7 +5945,7 @@ PAGES.sellos = async (v, param) => {
       // El personal no crea tarjetas (como la app, «Ayuda guiada»).
       : bi('Cuando quien lleva el negocio cree una, la verás aquí.', 'When whoever runs the business creates one, you’ll see it here.'))}</div>`}`;
   const nueva = $('#nueva', v);
-  if (nueva) nueva.onclick = () => { location.hash = '#/sellos/nueva'; };
+  if (nueva) nueva.onclick = () => { go('/panel/sellos/nueva'); };
 };
 
 /** Crear (id null) o cambiar una tarjeta. */
@@ -5899,9 +5953,9 @@ async function tarjetaForm(v, id) {
   const d = await rpc('business_stamp_cards', { p_business: BIZ.id });
   if (d?.ok === false) throw new Error(friendly(d.error));
   // Cambiar las reglas de una tarjeta, solo la gestión.
-  if (!(d.can_edit ?? gestiona())) { location.hash = id ? `#/sellos/${id}` : '#/sellos'; return; }
+  if (!(d.can_edit ?? gestiona())) { go(id ? `/panel/sellos/${id}` : '/panel/sellos'); return; }
   const c = id ? (d.cards || []).find((x) => x.id === id) : null;
-  if (id && !c) { location.hash = '#/sellos'; return; }
+  if (id && !c) { go('/panel/sellos'); return; }
   // Nombre o premio que esperan revisión (lenguaje ofensivo): se enseña lo
   // último que se escribió y lo que sigue en uso mientras tanto.
   const rev = c?.review || null;
@@ -5910,7 +5964,7 @@ async function tarjetaForm(v, id) {
   const cats = new Set(c?.category_ids || []);
   const offs = new Set(c?.offer_ids || []);
   v.innerHTML = `
-    <p class="crumbs"><a href="#/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a>${c ? ` · <a href="#/sellos/${esc(c.id)}">${esc(c.name)}</a>` : ''}</p>
+    <p class="crumbs"><a href="/panel/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a>${c ? ` · <a href="/panel/sellos/${esc(c.id)}">${esc(c.name)}</a>` : ''}</p>
     <div class="page-head"><h1>${c ? 'Editar tarjeta' : 'Nueva tarjeta'}</h1></div>
     <form id="f" class="form" novalidate>
       ${rev?.paused ? `<div class="full scan-result warn">${esc(I18N.t('En revisión: la tarjeta empieza cuando la revisemos, porque puede contener lenguaje ofensivo. Normalmente en menos de 24 h.'))}</div>` : ''}
@@ -6014,7 +6068,7 @@ async function tarjetaForm(v, id) {
           ` We’ve told ${r.notified === 1 ? '1 person' : `${r.notified} people`} about the new goal.`)
         : '';
     toast(r.status === 'review' ? I18N.t(EN_REVISION_USO) + meta : meta ? bi('Guardado.', 'Saved.') + meta : 'Guardado');
-    location.hash = `#/sellos/${r.card.id}`;
+    go(`/panel/sellos/${r.card.id}`);
   };
   const borrar = $('#borrar', v);
   if (borrar) {
@@ -6023,7 +6077,7 @@ async function tarjetaForm(v, id) {
         esc(I18N.t('Deja de verse en la app y en la web. Los premios ya entregados se quedan en el historial.')),
         { danger: true, submit: 'Borrar' })) return;
       const r = await rpc('delete_stamp_card', { p_card: c.id }).catch((err) => ({ ok: false, error: err.message }));
-      if (r?.ok) { toast('Tarjeta borrada'); location.hash = '#/sellos'; return; }
+      if (r?.ok) { toast('Tarjeta borrada'); go('/panel/sellos'); return; }
       if (r?.error === 'card_in_use') {
         const n = r.people || 1;
         await modal({
@@ -6052,7 +6106,7 @@ async function tarjetaClientes(v, id) {
     rpc('business_stamp_cards', { p_business: BIZ.id }).catch(() => null),
   ]);
   if (d?.ok === false) {
-    if (d.error === 'not_authorized') { location.hash = '#/sellos'; return; }
+    if (d.error === 'not_authorized') { go('/panel/sellos'); return; }
     throw new Error(friendly(d.error));
   }
   const c = (todas?.cards || []).find((x) => x.id === id) || d.card;
@@ -6070,9 +6124,9 @@ async function tarjetaClientes(v, id) {
   let q = '';
 
   v.innerHTML = `
-    <p class="crumbs"><a href="#/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a></p>
+    <p class="crumbs"><a href="/panel/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a></p>
     <div class="page-head"><h1>${esc(c.name)}</h1>${estadoTarjeta(c)}<span class="spacer"></span>
-      ${edita ? `<a class="btn sm ghost" href="#/sellos/${esc(c.id)}/editar">Editar</a>` : ''}</div>
+      ${edita ? `<a class="btn sm ghost" href="/panel/sellos/${esc(c.id)}/editar">Editar</a>` : ''}</div>
     <p><b>${esc(metaPremio(c))}</b><br><span class="muted">${esc(filtroSellos(c, todas?.offers || []))}</span></p>
     <div id="cifras"></div>
     <div id="persona"></div>
@@ -6723,7 +6777,7 @@ PAGES.carta = async (v) => {
   pinta();
 };
 
-// `#/cartel/<id>` (direcciones viejas): el cartel de una publicación ya no
+// `/panel/cartel/<id>` (direcciones viejas): el cartel de una publicación ya no
 // se pinta dentro del panel, va a «Imprimir cartel» de la web, que es el
 // mismo de la app (A4 o A3, ocho idiomas; §4zzz-cartel). Sin dejar la vieja
 // en el historial.
@@ -6731,9 +6785,9 @@ PAGES.cartel = async (v, offerId) => {
   const o = await miPublicacion(offerId);
   // Una oferta de RRPP no tiene cartel: sin el enlace de un RRPP, su QR no
   // la abriría (cada RRPP tiene el suyo en «RRPP»).
-  if (!o || o.audience === 'promoters') { location.hash = o ? '#/rrpp' : '#/publicar'; return; }
+  if (!o || o.audience === 'promoters') { go(o ? '/panel/rrpp' : '/panel/publicar'); return; }
   const motivo = cartelNoMotivo(o);
-  if (motivo) { toast(motivo); location.replace('#/publicar'); return; }
+  if (motivo) { toast(motivo); go('/panel/publicar', true); return; }
   location.replace(cartelPubUrl(o.id));
 };
 
@@ -6752,7 +6806,7 @@ PAGES['cartel-local'] = async (v) => {
   const nombres = tarjetas.map((c) => c.name).join(', ');
   const n = d.visit_stamps_30d || 0;
   v.innerHTML = `
-    <p class="crumbs"><a href="#/ficha">${esc(I18N.t('Tu ficha'))}</a> · <a href="#/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a></p>
+    <p class="crumbs"><a href="/panel/ficha">${esc(I18N.t('Tu ficha'))}</a> · <a href="/panel/sellos">${esc(I18N.t('Tarjetas de sellos'))}</a></p>
     <div class="page-head"><h1>Cartel del local</h1></div>
     ${helpBox('¿Para qué sirve?', segunCarta([bi('<p>Para la barra, la puerta o las mesas. Quien lo escanea con la cámara del móvil ve tu ficha: carta, fotos, publicaciones y reseñas. Desde ahí puede añadirte a favoritos.</p><p>Si una tarjeta de sellos tiene activado <b>«También por visita con el QR del local»</b>, además se lleva un sello, como mucho uno al día. Para eso comprobamos que está en tu local con la ubicación de su móvil (no la guardamos).</p>', '<p>For the counter, the door or the tables. Whoever scans it with their phone camera sees your profile: menu, photos, publications and reviews. From there they can add you to their favourites.</p><p>If a stamp card has <b>“Also per visit with the venue QR code”</b> turned on, they also get a stamp, one a day at most. To do that we check they are at your place with their phone’s location (we don’t store it).</p>'), bi('<p>Para la barra, la puerta o las mesas. Quien lo escanea con la cámara del móvil ve tu ficha: precios, fotos, publicaciones y reseñas. Desde ahí puede añadirte a favoritos.</p><p>Si una tarjeta de sellos tiene activado <b>«También por visita con el QR del local»</b>, además se lleva un sello, como mucho uno al día. Para eso comprobamos que está en tu local con la ubicación de su móvil (no la guardamos).</p>', '<p>For the counter, the door or the tables. Whoever scans it with their phone camera sees your profile: prices, photos, publications and reviews. From there they can add you to their favourites.</p><p>If a stamp card has <b>“Also per visit with the venue QR code”</b> turned on, they also get a stamp, one a day at most. To do that we check they are at your place with their phone’s location (we don’t store it).</p>')]))}
     <div class="card cartel-local">
@@ -6803,7 +6857,7 @@ PAGES['cartel-local'] = async (v) => {
 function cartelAgenda(v, d, base, url) {
   const q = (mesa) => `${base}${esc(d.token)}?agenda=1${mesa ? '&mesa=1' : ''}`;
   v.innerHTML = `
-    <p class="crumbs"><a href="#/negocio/en-el-local">${esc(bi('Pantallas y gente', 'Screens and people'))}</a></p>
+    <p class="crumbs"><a href="/panel/negocio/en-el-local">${esc(bi('Pantallas y gente', 'Screens and people'))}</a></p>
     <div class="page-head"><h1>${esc(I18N.t('Cartel «Sigue nuestra agenda»'))}</h1></div>
     ${helpBox('¿Para qué sirve?', `<p>${esc(I18N.t('Para el tablón de anuncios, la entrada o tus actividades. Quien lo escanea con la cámara del móvil ve tu ficha con todo lo que publicas y puede seguirte para enterarse de lo próximo.'))}</p>`)}
     <div class="card cartel-local">
@@ -6848,7 +6902,7 @@ const haceTele = (iso) => {
   return bi(`Vista por última vez el ${fmtDate(iso)}`, `Last seen on ${fmtDate(iso)}`);
 };
 PAGES.tele = async (v) => {
-  const codigo = (new URLSearchParams(location.hash.split('?')[1] || '').get('codigo') || '').replace(/\D/g, '').slice(0, 6);
+  const codigo = (new URLSearchParams(location.search).get('codigo') || '').replace(/\D/g, '').slice(0, 6);
   const [lista, sitio] = await Promise.all([
     rpc('tv_screens_list', { p_business: BIZ.id }),
     rpc('business_crowd_status', { p_business: BIZ.id }).catch(() => null),
@@ -6891,7 +6945,7 @@ PAGES.tele = async (v) => {
     if (!r?.ok) { msg.textContent = I18N.t(ERR_TELE[r?.error] || friendly(r?.error)); return; }
     toast(I18N.t('¡Listo! La tele ya enseña tus publicaciones.'));
     // Sin `?codigo=` en la dirección: si se recarga, no vuelve a probarlo.
-    if (location.hash.includes('?')) history.replaceState(null, '', '#/tele');
+    if (new URLSearchParams(location.search).has('codigo')) cambiaDireccion('/panel/tele');
     route();
   };
 
@@ -7059,7 +7113,7 @@ function planEstadoCorto(sub, bill) {
 }
 
 /** «Tu plan» en el resumen: el estado, como la tarjeta de la app, y la
- * entrada a #/plan (panel/plan.js), donde se paga y se gestiona. */
+ * entrada a /panel/plan (panel/plan.js), donde se paga y se gestiona. */
 function planCard(sub) {
   const en = I18N.lang === 'en';
   const name = planNombre(sub.plan_names, sub.plan_slug);
@@ -7073,7 +7127,7 @@ function planCard(sub) {
   return `<div class="card"><h2>${ms('workspace_premium')} ${esc(en ? `${name} plan` : `Plan ${name}`)} ${etiqueta ? `<span class="tag plan-tag ${esc(tono)}">${esc(etiqueta)}</span>` : ''}</h2>
     <p class="muted" style="margin:0 0 6px">${esc(frase)}</p>
     <p style="margin:0 0 12px">${esc(uso)}</p>
-    <a class="btn sm" href="#/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
+    <a class="btn sm" href="/panel/plan">${esc(bi('Ver tu plan', 'See your plan'))}</a></div>`;
 }
 
 /** «¿Quién puede qué?» de Equipo: el mismo texto que la app
@@ -7640,13 +7694,13 @@ PAGES.informe = async (v, param) => {
           { h: bi('Fuera de su oferta', 'Outside their offer'), num: true, r: (x) => fmtNum(x.off_offer) },
         ],
         rows: filasR,
-      })}<p style="margin:10px 0 0"><a class="btn" href="#/rrpp">${esc(bi('Abrir RRPP', 'Open Promoters'))}</a></p></div>`,
+      })}<p style="margin:10px 0 0"><a class="btn" href="/panel/rrpp">${esc(bi('Abrir RRPP', 'Open Promoters'))}</a></p></div>`,
       bi(`Apuntados: ${fmtNum(fir)} · Han entrado: ${fmtNum(ent)}`, `Signed up: ${fmtNum(fir)} · Got in: ${fmtNum(ent)}`));
     }
   }
   v.innerHTML = `
     <div class="page-head"><h1>Cifras</h1><span class="spacer"></span>
-      <span class="periodo" role="group" aria-label="${esc(bi('Periodo', 'Period'))}">${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="#/informe/${d}"${d === days ? ' aria-current="true"' : ''}>${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}</span>
+      <span class="periodo" role="group" aria-label="${esc(bi('Periodo', 'Period'))}">${[7, 30, 90, 365].map((d) => `<a class="btn sm ${d === days ? '' : 'ghost'}" href="/panel/informe/${d}"${d === days ? ' aria-current="true"' : ''}>${d === 365 ? bi('1 año', '1 year') : bi(`${d} días`, `${d} days`)}</a>`).join(' ')}</span>
     </div>
     ${entidadCifras || !gestiona() ? '' : `<div class="card trajo"><h2>Cuánto te ha traído Klendar</h2>
       ${grande ? `<p class="trajo-min">${esc(bi('Al menos', 'At least'))}</p><p class="trajo-cifra">${esc(cifraTrajo)}</p>` : ''}
@@ -8270,12 +8324,12 @@ PAGES.baja = async (v, param) => {
     : sub.status === 'trial' ? bi(`Prueba gratis hasta el ${diaLargoFecha(sub.period_end)}.`, `Free trial until ${diaLargoFecha(sub.period_end)}.`)
     : bi(`Pagada hasta el ${diaLargoFecha(sub.period_end)}.`, `Paid until ${diaLargoFecha(sub.period_end)}.`);
   v.innerHTML = `
-    <div class="page-head"><h1>Dar de baja el negocio</h1><span class="spacer"></span><a class="btn sm ghost" href="#/ficha">← Tu ficha</a></div>
+    <div class="page-head"><h1>Dar de baja el negocio</h1><span class="spacer"></span><a class="btn sm ghost" href="/panel/ficha">← Tu ficha</a></div>
     <p class="muted" style="margin:0 0 14px">Lo que puedes hacer si dejas de usar Klendar, de menos a más. Solo lo ve el propietario.</p>
     ${tarjetaDescarga()}
     <div class="card"><h2>Cerrar hasta nuevo aviso</h2>
       <p class="muted" style="margin:0 0 10px">Nadie verá tu ficha ni tus publicaciones en Descubre, el mapa o la búsqueda; quien tenga el enlace verá «Cerrado temporalmente». Lo abres de nuevo cuando quieras. Cerrar no cancela la suscripción.</p>
-      <p class="muted small" style="margin:0 0 10px">Si pagas el plan con tarjeta, puedes pausarlo mientras esté cerrado. <a href="#/plan">Ver tu plan</a></p>
+      <p class="muted small" style="margin:0 0 10px">Si pagas el plan con tarjeta, puedes pausarlo mientras esté cerrado. <a href="/panel/plan">Ver tu plan</a></p>
       ${s.closed_since ? `<p style="margin:0 0 10px"><b>${esc(I18N.t('Cerrado hasta nuevo aviso'))}</b> · ${esc(bi(`Desde el ${diaLargoFecha(s.closed_since)}. No se ve nada de tu negocio.`, `Since ${diaLargoFecha(s.closed_since)}. Nothing from your business is showing.`))}</p>
         <button class="btn primary" type="button" data-accion="abrir">Abrir de nuevo</button>`
         : '<button class="btn" type="button" data-accion="cerrar">Cerrar hasta nuevo aviso</button>'}</div>
@@ -8291,7 +8345,7 @@ PAGES.baja = async (v, param) => {
         : '<button class="btn" type="button" data-accion="traspaso">Elegir a quién</button>'}</div>
     <div class="card"><h2>Eliminar el negocio</h2>
       <p class="muted" style="margin:0 0 10px">Para siempre: la ficha, las publicaciones, las tarjetas de sellos y el equipo. Avisamos a quien tenga algo pendiente.</p>
-      <a class="btn bad" href="#/baja/eliminar">Eliminar el negocio</a></div>`;
+      <a class="btn bad" href="/panel/baja/eliminar">Eliminar el negocio</a></div>`;
   activaDescarga(v);
   const hecho = async (msg) => { toast(msg); await recargaNegocios(); route(); };
   const acciones = {
@@ -8380,7 +8434,7 @@ async function eliminarNegocio(v) {
     ['group', 'Personas del equipo', s.team],
   ];
   v.innerHTML = `
-    <div class="page-head"><h1>Eliminar el negocio</h1><span class="spacer"></span><a class="btn sm ghost" href="#/baja">← Dar de baja el negocio</a></div>
+    <div class="page-head"><h1>Eliminar el negocio</h1><span class="spacer"></span><a class="btn sm ghost" href="/panel/baja">← Dar de baja el negocio</a></div>
     <div class="card"><p style="margin:0 0 10px"><b>${esc(bi(`Esto es lo que se pierde al eliminar ${BIZ.name}. No se puede deshacer.`, `This is what's lost when you delete ${BIZ.name}. It can't be undone.`))}</b></p>
       ${table({ cols: [
         { h: 'Qué', r: (f) => `${ms(f[0])} ${esc(I18N.t(f[1]))}` },
@@ -8388,7 +8442,7 @@ async function eliminarNegocio(v) {
       ], rows: filas })}
       <p class="muted" style="margin:12px 0 0">Al eliminarlo anulamos las reservas y los códigos sin usar y avisamos a cada persona; también a quien tiene sellos, un premio o un regalo, y a tu equipo. Solo guardamos los datos de facturación el tiempo que obliga la ley.</p>
       ${s.paid_until ? `<p style="margin:10px 0 0"><b>${esc(bi(`Tienes pagado hasta el ${diaLargoFecha(s.paid_until)}. Si tienes dudas sobre lo pagado, escríbenos antes.`, `You've paid until ${diaLargoFecha(s.paid_until)}. If you have questions about what you've paid, write to us first.`))}</b></p>` : ''}
-      <p class="muted" style="margin:10px 0 0">${bi('¿Solo quieres parar un tiempo? Mejor <a class="link" href="#/baja">cierra hasta nuevo aviso</a>.', 'Just want a break? <a class="link" href="#/baja">Close until further notice</a> instead.')}</p></div>
+      <p class="muted" style="margin:10px 0 0">${bi('¿Solo quieres parar un tiempo? Mejor <a class="link" href="/panel/baja">cierra hasta nuevo aviso</a>.', 'Just want a break? <a class="link" href="/panel/baja">Close until further notice</a> instead.')}</p></div>
     ${tarjetaDescarga().replace('<h2>Descargar los datos del negocio</h2>', '<h2>Antes, guarda tus datos</h2>')}
     <div class="card"><label class="f" style="grid-template-columns:auto 1fr;align-items:center;margin:0 0 12px">
         <input type="checkbox" id="entiendo"><span>Entiendo que no se puede deshacer</span></label>
@@ -8417,7 +8471,7 @@ async function eliminarNegocio(v) {
     if (!BIZ) { noBusiness(); return; }
     await preparaNegocio();
     renderBizPicker();
-    location.hash = '#/hoy';
+    go('/panel/hoy');
   };
 }
 
@@ -8436,7 +8490,7 @@ async function salirDelEquipo() {
   if (!BIZ) { noBusiness(); return; }
   await preparaNegocio();
   renderBizPicker();
-  if (location.hash === '#/hoy') route(); else location.hash = '#/hoy';
+  if (aqui() === '/panel/hoy') route(); else go('/panel/hoy');
 }
 
 boot();

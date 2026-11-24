@@ -83,7 +83,7 @@
     var html = '';
     if (s.team) {
       html += '<p class="pregunta-equipo"><span class="muted">' + esc(T.equipo(Number(s.unanswered) || 0)) + '</span> '
-        + '<a class="pill" href="/panel#/preguntas?biz=' + encodeURIComponent(biz) + '">' + esc(s.can_answer ? T.contestar : T.ver) + '</a></p>';
+        + '<a class="pill" href="/panel/preguntas?biz=' + encodeURIComponent(biz) + '">' + esc(s.can_answer ? T.contestar : T.ver) + '</a></p>';
     }
     if (mias.length) {
       html += '<h3 class="side-h">' + esc(T.tuyas) + '</h3><div class="preguntas">' + mias.map(function (q) {

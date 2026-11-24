@@ -7,7 +7,7 @@
 
 export const onRequestGet = (ctx) => {
   const code = String(ctx.params.code || '').replace(/\D/g, '');
-  const destino = /^\d{6}$/.test(code) ? `/panel#/tele?codigo=${code}` : '/panel#/tele';
+  const destino = /^\d{6}$/.test(code) ? `/panel/tele?codigo=${code}` : '/panel/tele';
   return new Response(null, {
     status: 302,
     headers: { Location: destino, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },

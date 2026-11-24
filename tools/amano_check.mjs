@@ -184,7 +184,7 @@ if (BASE) {
     const p = await ctx.newPage();
     const errores = [];
     p.on('pageerror', (e) => errores.push(String(e)));
-    await p.goto(`${BASE}/panel#/validar`, { waitUntil: 'domcontentloaded' });
+    await p.goto(`${BASE}/panel/validar`, { waitUntil: 'domcontentloaded' });
     await p.waitForSelector('#code', { timeout: 15000 });
     ok('panel: sin validar todavía, sin contador', await p.locator('#validadosSesion').isHidden());
     for (const [i, code] of ['a1b2c3d4e5f6', 'b1b2c3d4e5f6'].entries()) {

@@ -114,14 +114,14 @@ async function panel(nav, nombre, t, vp) {
   for (const [op, sin] of [['Organizo eventos o actividades', true], ['Un local', false]]) {
     await p.click(`text=${op}`);
     await p.waitForSelector('#alta');
-    ok(await p.evaluate(() => location.hash) === '#/alta/1'
+    ok(await p.evaluate(() => location.pathname + location.search) === '/panel/alta/1'
       && await p.evaluate(() => ALTA.sin_local) === sin, `${nombre}/${t} «${op}»: al paso 1, sin_local=${sin}`);
-    await p.evaluate(() => { ALTA.name = 'Prueba'; ALTA.category_id = 1; location.hash = '#/alta/2'; });
+    await p.evaluate(() => { ALTA.name = 'Prueba'; ALTA.category_id = 1; go('/panel/alta/2'); });
     await p.waitForSelector('[name=city]');
     ok(await p.locator('[name=no_fixed_venue]').isChecked() === sin
       && !(await p.locator('[name=no_fixed_venue]').isVisible())
       && await p.locator('[name=address]').isVisible() === !sin, `${nombre}/${t} «${op}»: paso 2 sin la casilla del local`);
-    await p.evaluate(() => { location.hash = '#/alta'; });
+    await p.evaluate(() => { go('/panel/alta'); });
     await p.waitForSelector('text=¿Qué vas a dar de alta?');
   }
   await p.evaluate(() => { ALTA = null; });
@@ -134,7 +134,7 @@ async function panel(nav, nombre, t, vp) {
     && await p.locator('#altaEnt').count() === 0, `${nombre}/${t} los 18 años, al empezar`);
   await foto('alta-entidad-sin-edad');
   estado.nacimiento = '1990-01-01';
-  await p.click('#view a[href="#/alta"]');
+  await p.click('#view a[href="/panel/alta"]');
   await p.waitForSelector('text=¿Qué vas a dar de alta?');
   await p.click('text=Un ayuntamiento, asociación u ONG');
   await p.waitForSelector('#altaEnt');
@@ -182,22 +182,22 @@ async function panel(nav, nombre, t, vp) {
   ok(!/Fidelizar|RRPP|Días cerrados|Que vuelvan|Negocio/.test(menu) && /Entidad/.test(menu), `${nombre}/${t} el menú de una entidad: «Entidad», sin Fidelizar ni RRPP`);
   const hoy = await p.locator('#view').textContent();
   ok(!/Fidelizar|Tu plan|Cerrar por hoy/.test(hoy), `${nombre}/${t} Hoy de una entidad, sin Fidelizar, plan ni «Cerrar por hoy»`);
-  await p.goto(`${BASE}/panel#/negocio`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/negocio`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.neg-tiles');
   const negocio = await p.locator('#view').textContent();
   ok(/Agenda y equipo/.test(negocio) && /Series/.test(negocio) && !/Que vuelvan|Tu plan/.test(negocio), `${nombre}/${t} Entidad: sus grupos, sin «Que vuelvan» ni plan`);
   // Su cartel: «Sigue nuestra agenda», que se imprime con ?agenda=1.
   estado.rpc.business_visit_qr = { ok: true, token: 'AbCdEfGhIjKlMnOp', can_change: true, visit_cards: [], visit_stamps_30d: 0 };
-  await p.goto(`${BASE}/panel#/cartel-local`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/cartel-local`, { waitUntil: 'networkidle' });
   await p.waitForSelector('h1:has-text("Sigue nuestra agenda")');
   const cartel = await p.locator('#view').innerText();
   ok(!/sello/i.test(cartel) && await p.locator('a[href*="agenda=1"]').count() === 2
     && await p.locator('#cambiar').count() === 0, `${nombre}/${t} el cartel de la agenda, sin sellos`);
   await foto('panel-entidad-cartel');
-  await p.goto(`${BASE}/panel#/hoy`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/hoy`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#view h1');
   await foto('panel-entidad-pendiente');
-  await p.goto(`${BASE}/panel#/publicar`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/publicar`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#view .crear-bloqueado, #view .crear', { timeout: 15000 }).catch(() => null);
   ok(await p.locator('text=Podrás publicar cuando verifiquemos la entidad.').count() > 0 && await p.locator('.crear-op').count() === 0, `${nombre}/${t} Publicar no publica hasta verificarla`);
   ok(errores.length === 0, `${nombre}/${t} panel sin errores JS ${errores.join(' | ')}`);

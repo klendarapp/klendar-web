@@ -162,7 +162,7 @@ async function pruebaMenu(nav, nombre, zona) {
   await abre();
   await p.locator('#nav a.nav:not(.on)').first().tap();
   await cerrado('al elegir otra pantalla');
-  ok(zona === 'panel' ? !/#\/resumen/.test(p.url()) : !['/', '/resumen'].includes(new URL(p.url()).pathname) && !new URL(p.url()).hash, `${t}: y va a la pantalla elegida (${zona === 'panel' ? new URL(p.url()).hash : new URL(p.url()).pathname})`);
+  ok(zona === 'panel' ? !/\/panel\/resumen/.test(p.url()) : !['/', '/resumen'].includes(new URL(p.url()).pathname) && !new URL(p.url()).hash, `${t}: y va a la pantalla elegida (${zona === 'panel' ? new URL(p.url()).hash : new URL(p.url()).pathname})`);
 
   if (nombre === 'chromium') {
     await abre();
@@ -186,7 +186,7 @@ async function pruebaMenu(nav, nombre, zona) {
 const PAGINAS = [
   ['/admin', false], ['/admin#/configuracion', true], ['/admin#/negocios', true], ['/admin#/usuarios', true],
   // Sin sesión, /panel lleva a entrar (en el WebKit de Windows ese salto tumba la página).
-  ['/cuenta/entrar?destino=%2Fpanel', false], ['/panel#/ficha', true], ['/panel#/validar', true],
+  ['/cuenta/entrar?destino=%2Fpanel', false], ['/panel/ficha', true], ['/panel/validar', true],
   ['/cuenta/entrar', false], ['/cuenta/crear', false], ['/cuenta/ajustes', true],
   ['/', false], ['/descubre', false], ['/explorar', false], ['/para-negocios', false], ['/soporte', false], ['/agenda', false],
 ];
@@ -271,11 +271,11 @@ async function pruebaComoLaApp(nav, nombre) {
   ok(/\/cuenta\/idioma/.test(p.url()), `${nombre}: sin sesión, Ajustes cambia el idioma y se queda en Ajustes`);
   await ctx.close();
   ({ ctx, p } = await contexto(nav, nombre, { conSesion: true }));
-  await p.goto(`${BASE}/panel#/resumen`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/hoy`, { waitUntil: 'networkidle' });
   await p.waitForSelector('#nav a.nav', { state: 'attached' });
   const orden = await p.evaluate(() => ({
-    menu: [...document.querySelectorAll('#nav a.nav')].map((a) => a.getAttribute('href').slice(2)).join(' '),
-    barra: [...document.querySelectorAll('#tabbar a')].map((a) => a.getAttribute('href').slice(2)).join(' '),
+    menu: [...document.querySelectorAll('#nav a.nav')].map((a) => a.getAttribute('href').replace('/panel/', '')).join(' '),
+    barra: [...document.querySelectorAll('#tabbar a')].map((a) => a.getAttribute('href').replace('/panel/', '')).join(' '),
     iconos: [...document.querySelectorAll('#tabbar a .ms')].map((e) => e.textContent).join(' '),
     cajon: !!document.querySelector('#masBtn, #menuBtn, #menuCerrar, #sideVelo'),
   }));

@@ -12,7 +12,7 @@
  * - En Publicar: «¿Qué quieres publicar?» (las cuatro de siempre y «Más
  *   formas de publicar ▾»).
  * - Las baldosas de Negocio, por grupos, están en panel/negocio.js (antes,
- *   «Lo esencial» del resumen y «Más herramientas», #/herramientas).
+ *   «Lo esencial» del resumen y «Más herramientas»; hoy en /panel/negocio).
  *
  * Va después de panel.js y usa lo suyo (`PAGES`, `rpc`, `BIZ`, `gestiona`,
  * `esOrganizador`, `esc`, `ms`, `icono`, `SVG`, `bi`, `toast`, `fmtNum`).
@@ -110,35 +110,35 @@ async function herrCrearHtml() {
     <span><b>${esc(titulo)}</b><small>${esc(frase)}</small></span>${ms('chevron_right')}</a>`;
   const lista = (ops) => `<div class="crear-ops">${ops.map(op).join('')}</div>`;
   const grupo = (titulo, ops) => (ops.length ? `<h3 class="crear-grupo">${esc(titulo)}</h3>${lista(ops)}` : '');
-  const opMenu = ['#/menu-del-dia', 'restaurant_menu', bi('Menú del día', 'Daily menu'), bi('Foto de la pizarra y precio: hasta el cierre, en un toque.', 'Photo of the board and price: until closing, in one tap.')];
-  const opAntes = ['#/antes-de-cerrar', 'bolsa', bi('Antes de cerrar', 'Before closing'), bi('Lo que te ha sobrado hoy, con lo de la última vez ya puesto. Se paga en el local.', "What's left over today, with last time's details filled in. Paid at the venue.")];
+  const opMenu = ['/panel/menu-del-dia', 'restaurant_menu', bi('Menú del día', 'Daily menu'), bi('Foto de la pizarra y precio: hasta el cierre, en un toque.', 'Photo of the board and price: until closing, in one tap.')];
+  const opAntes = ['/panel/antes-de-cerrar', 'bolsa', bi('Antes de cerrar', 'Before closing'), bi('Lo que te ha sobrado hoy, con lo de la última vez ya puesto. Se paga en el local.', "What's left over today, with last time's details filled in. Paid at the venue.")];
   // Una entidad publica eventos y novedades, gratis (la base tampoco le deja
   // crear una oferta; §4zzz-propent).
   const arriba = [
-    ent ? null : ['#/publicaciones/nueva-flash', 'bolt', bi('Oferta', 'Offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.')],
+    ent ? null : ['/panel/publicaciones/nueva-flash', 'bolt', bi('Oferta', 'Offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.')],
     ent
-      ? ['#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora, gratis. Puede llevar un enlace para apuntarse.', 'Has a date and time, free. Can include a sign-up link.')]
-      : ['#/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora. Puede tener precio y enlace para entradas.', 'With a date and time. It can have a price and a ticket link.')],
+      ? ['/panel/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora, gratis. Puede llevar un enlace para apuntarse.', 'Has a date and time, free. Can include a sign-up link.')]
+      : ['/panel/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora. Puede tener precio y enlace para entradas.', 'With a date and time. It can have a price and a ticket link.')],
     menu ? opMenu : antes ? opAntes : null,
     ent
-      ? ['#/novedades', 'campaign', bi('Novedad', 'News'), bi('Una novedad de la entidad: una foto, un aviso, un cambio de fechas.', 'News from the organisation: a photo, a notice, a change of dates.')]
-      : ['#/novedades', 'campaign', bi('Novedad', 'News'), bi('Una novedad del local: una foto, una carta nueva, un cambio de horario.', 'News from your place: a photo, a new menu, a change in opening hours.')],
+      ? ['/panel/novedades', 'campaign', bi('Novedad', 'News'), bi('Una novedad de la entidad: una foto, un aviso, un cambio de fechas.', 'News from the organisation: a photo, a notice, a change of dates.')]
+      : ['/panel/novedades', 'campaign', bi('Novedad', 'News'), bi('Una novedad del local: una foto, una carta nueva, un cambio de horario.', 'News from your place: a photo, a new menu, a change in opening hours.')],
   ].filter(Boolean);
   const delDia = [
     menu && antes ? opAntes : null,
-    local && gestiona() && herrSi(o, 'broadcasts', 'suggested') ? ['#/partidos', 'partido', bi('Oferta para el partido', 'Offer for the match'), bi('Para que te encuentre quien busca dónde ver el partido: marca lo que pones.', "So people looking for where to watch the match find you: mark what you're showing.")] : null,
+    local && gestiona() && herrSi(o, 'broadcasts', 'suggested') ? ['/panel/partidos', 'partido', bi('Oferta para el partido', 'Offer for the match'), bi('Para que te encuentre quien busca dónde ver el partido: marca lo que pones.', "So people looking for where to watch the match find you: mark what you're showing.")] : null,
   ].filter(Boolean);
   const tuyos = ent ? [] : [
-    ['#/publicaciones/nueva-flash?primera=1', 'waving_hand', bi('Oferta de primera visita', 'First-visit offer'), bi('Para atraer clientes nuevos: una oferta que solo puede usar quien no ha canjeado nunca nada en tu negocio.', 'To attract new customers: an offer that only people who have never redeemed anything at your business can use.')],
-    ['#/publicaciones/nueva-flash?exclusiva=1', 'candado', bi('Exclusiva', 'Exclusive'), bi('Para premiar a los tuyos: una oferta que solo ve entera quien te tiene en favoritos o ya es cliente.', 'To reward your people: an offer only those who have you in favourites, or are already customers, see in full.')],
-    ['#/publicaciones/nueva-flash?rrpp=1', 'rrpp', bi('Oferta para RRPP', 'Promoter offer'), bi('Solo con el enlace de un RRPP', "Only with a promoter's link")],
-    ['#/mensajes', 'campaign', bi('Avisar a mis clientes', 'Message my customers'), bi('Para contar algo a tus favoritos y clientes con una notificación. Uno por semana.', 'To tell your favourites and customers something with a notification. One a week.')],
+    ['/panel/publicaciones/nueva-flash?primera=1', 'waving_hand', bi('Oferta de primera visita', 'First-visit offer'), bi('Para atraer clientes nuevos: una oferta que solo puede usar quien no ha canjeado nunca nada en tu negocio.', 'To attract new customers: an offer that only people who have never redeemed anything at your business can use.')],
+    ['/panel/publicaciones/nueva-flash?exclusiva=1', 'candado', bi('Exclusiva', 'Exclusive'), bi('Para premiar a los tuyos: una oferta que solo ve entera quien te tiene en favoritos o ya es cliente.', 'To reward your people: an offer only those who have you in favourites, or are already customers, see in full.')],
+    ['/panel/publicaciones/nueva-flash?rrpp=1', 'rrpp', bi('Oferta para RRPP', 'Promoter offer'), bi('Solo con el enlace de un RRPP', "Only with a promoter's link")],
+    ['/panel/mensajes', 'campaign', bi('Avisar a mis clientes', 'Message my customers'), bi('Para contar algo a tus favoritos y clientes con una notificación. Uno por semana.', 'To tell your favourites and customers something with a notification. One a week.')],
   ];
   const vender = ent ? [] : [
-    ['#/bonos/nuevo', 'redeem', bi('Bono', 'Pass'), bi('Para vender en tu local bonos de varios usos (5 cafés, 10 clases…). Cada uso se descuenta con el QR del cliente.', 'To sell multi-use passes at your venue (5 coffees, 10 classes…). Each use is taken off with the customer’s QR.')],
-    ['#/sellos/nueva', 'loyalty', bi('Tarjeta de sellos', 'Stamp card'), bi('Para premiar a quien repite: cada canje (o cada visita con el QR del local) suma un sello y al llegar a la meta hay premio.', 'To reward people who come back: each redemption (or visit with the venue QR) adds a stamp and reaching the goal earns a reward.')],
-    conEncargos ? ['#/encargos-cosas', 'encargo', bi('Algo para encargar', 'Something to pre-order'), bi('Tus clientes encargan desde tu ficha (una tarta, una bandeja, un ramo) y lo recogen y pagan aquí.', 'Your customers order from your page (a cake, a platter, a bouquet) and pick it up and pay here.')] : null,
-    conSorteos ? ['#/sorteos/nuevo', 'sorteo', bi('Sorteo', 'Giveaway'), bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.')] : null,
+    ['/panel/bonos/nuevo', 'redeem', bi('Bono', 'Pass'), bi('Para vender en tu local bonos de varios usos (5 cafés, 10 clases…). Cada uso se descuenta con el QR del cliente.', 'To sell multi-use passes at your venue (5 coffees, 10 classes…). Each use is taken off with the customer’s QR.')],
+    ['/panel/sellos/nueva', 'loyalty', bi('Tarjeta de sellos', 'Stamp card'), bi('Para premiar a quien repite: cada canje (o cada visita con el QR del local) suma un sello y al llegar a la meta hay premio.', 'To reward people who come back: each redemption (or visit with the venue QR) adds a stamp and reaching the goal earns a reward.')],
+    conEncargos ? ['/panel/encargos-cosas', 'encargo', bi('Algo para encargar', 'Something to pre-order'), bi('Tus clientes encargan desde tu ficha (una tarta, una bandeja, un ramo) y lo recogen y pagan aquí.', 'Your customers order from your page (a cake, a platter, a bouquet) and pick it up and pay here.')] : null,
+    conSorteos ? ['/panel/sorteos/nuevo', 'sorteo', bi('Sorteo', 'Giveaway'), bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.')] : null,
   ].filter(Boolean);
   // Plegado, qué hay dentro (los tres primeros nombres).
   const dentro = [...delDia, ...tuyos, ...vender].map((x) => x[2]);
@@ -193,24 +193,24 @@ function herrFilas(o, demanda, { cajaFilas, cajaPendiente }) {
   const horaMenu = dm.live_until ? new Date(dm.live_until).toLocaleTimeString(LOC(), { hour: '2-digit', minute: '2-digit', timeZone: TZ }) : '';
   const filas = [
     // Aforo en directo: la puerta, con la cifra de ahora (panel/aforo.js).
-    !org && herrSi(o, 'capacity', 'enabled') ? fila('#/aforo', 'aforo', bi('Aforo en directo · ', 'Live capacity · ')
+    !org && herrSi(o, 'capacity', 'enabled') ? fila('/panel/aforo', 'aforo', bi('Aforo en directo · ', 'Live capacity · ')
       + `${fmtNum(herrNum(o, 'capacity', 'people'))} / ${fmtNum(herrNum(o, 'capacity', 'max'))}`) : '',
     // Menú del día: a mano, en los sitios de comida (una fila).
-    gestiona() && !org && dm.suggested ? fila('#/menu-del-dia', 'restaurant_menu', horaMenu
+    gestiona() && !org && dm.suggested ? fila('/panel/menu-del-dia', 'restaurant_menu', horaMenu
       ? bi(`Menú del día · hasta las ${horaMenu}`, `Daily menu · until ${horaMenu}`)
       : bi('Menú del día · publicar el de hoy', 'Daily menu · publish today’s')) : '',
     // La cola abierta ya sale en su fila (panel/cola.js); si la usa y ahora
     // está cerrada, la fila para abrirla.
     // Con cola hoy (abierta o cerrada) ya sale su fila «· N esperando».
-    !ent && !herrSi(o, 'queue', 'open') && !herrSi(o, 'queue', 'today') && herrSi(o, 'queue', 'used_30d') ? fila('#/cola', 'cola', bi('Cola virtual · cerrada', 'Virtual queue · closed')) : '',
-    gestiona() && !org && bc.suggested && (bc.live || bc.reminder_at) ? fila('#/antes-de-cerrar', 'bolsa', bc.live
+    !ent && !herrSi(o, 'queue', 'open') && !herrSi(o, 'queue', 'today') && herrSi(o, 'queue', 'used_30d') ? fila('/panel/cola', 'cola', bi('Cola virtual · cerrada', 'Virtual queue · closed')) : '',
+    gestiona() && !org && bc.suggested && (bc.live || bc.reminder_at) ? fila('/panel/antes-de-cerrar', 'bolsa', bc.live
       ? bi('Antes de cerrar · publicada hoy', 'Before closing · published today')
       : bi(`Antes de cerrar · aviso a las ${bc.reminder_at}`, `Before closing · reminder at ${bc.reminder_at}`)) : '',
-    !org && herrNum(o, 'broadcasts', 'upcoming') > 0 ? fila('#/partidos', 'partido', bi(`Partidos que pones · ${herrNum(o, 'broadcasts', 'upcoming')} esta semana`, `Matches you're showing · ${herrNum(o, 'broadcasts', 'upcoming')} this week`)) : '',
-    gestiona() && herrNum(o, 'tv', 'screens') > 0 ? fila('#/tele', 'tele', bi('Poner en la tele · ', 'Show on TV · ') + herrPl(herrNum(o, 'tv', 'screens'), ['1 tele', 'teles'], ['1 TV', 'TVs'])) : '',
-    !ent && herrNum(o, 'series', 'rules_active') > 0 ? fila('#/series', 'repite', bi('Series y repeticiones · ', 'Series and repeats · ')
+    !org && herrNum(o, 'broadcasts', 'upcoming') > 0 ? fila('/panel/partidos', 'partido', bi(`Partidos que pones · ${herrNum(o, 'broadcasts', 'upcoming')} esta semana`, `Matches you're showing · ${herrNum(o, 'broadcasts', 'upcoming')} this week`)) : '',
+    gestiona() && herrNum(o, 'tv', 'screens') > 0 ? fila('/panel/tele', 'tele', bi('Poner en la tele · ', 'Show on TV · ') + herrPl(herrNum(o, 'tv', 'screens'), ['1 tele', 'teles'], ['1 TV', 'TVs'])) : '',
+    !ent && herrNum(o, 'series', 'rules_active') > 0 ? fila('/panel/series', 'repite', bi('Series y repeticiones · ', 'Series and repeats · ')
       + herrPl(herrNum(o, 'series', 'rules_active'), ['1 se publica sola', 'se publican solas'], ['1 publishes itself', 'publish themselves'])) : '',
-    herrDemanda(demanda) > 0 ? fila('#/', 'campaign', herrDemandaTxt(herrDemanda(demanda)), 'data-demanda') : '',
+    herrDemanda(demanda) > 0 ? fila('/panel', 'campaign', herrDemandaTxt(herrDemanda(demanda)), 'data-demanda') : '',
   ].filter(Boolean);
   cajaFilas.innerHTML = filas.length ? `<div class="filas-inicio">${filas.join('')}</div>` : '';
   const filaDemanda = $('[data-demanda]', cajaFilas);
@@ -230,11 +230,11 @@ function herrFilas(o, demanda, { cajaFilas, cajaPendiente }) {
   if (cajaPendiente) {
     const trozos = [
       // Las preguntas las contestan propietario y encargado.
-      gestiona() && preguntas > 0 ? ['#/preguntas', preguntas === 1 ? bi('1 pregunta', '1 question')
+      gestiona() && preguntas > 0 ? ['/panel/preguntas', preguntas === 1 ? bi('1 pregunta', '1 question')
         : bi('{n} preguntas', '{n} questions').replace('{n}', fmtNum(preguntas))] : null,
-      resenas > 0 ? ['#/resenas', resenas === 1 ? bi('1 reseña', '1 review')
+      resenas > 0 ? ['/panel/resenas', resenas === 1 ? bi('1 reseña', '1 review')
         : bi('{n} reseñas', '{n} reviews').replace('{n}', fmtNum(resenas))] : null,
-      !ent && gestiona() && herrSi(o, 'groups', 'enabled') && pend > 0 ? ['#/grupos', pend === 1 ? bi('1 grupo', '1 group')
+      !ent && gestiona() && herrSi(o, 'groups', 'enabled') && pend > 0 ? ['/panel/grupos', pend === 1 ? bi('1 grupo', '1 group')
         : bi('{n} grupos', '{n} groups').replace('{n}', fmtNum(pend))] : null,
     ].filter(Boolean);
     const titulo = bi('Por contestar', 'To answer');

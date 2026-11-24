@@ -12,9 +12,9 @@
  * ✕ para dejarlo, y «Poner siempre…», con el buscador único de equipos,
  * deportistas y competiciones: migración 20261260100070_seguir_lo_que_sea).
  * Nada de canal. Marcado, «Oferta para el partido»: crear una nueva
- * (el formulario de oferta ya relleno: `#/publicaciones/nueva-flash?
+ * (el formulario de oferta ya relleno: `/panel/publicaciones/nueva-flash?
  * partido=<id>`, que al guardar la une al partido), usar una que ya tienes o
- * quitarla. «Añadir otro» (`#/partidos/nuevo`): lo que no está en la lista.
+ * quitarla. «Añadir otro» (`/panel/partidos/nuevo`): lo que no está en la lista.
  * Un empleado lo ve sin poder tocar (`can_edit`).
  *
  * Va después de panel.js y usa lo suyo (`PAGES`, `rpc`, `BIZ`, `TZ`, `KZ`,
@@ -54,7 +54,7 @@ PAGES.partidos = async (v, param) => {
 
   v.innerHTML = `
     <div class="page-head"><h1>${esc(S.tool)}</h1><span class="spacer"></span>
-      ${puede ? `<a class="btn sm" href="#/partidos/nuevo">${esc(S.addAnother)}</a>` : ''}</div>
+      ${puede ? `<a class="btn sm" href="/panel/partidos/nuevo">${esc(S.addAnother)}</a>` : ''}</div>
     <p class="muted" style="margin:-6px 0 14px">${esc(S.toolLead)}</p>
     ${puede ? '' : `<div class="help pt-solo">${esc(S.readOnly)}</div>`}
     ${reglas.length || puede ? `<section class="card pt-siempre" aria-labelledby="ptSiempreT">
@@ -112,7 +112,7 @@ PAGES.partidos = async (v, param) => {
       caja.innerHTML = `<section class="vacio">
         <h2>${esc(S.emptyWeek)}</h2>
         <p>${esc(S.emptyWeekText)}</p>
-        ${puede ? `<div class="vacio-botones"><a class="btn primary" href="#/partidos/nuevo">${esc(S.addFirst)}</a></div>` : ''}
+        ${puede ? `<div class="vacio-botones"><a class="btn primary" href="/panel/partidos/nuevo">${esc(S.addFirst)}</a></div>` : ''}
       </section>`;
       return;
     }
@@ -320,7 +320,7 @@ function hojaOferta(item) {
         const op = b.dataset.op;
         if (op === 'crear') {
           fin(null);
-          location.hash = `#/publicaciones/nueva-flash?partido=${encodeURIComponent(item.id)}`;
+          go(`/panel/publicaciones/nueva-flash?partido=${encodeURIComponent(item.id)}`);
           return;
         }
         if (op === 'quitar') {
@@ -368,11 +368,11 @@ async function ponOferta(partido, oferta) {
 async function nuevoPartido(v) {
   const S = SP();
   const lang = I18N.lang;
-  if (!gestiona()) { location.replace('#/partidos'); return; }
+  if (!gestiona()) { go('/panel/partidos', true); return; }
   const min = KZ.aInput(new Date(Date.now() - 36e5).toISOString(), TZ);
   const max = KZ.aInput(new Date(Date.now() + 60 * 864e5).toISOString(), TZ);
   v.innerHTML = `
-    <div class="page-head"><a class="btn sm ghost" href="#/partidos">← Volver</a><h1>${esc(S.addAnother)}</h1></div>
+    <div class="page-head"><a class="btn sm ghost" href="/panel/partidos">← Volver</a><h1>${esc(S.addAnother)}</h1></div>
     <form class="card form pt-nuevo" id="ptNuevo" novalidate>
       <label class="f"><span>${esc(S.sport)}</span><select name="sport">${KEp.DEPORTES.map((s) => `<option value="${s}">${esc(KEp.deporte(s, lang))}</option>`).join('')}</select></label>
       <label class="f"><span>${esc(S.what)}</span><input name="title" maxlength="90" autocomplete="off" required><small class="hint">${esc(S.whatHelp)}</small><small class="hint err-txt" data-err="title" hidden></small></label>
@@ -413,7 +413,7 @@ async function nuevoPartido(v) {
       // A la semana en la que cae.
       PT.semana = KZ.dia(cuando, TZ) >= KZ.hoy(TZ, 7) ? 1 : 0;
       PT.q = ''; PT.deportes.clear(); PT.comps.clear();
-      location.hash = '#/partidos';
+      go('/panel/partidos');
     } catch (err) { $('#ptErr', f).textContent = err.message; $('#ptErr', f).hidden = false; }
   };
 }

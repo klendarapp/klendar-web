@@ -14,10 +14,10 @@
  * fijo (organizador o entidad), entidad y los interruptores (sorteos). Un
  * grupo que se quedaría con una sola baldosa se une al de antes (Iván, 18-11,
  * opción B). Cada baldosa abre la pantalla de siempre, en su dirección de
- * siempre (`#/ficha`, `#/sellos`…). Antes, esto estaba repartido entre «Lo
+ * siempre (`/panel/ficha`, `/panel/sellos`…). Antes, esto estaba repartido entre «Lo
  * esencial» y «Tu negocio» del resumen, «Más herramientas» y el menú.
  *
- * `#/negocio/<grupo>` baja a ese grupo (el submenú de la izquierda).
+ * `/panel/negocio/<grupo>` baja a ese grupo (el submenú de la izquierda).
  *
  * Va después de panel.js y herramientas.js y usa lo suyo (`PAGES`, `rpc`,
  * `BIZ`, `gestiona`, `herrAhora`, `herrEstado`, `herrSi`, `herrNum`,
@@ -56,70 +56,70 @@ function negHerramientas(c) {
   const encargos = herrNum(c.o, 'preorders', 'items_all') > 0;
   return [
     // ── Tu ficha ──
-    ['profileEdit', 'tu-ficha', 'storefront', bi('Editar ficha', 'Edit page'), null, '#/ficha', c.edit],
+    ['profileEdit', 'tu-ficha', 'storefront', bi('Editar ficha', 'Edit page'), null, '/panel/ficha', c.edit],
     ['viewPublic', 'tu-ficha', 'visibility', bi('Cómo se ve', 'How it looks'), bi('Ver cómo se ve', 'See how it looks'), ficha, true],
-    ['hours', 'tu-ficha', 'schedule', bi('Horario', 'Opening hours'), null, '#/ficha/horario', c.edit && c.venue],
-    ['menu', 'tu-ficha', 'restaurant_menu', carta, null, '#/carta',
+    ['hours', 'tu-ficha', 'schedule', bi('Horario', 'Opening hours'), null, '/panel/ficha/horario', c.edit && c.venue],
+    ['menu', 'tu-ficha', 'restaurant_menu', carta, null, '/panel/carta',
       c.edit && negLleva(c, 'menu', (o) => herrNum(o, 'menu', 'items') > 0 || herrNum(o, 'menu', 'files') > 0)],
-    ['highlights', 'tu-ficha', 'star', bi('Qué pedir', 'What to order'), bi('Qué pedir aquí', 'What to order here'), '#/ficha/que-pedir', c.edit && c.venue],
-    ['venueInfo', 'tu-ficha', 'deck', bi('Tu local', 'Your place'), bi('Cómo es tu local', 'About your place'), '#/ficha/local', c.edit && c.venue],
-    ['links', 'tu-ficha', 'link', bi('Reservar y pedir', 'Book and order'), null, '#/ficha/contacto', c.edit],
-    ['closures', 'tu-ficha', 'event_busy', bi('Días cerrados', 'Closed days'), null, '#/cerrados', c.edit && c.venue],
-    ['reviews', 'tu-ficha', 'reviews', bi('Reseñas', 'Reviews'), null, '#/resenas', true],
-    ['questions', 'tu-ficha', 'contact_support', bi('Preguntas', 'Questions'), null, '#/preguntas', true],
-    ['closedReports', 'tu-ficha', 'no_meeting_room', bi('Estaba cerrado', 'It was closed'), null, '#/estaba-cerrado', c.edit && c.venue],
+    ['highlights', 'tu-ficha', 'star', bi('Qué pedir', 'What to order'), bi('Qué pedir aquí', 'What to order here'), '/panel/ficha/que-pedir', c.edit && c.venue],
+    ['venueInfo', 'tu-ficha', 'deck', bi('Tu local', 'Your place'), bi('Cómo es tu local', 'About your place'), '/panel/ficha/local', c.edit && c.venue],
+    ['links', 'tu-ficha', 'link', bi('Reservar y pedir', 'Book and order'), null, '/panel/ficha/contacto', c.edit],
+    ['closures', 'tu-ficha', 'event_busy', bi('Días cerrados', 'Closed days'), null, '/panel/cerrados', c.edit && c.venue],
+    ['reviews', 'tu-ficha', 'reviews', bi('Reseñas', 'Reviews'), null, '/panel/resenas', true],
+    ['questions', 'tu-ficha', 'contact_support', bi('Preguntas', 'Questions'), null, '/panel/preguntas', true],
+    ['closedReports', 'tu-ficha', 'no_meeting_room', bi('Estaba cerrado', 'It was closed'), null, '/panel/estaba-cerrado', c.edit && c.venue],
     // ── Que vuelvan (nada para una entidad). «Fidelizar» entero, solo al
     // personal: lo mira todo ahí, también lo que no abre. ──
-    ['loyalty', 'que-vuelvan', 'favorite', bi('Fidelizar', 'Loyalty'), null, '#/fidelizar', !c.ent && c.staff],
-    ['stamps', 'que-vuelvan', 'approval', bi('Sellos', 'Stamps'), bi('Tarjetas de sellos', 'Stamp cards'), '#/sellos', !c.ent],
-    ['passes', 'que-vuelvan', 'confirmation_number', bi('Bonos', 'Passes'), null, '#/bonos', !c.ent],
-    ['coupon', 'que-vuelvan', 'local_offer', bi('Cupón', 'Coupon'), bi('Cupón para la próxima visita', 'Coupon for the next visit'), '#/cupon', !c.ent],
-    ['birthday', 'que-vuelvan', 'cake', bi('Cumpleaños', 'Birthday'), bi('Regalo de cumpleaños', 'Birthday gift'), '#/cumpleanos', !c.ent],
-    ['thanks', 'que-vuelvan', 'volunteer_activism', bi('Agradecer', 'Thank'), bi('Agradecer a los habituales', 'Thank your regulars'), '#/habituales', !c.ent && c.edit],
-    ['message', 'que-vuelvan', 'campaign', bi('Avisar', 'Notify'), bi('Avisar a mis clientes', 'Message my customers'), '#/mensajes', !c.ent && c.edit],
-    ['firstVisit', 'que-vuelvan', 'waving_hand', bi('Primera visita', 'First visit'), bi('Ofertas de primera visita', 'First-visit offers'), '#/publicaciones/nueva-flash?primera=1', !c.ent && c.edit],
-    ['exclusives', 'que-vuelvan', 'lock', bi('Exclusivas', 'Exclusives'), bi('Exclusivas para favoritos o clientes', 'Exclusives for favourites or customers'), '#/publicaciones/nueva-flash?exclusiva=1', !c.ent && c.edit],
-    ['giveaways', 'que-vuelvan', 'redeem', bi('Sorteos', 'Giveaways'), null, '#/sorteos', !c.ent && c.sorteos],
+    ['loyalty', 'que-vuelvan', 'favorite', bi('Fidelizar', 'Loyalty'), null, '/panel/fidelizar', !c.ent && c.staff],
+    ['stamps', 'que-vuelvan', 'approval', bi('Sellos', 'Stamps'), bi('Tarjetas de sellos', 'Stamp cards'), '/panel/sellos', !c.ent],
+    ['passes', 'que-vuelvan', 'confirmation_number', bi('Bonos', 'Passes'), null, '/panel/bonos', !c.ent],
+    ['coupon', 'que-vuelvan', 'local_offer', bi('Cupón', 'Coupon'), bi('Cupón para la próxima visita', 'Coupon for the next visit'), '/panel/cupon', !c.ent],
+    ['birthday', 'que-vuelvan', 'cake', bi('Cumpleaños', 'Birthday'), bi('Regalo de cumpleaños', 'Birthday gift'), '/panel/cumpleanos', !c.ent],
+    ['thanks', 'que-vuelvan', 'volunteer_activism', bi('Agradecer', 'Thank'), bi('Agradecer a los habituales', 'Thank your regulars'), '/panel/habituales', !c.ent && c.edit],
+    ['message', 'que-vuelvan', 'campaign', bi('Avisar', 'Notify'), bi('Avisar a mis clientes', 'Message my customers'), '/panel/mensajes', !c.ent && c.edit],
+    ['firstVisit', 'que-vuelvan', 'waving_hand', bi('Primera visita', 'First visit'), bi('Ofertas de primera visita', 'First-visit offers'), '/panel/publicaciones/nueva-flash?primera=1', !c.ent && c.edit],
+    ['exclusives', 'que-vuelvan', 'lock', bi('Exclusivas', 'Exclusives'), bi('Exclusivas para favoritos o clientes', 'Exclusives for favourites or customers'), '/panel/publicaciones/nueva-flash?exclusiva=1', !c.ent && c.edit],
+    ['giveaways', 'que-vuelvan', 'redeem', bi('Sorteos', 'Giveaways'), null, '/panel/sorteos', !c.ent && c.sorteos],
     // ── En el local («Pantallas y gente» en una entidad) ──
-    ['queue', 'en-el-local', 'people', bi('Cola virtual', 'Virtual queue'), null, '#/cola',
+    ['queue', 'en-el-local', 'people', bi('Cola virtual', 'Virtual queue'), null, '/panel/cola',
       !c.ent && negLleva(c, 'queue', (o) => herrSi(o, 'queue', 'open') || herrSi(o, 'queue', 'used_30d'))],
-    ['capacity', 'en-el-local', 'exposure_plus_1', bi('Aforo', 'Capacity'), bi('Aforo en directo', 'Live capacity'), aforoOn ? '#/aforo' : '#/aforo/ajustes',
+    ['capacity', 'en-el-local', 'exposure_plus_1', bi('Aforo', 'Capacity'), bi('Aforo en directo', 'Live capacity'), aforoOn ? '/panel/aforo' : '/panel/aforo/ajustes',
       c.venue && (c.edit || aforoOn) && negLleva(c, 'capacity', (o) => herrSi(o, 'capacity', 'enabled'))],
     // «Te aviso cuando esté listo»: hasta que se pueda activar, sin baldosa.
-    ['orders', 'en-el-local', 'takeout_dining', bi('Pedido listo', 'Order ready'), bi('Te aviso cuando esté listo', 'Ready alert'), '#/pedidos',
+    ['orders', 'en-el-local', 'takeout_dining', bi('Pedido listo', 'Order ready'), bi('Te aviso cuando esté listo', 'Ready alert'), '/panel/pedidos',
       !c.ent && (c.edit || herrSi(c.o, 'orders', 'enabled')) && negLleva(c, 'orders', (o) => herrSi(o, 'orders', 'enabled'))
       && (herrSi(c.o, 'orders', 'enabled') || c.o?.orders_available !== false)],
-    ['preorders', 'en-el-local', 'shopping_basket', bi('Encargos', 'Pre-orders'), null, encargos ? '#/encargos' : '#/encargos-cosas',
+    ['preorders', 'en-el-local', 'shopping_basket', bi('Encargos', 'Pre-orders'), null, encargos ? '/panel/encargos' : '/panel/encargos-cosas',
       herrSi(c.o, 'preorders', 'enabled') && !c.ent && (c.edit || encargos) && negLleva(c, 'preorders', (o) => herrNum(o, 'preorders', 'items_all') > 0)],
-    ['dailyMenu', 'en-el-local', 'restaurant_menu', bi('Menú del día', 'Daily menu'), null, '#/menu-del-dia', c.edit && c.venue && herrSi(c.o, 'daily_menu', 'suggested')],
-    ['beforeClosing', 'en-el-local', 'shopping_bag', bi('Antes de cerrar', 'Before closing'), null, '#/antes-de-cerrar', c.edit && c.venue && herrSi(c.o, 'before_closing', 'suggested')],
-    ['tableQr', 'en-el-local', 'wifi', bi('Wifi', 'Wi-Fi'), bi('Wifi para clientes', 'Wi-Fi for customers'), '#/wifi-clientes',
+    ['dailyMenu', 'en-el-local', 'restaurant_menu', bi('Menú del día', 'Daily menu'), null, '/panel/menu-del-dia', c.edit && c.venue && herrSi(c.o, 'daily_menu', 'suggested')],
+    ['beforeClosing', 'en-el-local', 'shopping_bag', bi('Antes de cerrar', 'Before closing'), null, '/panel/antes-de-cerrar', c.edit && c.venue && herrSi(c.o, 'before_closing', 'suggested')],
+    ['tableQr', 'en-el-local', 'wifi', bi('Wifi', 'Wi-Fi'), bi('Wifi para clientes', 'Wi-Fi for customers'), '/panel/wifi-clientes',
       c.edit && c.venue && negLleva(c, 'table_qr', (o) => herrSi(o, 'table_qr', 'wifi') || herrSi(o, 'table_qr', 'has'))],
     // Una entidad, el de su agenda («Sigue nuestra agenda»; §4zzz-propent).
     ['poster', 'en-el-local', 'qr_code_2', bi('Cartel', 'Poster'), c.ent ? bi('Cartel «Sigue nuestra agenda»', '“Follow our events” poster') : bi('Cartel del local', 'Venue poster'),
-      '#/cartel-local', c.edit && (c.venue || c.ent)],
+      '/panel/cartel-local', c.edit && (c.venue || c.ent)],
     // La pegatina de escaparate «Encuéntranos en Klendar» (§4zzz-cartel): la
     // página de la web, con el QR a su ficha. Solo con local (va en el cristal).
     ['sticker', 'en-el-local', 'escaparate', bi('Pegatina', 'Sticker'), bi('Pegatina de escaparate', 'Window sticker'), pegatinaUrl(), c.edit && c.venue],
-    ['tv', 'en-el-local', 'tv', bi('Tele', 'TV'), bi('Poner en la tele', 'Show on TV'), '#/tele', c.edit],
-    ['broadcasts', 'en-el-local', 'live_tv', bi('Partidos', 'Matches'), bi('Partidos que pones', "Matches you're showing"), '#/partidos', c.venue && herrSi(c.o, 'broadcasts', 'suggested')],
-    ['groups', 'en-el-local', 'groups', bi('Grupos', 'Groups'), bi('Grupos y empresas', 'Groups and companies'), '#/grupos',
+    ['tv', 'en-el-local', 'tv', bi('Tele', 'TV'), bi('Poner en la tele', 'Show on TV'), '/panel/tele', c.edit],
+    ['broadcasts', 'en-el-local', 'live_tv', bi('Partidos', 'Matches'), bi('Partidos que pones', "Matches you're showing"), '/panel/partidos', c.venue && herrSi(c.o, 'broadcasts', 'suggested')],
+    ['groups', 'en-el-local', 'groups', bi('Grupos', 'Groups'), bi('Grupos y empresas', 'Groups and companies'), '/panel/grupos',
       c.edit && !c.ent && negLleva(c, 'groups', (o) => herrSi(o, 'groups', 'enabled'))],
     ['webWidget', 'en-el-local', 'code', bi('En tu web', 'On your website'), bi('Klendar en tu web', 'Klendar on your website'), 'widget', true],
     // ── Agenda y equipo ──
-    ['series', 'agenda-y-equipo', 'event_repeat', bi('Series', 'Series'), bi('Series y repeticiones', 'Series and repeats'), '#/series', true],
-    ['calendar', 'agenda-y-equipo', 'calendar_month', bi('Calendario', 'Calendar'), null, '#/calendario', true],
-    ['team', 'agenda-y-equipo', 'group', bi('Equipo', 'Team'), null, '#/equipo', c.edit],
-    ['promoters', 'agenda-y-equipo', 'badge', 'RRPP', bi('RRPP', 'Promoters'), '#/rrpp', c.edit && !c.ent],
+    ['series', 'agenda-y-equipo', 'event_repeat', bi('Series', 'Series'), bi('Series y repeticiones', 'Series and repeats'), '/panel/series', true],
+    ['calendar', 'agenda-y-equipo', 'calendar_month', bi('Calendario', 'Calendar'), null, '/panel/calendario', true],
+    ['team', 'agenda-y-equipo', 'group', bi('Equipo', 'Team'), null, '/panel/equipo', c.edit],
+    ['promoters', 'agenda-y-equipo', 'badge', 'RRPP', bi('RRPP', 'Promoters'), '/panel/rrpp', c.edit && !c.ent],
     // Las listas de la puerta: el personal siempre (es lo suyo); quien
     // gestiona las tiene en RRPP y en Validar, y aquí solo si tiene RRPP.
-    ['door', 'agenda-y-equipo', 'how_to_reg', bi('Listas', 'Lists'), bi('Listas de esta noche', "Tonight's lists"), '#/validar?listas=1',
+    ['door', 'agenda-y-equipo', 'how_to_reg', bi('Listas', 'Lists'), bi('Listas de esta noche', "Tonight's lists"), '/panel/validar?listas=1',
       !c.ent && (!c.edit || herrNum(c.o, 'promoters', 'active') > 0)],
     // ── Cifras, plan y ayuda (el asistente va dentro de Ayuda) ──
-    ['report', 'cifras', 'insights', bi('Cifras', 'Stats'), null, '#/informe', true],
+    ['report', 'cifras', 'insights', bi('Cifras', 'Stats'), null, '/panel/informe', true],
     // Una entidad no paga cuota: sin plan.
-    ['plan', 'cifras', 'receipt_long', bi('Tu plan', 'Your plan'), null, '#/plan', c.edit && !c.ent],
-    ['help', 'cifras', 'help_outline', bi('Ayuda', 'Help'), bi('Preguntas frecuentes', 'Frequently asked questions'), '#/ayuda', true],
+    ['plan', 'cifras', 'receipt_long', bi('Tu plan', 'Your plan'), null, '/panel/plan', c.edit && !c.ent],
+    ['help', 'cifras', 'help_outline', bi('Ayuda', 'Help'), bi('Preguntas frecuentes', 'Frequently asked questions'), '/panel/ayuda', true],
   ];
 }
 
@@ -180,7 +180,7 @@ const negDelicado = (titulo) => `<section class="neg-grupo neg-delicado" id="g-d
       <p class="muted" style="margin:0 0 10px">${esc(esEntidad()
     ? bi('Si dejas Klendar: cerrar hasta nuevo aviso, traspasar la entidad o eliminarla.', 'If you’re leaving Klendar: close until further notice, hand over the organisation or delete it.')
     : bi('Si dejas Klendar: cerrar hasta nuevo aviso, cancelar la suscripción, traspasar el negocio o eliminarlo.', 'If you’re leaving Klendar: close until further notice, cancel the subscription, transfer the business or delete it.'))}</p>
-      <a class="btn" href="#/baja">Dar de baja el negocio</a></div></section>`;
+      <a class="btn" href="/panel/baja">Dar de baja el negocio</a></div></section>`;
 
 /** Al final: «Salir del equipo» (quien no es propietario) y, en el móvil,
  * la sesión y «Cerrar sesión» (en el ordenador están abajo del menú). */
@@ -205,7 +205,7 @@ function negCabecera(b, pct) {
       <p class="neg-nombre"><b translate="no">${esc(BIZ.name)}</b>${BIZ.entity?.kind ? ` <span class="tag badge-entidad">${icono('entidad')} ${esc(entSello(BIZ.entity.kind))}</span>` : ''}
         <span class="tag st-${esc(BIZ.verification_status)}">${esc(BIZ_LABELS[BIZ.verification_status] || BIZ.verification_status)}</span></p>
       ${donde ? `<p class="muted neg-donde" translate="no">${esc(donde)}</p>` : ''}
-      ${pct != null && pct < 100 ? `<a class="link" href="#/ficha">${esc(bi(`Completa al ${pct} %`, `${pct}% complete`))}</a>` : ''}
+      ${pct != null && pct < 100 ? `<a class="link" href="/panel/ficha">${esc(bi(`Completa al ${pct} %`, `${pct}% complete`))}</a>` : ''}
     </div></div>`;
 }
 
@@ -230,7 +230,7 @@ function negWidget(boton) {
   d.showModal();
 }
 
-/** Baja al grupo de `#/negocio/<grupo>` (el submenú de la izquierda). */
+/** Baja al grupo de `/panel/negocio/<grupo>` (el submenú de la izquierda). */
 function negBajaA(v, grupo) {
   const sec = grupo && $(`#g-${CSS.escape(grupo)}`, v);
   if (!sec) return;
@@ -258,12 +258,12 @@ async function negPrimeros(ficha, cuentas) {
       ${sug.length ? `<h3 class="sug-titulo">Tu primera oferta, que se repite sola</h3>
       <p class="muted" style="margin:0 0 4px">Elige una y ajusta el precio o los días: sale sola cada semana a su hora.</p>
       ${sugLista(sug)}
-      <p style="margin:2px 0 10px"><a class="link" href="#/publicaciones/nueva-flash?idea=1">Prefiero escribir otra</a></p>
+      <p style="margin:2px 0 10px"><a class="link" href="/panel/publicaciones/nueva-flash?idea=1">Prefiero escribir otra</a></p>
       <h3 class="sug-titulo">Completa tu ficha</h3>` : ''}
       <p class="muted" style="margin:0 0 8px">Nada de esto frena tu alta: hazlo ahora o cuando quieras.</p>
       ${sinLocal && sinNada ? (esEntidad()
-    ? paso(false, 'Publica tu primer evento', 'Con su fecha y su sitio: cada evento lleva el suyo.', '#/publicaciones/nuevo-evento')
-    : paso(false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '#/publicaciones/nueva-flash?idea=1')) : ''}
+    ? paso(false, 'Publica tu primer evento', 'Con su fecha y su sitio: cada evento lleva el suyo.', '/panel/publicaciones/nuevo-evento')
+    : paso(false, 'Publica tu primera oferta', 'Te la dejamos casi hecha: cambia el precio y la hora.', '/panel/publicaciones/nueva-flash?idea=1')) : ''}
       ${faltan.map((f) => paso(f.hecho, f.titulo, '', f.href)).join('')}
     </div>`;
   return { html, lista: sug };

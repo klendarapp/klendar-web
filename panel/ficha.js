@@ -2,11 +2,11 @@
 
    Lo mismo que la app (`lib/features/business_panel/presentation/profile/`):
    «Tu ficha» es un índice con un resumen de una línea por apartado; cada
-   apartado se edita en su propia vista (`#/ficha/fotos`, `#/ficha/basico`…)
+   apartado se edita en su propia vista (`/panel/ficha/fotos`, `/panel/ficha/basico`…)
    con un solo «Guardar», que manda solo lo suyo a `update_business`. Al
    final, solo para el propietario, la «Zona delicada» (descargar los datos y
    dar de baja el negocio). El alta usa las mismas partes en tres pasos
-   (`#/alta/1`, `#/alta/2`, `#/alta/3`) y no pierde nada al ir atrás.
+   (`/panel/alta/1`, `/panel/alta/2`, `/panel/alta/3`) y no pierde nada al ir atrás.
 
    Script clásico: comparte ámbito con panel.js (PAGES, rpc, BIZ, esc…). */
 'use strict';
@@ -27,7 +27,7 @@ const SITIO_PANEL = [
 const DIETAS_PANEL = ['veggie', 'vegan', 'gluten_free', 'celiac', 'lactose_free', 'halal'];
 
 /** Los apartados, en el orden del índice: [ruta, título]. «Carta» lleva a
- * su pantalla de siempre (`#/carta`). */
+ * su pantalla de siempre (`/panel/carta`). */
 const PARTES_FICHA = [
   ['fotos', 'Fotos'],
   ['basico', 'Lo básico'],
@@ -640,15 +640,15 @@ async function datosFicha() {
 }
 
 PAGES.ficha = async (v, parte) => {
-  if (!gestiona()) { location.hash = '#/hoy'; return; }
+  if (!gestiona()) { go('/panel/hoy'); return; }
   // Un apartado que no existe (un enlace viejo o mal escrito): el índice.
-  if (parte === 'carta') { location.hash = '#/carta'; return; }
-  if (parte && !PARTES_FICHA.some((p) => p[0] === parte) && !['datos', 'entidad'].includes(parte)) { location.hash = '#/ficha'; return; }
+  if (parte === 'carta') { go('/panel/carta'); return; }
+  if (parte && !PARTES_FICHA.some((p) => p[0] === parte) && !['datos', 'entidad'].includes(parte)) { go('/panel/ficha'); return; }
   // El NIF/CIF (en un autónomo, su DNI): solo el propietario (20261284500020), como la app.
-  if (parte === 'klendar' && BIZ.role !== 'owner') { location.hash = '#/ficha'; return; }
-  if (parte === 'datos' && !esPropietario()) { location.hash = '#/ficha'; return; }
+  if (parte === 'klendar' && BIZ.role !== 'owner') { go('/panel/ficha'); return; }
+  if (parte === 'datos' && !esPropietario()) { go('/panel/ficha'); return; }
   // Un organizador sin local fijo no tiene horario ni «Cómo es tu local».
-  if (esOrganizador() && ['horario', 'local', 'que-pedir'].includes(parte)) { location.hash = '#/ficha'; return; }
+  if (esOrganizador() && ['horario', 'local', 'que-pedir'].includes(parte)) { go('/panel/ficha'); return; }
   const { b, cats, carta } = await datosFicha();
   if (!b) {
     v.innerHTML = `<section class="vacio"><h2>${esc(I18N.t('No hemos podido cargar tu ficha.'))}</h2><div class="vacio-botones"><button class="btn primary" type="button" data-reintentar>${esc(I18N.t('Reintentar'))}</button></div></section>`;
@@ -701,7 +701,7 @@ function indiceFicha(v, b, cats, carta) {
   };
   const sinCategoria = !b.category_id;
   const sinDireccion = esOrganizador() ? !b.city : (!b.address || !b.city);
-  const fila = (k, titulo, texto, { mal = false, peligro = false, href = null } = {}) => `<a class="indice-fila${peligro ? ' peligro' : ''}" href="${href || `#/${k === 'carta' ? 'carta' : `ficha/${k}`}`}">
+  const fila = (k, titulo, texto, { mal = false, peligro = false, href = null } = {}) => `<a class="indice-fila${peligro ? ' peligro' : ''}" href="${href || `/panel/${k === 'carta' ? 'carta' : `ficha/${k}`}`}">
     <span><b>${esc(I18N.t(titulo))}</b>${texto ? `<small${mal ? ' class="mal"' : ''}>${esc(texto)}</small>` : ''}</span>${ms('chevron_right')}</a>`;
 
   v.innerHTML = `
@@ -711,7 +711,7 @@ function indiceFicha(v, b, cats, carta) {
       ${b.logo_url ? `<img src="${esc(b.logo_url)}" alt="">` : `<span class="ph" aria-hidden="true">${ms('storefront')}</span>`}
       <div><b>${esc(b.name)}</b><span class="muted">${esc([nombreCat, b.city, pct < 100 && bi(`ficha completa al ${pct} %`, `page ${pct}% complete`)].filter(Boolean).join(' · '))}</span></div>
     </div>
-    ${sinCategoria || sinDireccion ? `<a class="aviso-falta" href="#/ficha/${sinCategoria ? 'basico' : 'donde'}">${ms('cancel')}<span>${esc(I18N.t(sinCategoria ? 'Elige una categoría.' : 'Falta la dirección o la ciudad.'))}</span>${ms('chevron_right')}</a>` : ''}
+    ${sinCategoria || sinDireccion ? `<a class="aviso-falta" href="/panel/ficha/${sinCategoria ? 'basico' : 'donde'}">${ms('cancel')}<span>${esc(I18N.t(sinCategoria ? 'Elige una categoría.' : 'Falta la dirección o la ciudad.'))}</span>${ms('chevron_right')}</a>` : ''}
     <p class="muted" style="margin:0 0 10px">Toca un apartado para cambiarlo. Cada uno se guarda por separado.</p>
     <nav class="card indice" aria-label="${esc(I18N.t('Apartados de la ficha'))}">
       ${PARTES_FICHA.filter(([k]) => !((esOrganizador() || esEntidad()) && ['horario', 'local', 'que-pedir'].includes(k)))
@@ -723,13 +723,13 @@ function indiceFicha(v, b, cats, carta) {
     ${esPropietario() ? `<section class="card indice zona-delicada" aria-labelledby="zonaFicha">
       <h2 id="zonaFicha">Zona delicada · solo el propietario</h2>
       ${fila('datos', 'Descargar los datos del negocio', '')}
-      ${fila('baja', 'Dar de baja el negocio', I18N.t('Cerrar hasta nuevo aviso, cancelar la suscripción, traspasarlo o eliminarlo'), { peligro: true, href: '#/baja' })}
+      ${fila('baja', 'Dar de baja el negocio', I18N.t('Cerrar hasta nuevo aviso, cancelar la suscripción, traspasarlo o eliminarlo'), { peligro: true, href: '/panel/baja' })}
     </section>` : ''}`;
 }
 
 async function parteFicha(v, parte, b, cats) {
   const titulo = tituloParte(parte);
-  const cab = `<p class="crumbs"><a href="#/ficha">← ${esc(I18N.t('Tu ficha'))}</a></p>
+  const cab = `<p class="crumbs"><a href="/panel/ficha">← ${esc(I18N.t('Tu ficha'))}</a></p>
     <div class="page-head"><h1>${esc(I18N.t(titulo))}</h1></div>`;
 
   if (parte === 'datos') {
@@ -895,7 +895,7 @@ async function parteFicha(v, parte, b, cats) {
       inicial = estado();
       GUARDA = null;
       toast('Guardado');
-      location.hash = '#/ficha';
+      go('/panel/ficha');
     } catch (err) { toast(friendly(err.message), true); }
   }
 
@@ -929,7 +929,7 @@ function pasoAltaIncompleto(n) {
 }
 
 PAGES.alta = async (v, param) => {
-  // `#/alta`: «¿Qué vas a dar de alta?»; `#/alta/entidad/N`: el alta de una
+  // `/panel/alta`: «¿Qué vas a dar de alta?»; `/panel/alta/entidad/N`: el alta de una
   // entidad (entidades.js). Sin negocio, `noBusiness` llama sin el paso: se
   // saca de la dirección.
   const partes = currentRoute()[0] === 'alta' ? currentRoute().slice(1) : [];
@@ -943,14 +943,14 @@ PAGES.alta = async (v, param) => {
     ALTA.sin_local = param === 'eventos';
     ALTA.elegido = true;
     param = '1';
-    history.replaceState(null, '', '#/alta/1');
+    cambiaDireccion('/panel/alta/1');
   }
   const cats = CATS.length ? CATS
     : ((await sb.from('categories').select('*').order('position', { ascending: true })).data || []);
   if (!ALTA) ALTA = altaNueva();
   let paso = Math.min(3, Math.max(1, parseInt(param, 10) || 1));
   // A un paso solo se llega con los de antes hechos.
-  for (let n = 1; n < paso; n++) if (pasoAltaIncompleto(n)) { location.hash = `#/alta/${n}`; return; }
+  for (let n = 1; n < paso; n++) if (pasoAltaIncompleto(n)) { go(`/panel/alta/${n}`); return; }
   const otro = BIZZES.length > 0;
   const A = ALTA;
   // Las otras categorías, si la base ya las tiene (sus categorías traen
@@ -1045,7 +1045,7 @@ PAGES.alta = async (v, param) => {
     }
     const atras = $('[data-atras]', v);
     // Del primer paso, otra vez a «¿Qué vas a dar de alta?».
-    if (atras) atras.onclick = () => { lee(f); location.hash = paso > 1 ? `#/alta/${paso - 1}` : '#/alta'; };
+    if (atras) atras.onclick = () => { lee(f); go(paso > 1 ? `/panel/alta/${paso - 1}` : '/panel/alta'); };
     f.onsubmit = siguiente;
     sinDobleEnvio(v);
     if (foco) $(foco, v)?.focus();
@@ -1078,7 +1078,7 @@ PAGES.alta = async (v, param) => {
       ])) return;
       return enviar();
     }
-    location.hash = `#/alta/${paso + 1}`;
+    go(`/panel/alta/${paso + 1}`);
   }
 
   async function enviar() {
@@ -1136,7 +1136,7 @@ PAGES.alta = async (v, param) => {
       hechoBreve('Solicitud enviada. Te avisamos cuando la revisemos.');
       // Al panel del negocio nuevo, a Negocio: arriba, «Primeros pasos» (la
       // primera oferta y lo que le falta a la ficha), como la app.
-      if (location.hash === '#/negocio') route(); else location.hash = '#/negocio';
+      if (aqui() === '/panel/negocio') route(); else go('/panel/negocio');
     } catch (e2) {
       $('#err', v).textContent = I18N.t(friendly(e2.message));
       boton.disabled = false;
@@ -1144,5 +1144,5 @@ PAGES.alta = async (v, param) => {
   }
 
   pinta();
-  GUARDA = { sucia: altaConAlgo, dentro: (h) => h.startsWith('#/alta') };
+  GUARDA = { sucia: altaConAlgo, dentro: (h) => h.startsWith('/panel/alta') };
 };

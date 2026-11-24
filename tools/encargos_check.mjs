@@ -8,7 +8,7 @@
 //   3. Antes de encargar, los alérgenos con su nombre oficial; bajo la nota,
 //      «No escribas datos de salud…»; el resumen con «Se paga al recogerlo»
 //      y «Klendar no cobra ni responde del pedido».
-//   4. El panel: #/encargos (acciones de todo el equipo) y #/encargos-cosas
+//   4. El panel: /panel/encargos (acciones de todo el equipo) y /panel/encargos-cosas
 //      con los alérgenos; la tarjeta en «Más herramientas»; la hoja de
 //      cierre con los encargos.
 //
@@ -62,12 +62,12 @@ ok('3. el resumen', cuenta.includes('Se paga al recogerlo en {business}.') && cu
 ok('3. encargar con place_preorder', cuenta.includes("'place_preorder'") && cuenta.includes('p_phone'));
 
 // 4
-ok('4. #/encargos con las acciones', panel.includes('PAGES.encargos =') && ['accept', 'ready', 'picked_up', 'no_show', 'reject']
+ok('4. /panel/encargos con las acciones', panel.includes('PAGES.encargos =') && ['accept', 'ready', 'picked_up', 'no_show', 'reject']
   .every((a) => panel.includes(`'${a}'`)) && panel.includes("'preorder_action'"));
 ok('4. rechazar pide el motivo', panel.includes('¿Por qué lo rechazas?') && panel.includes('required: true, maxlength: 200'));
 ok('4. «Lo que se encarga» con los alérgenos', panel.includes("PAGES['encargos-cosas']") && panel.includes('allergens_none')
   && panel.includes("'save_preorder_item'"));
-ok('4. la tarjeta en «Más herramientas»', herr.includes("herrSi(o, 'preorders', 'enabled')") && herr.includes('#/encargos'));
+ok('4. la tarjeta en «Más herramientas»', herr.includes("herrSi(o, 'preorders', 'enabled')") && herr.includes('/panel/encargos'));
 ok('4. la hoja de cierre con los encargos', panelJs.includes("rpc('closure_preorders'") && panelJs.includes("rpc('cancel_closure_preorders'"));
 
 if (fallos) {

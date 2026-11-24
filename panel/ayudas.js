@@ -237,7 +237,7 @@ window.KAyudas = (() => {
           b.onclick = () => {
             const i = w.ideas[+b.dataset.ideaIa];
             ideaPendiente = i;
-            location.hash = i.kind === 'future_event' ? '#/publicaciones/nuevo-evento' : '#/publicaciones/nueva-flash';
+            go(i.kind === 'future_event' ? '/panel/publicaciones/nuevo-evento' : '/panel/publicaciones/nueva-flash');
           };
         });
         $$('[data-aviso-ia]', caja).forEach((x) => {

@@ -48,7 +48,7 @@ const RUTAS = [
   [`/o/${oferta.id}`, null], [`/o/${evento.id}`, null], [`/cartel/${oferta.id}`, null], ['/precios', null],
   ['/para-negocios', null], ['/para-entidades', null], ['/como-funciona', null], ['/preguntas', null], ['/alta', null], ['/en', null],
   ['/cuenta', 'cuenta'],
-  ['/panel#/hoy', 'panel'], ['/panel#/validar', 'panel'], ['/panel#/publicar', 'panel'], ['/panel#/negocio', 'panel'], ['/panel#/ficha', 'panel'],
+  ['/panel/hoy', 'panel'], ['/panel/validar', 'panel'], ['/panel/publicar', 'panel'], ['/panel/negocio', 'panel'], ['/panel/ficha', 'panel'],
   ['/admin', 'admin'],
 ];
 const solo = (process.env.TABLET_SOLO || '').split(',').filter(Boolean);

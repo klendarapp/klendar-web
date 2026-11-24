@@ -61,7 +61,8 @@
   ['error', 'error_code', 'error_description'].forEach(function (k) {
     if (q.has(k)) { fallo = fallo || q.get('error_code') || q.get('error') || 'acceso'; q.delete(k); cambia = true; }
   });
-  // En el `#`: las rutas del panel y del admin son `#/…`; lo demás que traiga `=` es de Supabase
+  // En el `#`: lo que traiga `=` es de Supabase (las rutas del panel y del admin ya no van
+  // en él, §4zzz-panellimpio; un `#/…` viejo lo quita su página)
   // (tokens de un enlace de antes de PKCE, o `#error=…`): fuera, sin usarlo.
   var hash = url.hash;
   if (hash && hash.charAt(1) !== '/' && /(^#|&)(access_token|refresh_token|error|error_code|error_description)=/.test(hash)) {

@@ -1,13 +1,13 @@
 // Prueba del «Aforo en directo» y de «Avísame cuando haya sitio» en la web
 // local, con un Supabase de mentira (no toca dev ni manda nada):
 //
-//  1. Panel › #/aforo (la puerta): «84 / 120» y «Casi lleno»; +1, +1, −1
+//  1. Panel › /panel/aforo (la puerta): «84 / 120» y «Casi lleno»; +1, +1, −1
 //     → 85, y la cifra cuadra con `capacity_status`; un doble toque rápido
 //     cuenta 1; un envío que falla por la red se repite con el mismo
 //     `p_op` y no cuenta dos veces; se pone al día sola (sondeo de 4 s);
 //     las líneas (ficha, esta noche, quién espera, eventos de hoy) y
 //     «Poner a 0» con su pregunta.
-//  2. Panel › #/aforo/ajustes: validación (sin mandar) y `set_capacity_settings`.
+//  2. Panel › /panel/aforo/ajustes: validación (sin mandar) y `set_capacity_settings`.
 //     Un empleado ve la puerta sin ajustes.
 //  3. Panel › Negocio (la baldosa), Hoy (fila de acceso rápido y «¿Hay
 //     sitio ahora?» con «Marcado a mano · vuelve al contador…» y «Volver al
@@ -184,7 +184,7 @@ const llamadas = (estado, fn) => estado.llamadas.filter(([f]) => f === fn);
 async function puerta(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
   const af = estado.af;
-  await p.goto(`${BASE}/panel#/aforo`);
+  await p.goto(`${BASE}/panel/aforo`);
   await p.waitForSelector('.afd-btn');
   const cifra = async () => (await p.locator('#afdCifra').innerText()).replace(/\s+/g, ' ').trim();
   ok(await cifra() === '84 / 120', `${nombre}/${t} puerta: «84 / 120» (${await cifra()})`);
@@ -198,7 +198,7 @@ async function puerta(nav, nombre, t, vp) {
   ok(/Esta noche: máximo 118 a las 0:30 · lleno a las 23:40/.test(txt), `${nombre}/${t} puerta: «Esta noche: máximo 118 a las 0:30 · lleno a las 23:40»`);
   ok(/3 personas esperan que haya sitio/.test(txt), `${nombre}/${t} puerta: «3 personas esperan que haya sitio»`);
   ok(/Hoy: «Jazz» a las 22:00 · 14 con reserva por llegar/.test(txt) && /El aforo no cierra las reservas del evento\./.test(txt), `${nombre}/${t} puerta: evento de hoy y su aviso`);
-  ok(await p.locator('a[href="#/aforo/ajustes"]').count() === 1, `${nombre}/${t} puerta: «Ajustes del aforo» arriba`);
+  ok(await p.locator('a[href="/panel/aforo/ajustes"]').count() === 1, `${nombre}/${t} puerta: «Ajustes del aforo» arriba`);
   const anchoPagina = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   ok(anchoPagina <= 0, `${nombre}/${t} puerta: sin desplazamiento horizontal`);
   await p.screenshot({ path: `${OUT}/panel-puerta-${nombre}-${t}.png`, fullPage: true });
@@ -247,7 +247,7 @@ async function puerta(nav, nombre, t, vp) {
 
 async function ajustes(nav, nombre, t, vp) {
   let { ctx, p, estado, errores } = await contextoPanel(nav, vp);
-  await p.goto(`${BASE}/panel#/aforo/ajustes`);
+  await p.goto(`${BASE}/panel/aforo/ajustes`);
   await p.waitForSelector('#afdForm');
   const txt = await vista(p);
   ok(/Ajustes del aforo/.test(txt) && /Aforo máximo/.test(txt) && /personas/.test(txt) && /Casi lleno desde/.test(txt) && /Lleno desde/.test(txt),
@@ -271,18 +271,18 @@ async function ajustes(nav, nombre, t, vp) {
   await p.click('#afdForm button[type=submit]');
   await p.waitForTimeout(600);
   const s = llamadas(estado, 'set_capacity_settings')[0]?.[1] || {};
-  ok(s.p_business === BIZ && s.p_enabled === true && s.p_max === 150 && s.p_almost === 60 && s.p_full === 90 && /#\/aforo$/.test(p.url()),
+  ok(s.p_business === BIZ && s.p_enabled === true && s.p_max === 150 && s.p_almost === 60 && s.p_full === 90 && /\/panel\/aforo$/.test(p.url()),
     `${nombre}/${t} ajustes: guarda y vuelve a la puerta (${JSON.stringify(s)})`);
   ok(errores.length === 0, `${nombre}/${t} ajustes: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
   // Un empleado: la puerta, sin ajustes.
   ({ ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'staff' }));
-  await p.goto(`${BASE}/panel#/aforo/ajustes`);
+  await p.goto(`${BASE}/panel/aforo/ajustes`);
   await p.waitForSelector('.afd-btn');
-  ok(/#\/aforo$/.test(p.url()) && await p.locator('a[href="#/aforo/ajustes"]').count() === 0, `${nombre}/${t} empleado: ve la puerta sin ajustes`);
-  await p.goto(`${BASE}/panel#/negocio`);
+  ok(/\/panel\/aforo$/.test(p.url()) && await p.locator('a[href="/panel/aforo/ajustes"]').count() === 0, `${nombre}/${t} empleado: ve la puerta sin ajustes`);
+  await p.goto(`${BASE}/panel/negocio`);
   await p.waitForSelector('.neg-tiles');
-  ok(await p.locator('[data-neg="capacity"][href="#/aforo"]').count() === 1, `${nombre}/${t} empleado: la baldosa «Aforo» en Negocio › En el local`);
+  ok(await p.locator('[data-neg="capacity"][href="/panel/aforo"]').count() === 1, `${nombre}/${t} empleado: la baldosa «Aforo» en Negocio › En el local`);
   ok(errores.length === 0, `${nombre}/${t} empleado: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
 }
@@ -292,12 +292,12 @@ async function resumenYCifras(nav, nombre, t, vp) {
   // Negocio › En el local: la baldosa «Aforo» (antes, la tarjeta de «Más
   // herramientas»; §4zzz-panelapp). «¿Hay sitio ahora?» no es baldosa: va
   // dentro de «Tu local», como la app.
-  await p.goto(`${BASE}/panel#/negocio`);
+  await p.goto(`${BASE}/panel/negocio`);
   await p.waitForSelector('.neg-tiles');
   let txt = await vista(p);
-  ok(await p.locator('#g-en-el-local [data-neg="capacity"][href="#/aforo"]').count() === 1 && /Aforo/.test(txt), `${nombre}/${t} Negocio: la baldosa «Aforo» lleva a la puerta`);
-  ok(await p.locator('[data-neg="venueInfo"][href="#/ficha/local"]').count() === 1 && !/tranquilo|animado/i.test(txt), `${nombre}/${t} Negocio: «Tu local» (con «¿Hay sitio ahora?» dentro)`);
-  await p.goto(`${BASE}/panel#/resumen`);
+  ok(await p.locator('#g-en-el-local [data-neg="capacity"][href="/panel/aforo"]').count() === 1 && /Aforo/.test(txt), `${nombre}/${t} Negocio: la baldosa «Aforo» lleva a la puerta`);
+  ok(await p.locator('[data-neg="venueInfo"][href="/panel/ficha/local"]').count() === 1 && !/tranquilo|animado/i.test(txt), `${nombre}/${t} Negocio: «Tu local» (con «¿Hay sitio ahora?» dentro)`);
+  await p.goto(`${BASE}/panel/hoy`);
   await p.waitForSelector('.fila-inicio');
   await p.waitForTimeout(500);
   txt = await vista(p);
@@ -305,7 +305,7 @@ async function resumenYCifras(nav, nombre, t, vp) {
   // Con el aforo encendido, «¿Hay sitio ahora?» no se repite en el resumen
   // (2026-10-22): marcarlo a mano está en la puerta.
   ok(await p.locator('#aforoCaja .card.aforo').count() === 0, `${nombre}/${t} resumen: sin «¿Hay sitio ahora?» repetido con el aforo encendido`);
-  await p.goto(`${BASE}/panel#/aforo`);
+  await p.goto(`${BASE}/panel/aforo`);
   await p.waitForSelector('#afdSitio .card.aforo');
   txt = await vista(p);
   ok(/Marcado a mano · vuelve al contador a las/.test(txt) && /Volver al contador/.test(txt), `${nombre}/${t} puerta: «Marcado a mano · vuelve al contador…» y «Volver al contador»`);
@@ -317,7 +317,7 @@ async function resumenYCifras(nav, nombre, t, vp) {
   const c = llamadas(estado, 'set_business_crowd')[0]?.[1] || {};
   ok(c.p_level === null && /Con el aforo en directo, lo que marques manda 30 minutos\./.test(await vista(p)), `${nombre}/${t} puerta: «Volver al contador» quita lo marcado`);
   // Cifras
-  await p.goto(`${BASE}/panel#/informe`);
+  await p.goto(`${BASE}/panel/informe`);
   await p.waitForSelector('#informeAforo details.plegable');
   const d = p.locator('#informeAforo details');
   ok(/Aforo/.test(await d.locator('summary').innerText()) && /Máximo: 118 a las 0:30/.test(await d.locator('summary').innerText()), `${nombre}/${t} cifras: plegable «Aforo» con su resumen`);
@@ -505,7 +505,7 @@ async function mapa(nav, nombre, t, vp) {
 // ── 7. Contar sin enseñarlo ─────────────────────────────────────────────────
 async function sinEnsenar(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
-  await p.goto(`${BASE}/panel#/aforo/ajustes`);
+  await p.goto(`${BASE}/panel/aforo/ajustes`);
   await p.waitForSelector('#afdForm input[name=show]');
   const casilla = p.locator('#afdForm input[name=show]');
   ok(await casilla.isChecked(), `${nombre}/${t} sin enseñar: «Enseñar en mi ficha si hay sitio» encendido de serie`);
@@ -552,7 +552,7 @@ async function hasAbierto(nav, nombre, t, vp) {
   for (const respuesta of ['si', 'no']) {
     const { ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'manager' });
     estado.af.k.closed = true;
-    await p.goto(`${BASE}/panel#/aforo`);
+    await p.goto(`${BASE}/panel/aforo`);
     await p.waitForSelector('.afd-abre');
     const caja = await p.locator('.afd-abre').innerText();
     ok(/¿Has abierto hoy\?/.test(caja) && /En Klendar figuras cerrado\./.test(caja) && /Sí, he abierto/.test(caja) && /Ahora no/.test(caja),
@@ -576,7 +576,7 @@ async function hasAbierto(nav, nombre, t, vp) {
   }
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'staff' });
   estado.af.k.closed = true;
-  await p.goto(`${BASE}/panel#/aforo`);
+  await p.goto(`${BASE}/panel/aforo`);
   await p.waitForSelector('.afd-abre');
   const caja = await p.locator('.afd-abre').innerText();
   ok(/Díselo a quien lleva el local/.test(caja) && !/Sí, he abierto/.test(caja) && await p.locator('.afd-abre [data-abre]').count() === 1,

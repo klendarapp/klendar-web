@@ -119,7 +119,7 @@ window.KEnlaceRellena = (() => {
     return leido.events.filter((_, i) => r[`e${i}`]);
   };
 
-  const rutaDe = (r, pos) => `#/publicaciones/${r.kind === 'future_event' ? 'nuevo-evento' : 'nueva-flash'}?cola=${pos}`;
+  const rutaDe = (r, pos) => `/panel/publicaciones/${r.kind === 'future_event' ? 'nuevo-evento' : 'nueva-flash'}?cola=${pos}`;
 
   /** Después de publicar o guardar: la dirección del siguiente de la cola, o null si no queda ninguno. */
   const siguiente = () => {
@@ -130,13 +130,13 @@ window.KEnlaceRellena = (() => {
   };
   const salta = () => {
     GUARDA = null;
-    location.hash = siguiente() || '#/publicar';
+    go(siguiente() || '/panel/publicar');
   };
 
   // ── La tarjeta del formulario ───────────────────────────────────────────
   const oferta = async (caja, api) => {
     if (!caja) return;
-    const q = new URLSearchParams(location.hash.split('?')[1] || '');
+    const q = new URLSearchParams(location.search);
     // El siguiente de una agenda: ya relleno, con su paso. Si se llega aquí de otra manera, la cola se olvida.
     if (cola && q.get('cola') && cola.items.length) {
       const r = cola.items[0];

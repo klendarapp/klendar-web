@@ -181,7 +181,7 @@ async function panelGrupos(nav, nombre, t, vp) {
     business_group_requests: [{ id: FILA, status: 'pending', respond_by: masDias(2), kind: 'company_dinner', event_date: '2026-12-12', people: 10, budget_cents: 3000, note: 'Visitad mi web de apuestas', others: 1, created_at: masDias(0) }],
     report_target: null,
   }));
-  await p.goto(`${BASE}/panel#/grupos`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/grupos`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-denunciar]');
   await p.screenshot({ path: `${OUT}/web-panel-grupos-denunciar-${nombre}-${t}.png`, fullPage: true });
   await p.click('[data-denunciar]');
@@ -201,7 +201,7 @@ async function panelSorteo(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, PANEL({
     business_giveaways: { can_manage: true, tax_id: 'B12345674', giveaways: [g] },
   }));
-  await p.goto(`${BASE}/panel#/sorteos/${G1}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/sorteos/${G1}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('.kpis');
   const v = await p.locator('#view').innerText();
   ok(/Retirado/.test(v) && /Klendar lo ha retirado: Premio engañoso/.test(v) && /6 meses/.test(v), `${nombre}/${t} panel sorteo retirado: estado, motivo y recurso`);

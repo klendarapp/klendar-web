@@ -1,14 +1,14 @@
-/* Panel del negocio: «Sorteos» (#/sorteos; tanda C, migración
+/* Panel del negocio: «Sorteos» (/panel/sorteos; tanda C, migración
  * 20261208100001_sorteos de la app). Lo mismo que Mi negocio › Clientes ›
  * «Sorteos» en la app. Lo ve todo el equipo; crear, cambiar y cancelar,
  * propietario o encargado (`can_manage`; la base también lo exige). «Marcar
  * como entregado», cualquiera del equipo (es quien da el premio).
  *
- * - #/sorteos: la lista con su estado y cifras (`business_giveaways`).
- * - #/sorteos/nuevo y #/sorteos/<id>?editar=1: el formulario
+ * - /panel/sorteos: la lista con su estado y cifras (`business_giveaways`).
+ * - /panel/sorteos/nuevo y /panel/sorteos/<id>?editar=1: el formulario
  *   (`save_giveaway`), con el NIF de serie (`tax_id`), el aviso del IRPF por
  *   encima de 300 € y la casilla de las obligaciones.
- * - #/sorteos/<id>: cifras, ganadores y suplentes, «Marcar como entregado»
+ * - /panel/sorteos/<id>: cifras, ganadores y suplentes, «Marcar como entregado»
  *   (`mark_giveaway_delivered`), «Ver la página», «Compartir en historias»,
  *   «Editar» (sin participantes) y «Cancelar el sorteo» (`cancel_giveaway`,
  *   con motivo si ya participa alguien).
@@ -66,7 +66,7 @@ const SORTEO_NIF = /^([0-9]{8}[A-Z]|[XYZ][0-9]{7}[A-Z]|[ABCDEFGHJKLMNPQRSUVW][0-
 
 /** ¿Salen los sorteos? (`app_config.giveaways`, migración 20261243100000 de
  * la app). Al lanzar, apagados en todas partes por la norma 5.3 de Apple:
- * «Sorteos» no sale en Fidelizar ni cuenta en el resumen, y `#/sorteos`
+ * «Sorteos» no sale en Fidelizar ni cuenta en el resumen, y `/panel/sorteos`
  * dice que no están disponibles. Se pregunta una vez por carga; sin
  * respuesta, apagados. */
 let SORTEOS_EN_PANEL = null;
@@ -98,7 +98,7 @@ PAGES.sorteos = async (v, param) => {
   if (!(await sorteosEnPanel())) {
     const S = KSp.t(sorteoL());
     v.innerHTML = `<section class="vacio"><h2>${esc(S.offTitle)}</h2><p>${esc(S.offTextBiz)}</p>
-      <div class="vacio-botones"><a class="btn primary" href="#/hoy">${esc(S.offGoBiz)}</a></div></section>`;
+      <div class="vacio-botones"><a class="btn primary" href="/panel/hoy">${esc(S.offGoBiz)}</a></div></section>`;
     return;
   }
   const d = await sorteosDelNegocio();
@@ -109,8 +109,8 @@ PAGES.sorteos = async (v, param) => {
     // Uno antiguo (de una parte sin cargar o de un aviso): se pide aparte.
     const g = lista.find((x) => x.id === param)
       || ((await sorteosDelNegocio({ p_id: param })).giveaways || [])[0];
-    if (!g) { location.hash = '#/sorteos'; return; }
-    if (new URLSearchParams(location.hash.split('?')[1] || '').get('editar') === '1') return sorteoForm(v, d, g);
+    if (!g) { go('/panel/sorteos'); return; }
+    if (new URLSearchParams(location.search).get('editar') === '1') return sorteoForm(v, d, g);
     return sorteoDetalle(v, d, g);
   }
   const abiertos = lista.filter((g) => g.status === 'active').length;
@@ -119,7 +119,7 @@ PAGES.sorteos = async (v, param) => {
     <div class="page-head"><h1>${esc(KSp.t(sorteoL()).title)}</h1><span class="spacer"></span>
       ${d.can_manage ? (abiertos >= 3
     ? `<button class="btn sm primary" type="button" disabled>${esc(bi('Crear un sorteo', 'Create a giveaway'))}</button>`
-    : `<a class="btn sm primary" href="#/sorteos/nuevo">${esc(bi('Crear un sorteo', 'Create a giveaway'))}</a>`) : ''}</div>
+    : `<a class="btn sm primary" href="/panel/sorteos/nuevo">${esc(bi('Crear un sorteo', 'Create a giveaway'))}</a>`) : ''}</div>
     ${d.can_manage && abiertos >= 3 ? `<p class="muted">${esc(bi('Puedes tener 3 sorteos abiertos a la vez.', 'You can have 3 open giveaways at a time.'))}</p>` : ''}
     ${helpBox(bi('¿Cómo funciona?', 'How does it work?'), bi(
       `<p>Sorteas algo tuyo (una manicura, una cena para dos…) entre quien participe en la app o en klendar.app. <b>Participar es gratis y sin compra</b>; lo único que puedes pedir es tener tu negocio en favoritos.</p>
@@ -128,7 +128,7 @@ PAGES.sorteos = async (v, param) => {
       `<p>You give away something of yours (a manicure, dinner for two…) among the people who enter in the app or on klendar.app. <b>Entering is free, no purchase needed</b>; the only thing you can ask is to have your business in their favourites.</p>
       <p>When it ends, Klendar draws the winners with a verifiable system: anyone can check the result. The winner accepts the prize in the app and you hand it over at your venue and mark it as handed over.</p>
       <p>You run the giveaway: the rules are generated with your details (company name and tax ID) and you commit to handing over the prize. Up to 3 open giveaways at a time.</p>`))}
-    ${lista.length ? lista.map((g) => `<a class="card tarjeta-sellos sorteo-item" href="#/sorteos/${esc(g.id)}">
+    ${lista.length ? lista.map((g) => `<a class="card tarjeta-sellos sorteo-item" href="/panel/sorteos/${esc(g.id)}">
         <div class="ts-top"><h2>${esc(g.prize)}</h2><span class="tag ${sorteoAbierto(g) ? 'st-active' : 'off'}">${esc(sorteoEstado(g))}</span><span class="ms" aria-hidden="true">chevron_right</span></div>
         <p class="muted">${esc(sorteoCifras(g.stats))}</p>
       </a>`).join('')
@@ -181,11 +181,11 @@ async function sorteoDetalle(v, d, g) {
   const acciones = [
     `<a class="btn" href="${esc(sorteoPub(g.id))}" target="_blank" rel="noopener">${esc(bi('Ver la página', 'See the page'))}</a>`,
     sorteoAbierto(g) ? `<a class="btn" href="${esc(sorteoHistoria(g.id))}" target="_blank" rel="noopener">${esc(KSp.t(sorteoL()).shareStories)}</a>` : '',
-    d.can_manage && g.editable ? `<a class="btn" href="#/sorteos/${esc(g.id)}?editar=1">${esc(bi('Editar', 'Edit'))}</a>` : '',
+    d.can_manage && g.editable ? `<a class="btn" href="/panel/sorteos/${esc(g.id)}?editar=1">${esc(bi('Editar', 'Edit'))}</a>` : '',
     d.can_manage && g.status === 'active' ? `<button type="button" class="btn bad" id="sorteo-cancela">${esc(bi('Cancelar el sorteo', 'Cancel the giveaway'))}</button>` : '',
   ].filter(Boolean);
   v.innerHTML = `
-    <div class="page-head"><h1>${esc(g.prize)}</h1><span class="spacer"></span><a class="btn sm ghost" href="#/sorteos">← ${esc(KSp.t(sorteoL()).title)}</a></div>
+    <div class="page-head"><h1>${esc(g.prize)}</h1><span class="spacer"></span><a class="btn sm ghost" href="/panel/sorteos">← ${esc(KSp.t(sorteoL()).title)}</a></div>
     <p><span class="tag ${sorteoAbierto(g) ? 'st-active' : 'off'}">${esc(sorteoEstado(g))}</span></p>
     ${g.status === 'cancelled' && g.cancel_reason ? `<p class="muted">${esc(g.cancel_reason)}</p>` : ''}
     ${g.status === 'removed' ? `<p class="muted">${esc(g.removed_reason
@@ -233,7 +233,7 @@ async function sorteoDetalle(v, d, g) {
         try {
           await sorteoRpc('cancel_giveaway', { p_id: g.id, p_reason: r.motivo || null });
           toast(bi('Sorteo cancelado', 'Giveaway cancelled'));
-          location.hash = '#/sorteos';
+          go('/panel/sorteos');
           return;
         } catch (e) { aviso = e.message; }
       }
@@ -243,8 +243,8 @@ async function sorteoDetalle(v, d, g) {
 
 /** Crear (`g` null) o editar un sorteo (solo sin participantes). */
 async function sorteoForm(v, d, g) {
-  if (!d.can_manage) { location.hash = '#/sorteos'; return; }
-  if (g && !g.editable) { location.hash = `#/sorteos/${g.id}`; return; }
+  if (!d.can_manage) { go('/panel/sorteos'); return; }
+  if (g && !g.editable) { go(`/panel/sorteos/${g.id}`); return; }
   const en = sorteoL() === 'en';
   const fin = g ? toLocalInput(g.ends_at) : toLocalInput(enDiasNegocio(7, 21).toISOString());
   const min = toLocalInput(new Date(Date.now() + 61 * 60e3).toISOString());
@@ -253,7 +253,7 @@ async function sorteoForm(v, d, g) {
   const sup = (w) => Math.min(10, Math.max(2, w));
   v.innerHTML = `
     <div class="page-head"><h1>${esc(g ? bi('Editar el sorteo', 'Edit the giveaway') : bi('Crear un sorteo', 'Create a giveaway'))}</h1><span class="spacer"></span>
-      <a class="btn sm ghost" href="${g ? `#/sorteos/${esc(g.id)}` : '#/sorteos'}">← ${esc(KSp.t(sorteoL()).title)}</a></div>
+      <a class="btn sm ghost" href="${g ? `/panel/sorteos/${esc(g.id)}` : '/panel/sorteos'}">← ${esc(KSp.t(sorteoL()).title)}</a></div>
     <form class="card form sorteo-form" id="f-sorteo" novalidate>
       <label class="f"><span>${esc(bi('Premio', 'Prize'))}</span><input name="prize" maxlength="90" required placeholder="${esc(bi('Ej.: Una manicura completa', 'E.g. A full manicure'))}" value="${esc(g?.prize || '')}"></label>
       <label class="f"><span>${esc(bi('Qué incluye (opcional)', "What's included (optional)"))}</span><textarea name="desc" rows="3" maxlength="600">${esc(g?.description || '')}</textarea></label>
@@ -326,7 +326,7 @@ async function sorteoForm(v, d, g) {
       GUARDA = null;
       toast(g ? bi('Cambios guardados', 'Changes saved') : bi('Sorteo publicado', 'Giveaway published'));
       if (r.adults_only && !f.adults.checked) toast(bi('Lo hemos marcado como solo para mayores de 18.', "We've marked it as 18+ only."));
-      location.hash = `#/sorteos/${r.id}`;
+      go(`/panel/sorteos/${r.id}`);
     } catch (e2) { err.textContent = e2.message; }
   };
 }

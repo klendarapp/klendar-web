@@ -201,8 +201,11 @@ async function pruebaDireccion(nav, motor) {
   // rutaInterna: solo direcciones propias y sin datos.
   const casos = await p.evaluate(() => ({
     panel: rutaInterna('/panel'),
-    panelRuta: rutaInterna('/panel#/validar?code=abc12345&biz=0e7717e0-0000-4000-8000-0000000097d4&x=1'),
+    panelRuta: rutaInterna('/panel/validar?code=abc12345&biz=0e7717e0-0000-4000-8000-0000000097d4&x=1'),
     panelAlta: rutaInterna('/panel?alta=1'),
+    // Con `#` (antes del 24-11): el `#` ya no lleva a ninguna pantalla (§4zzz-panellimpio).
+    panelHash: rutaInterna('/panel#/validar?code=abc12345'),
+    panelBarra: rutaInterna('/panel/sellos/x/editar/?biz=0e7717e0-0000-4000-8000-0000000097d4'),
     cuenta: rutaInterna('/cuenta'),
     cuentaRuta: rutaInterna('/cuenta/ajustes/notificaciones?lang=en&x=1'),
     fuera: rutaInterna('https://evil.example/panel/'),
@@ -219,7 +222,8 @@ async function pruebaDireccion(nav, motor) {
     normal: urlCuenta('/cuenta/codigo/x.y.z?rp=1'),
   }));
   ok(casos.panel === '/panel' && casos.panelAlta === '/panel?alta=1' && casos.cuenta === '/cuenta', `${motor} rutaInterna: las propias`, JSON.stringify(casos));
-  ok(casos.panelRuta === '/panel#/validar?biz=0e7717e0-0000-4000-8000-0000000097d4&code=abc12345', `${motor} rutaInterna: el panel con su ruta y sin lo demás`, casos.panelRuta);
+  ok(casos.panelRuta === '/panel/validar?biz=0e7717e0-0000-4000-8000-0000000097d4&code=abc12345', `${motor} rutaInterna: el panel con su ruta y sin lo demás`, casos.panelRuta);
+  ok(casos.panelHash === '/panel' && casos.panelBarra === '/panel/sellos/x/editar?biz=0e7717e0-0000-4000-8000-0000000097d4', `${motor} rutaInterna: el panel sin almohadilla ni barra final`, JSON.stringify([casos.panelHash, casos.panelBarra]));
   ok(casos.cuentaRuta === '/cuenta/ajustes/notificaciones?lang=en', `${motor} rutaInterna: la cuenta con su ruta`, casos.cuentaRuta);
   ok(![casos.fuera, casos.dobles, casos.subir, casos.subir2, casos.vieja, casos.admin].some(Boolean), `${motor} rutaInterna: nada de fuera ni /app/`, JSON.stringify(casos));
   ok([casos.seguro1, casos.seguro2, casos.seguro4, casos.seguro5].every((x) => /^\/cuenta(\?|$)/.test(x)) && casos.seguro3.startsWith('/cuenta'), `${motor} urlCuenta: nunca sale de /cuenta`, JSON.stringify(casos));
@@ -396,16 +400,16 @@ async function pruebaAcceso(nav, motor) {
 }
 
 // ── Propietario que quiere eliminar su cuenta (revisión 9-11, I6) ─────────
-// «Ir a mi negocio» lleva a «Dar de baja el negocio» del panel (`/panel#/baja?biz=`),
-// no a `/panel//cuenta/baja` (el 5-11 se cambió `#/` por `/cuenta` también aquí).
+// «Ir a mi negocio» lleva a «Dar de baja el negocio» del panel (`/panel/baja?biz=`),
+// no a `/panel//cuenta/baja` (el 5-11 se cambió `#/` por `/cuenta` también aquí; desde el 24-11, sin `#`: §4zzz-panellimpio).
 async function pruebaPropietario(nav, motor) {
   const BIZ = 'b0000000-0000-4000-8000-0000000000b1';
   for (const [negocios, esperado, que] of [
-    [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }], `/panel#/baja?biz=${BIZ}`, 'un negocio'],
+    [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }], `/panel/baja?biz=${BIZ}`, 'un negocio'],
     [[{ id: BIZ, name: 'Bar Uno', role: 'owner' }, { id: `${BIZ.slice(0, -1)}2`, name: 'Bar Dos', role: 'owner' }], '/panel', 'dos negocios'],
   ]) {
     const { ctx, p, estado } = await abre(nav, { sesion: true, negocios });
-    // El panel, una página vacía: así la dirección (con su `#/`) se queda y se puede leer.
+    // El panel, una página vacía: así la dirección (con su ruta) se queda y se puede leer.
     await p.route('**/panel/**', (r) => (r.request().isNavigationRequest()
       ? r.fulfill({ status: 200, contentType: 'text/html', body: '<!doctype html><title>panel</title>' })
       : r.continue()));
@@ -417,7 +421,7 @@ async function pruebaPropietario(nav, motor) {
     await p.click('dialog[open] button[value=si]');
     await p.waitForURL(/\/panel\//).catch(() => {});
     const u = new URL(p.url());
-    ok(`${u.pathname}${u.hash}` === esperado, `${motor} eliminar la cuenta con ${que}: «Ir a mi negocio» a ${esperado}`, p.url());
+    ok(`${u.pathname}${u.search}` === esperado, `${motor} eliminar la cuenta con ${que}: «Ir a mi negocio» a ${esperado}`, p.url());
     ok(!estado.rpc.some(([fn]) => fn === 'delete_my_account'), `${motor} eliminar la cuenta con ${que}: no se borra nada`);
     await ctx.close();
   }

@@ -1,7 +1,7 @@
 // Prueba de «Te aviso cuando esté listo» en la web local, con un Supabase de
 // mentira (no toca dev ni manda nada):
 //
-//  1. Panel › #/pedidos: «3 preparando · 1 listo», los avisados hoy y la
+//  1. Panel › /panel/pedidos: «3 preparando · 1 listo», los avisados hoy y la
 //     espera media; «Listo» → `order_set_ready` y «Avisado el 24»;
 //     «Recogido»; «Quitar» con su pregunta; «Terminar por hoy» con su
 //     pregunta → «Has terminado por hoy» y «Volver a abrir»; sin
@@ -158,7 +158,7 @@ const sinScroll = (p) => p.evaluate(() => document.documentElement.scrollWidth -
 
 async function pedidos(nav, nombre, t, vp) {
   const { ctx, p, estado, errores } = await contextoPanel(nav, vp);
-  await p.goto(`${BASE}/panel#/pedidos`);
+  await p.goto(`${BASE}/panel/pedidos`);
   await p.waitForSelector('.listo-fila');
   let txt = await vista(p);
   ok(/Pedidos de hoy/.test(txt) && /3 preparando · 1 listo/.test(txt), `${nombre}/${t} pedidos: «3 preparando · 1 listo»`);
@@ -205,7 +205,7 @@ async function pedidos(nav, nombre, t, vp) {
 
 async function apagado(nav, nombre, t, vp) {
   let { ctx, p, estado, errores } = await contextoPanel(nav, vp, { enabled: false });
-  await p.goto(`${BASE}/panel#/pedidos`);
+  await p.goto(`${BASE}/panel/pedidos`);
   await p.waitForSelector('[data-listo="activar"]');
   ok(/Te aviso cuando esté listo/.test(await vista(p)) && /Tú solo tocas «Listo»\./.test(await vista(p)), `${nombre}/${t} apagado: la explicación`);
   await p.screenshot({ path: `${OUT}/panel-pedidos-apagado-${nombre}-${t}.png`, fullPage: true });
@@ -215,12 +215,12 @@ async function apagado(nav, nombre, t, vp) {
   ok(errores.length === 0, `${nombre}/${t} apagado: sin errores de JavaScript (${errores.join(' | ')})`);
   await ctx.close();
   ({ ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'staff', enabled: false }));
-  await p.goto(`${BASE}/panel#/pedidos`);
+  await p.goto(`${BASE}/panel/pedidos`);
   await p.waitForSelector('.vacio');
   ok(/El avisador de pedidos está apagado/.test(await vista(p)) && await p.locator('[data-listo="activar"]').count() === 0, `${nombre}/${t} empleado: apagado, sin «Activar»`);
   await ctx.close();
   ({ ctx, p, estado, errores } = await contextoPanel(nav, vp, { rol: 'staff' }));
-  await p.goto(`${BASE}/panel#/pedidos`);
+  await p.goto(`${BASE}/panel/pedidos`);
   await p.waitForSelector('.listo-fila');
   ok(await p.locator('[data-listo="terminar"]').count() === 0 && await p.locator('[data-listo="codigo"]').count() === 0
     && await p.locator('button[data-listo-ya]').count() === 3, `${nombre}/${t} empleado: marca «Listo», sin terminar ni cambiar el código`);
@@ -231,18 +231,18 @@ async function apagado(nav, nombre, t, vp) {
 async function resto(nav, nombre, t, vp) {
   const { ctx, p, errores } = await contextoPanel(nav, vp);
   // Negocio › En el local: la baldosa (antes, la tarjeta de «Más herramientas»).
-  await p.goto(`${BASE}/panel#/negocio`);
+  await p.goto(`${BASE}/panel/negocio`);
   await p.waitForSelector('.neg-tiles');
   let txt = await vista(p);
-  ok(/Pedido listo/.test(txt) && await p.locator('[data-neg="orders"][href="#/pedidos"]').count() === 1, `${nombre}/${t} Negocio: la baldosa «Pedido listo» lleva a #/pedidos`);
+  ok(/Pedido listo/.test(txt) && await p.locator('[data-neg="orders"][href="/panel/pedidos"]').count() === 1, `${nombre}/${t} Negocio: la baldosa «Pedido listo» lleva a /panel/pedidos`);
   ok(/Te aviso cuando esté listo/.test(await p.locator('[data-neg="orders"]').getAttribute('aria-label')), `${nombre}/${t} Negocio: el lector oye «Te aviso cuando esté listo»`);
-  await p.goto(`${BASE}/panel#/resumen`);
+  await p.goto(`${BASE}/panel/hoy`);
   await p.waitForSelector('#listoCaja .fila-inicio');
   ok(/Pedidos de hoy · 3 preparando/.test(await p.locator('#listoCaja').innerText()), `${nombre}/${t} resumen: «Pedidos de hoy · 3 preparando»`);
-  await p.goto(`${BASE}/panel#/validar`);
-  await p.waitForSelector('#listoEntrada a[href="#/pedidos"]');
+  await p.goto(`${BASE}/panel/validar`);
+  await p.waitForSelector('#listoEntrada a[href="/panel/pedidos"]');
   ok(true, `${nombre}/${t} validar: el botón «Pedidos de hoy»`);
-  await p.goto(`${BASE}/panel#/informe`);
+  await p.goto(`${BASE}/panel/informe`);
   await p.waitForSelector('#informeListo details.plegable');
   const d = p.locator('#informeListo details');
   ok(/Te aviso cuando esté listo/.test(await d.locator('summary').innerText()) && /Pedidos avisados: 41 hoy · 812 este mes/.test(await d.locator('summary').innerText()), `${nombre}/${t} cifras: plegable con su resumen`);

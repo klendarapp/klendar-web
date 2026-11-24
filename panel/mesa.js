@@ -2,7 +2,7 @@
  * Tanda D, migraciones 20261230100001–02 de la app. Lo mismo que la app
  * (`daily_menu_sheet.dart`, `table_qr_screen.dart`):
  *
- * - #/menu-del-dia: la foto de la pizarra, el precio, una línea opcional y
+ * - /panel/menu-del-dia: la foto de la pizarra, el precio, una línea opcional y
  *   para qué es (comida, cena o las dos); sale como «Menú de hoy · 12,50 €»
  *   hasta que cierra la cocina (o el local) y al día siguiente desaparece
  *   solo (sin horario ese día: comida hasta las 16:00, cena hasta las
@@ -10,7 +10,7 @@
  *   Si hoy sale cerrado (`closed_today`, migración 20261232100000): «¿Abres
  *   hoy?» arriba, con «Sí, abro hoy» (horario o «Días cerrados») y «Seguir
  *   igualmente».
- * - #/wifi-clientes: red y contraseña (opcionales) y los carteles de mesa
+ * - /panel/wifi-clientes: red y contraseña (opcionales) y los carteles de mesa
  *   (`/cartel/mesa/<código>`, cuatro por folio, numerados si se quiere),
  *   los escaneos del mes y «Cambiar el enlace».
  *
@@ -103,7 +103,7 @@ PAGES['menu-del-dia'] = async (v) => {
     ? bi('Hoy está en «Días cerrados»: mientras siga así, no se ve nada de tu local.', 'Today is in “Closed days”: while it stays that way, nothing from your place is shown.')
     : bi('Tu horario no tiene horas hoy: el menú se publica igual, pero la ficha dice «Cerrado».', 'Your opening hours have nothing for today: the menu is posted anyway, but your page says “Closed”.'))}</p>
       <div class="acciones-fila" style="display:flex;gap:8px;flex-wrap:wrap">
-        <a class="btn" href="${s.closed_today === 'closure' ? '#/cerrados' : '#/ficha/horario'}">${esc(bi('Sí, abro hoy', 'Yes, I’m open today'))}</a>
+        <a class="btn" href="${s.closed_today === 'closure' ? '/panel/cerrados' : '/panel/ficha/horario'}">${esc(bi('Sí, abro hoy', 'Yes, I’m open today'))}</a>
         <button class="btn" type="button" id="mesaSigue">${esc(bi('Seguir igualmente', 'Continue anyway'))}</button>
       </div>
     </div>` : ''}

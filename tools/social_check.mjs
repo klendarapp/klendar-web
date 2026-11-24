@@ -4,7 +4,7 @@
 //  1. Ficha de un amigo (`/cuenta/amigos/<id>`): el ⋮ con «Quitar de tus amigos» y
 //     «Bloquear», cada uno con su confirmación y, hecho, a la lista. Bloquear
 //     con el tope lleno dice el texto de la app (`blockTooMany`).
-//  2. Tus listas de RRPP (`#/rrpp/<negocio>`): cuándo funciona la lista, el
+//  2. Tus listas de RRPP (`/panel/rrpp/<negocio>`): cuándo funciona la lista, el
 //     estado de cada enlace (fuera de horario, caducidad, visitas) y «Tus
 //     ofertas» vacía.
 //  3. Dejar un sorteo, dejar de seguir a un artista o a un equipo: piden
@@ -176,7 +176,7 @@ async function rrppPanel(nav, nombre, t, vp) {
     set_promoter_link_schedule: { ok: true },
     update_promoter_link: { ok: true },
   }));
-  await p.goto(`${BASE}/panel#/rrpp/${PROMO}`, { waitUntil: 'networkidle' });
+  await p.goto(`${BASE}/panel/rrpp/${PROMO}`, { waitUntil: 'networkidle' });
   await p.waitForSelector('[data-rrpp-editar-enlace]');
   ok(await p.locator('[data-rrpp-compartir]').count() === 1, `${nombre}/${t} panel RRPP: «Compartir enlace»`);
   await p.screenshot({ path: `${OUT}/web-panel-rrpp-${nombre}-${t}.png`, fullPage: true });

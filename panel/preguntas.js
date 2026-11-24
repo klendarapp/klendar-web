@@ -1,4 +1,4 @@
-/* Panel del negocio: «Preguntas» (#/preguntas; «Pregúntale al local»,
+/* Panel del negocio: «Preguntas» (/panel/preguntas; «Pregúntale al local»,
  * migración 20261237100000 de la app). Lo mismo que Mi negocio › Tu negocio
  * › «Preguntas» en la app.
  *

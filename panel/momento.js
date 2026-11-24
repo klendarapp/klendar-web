@@ -94,7 +94,7 @@ PAGES.momento = async (v) => {
   const radio = (k, texto, ok, nota) => `<label class="opcion"><input type="radio" name="kind" value="${k}" ${k === primero ? 'checked' : ''} ${ok ? '' : 'disabled'}><span>${esc(texto)}${nota ? `<br><small class="muted">${esc(nota)}</small>` : ''}</span></label>`;
   v.innerHTML = `
     <div class="page-head"><h1>Dar en el momento</h1></div>
-    <p class="muted"><a class="link" href="#/validar">← Validar códigos</a></p>
+    <p class="muted"><a class="link" href="/panel/validar">← Validar códigos</a></p>
     <form class="card momento-form" id="momentoForm">
       <fieldset class="f full"><legend>¿Qué das?</legend>
         ${bloq ? `<p class="hint">${esc('Con el negocio parado solo puedes dar usos de bonos que la gente ya tiene: los sellos nuevos y «algo del momento» vuelven cuando se reactive.')}</p>` : ''}

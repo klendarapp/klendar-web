@@ -22,7 +22,7 @@ Web pública de Klendar: landing, páginas legales y páginas de enlace (`/o/<id
 ## Direcciones sin barra al final (desde el 2026-11-11)
 
 Iván: todas las direcciones van **sin barra final** (`/privacidad`, `/en/privacy`,
-`/para-negocios`, `/cuenta/entrar`, `/panel#/validar`); solo la portada es `/`.
+`/para-negocios`, `/cuenta/entrar`, `/panel/validar`); solo la portada es `/`.
 
 - Cada página es un fichero `x.html` (no `x/index.html`): `privacidad.html`,
   `en/privacy.html`, `panel.html`… Cloudflare Pages sirve `x.html` en `/x`.
