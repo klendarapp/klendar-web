@@ -187,7 +187,7 @@ const negDelicado = (titulo) => `<section class="neg-grupo neg-delicado" id="g-d
 const negFinal = (c) => `${c.owner ? '' : `<div class="card neg-salir"><h2>Salir del equipo</h2>
       <p class="muted" style="margin:0 0 10px">Dejarás de ver este panel y de validar sus códigos. Avisaremos al propietario.</p>
       <button class="btn bad ghost" type="button" id="salir-equipo">Salir del equipo</button></div>`}
-    <p class="neg-sesion"><span class="muted">${esc(bi('Sesión', 'Signed in as'))}</span> <b translate="no">${esc(ME?.email || ME?.phone || '')}</b>
+    <p class="neg-sesion"><span class="muted">${esc(bi('Sesión', 'Logged in as'))}</span> <b translate="no">${esc(ME?.email || ME?.phone || '')}</b>
       <button type="button" class="linkbtn" id="negLogout">${esc(bi('Cerrar sesión', 'Log out'))}</button></p>`;
 
 /** La cabecera: logo, nombre, sellos y dirección y, a quien gestiona,
