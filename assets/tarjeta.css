@@ -133,6 +133,19 @@
 .tj-org { font-size: 12px; color: var(--ink-2); margin-top: -4px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tj--bold .tj-org { color: inherit; opacity: .8; }
 .tj--poster .tj-org { color: rgba(255,255,255,.82); }
+/* En las rejillas de la web pública, la tarjeta entera dentro de su marco,
+   como en «Tus publicaciones» del panel (`.pub-item .tj`, §4zzz-coherencia1):
+   la foto arriba y el recuadro del texto dentro, sin colgar de la foto
+   (aprobado por Iván el 24-11). Sin foto de verdad, en el móvil, el hueco más
+   bajo: 16:9 en vez de 4:5 (con foto, siempre 4:5, como se sube). */
+.tjs .tj:not(.tj--pantalla) { border: 1px solid var(--glass-border); border-radius: 26px; background: var(--elevated); padding-bottom: 10px; }
+.tjs .tj:not(.tj--pantalla) .tj-media { border-radius: 25px 25px 0 0; }
+.tjs .tj:not(.tj--pantalla) .tj-panel { box-shadow: none; }
+.tjs .tj:not(.tj--pantalla) .tj-enlace::after { border-radius: 25px; }
+@media (max-width: 600px) {
+  .tjs .tj:not(.tj--pantalla) .tj-media:has(> .sin-foto, > .tj-arte, > .tj-ph) { aspect-ratio: 16 / 9; }
+  .tjs .tj:not(.tj--pantalla) .tj-media:has(> .tj-arte) .tj-arte svg { width: 26%; transform: translateY(-14%); }
+}
 
 /* La forma «fila»: la lista de un día del calendario (la agenda de la app). */
 .tj-filas { display: grid; gap: 10px; }
@@ -148,7 +161,7 @@
 .tj-hora { color: var(--ink); font-weight: 800; font-size: 15px; }
 /* La hora, en coral solo si es oferta (flash o con descuento), como la app. */
 .tj-hora.tj-hora-oferta { color: var(--accent-text); }
-.tj-rayo { color: var(--accent-text); display: inline-flex; }
+.tj-oferta-ic { color: var(--accent-text); display: inline-flex; }
 .tj-fila .tj-precio { font-size: 13px; padding: 2px 9px; }
 :is(.pub, .tjv) .tj-fila .tj-titulo { font-size: 16px; -webkit-line-clamp: 2; }
 .tj-fila .tj-negocio { font-weight: 600; color: var(--ink-2); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

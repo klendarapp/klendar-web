@@ -115,7 +115,7 @@ async function herrCrearHtml() {
   // Una entidad publica eventos y novedades, gratis (la base tampoco le deja
   // crear una oferta; §4zzz-propent).
   const arriba = [
-    ent ? null : ['/panel/publicaciones/nueva-flash', 'bolt', bi('Oferta', 'Offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.')],
+    ent ? null : ['/panel/publicaciones/nueva-flash', 'local_offer', bi('Oferta', 'Offer'), bi('De unas horas a varios días, o cada semana.', 'From a few hours to several days, or every week.')],
     ent
       ? ['/panel/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora, gratis. Puede llevar un enlace para apuntarse.', 'Has a date and time, free. Can include a sign-up link.')]
       : ['/panel/publicaciones/nuevo-evento', 'event', bi('Evento', 'Event'), bi('Con fecha y hora. Puede tener precio y enlace para entradas.', 'With a date and time. It can have a price and a ticket link.')],
@@ -135,10 +135,10 @@ async function herrCrearHtml() {
     ['/panel/mensajes', 'campaign', bi('Avisar a mis clientes', 'Message my customers'), bi('Para contar algo a tus favoritos y clientes con una notificación. Uno por semana.', 'To tell your favourites and customers something with a notification. One a week.')],
   ];
   const vender = ent ? [] : [
-    ['/panel/bonos/nuevo', 'redeem', bi('Bono', 'Pass'), bi('Para vender en tu local bonos de varios usos (5 cafés, 10 clases…). Cada uso se descuenta con el QR del cliente.', 'To sell multi-use passes at your venue (5 coffees, 10 classes…). Each use is taken off with the customer’s QR.')],
+    ['/panel/bonos/nuevo', 'confirmation_number', bi('Bono', 'Pass'), bi('Para vender en tu local bonos de varios usos (5 cafés, 10 clases…). Cada uso se descuenta con el QR del cliente.', 'To sell multi-use passes at your venue (5 coffees, 10 classes…). Each use is taken off with the customer’s QR.')],
     ['/panel/sellos/nueva', 'loyalty', bi('Tarjeta de sellos', 'Stamp card'), bi('Para premiar a quien repite: cada canje (o cada visita con el QR del local) suma un sello y al llegar a la meta hay premio.', 'To reward people who come back: each redemption (or visit with the venue QR) adds a stamp and reaching the goal earns a reward.')],
     conEncargos ? ['/panel/encargos-cosas', 'encargo', bi('Algo para encargar', 'Something to pre-order'), bi('Tus clientes encargan desde tu ficha (una tarta, una bandeja, un ramo) y lo recogen y pagan aquí.', 'Your customers order from your page (a cake, a platter, a bouquet) and pick it up and pay here.')] : null,
-    conSorteos ? ['/panel/sorteos/nuevo', 'sorteo', bi('Sorteo', 'Giveaway'), bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.')] : null,
+    conSorteos ? ['/panel/sorteos/nuevo', 'redeem', bi('Sorteo', 'Giveaway'), bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.')] : null,
   ].filter(Boolean);
   // Plegado, qué hay dentro (los tres primeros nombres).
   const dentro = [...delDia, ...tuyos, ...vender].map((x) => x[2]);

@@ -36,7 +36,7 @@ export async function promoterLinkPage(rawCode, lang) {
   const sp = supabasePublic();
   // El script del navegador: la sesión (apuntarse) y, si el servidor no ha
   // podido, abrir el enlace desde aquí.
-  const script = (pendiente) => `${pendiente ? '<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/tarjeta.js?v=20261124sinfoto" defer></script>\n' : ''}<script src="/assets/rrpp-enlace.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
+  const script = (pendiente) => `${pendiente ? '<script src="/assets/zona.js?v=2" defer></script>\n<script src="/assets/tarjeta.js?v=20261124marco" defer></script>\n' : ''}<script src="/assets/rrpp-enlace.js?v=20261111sinbarra" defer data-lang="${en ? 'en' : 'es'}" data-url="${esc(sp.url)}" data-key="${esc(sp.key)}"></script>`;
   const pagina = ({ body, title, description, status = 200, image }) => privada(publicPage({
     // Los avisos llevan punto; en la pestaña, «Este enlace ha caducado · Klendar».
     lang, path, body, title: title.replace(/\.$/, ''), description, image, head: HEAD, contador: false, privada: true,

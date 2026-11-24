@@ -73,7 +73,7 @@ function negHerramientas(c) {
     ['loyalty', 'que-vuelvan', 'favorite', bi('Fidelizar', 'Loyalty'), null, '/panel/fidelizar', !c.ent && c.staff],
     ['stamps', 'que-vuelvan', 'approval', bi('Sellos', 'Stamps'), bi('Tarjetas de sellos', 'Stamp cards'), '/panel/sellos', !c.ent],
     ['passes', 'que-vuelvan', 'confirmation_number', bi('Bonos', 'Passes'), null, '/panel/bonos', !c.ent],
-    ['coupon', 'que-vuelvan', 'local_offer', bi('Cupón', 'Coupon'), bi('Cupón para la próxima visita', 'Coupon for the next visit'), '/panel/cupon', !c.ent],
+    ['coupon', 'que-vuelvan', 'redeem', bi('Cupón', 'Coupon'), bi('Cupón para la próxima visita', 'Coupon for the next visit'), '/panel/cupon', !c.ent],
     ['birthday', 'que-vuelvan', 'cake', bi('Cumpleaños', 'Birthday'), bi('Regalo de cumpleaños', 'Birthday gift'), '/panel/cumpleanos', !c.ent],
     ['thanks', 'que-vuelvan', 'volunteer_activism', bi('Agradecer', 'Thank'), bi('Agradecer a los habituales', 'Thank your regulars'), '/panel/habituales', !c.ent && c.edit],
     ['message', 'que-vuelvan', 'campaign', bi('Avisar', 'Notify'), bi('Avisar a mis clientes', 'Message my customers'), '/panel/mensajes', !c.ent && c.edit],

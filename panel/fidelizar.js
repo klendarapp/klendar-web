@@ -110,7 +110,7 @@ PAGES.fidelizar = async (v) => {
     href: '/panel/sellos',
   })}
       ${fielTarjeta({
-    icono: 'local_offer',
+    icono: 'redeem',
     titulo: bi('Cupón para la próxima visita', 'Coupon for the next visit'),
     frase: bi('Para que vuelvan: al validar un canje, la persona recibe un cupón para su próxima visita.', 'To bring them back: when you validate a redemption, the person gets a coupon for their next visit.'),
     estado: c.enabled && regalo ? bi(`Activado: ${regalo} · ${fielDias(c.valid_days)}`, `On: ${regalo} · ${fielDias(c.valid_days)}`) : apagado,
@@ -169,7 +169,7 @@ PAGES.fidelizar = async (v) => {
     href: '/panel/habituales',
   })}
       ${fielTarjeta({
-    icono: 'redeem',
+    icono: 'confirmation_number',
     titulo: bi('Bonos', 'Passes'),
     frase: bi('Para vender en tu local bonos de varios usos (5 cafés, 10 clases…). Cada uso se descuenta con el QR del cliente.', 'To sell multi-use passes at your venue (5 coffees, 10 classes…). Each use is taken off with the customer’s QR.'),
     estado: o ? (bonos ? bi(bonos === 1 ? '1 bono a la venta' : `${bonos} bonos a la venta`, bonos === 1 ? '1 pass on sale' : `${bonos} passes on sale`) : apagado) : '',
@@ -178,7 +178,7 @@ PAGES.fidelizar = async (v) => {
     href: '/panel/bonos',
   })}
       ${conSorteos ? fielTarjeta({
-    icono: 'sorteo',
+    icono: 'redeem',
     titulo: bi('Sorteos', 'Giveaways'),
     frase: bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.'),
     estado: o ? (sorteos ? bi(sorteos === 1 ? '1 sorteo abierto' : `${sorteos} sorteos abiertos`, sorteos === 1 ? '1 open giveaway' : `${sorteos} open giveaways`) : apagado) : '',

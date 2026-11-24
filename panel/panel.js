@@ -1365,8 +1365,7 @@ const SVG = {
   // RRPP (record_voice_over).
   // «Poner en la tele» (tv; no está en la fuente recortada).
   tele: 'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12z',
-  // Sorteos (confirmation_number) y Grupos y empresas (groups).
-  sorteo: 'M22 10V6c0-1.11-.9-2-2-2H4c-1.1 0-1.99.89-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-2-1.46c-1.19.69-2 1.99-2 3.46s.81 2.77 2 3.46V18H4v-2.54c1.19-.69 2-1.99 2-3.46 0-1.48-.8-2.77-1.99-3.46L4 6h16v2.54zM11 15h2v2h-2zm0-4h2v2h-2zm0-4h2v2h-2z',
+  // Grupos y empresas (groups).
   grupos: 'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z',
   rrpp: 'M9 13c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0-6c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 8c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm6 5H3v-.99C3.2 18.29 6.3 17 9 17s5.8 1.29 6 2v1zM15.08 7.05c.84 1.18.84 2.71 0 3.89l1.68 1.69c2.02-2.02 2.02-5.07 0-7.27l-1.68 1.69zM20.07 2l-1.63 1.63c2.77 3.02 2.77 7.56 0 10.74L20.07 16c3.9-3.89 3.91-9.95 0-14z',
   // «Cola virtual» (format_list_numbered).
@@ -2839,7 +2838,7 @@ const tarjetasPublicaciones = (rows) => `<div class="pubs">${rows.map((o) => `
 /** La lista de siempre (más densa), con las mismas acciones. */
 const tablaPublicaciones = (rows) => table({
   cols: [
-    { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(KFotos.mini(primeraFoto(o.images)))}" data-original="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : ((o.images || []).some(esVideo) || !globalThis.KlendarSinFoto ? `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'bolt' : 'event')}</span>` : KlendarSinFoto.html({ categoria: o.category_id, clase: 'ph' }))}<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
+    { h: 'Publicación', r: (o) => `${primeraFoto(o.images) ? `<img class="thumb" src="${esc(KFotos.mini(primeraFoto(o.images)))}" data-original="${esc(primeraFoto(o.images))}" alt="" loading="lazy">` : ((o.images || []).some(esVideo) || !globalThis.KlendarSinFoto ? `<span class="ph">${ms((o.images || []).some(esVideo) ? 'play_circle' : o.kind === 'flash_offer' ? 'local_offer' : 'event')}</span>` : KlendarSinFoto.html({ categoria: o.category_id, clase: 'ph' }))}<b class="title" translate="no">${esc(o.title)}</b><span class="sub">${esc(I18N.t(LABELS[o.kind]))} · ${fmtDate(o.kind === 'flash_offer' ? o.redeem_start_at : o.event_at)}${etiquetaAudiencia(o)}</span>` },
     { h: 'Estado', r: (o) => etiquetaEstado(o) },
     { h: 'Plazas', r: (o) => o.max_redemptions == null ? '—' : `<span data-plazas="${esc(o.id)}">${plazasTxt(o, plazasOcupadas(o))}</span>` },
     { h: 'Vistas', num: true, r: (o) => fmtNum(o.views) },
@@ -4780,7 +4779,7 @@ PAGES.calendario = async (v, param) => {
     const delDia = porDia.get(dia) || [];
     const proximo = delDia.length ? null : await siguienteDe(dia);
     const crear = gestiona() ? `<div class="actions cal-crear">
-        ${esEntidad() ? '' : `<a class="btn sm" href="/panel/publicaciones/nueva-flash?dia=${dia}">${ms('bolt')}${esc(I18N.t('Oferta este día'))}</a>`}
+        ${esEntidad() ? '' : `<a class="btn sm" href="/panel/publicaciones/nueva-flash?dia=${dia}">${ms('local_offer')}${esc(I18N.t('Oferta este día'))}</a>`}
         <a class="btn sm" href="/panel/publicaciones/nuevo-evento?dia=${dia}">${ms('event')}${esc(I18N.t('Evento este día'))}</a></div>` : '';
     $('#cal', v).innerHTML = `
       <section class="cal-mes" aria-labelledby="calTitulo">
@@ -5105,8 +5104,8 @@ function tarjetaCodigo(r, estado) {
   const titulo = r.kind === 'stamp_reward' && r.card_name ? bi(`Premio de «${r.card_name}»`, `Reward from “${r.card_name}”`)
     : regalo || (r.offer_title || '');
   const icono = r.kind === 'stamp_reward' ? 'loyalty' : r.kind === 'birthday_gift' ? 'cake'
-    : r.kind === 'visit_coupon' ? 'local_offer' : r.kind === 'thanks_gift' ? 'volunteer_activism'
-      : r.offer_kind === 'future_event' ? 'event' : 'redeem';
+    : r.kind === 'visit_coupon' ? 'redeem' : r.kind === 'thanks_gift' ? 'volunteer_activism'
+      : r.offer_kind === 'future_event' ? 'event' : 'local_offer';
   const foto = r.offer_image ? `<img src="${esc(KFotos.mini(r.offer_image))}" data-original="${esc(r.offer_image)}" alt="" loading="lazy">` : `<span class="cod-ic">${ms(icono)}</span>`;
   const [dar, antes] = ajeno ? ['', ''] : partesDelCanje(r);
   const lineas = [];
@@ -8432,9 +8431,9 @@ async function eliminarNegocio(v) {
     ['event', 'Reservas para eventos que aún no han pasado', s.reservations],
     ['qr_code_2', 'Códigos sin usar', s.codes],
     ['cake', 'Regalos de cumpleaños sin usar', s.birthday_gifts],
-    ['local_offer', 'Cupones y regalos sin usar', s.loyalty_gifts],
+    ['redeem', 'Cupones y regalos sin usar', s.loyalty_gifts],
     ['loyalty', 'Clientes con sellos o un premio sin canjear', s.stamp_customers],
-    ['redeem', 'Clientes con bonos sin gastar (tienes que cumplirlos)', s.pass_customers || 0],
+    ['confirmation_number', 'Clientes con bonos sin gastar (tienes que cumplirlos)', s.pass_customers || 0],
     ['person', 'Personas que lo tienen en favoritos', s.favorites],
     ['reviews', 'Reseñas', s.reviews],
     ['bolt', 'Publicaciones', s.publications],

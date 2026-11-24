@@ -153,7 +153,9 @@
   // Iconos de Material en SVG (las páginas públicas no cargan la fuente).
   const IC = {
     cal: 'M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Zm0 16H5V10h14v10Zm0-12H5V6h14v2Z',
-    rayo: 'M7 2v11h3v9l7-12h-4l4-8z',
+    // La oferta: la etiqueta de precio (local_offer, outlined), como la app
+    // y el panel (antes, el rayo; aprobado por Iván el 24-11).
+    oferta: 'M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM13 20.01 4 11V4h7v-.01l9 9-7 7.02zM6.5 5a1.5 1.5 0 1 0 0 3 1.5 1.5 0 0 0 0-3z',
     lugar: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z',
     flecha: 'M8.59 16.59 13.17 12 8.59 7.41 10 6l6 6-6 6z',
     play: 'M8 5v14l11-7z',
@@ -583,7 +585,7 @@
       return `<article class="tj tj-fila" data-o="${esc(o.id)}"${geo}>
     <div class="tj-media">${mediaTarjeta(o, { primera: false, ancho: 72, alto: 72, S })}</div>
     <div class="tj-cuerpo">
-      <p class="tj-datos"><span class="tj-hora${flash || o.discount ? ' tj-hora-oferta' : ''}">${esc(hora)}</span>${flash ? `<span class="tj-rayo" title="${esc(S.flash)}">${ic('rayo', 14)}<span class="sr">${esc(S.flash)}</span></span>` : ''}${antesCierre ? `<span class="tj-chip">${esc(S.antes)}</span>` : ''}${menuDia ? `<span class="tj-chip">${esc(S.menu)}</span>` : ''}${primera}${precio ? `<span class="tj-precio">${esc(precio)}</span>` : ''}${agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>` : ''}</p>
+      <p class="tj-datos"><span class="tj-hora${flash || o.discount ? ' tj-hora-oferta' : ''}">${esc(hora)}</span>${flash ? `<span class="tj-oferta-ic" title="${esc(S.flash)}">${ic('oferta', 14)}<span class="sr">${esc(S.flash)}</span></span>` : ''}${antesCierre ? `<span class="tj-chip">${esc(S.antes)}</span>` : ''}${menuDia ? `<span class="tj-chip">${esc(S.menu)}</span>` : ''}${primera}${precio ? `<span class="tj-precio">${esc(precio)}</span>` : ''}${agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>` : ''}</p>
       <${h} class="tj-titulo"><a class="tj-enlace" href="${esc(href)}">${esc(o.title)}</a></${h}>
       <p class="tj-negocio">${esc(o.business_name || '')}${lugar ? ` · ${esc(lugar)}` : ''}<span class="tj-dist">${dist ? ` · ${esc(dist)}` : ''}</span></p>
       <div class="tj-amigos"></div>
@@ -603,7 +605,7 @@
       antes ? `<s class="tj-antes">${esc(antes)}</s>` : '',
       // En «Cartel», la fecha de un evento ya va arriba (el antetítulo).
       plantilla === 'poster' && !flash ? ''
-        : `<span class="tj-chip tj-cuando"${cuentaAtras}>${ic(flash ? 'rayo' : 'cal', 15)}<span>${esc(cuandoCorto(o, lang, tz))}</span></span>`,
+        : `<span class="tj-chip tj-cuando"${cuentaAtras}>${ic(flash ? 'oferta' : 'cal', 15)}<span>${esc(cuandoCorto(o, lang, tz))}</span></span>`,
       agotado ? `<span class="tj-chip">${esc(S.soldOut)}</span>`
         : o.seats_left != null ? `<span class="tj-chip">${esc(quedan(Number(o.seats_left)))}</span>` : '',
       plataforma ? `<span class="tj-chip">${esc(S.entradas(plataforma))}</span>` : '',
@@ -655,7 +657,7 @@
         if (!flash) return `<span class="tj-cta" aria-hidden="true">${ic('cal', 18)}${esc(S.verEvento)}</span>`;
         const ahora = Date.now();
         const puede = (!ini || Date.parse(ini) <= ahora) && (!o.redeem_end_at || Date.parse(o.redeem_end_at) > ahora);
-        return `<span class="tj-cta" aria-hidden="true"${o.redeem_end_at ? ` data-cta-ini="${esc(ini || '')}" data-cta-fin="${esc(o.redeem_end_at)}" data-si="${esc(S.verOferta)}" data-no="${esc(S.aunNo)}"` : ''}>${ic('rayo', 18)}<span>${esc(puede ? S.verOferta : S.aunNo)}</span></span>`;
+        return `<span class="tj-cta" aria-hidden="true"${o.redeem_end_at ? ` data-cta-ini="${esc(ini || '')}" data-cta-fin="${esc(o.redeem_end_at)}" data-si="${esc(S.verOferta)}" data-no="${esc(S.aunNo)}"` : ''}>${ic('oferta', 18)}<span>${esc(puede ? S.verOferta : S.aunNo)}</span></span>`;
       })()}
     </div>
   </article>`;
