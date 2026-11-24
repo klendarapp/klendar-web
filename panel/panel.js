@@ -1222,6 +1222,8 @@ function showLogin() {
   location.replace(`/cuenta/${alta ? 'registro' : 'entrar'}?${idioma}destino=${encodeURIComponent(aqui)}${alta ? '&para=negocio' : ''}`);
 }
 async function noBusiness() {
+  // El alta vive en ficha.js y entidades.js, que cargan detrás (ver `route`).
+  if (document.readyState === 'loading') await new Promise((listo) => document.addEventListener('DOMContentLoaded', listo, { once: true }));
   $('#nav').innerHTML = '';
   $('#tabbar').innerHTML = '';
   $('.bizpick').hidden = true;
@@ -1616,6 +1618,11 @@ async function puedeSalir() {
 }
 
 async function route() {
+  // Con la sesión guardada, la primera pintada puede llegar antes de que
+  // carguen los ficheros de detrás (mesa.js, herramientas.js, entidades.js…):
+  // se espera a que estén (como el admin). Con las rutas limpias se abre
+  // directamente cualquier pantalla (un enlace, recargar), no solo Hoy.
+  if (document.readyState === 'loading') await new Promise((listo) => document.addEventListener('DOMContentLoaded', listo, { once: true }));
   paraCamara();
   GUARDA = null;
   if (!ME) return;

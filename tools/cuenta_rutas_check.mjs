@@ -499,7 +499,9 @@ async function pruebaFuera(nav, motor) {
   }
   const h = await pide('/app', 'HEAD');
   ok(h.r.status === 404 && (await h.r.text()) === '', 'middleware HEAD /app: 404 sin cuerpo');
-  for (const ruta of ['/cuenta', '/apple', '/app-store', '/panel']) ok((await pide(ruta)).r.status === 200, `middleware ${ruta}: sigue su camino`);
+  for (const ruta of ['/cuenta', '/apple', '/app-store']) ok((await pide(ruta)).r.status === 200, `middleware ${ruta}: sigue su camino`);
+  // El panel (§4zzz-panellimpio): `/panel` y sus pantallas, panel.html por dentro (no la 404).
+  for (const ruta of ['/panel', '/panel/hoy']) { const { a } = await pide(ruta); ok(a.length === 1 && a[0] === '/panel', `middleware ${ruta}: el panel (panel.html por dentro)`, a.join()); }
   const f = await import('../functions/cuenta/[[ruta]].js');
   ok(f.onRequestHead === f.onRequestGet, '/cuenta/…: HEAD igual que GET (sin esto Cloudflare da 404 a los vigilantes)');
 }
