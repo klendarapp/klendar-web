@@ -256,7 +256,7 @@ PAGES['wifi-clientes'] = async (v) => {
         <p class="muted">${esc(bi('Cuatro por folio, para recortar. Se imprimen o se guardan en PDF desde el navegador.', 'Four per sheet, to cut out. Print them or save them as PDF from the browser.'))}</p>
         <label class="opcion"><input type="checkbox" id="numerar"><span>${esc(bi('Numerar las mesas («Mesa 1», «Mesa 2»…)', 'Number the tables (“Table 1”, “Table 2”…)'))}</span></label>
         <label class="f" style="max-width:200px" id="mesasF" hidden><span>${esc(bi('Cuántas mesas', 'How many tables'))}</span><input type="number" id="mesas" min="1" max="200" value="12"></label>
-        <p class="acciones"><a class="btn" id="imprimir" href="${base}${esc(d.token)}" target="_blank" rel="noopener">${esc(bi('Imprimir carteles de mesa', 'Print table cards'))}</a>
+        <p class="acciones"><a class="btn primary" id="imprimir" href="${base}${esc(d.token)}" target="_blank" rel="noopener">${esc(bi('Imprimir carteles de mesa', 'Print table cards'))}</a>
           <a class="btn ghost" href="/m/${esc(d.token)}" target="_blank" rel="noopener">${esc(bi('Ver la página', 'See the page'))}</a></p>
         <p><b>${esc(bi(n === 0 ? 'Ningún escaneo este mes' : n === 1 ? '1 escaneo este mes' : `${num} escaneos este mes`,
     n === 0 ? 'No scans this month' : n === 1 ? '1 scan this month' : `${num} scans this month`))}</b></p>

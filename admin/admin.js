@@ -1116,7 +1116,7 @@ const NAV_GRUPOS = [
   { id: 'crecer', t: 'Crecer', items: [['pedidos', 'add_business', 'Locales pedidos'], ['crecer', 'travel_explore', 'Dónde crecer']] },
   { id: 'contenido', t: 'Contenido', items: [['publicaciones', 'bolt', 'Publicaciones'], ['canjes', 'confirmation_number', 'Canjes'], ['colecciones', 'auto_awesome', 'Colecciones'], ['guias', 'menu_book', 'Guías'], ['emisiones', 'sports_soccer', 'Emisiones'], ['artistas', 'music_note', 'Artistas'], ['categorias', 'category', 'Categorías'], ['festivos', 'event', 'Festivos']] },
   { id: 'personas', t: 'Personas', items: [['usuarios', 'person', 'Usuarios'], ['inactivas', 'hourglass_empty', 'Cuentas inactivas'], ['avisos', 'notifications', 'Notificaciones y push'], ['sugerencias', 'lightbulb', 'Sugerencias']] },
-  { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['medios', 'imagesmode', 'Filtro automático'], ['sorteos', 'redeem', 'Sorteos'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
+  { id: 'moderacion', t: 'Moderación', items: [['denuncias', 'flag', 'Denuncias'], ['medios', 'imagesmode', 'Filtro automático'], ['sorteos', 'celebration', 'Sorteos'], ['resenas', 'chat_bubble', 'Reseñas y novedades'], ['mensajes', 'campaign', 'Mensajes a clientes']] },
   { id: 'sistema', t: 'Sistema', plegable: true, items: [['configuracion', 'settings', 'Configuración'], ['errores', 'bug_report', 'Errores de la web'], ['automatico', 'auto_awesome', 'Automático'], ['traduccion', 'translate', 'Traducción automática'], ['administradores', 'shield', 'Administradores'], ['actividad', 'history', 'Registro de actividad'], ['ayuda', 'help', 'Ayuda']] },
 ];
 const NAV_SISTEMA = 'klendar.admin.nav.sistema';

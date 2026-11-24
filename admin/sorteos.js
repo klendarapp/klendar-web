@@ -52,7 +52,7 @@ function sorteoAdmFila(g, conNegocio = true) {
         : bi(`Sorteado el ${fmtDate(g.drawn_at || g.ends_at)}`, `Drawn on ${fmtDate(g.drawn_at || g.ends_at)}`);
   const personas = bi(`${fmtNum(g.entries || 0)} ${g.entries === 1 ? 'participa' : 'participan'}`, `${fmtNum(g.entries || 0)} ${g.entries === 1 ? 'entry' : 'entries'}`);
   return `<div class="item" data-sorteo-adm="${esc(g.id)}" data-premio="${esc(g.prize)}" data-negocio="${esc(b.name || '')}" data-gente="${Number(g.entries) || 0}">
-    <div class="ph">${ms('redeem')}</div><div style="min-width:0">
+    <div class="ph">${ms('celebration')}</div><div style="min-width:0">
     <h3>${esc(g.prize)} <span class="tag ${cls}">${esc(en ? ing : es)}</span>${g.adults_only ? ' <span class="tag bad">+18</span>' : ''}</h3>
     <div class="meta">${conNegocio && b.id ? `<a class="link" href="/negocios/${esc(b.id)}">${esc(b.name)}</a>${b.city ? ` · ${esc(b.city)}` : ''} · ` : ''}${esc(cuando)} · ${esc(personas)}${g.prize_value_cents ? ` · ${esc(fmtMoney(g.prize_value_cents))}` : ''}${conNegocio && g.open_reports ? ` · <a class="link" href="/denuncias/business/${esc(b.id)}"><span class="tag bad">${ms('flag')} ${g.open_reports}</span></a>` : ''}</div>
     ${g.description ? `<p>${esc(g.description)}</p>` : ''}

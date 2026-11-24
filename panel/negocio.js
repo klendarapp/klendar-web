@@ -79,7 +79,7 @@ function negHerramientas(c) {
     ['message', 'que-vuelvan', 'campaign', bi('Avisar', 'Notify'), bi('Avisar a mis clientes', 'Message my customers'), '/panel/mensajes', !c.ent && c.edit],
     ['firstVisit', 'que-vuelvan', 'waving_hand', bi('Primera visita', 'First visit'), bi('Ofertas de primera visita', 'First-visit offers'), '/panel/publicaciones/nueva-flash?primera=1', !c.ent && c.edit],
     ['exclusives', 'que-vuelvan', 'lock', bi('Exclusivas', 'Exclusives'), bi('Exclusivas para favoritos o clientes', 'Exclusives for favourites or customers'), '/panel/publicaciones/nueva-flash?exclusiva=1', !c.ent && c.edit],
-    ['giveaways', 'que-vuelvan', 'redeem', bi('Sorteos', 'Giveaways'), null, '/panel/sorteos', !c.ent && c.sorteos],
+    ['giveaways', 'que-vuelvan', 'celebration', bi('Sorteos', 'Giveaways'), null, '/panel/sorteos', !c.ent && c.sorteos],
     // ── En el local («Pantallas y gente» en una entidad) ──
     ['queue', 'en-el-local', 'people', bi('Cola virtual', 'Virtual queue'), null, '/panel/cola',
       !c.ent && negLleva(c, 'queue', (o) => herrSi(o, 'queue', 'open') || herrSi(o, 'queue', 'used_30d'))],

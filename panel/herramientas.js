@@ -138,7 +138,7 @@ async function herrCrearHtml() {
     ['/panel/bonos/nuevo', 'confirmation_number', bi('Bono', 'Pass'), bi('Para vender en tu local bonos de varios usos (5 cafés, 10 clases…). Cada uso se descuenta con el QR del cliente.', 'To sell multi-use passes at your venue (5 coffees, 10 classes…). Each use is taken off with the customer’s QR.')],
     ['/panel/sellos/nueva', 'loyalty', bi('Tarjeta de sellos', 'Stamp card'), bi('Para premiar a quien repite: cada canje (o cada visita con el QR del local) suma un sello y al llegar a la meta hay premio.', 'To reward people who come back: each redemption (or visit with the venue QR) adds a stamp and reaching the goal earns a reward.')],
     conEncargos ? ['/panel/encargos-cosas', 'encargo', bi('Algo para encargar', 'Something to pre-order'), bi('Tus clientes encargan desde tu ficha (una tarta, una bandeja, un ramo) y lo recogen y pagan aquí.', 'Your customers order from your page (a cake, a platter, a bouquet) and pick it up and pay here.')] : null,
-    conSorteos ? ['/panel/sorteos/nuevo', 'redeem', bi('Sorteo', 'Giveaway'), bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.')] : null,
+    conSorteos ? ['/panel/sorteos/nuevo', 'celebration', bi('Sorteo', 'Giveaway'), bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.')] : null,
   ].filter(Boolean);
   // Plegado, qué hay dentro (los tres primeros nombres).
   const dentro = [...delDia, ...tuyos, ...vender].map((x) => x[2]);

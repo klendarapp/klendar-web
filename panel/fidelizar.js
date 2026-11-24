@@ -178,7 +178,7 @@ PAGES.fidelizar = async (v) => {
     href: '/panel/bonos',
   })}
       ${conSorteos ? fielTarjeta({
-    icono: 'redeem',
+    icono: 'celebration',
     titulo: bi('Sorteos', 'Giveaways'),
     frase: bi('Para darte a conocer: un sorteo gratis en el que participa quien te añade a favoritos.', 'To get known: a free giveaway people enter by adding you to their favourites.'),
     estado: o ? (sorteos ? bi(sorteos === 1 ? '1 sorteo abierto' : `${sorteos} sorteos abiertos`, sorteos === 1 ? '1 open giveaway' : `${sorteos} open giveaways`) : apagado) : '',

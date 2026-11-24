@@ -47,10 +47,21 @@
 // 17. En una ficha, los botones de la cabecera al borde derecho (ordenador).
 // 18. Todas las pantallas con el mismo ancho (--admin-ancho, 1.400, a 1.920).
 //
+// Y lo aprobado por Iván el 24-11 (§4zzz-propuestas), en el panel y el admin:
+//
+// 19. Las cifras (`.kpis`) en casillas iguales: todas del mismo ancho, con
+//     tres siempre en un renglón, y nada se sale de su casilla (panel ›
+//     Cifras, con Bonos, Fidelizar y «Del momento» de tres; admin › Cifras y
+//     «Últimos 14 días» de una publicación), de 360 a 1.920.
+// 20. Sorteos con el confeti (`celebration`), no con el regalo del Cupón, y el
+//     icono pintado (la fuente del panel lo lleva: no sale su nombre).
+// 21. Carteles de mesa: «Imprimir carteles de mesa» en color.
+//
 //   PW=<ruta a playwright> node tools/coherencia_check.mjs
 //   SOLO=web …    solo la parte 2;  SOLO=panel …   solo la parte 1;  SOLO=admin …   solo la parte 3
+//   SOLO=propuestas …   solo 19–21
 //   (arranca su serve_dev en PORT, 9411, con Supabase cortado)
-import { playwright } from './_supabase_simulado.mjs';
+import { playwright, SUPA } from './_supabase_simulado.mjs';
 import { webConDatos } from './_web_con_datos.mjs';
 import { rpcs, conSesion } from './_panel_simulado.mjs';
 import { bordesPantalla } from './_bordes.mjs';
@@ -128,6 +139,7 @@ try {
   }
   if (!SOLO || SOLO === 'web') await parteWeb();
   if (!SOLO || SOLO === 'admin') await parteAdmin();
+  if (!SOLO || SOLO === 'propuestas') await partePropuestas();
 } finally {
   await web.cierra();
 }
@@ -300,5 +312,113 @@ async function parteAdmin() {
     await nav.close();
   }
 }
+/** 19: cada `.kpis` visible, en casillas iguales (tres en un renglón) y sin
+ * nada salido de su casilla. */
+function cifrasIguales() {
+  const mal = [];
+  for (const k of document.querySelectorAll('#view .kpis')) {
+    const hijos = [...k.children].filter((e) => e.getClientRects().length > 0);
+    if (hijos.length < 2) continue;
+    const rs = hijos.map((e) => e.getBoundingClientRect());
+    const anchos = rs.map((r) => Math.round(r.width));
+    const que = k.closest('.card')?.querySelector('h2, h3')?.textContent?.trim().slice(0, 30) || k.className;
+    if (Math.max(...anchos) - Math.min(...anchos) > 1) mal.push(`${que}: anchos ${anchos.join('/')}`);
+    if (hijos.length === 3 && rs.some((r) => Math.abs(r.top - rs[0].top) > 1)) mal.push(`${que}: tres cifras en dos renglones`);
+    for (const e of hijos) if (e.scrollWidth > e.clientWidth + 1) mal.push(`${que}: «${e.textContent.trim().slice(0, 20)}» se sale de su casilla`);
+  }
+  return mal;
+}
+
+/** La parte de lo aprobado el 24-11 (§4zzz-propuestas). */
+async function partePropuestas() {
+  const INFORME = {
+    from: null,
+    totals: {
+      views: 120, codes: 30, redeemed: 22, unused: 8, favorites: 9, brought_visits: 22, brought_priced: 20, brought_cents: 45000, currency: 'EUR',
+      ratings: 12, rating: 4.6, passes: { sold: 6, uses: 23, active: 10, sold_cents: 54000 }, spot: { given: 3, gifts: 1, stamps: 1, pass_uses: 1 },
+    },
+    loyalty: { customers: 10, repeat_customers: 4, new_customers: 6, coupons_given: 5, coupons_redeemed: 2, thanks_redeemed: 1, birthday_redeemed: 0 },
+    stamps: { given: 14, rewards_redeemed: 2, visit: 4, redemption: 10 }, daily: [], by_hour: [], offers: [], redemptions: [],
+  };
+  const SORTEOS_ON = { enabled: true, platforms: ['web', 'android', 'ios'] };
+  const ADMIN = adminDe(web.BASE);
+  const ATAM = [[1920, 1080], [1280, 800], [1024, 768], [768, 1024], [390, 844], [360, 780]];
+  for (const tipo of ['chromium', 'webkit']) {
+    const nav = await pw[tipo].launch();
+    for (const [w, h] of ATAM) {
+      if (tipo === 'webkit' && ![1280, 390].includes(w)) continue;
+      const opc = { viewport: { width: w, height: h }, locale: 'es-ES', timezoneId: 'Europe/Madrid', hasTouch: w < 1000, ...(tipo === 'chromium' ? { isMobile: w < 800 } : {}) };
+      // El panel.
+      const ctx = await nav.newContext(opc);
+      await web.conDatos(ctx);
+      await conSesion(ctx, { ...rpcs('owner'), business_report: INFORME,
+        business_table_qr: { ok: true, token: 'tok123', ssid: 'Bar Sonda', password: 'cafe1234', scans_month: 142, can_change: true } });
+      // Los sorteos encendidos (app_config.giveaways), para ver su icono.
+      await ctx.route(`${SUPA}/rest/v1/app_config**`, (route) => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([{ value: SORTEOS_ON }]) }));
+      const p = await ctx.newPage();
+      const errores = [];
+      p.on('pageerror', (e) => errores.push(e.message));
+      const t = `${tipo} ${w}`;
+      await p.goto(`${web.BASE}/panel/informe`);
+      await p.waitForSelector('#view .kpis', { timeout: 15000 }).catch(() => {});
+      await p.waitForTimeout(500);
+      // Abiertos los plegables, para medir también sus cifras.
+      await p.evaluate(() => document.querySelectorAll('#view details').forEach((d) => { d.open = true; }));
+      const tres = await p.$$eval('#view .kpis', (ks) => ks.filter((k) => k.children.length === 3).length);
+      ok(tres >= 3, `${t} panel cifras: con bloques de tres cifras para mirar (${tres})`);
+      const mal = await p.evaluate(cifrasIguales);
+      ok(!mal.length, `${t} panel cifras: en casillas iguales, tres en un renglón${mal.length ? ` — ${mal.join(' | ')}` : ''}`);
+      const sobra = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      ok(sobra <= 1, `${t} panel cifras: sin desplazamiento de lado (${sobra} px)`);
+      if (w === 1280 || w === 390) {
+        await p.goto(`${web.BASE}/panel/fidelizar`);
+        await p.waitForSelector('#view .fiel-card', { timeout: 15000 }).catch(() => {});
+        await p.evaluate(() => document.fonts.ready);
+        await p.waitForTimeout(300);
+        const ic = await p.evaluate(() => [...document.querySelectorAll('#view .fiel-card h2')].map((h) => {
+          const s = h.querySelector('.ms');
+          return [h.textContent.replace(s?.textContent || '', '').trim(), s?.textContent || '', Math.round(s?.getBoundingClientRect().width || 0)];
+        }));
+        const sorteo = ic.find(([n]) => n === 'Sorteos');
+        const cupon = ic.find(([n]) => /^Cupón/.test(n));
+        ok(sorteo && sorteo[1] === 'celebration' && sorteo[2] <= 32, `${t} panel fidelizar: Sorteos con el confeti, pintado (${sorteo})`);
+        ok(cupon && cupon[1] === 'redeem', `${t} panel fidelizar: el Cupón con el regalo (${cupon})`);
+        const repes = ic.map(([, i]) => i).filter((i, n, a) => i && a.indexOf(i) !== n);
+        ok(!repes.length, `${t} panel fidelizar: ningún icono repetido (${repes})`);
+        await p.goto(`${web.BASE}/panel/wifi-clientes`);
+        await p.waitForSelector('#imprimir', { timeout: 15000 }).catch(() => {});
+        ok(await p.$eval('#imprimir', (a) => a.classList.contains('primary')).catch(() => false), `${t} panel carteles de mesa: imprimir, en color`);
+      }
+      ok(!errores.length, `${t} panel propuestas: sin errores (${errores.join(' | ')})`);
+      await ctx.close();
+      // El admin.
+      const cta = await nav.newContext(opc);
+      await web.conDatos(cta);
+      await conSesionAdmin(cta);
+      const q = await cta.newPage();
+      const errA = [];
+      q.on('pageerror', (e) => errA.push(e.message));
+      for (const n of ['cifras', 'publicacion']) {
+        const ruta = PANTALLAS_ADMIN.find((x) => x[0] === n)[1];
+        await q.goto(ADMIN + ruta, { waitUntil: 'networkidle' }).catch(() => {});
+        await q.waitForSelector('#view h1', { timeout: 15000 }).catch(() => {});
+        await q.waitForFunction(() => !document.querySelector('#view .loading'), null, { timeout: 6000 }).catch(() => {});
+        await q.waitForTimeout(400);
+        const tres = await q.$$eval('#view .kpis', (ks) => ks.filter((k) => k.children.length === 3).length);
+        ok(n !== 'publicacion' || tres >= 1, `${t} admin ${n}: con «Últimos 14 días» de tres (${tres})`);
+        const malA = await q.evaluate(cifrasIguales);
+        ok(!malA.length, `${t} admin ${n}: cifras en casillas iguales, tres en un renglón${malA.length ? ` — ${malA.join(' | ')}` : ''}`);
+      }
+      if (w === 1280) {
+        const icono = await q.$eval('a.nav[href="/sorteos"] .ms', (s) => s.textContent).catch(() => null);
+        ok(icono === 'celebration', `${t} admin: Sorteos en el menú con el confeti (${icono})`);
+      }
+      ok(!errA.length, `${t} admin propuestas: sin errores (${errA.join(' | ')})`);
+      await cta.close();
+    }
+    await nav.close();
+  }
+}
+
 console.log(fallos ? `\n${fallos} fallo(s)` : '\nTodo bien.');
 process.exit(fallos ? 1 : 0);

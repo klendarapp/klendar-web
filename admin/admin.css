@@ -402,6 +402,24 @@ details.grupo[open] > summary { margin-bottom: 8px; }
 @media (max-width: 560px) { .kpis.principales { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 /* En el móvil, las cifras de dos en dos (una por fila alargaba mucho la pantalla). */
 @media (max-width: 560px) { .kpis > * { flex: 1 1 calc(50% - 5px); } }
+/* Las cifras en casillas iguales (aprobado por Iván el 24-11,
+   §4zzz-propuestas): todas del mismo tamaño, las que quepan por fila (cuatro,
+   de dos en dos si no caben) y, si son tres, siempre las tres en un renglón
+   (antes la última bajaba sola y se estiraba a todo el ancho: Cifras ›
+   «Atascados ahora», «Últimos 14 días» de una publicación…). Sin `.adm`: el
+   panel carga esta hoja y tiene lo mismo en Cifras, Bonos, Sorteos y una
+   publicación (como la app, `StatGrid`). */
+.kpis:not(.principales) { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+.kpis:not(.principales):has(> :nth-child(3):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 560px) {
+  .kpis:not(.principales) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .kpis:not(.principales):has(> :nth-child(3):last-child) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  /* Tres en un móvil: casillas de ~100 px; la cifra un poco más pequeña y,
+     si aun así no cabe (un importe largo), que no se salga. */
+  .kpis:has(> :nth-child(3):last-child) > .kpi { padding: 10px; }
+  .kpis:has(> :nth-child(3):last-child) > .kpi b { font-size: 1.25rem; overflow-wrap: anywhere; }
+  .kpis:has(> :nth-child(3):last-child) > .kpi span { display: block; overflow-wrap: break-word; hyphens: auto; }
+}
 
 /* ── Cifras ───────────────────────────────────────────────────────────────
    Sobrio: tinta sobre la superficie, una sola serie por gráfica (dos

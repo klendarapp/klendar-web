@@ -1,0 +1,31 @@
+/* Material Symbols Outlined (Google, licencia Apache 2.0), servida desde
+ * klendar.app: el navegador no pide nada a Google Fonts. opsz 24, wght 400,
+ * FILL 0, GRAD 0. Solo los iconos que usa el panel de negocios (/panel), con
+ * sus alias:
+ * ac_unit, accessible, account_balance, add_box, approval, badge, bar_chart, bolt, cake, calendar_month, camera_alt, campaign, cancel, card_giftcard, celebration, check, check_circle, check_circle_filled, check_circle_outline, chevron_right, child_friendly, cloud_off, code, confirmation_number, contact_support, create, credit_card, dashboard, deck, delete, delete_outline, download, eco, edit, email, event, event_busy, event_repeat, exposure_plus_1, favorite, fmd_good, forum, grain, group, groups, help, help_outline, highlight_off, how_to_reg, insert_invitation, insights, link, live_tv, local_dining, local_drink, local_offer, local_parking, location_on, location_pin, lock, lock_clock, logout, loyalty, mail, mail_outline, markunread, menu, mode, mode_edit, mode_edit_outline, more_horiz, no_meeting_room, notifications_active, park, payment, people, people_alt, people_outline, perm_identity, person, person_filled, person_outline, pets, photo_camera, place, play_circle, qr_code_2, qr_code_scanner, receipt_long, redeem, reply, restaurant, restaurant_menu, reviews, roofing, room, schedule, shopping_bag, shopping_basket, spa, star, storefront, takeout_dining, timer_off, today, toys, try, tv, verified_user, visibility, volunteer_activism, waving_hand, wifi, workspace_premium.
+ * v375f (2026-11-24): más celebration (Sorteos, para no repetir el regalo
+ * del Cupón; §4zzz-propuestas). Recortada igual que la v375e.
+ * v375e (2026-11-23): más los de las cuatro secciones como el modo negocio
+ * de la app (today, add_box, account_balance) y los de las baldosas de
+ * Negocio (schedule, visibility, link, approval, tv, groups…). Recortada de la
+ * del admin con fontTools: cada nombre se resuelve por su ligadura (GSUB) y
+ * `pyftsubset --glyphs=<esos> --text=<sus letras> --no-layout-closure`.
+ * v375d (2026-11-12): más los de la app en «Mi negocio» (insights en Cifras,
+ * badge en RRPP, contact_support en Preguntas). Recortada igual, con fontTools.
+ * v375c (2026-10-12): más los de Fidelizar (waving_hand,
+ * volunteer_activism, local_offer, favorite), igual que la v375b.
+ * v375b (2026-10-12): la v375 más los de «Alérgenos y dietas» (spa, grain,
+ * verified_user, local_drink, restaurant). Recortada con fontTools de la
+ * fuente entera del admin (material-symbols-admin-v374.woff2), sin
+ * descargar nada: `pyftsubset` con los glifos de esas ligaduras y
+ * `layout_closure` apagado (si no, entran todas las ligaduras).
+ * Un icono nuevo hay que añadirlo a la lista y volver a generarla.
+ * Cómo regenerarla: docs/RUNBOOK.md de la app, §2e. El nombre lleva la
+ * versión: /assets/fonts/ se guarda en caché para siempre (immutable). */
+@font-face {
+  font-family: 'Material Symbols Outlined';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url(/assets/fonts/material-symbols-panel-v375f.woff2) format('woff2');
+}
