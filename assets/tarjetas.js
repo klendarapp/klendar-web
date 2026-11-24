@@ -31,7 +31,8 @@
  *   novedades y las reseñas también lo abren.
  * - Filtros: los desplegables y la hoja se cierran al pulsar fuera o con
  *   Escape, y solo hay uno abierto a la vez; «Cerca de mí» y «Estoy aquí»
- *   piden la ubicación (solo al pulsarlos); los enlaces de la propia página
+ *   piden la ubicación (solo al pulsarlos; con el permiso ya dado, Explorar y
+ *   Descubre sin zona la usan solos, sin pedirla); los enlaces de la propia página
  *   no se pisan con los filtros guardados (ver `guardaFiltros` en
  *   functions/_lib/explore.js).
  */
@@ -723,6 +724,25 @@
       }, { maximumAge: 300000, timeout: 10000 });
     });
   });
+  // «Cerca de mí» sola (Iván, 24-11; RUNBOOK §4zzz-ubicacion-web): en Explorar
+  // y Descubre sin zona, si el navegador ya dejaba usar la ubicación, la
+  // posición la busca desde el principio /assets/filtros-guarda.js (nunca la
+  // pide; ahí, cuándo sí y cuándo no) y aquí se vuelve a pedir la página con
+  // su celda, como al pulsar «Cerca de mí», sin entrada nueva en el historial.
+  // Si mientras tanto se ha tocado algo (¿Dónde?, la edad, pasar), nada.
+  var sola = window.KLENDAR_CERCA_SOLA;
+  if (sola && KCe) {
+    sola.pos.then(function (p) {
+      if (!p || sola.tocado() || !isFinite(p.lat) || !isFinite(p.lng)) return;
+      window.KL_CERCA(p.lat, p.lng);
+      var u = new URL(location.href);
+      ['lat', 'lng', 'celda', 'cell', 'p', 'ciudad', 'city'].forEach(function (k) { u.searchParams.delete(k); });
+      u.searchParams.set(/^\/en\//.test(u.pathname) ? 'cell' : 'celda', KCe.de(p.lat, p.lng));
+      // La página siguiente no recupera lo guardado (y, si saliera sin zona, no vuelve a probar).
+      marcaPropia();
+      location.replace(u.toString());
+    });
+  }
   var aviso = document.querySelector('[data-cerca-aviso]');
   // Con la pregunta de la edad a la vista, espera a que se conteste (un solo
   // aviso a la vez; lo enseña el script de la edad).

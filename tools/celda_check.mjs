@@ -98,7 +98,8 @@ if (!PW) {
   const web2 = await webConDatos({ puerto: Number(process.env.PORT || 8941) + 4 });
   const nav = await playwright().chromium.launch();
   try {
-    const ctx = await nav.newContext({ geolocation: { latitude: AQUI.lat, longitude: AQUI.lng, accuracy: 10 }, permissions: ['geolocation'], locale: 'es-ES' });
+    // Sin el permiso al cargar (con él, Explorar va solo a tu celda: tools/ubicacion_sola_check.mjs); se da antes de pulsar.
+    const ctx = await nav.newContext({ geolocation: { latitude: AQUI.lat, longitude: AQUI.lng, accuracy: 10 }, locale: 'es-ES' });
     const peticiones = [];
     ctx.on('request', (q) => peticiones.push(`${q.url()} ${q.postData() || ''}`));
     const p = await ctx.newPage();
@@ -107,6 +108,7 @@ if (!PW) {
 
     // «Usar mi ubicación».
     await p.goto(`${web2.BASE}/explorar?vista=lista`, { waitUntil: 'networkidle' });
+    await ctx.grantPermissions(['geolocation']);
     await p.locator('[data-cerca-aviso] [data-cerca]').first().click();
     await p.waitForURL(/celda=/, { timeout: 8000 });
     await p.waitForLoadState('networkidle');

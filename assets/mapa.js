@@ -549,6 +549,40 @@
   };
   KA.camara = camara;
 
+  // ── Dónde abre el mapa sin cámara guardada ─────────────────────────────
+  // La zona elegida (`data-vista` en Planes, `vista` en Sitios; `zonaMapa` en
+  // functions/_lib/explore.js), también sin nada que enseñar (Iván, 24-11: en
+  // Huelva sin planes, el mapa salía en Madrid, el centro de serie): `c`
+  // [lng, lat], `r` la distancia de «Cerca de mí» en metros (a la vista
+  // entera) y, con la celda, `celda` y `m` (su media diagonal). Tu punto, si
+  // es de esa celda (`klendar.cerca`, de este navegador), con su radio justo;
+  // si no, el centro de la celda con el radio más la media diagonal.
+  function zonaVista(z) {
+    if (!z || !Array.isArray(z.c) || !Number.isFinite(z.c[0]) || !Number.isFinite(z.c[1])) return null;
+    let lng = z.c[0];
+    let lat = z.c[1];
+    let r = Number(z.r) || 0;
+    if (z.celda && r) {
+      let p = null;
+      try { p = JSON.parse(localStorage.getItem('klendar.cerca') || 'null'); } catch { /* sin almacenamiento */ }
+      const KC = globalThis.KlendarCelda;
+      if (p && Date.now() - p.t < 6 * 3600e3 && Number.isFinite(p.lat) && Number.isFinite(p.lng) && KC && KC.de(p.lat, p.lng) === z.celda) {
+        lat = p.lat; lng = p.lng;
+      } else r += Number(z.m) || 0;
+    }
+    return { lng, lat, r };
+  }
+  /** Encuadra [m] en la zona [v] (de `zonaVista`): con radio, el círculo entero. */
+  function encuadra(m, v) {
+    if (!v) return;
+    if (!v.r) { m.jumpTo({ center: [v.lng, v.lat] }); return; }
+    const dLat = v.r / 111320;
+    const dLng = v.r / (111320 * Math.max(0.1, Math.cos(v.lat * Math.PI / 180)));
+    m.fitBounds([[v.lng - dLng, v.lat - dLat], [v.lng + dLng, v.lat + dLat]], { padding: 24, duration: 0 });
+  }
+  KA.zonaVista = zonaVista;
+  KA.encuadra = encuadra;
+
   /** Arranca el mapa de Planes (`#mapa`, con `#mapaPuntos`). */
   async function mapaPlanes() {
     const caja = document.getElementById('mapa');
@@ -593,11 +627,14 @@
       const oscuro = matchMedia('(prefers-color-scheme: dark)').matches;
       const zona = caja.dataset.zona || '';
       const antes = camara.lee(zona);
+      let vista = null;
+      try { vista = zonaVista(JSON.parse(caja.dataset.vista || 'null')); } catch { /* sin zona */ }
       const m = new mb.Map({
         container: caja,
         style: oscuro ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
-        center: antes ? [antes.lng, antes.lat] : puntos.length ? [puntos[0].lng, puntos[0].lat] : [-3.7038, 40.4168],
-        zoom: antes ? antes.zoom : 12,
+        // Sin zona ni nada que enseñar («Todas las ciudades»), España entera, como la app (`mapStartZoom`).
+        center: antes ? [antes.lng, antes.lat] : puntos.length ? [puntos[0].lng, puntos[0].lat] : vista ? [vista.lng, vista.lat] : [-3.7, 40.2],
+        zoom: antes ? antes.zoom : puntos.length || vista ? 12 : 5.2,
         performanceMetricsCollection: false,
         collectResourceTiming: false,
         cooperativeGestures: matchMedia('(pointer: coarse)').matches,
@@ -610,7 +647,7 @@
         const b = new mb.LngLatBounds();
         puntos.forEach((p) => b.extend([p.lng, p.lat]));
         m.fitBounds(b, { padding: 48, maxZoom: 15, duration: 0 });
-      }
+      } else if (!puntos.length && !antes) encuadra(m, vista);
       camara.sigue(m, zona);
       planes(m, puntos, T);
     } catch { falla(); }

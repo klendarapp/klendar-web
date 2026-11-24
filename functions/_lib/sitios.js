@@ -97,12 +97,12 @@ export function filaSitio(p, lang, { conDistancia = true } = {}) {
 }
 
 /** El mapa de Sitios: lo pinta /assets/sitios.js con `map_places`. */
-export function mapaSitios({ lang, centro, zoom, filtros, desde = null, zona = '' }) {
+export function mapaSitios({ lang, centro, zoom, filtros, desde = null, zona = '', vista = null }) {
   const en = lang === 'en';
   const S = TS(en);
   const sp = supabasePublic();
   const datos = {
-    url: sp.url, key: sp.key, centro, zoom, filtros, desde, zona,
+    url: sp.url, key: sp.key, centro, zoom, filtros, desde, zona, vista,
     no: S.mapNo, ver: S.seePlace, base: en ? '/en/b/' : '/b/', lang: en ? 'en' : 'es',
   };
   return `<div id="mapa-sitios" class="mapa-explorar" role="region" aria-label="${esc(S.onMap)}" data-sitios="${esc(JSON.stringify(datos))}"></div>`;
@@ -111,8 +111,8 @@ export function mapaSitios({ lang, centro, zoom, filtros, desde = null, zona = '
 /** Los scripts de la página de Sitios (la hora de cada fila y el mapa). */
 export const SITIOS_SCRIPTS = `<script src="/assets/zona.js?v=2" defer></script>
 <script src="/assets/iconos-mapa.js?v=2" defer></script>
-<script src="/assets/mapa.js?v=10" defer></script>
-<script src="/assets/sitios.js?v=12" defer></script>`;
+<script src="/assets/mapa.js?v=11" defer></script>
+<script src="/assets/sitios.js?v=13" defer></script>`;
 
 export const SITIOS_CSS = `<style>
 /* Sin saltos al cambiar entre Planes y Sitios: la barra de desplazamiento

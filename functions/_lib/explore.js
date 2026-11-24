@@ -511,7 +511,7 @@ function cuandoEnMapa(o, lang) {
  * sitio, un marcador con «N planes» que abre su lista; los sitios cercanos,
  * una burbuja con el total que se acerca hasta separarlos. Si Mapbox no carga
  * (sin token, sin red), se dice: debajo está la lista con lo mismo. */
-const mapaHtml = (items, lang, S, zona = '') => {
+const mapaHtml = (items, lang, S, zona = '', vista = null) => {
   const en = lang === 'en';
   const puntos = items.filter((o) => Number.isFinite(o.lat) && Number.isFinite(o.lng)).map((o) => ({
     id: o.id, t: o.title, b: o.business_name, lat: o.lat, lng: o.lng, k: o.kind === 'flash_offer' ? 'f' : 'e',
@@ -532,12 +532,12 @@ const mapaHtml = (items, lang, S, zona = '') => {
     ...(o.venue_address ? {} : { n: o.business_id, bu: `${en ? '/en' : ''}/b/${o.business_id}` }),
   }));
   const { hasta, ...textos } = MAPA_T[en ? 'en' : 'es'];
-  return `<div id="mapa" class="mapa-explorar" role="region" aria-label="${esc(S.mapView)}" data-no="${esc(S.mapNo)}" data-zona="${esc(zona)}" data-textos="${esc(JSON.stringify(textos))}"></div>
+  return `<div id="mapa" class="mapa-explorar" role="region" aria-label="${esc(S.mapView)}" data-no="${esc(S.mapNo)}" data-zona="${esc(zona)}"${vista ? ` data-vista="${esc(JSON.stringify(vista))}"` : ''} data-textos="${esc(JSON.stringify(textos))}"></div>
   <p class="ambiente-leyenda" id="ambiente-leyenda" hidden></p>
   ${sitioAhoraScripts(lang).replace(/ defer/g, '')}
   <script type="application/json" id="mapaPuntos">${jsonEnScript(puntos)}</script>
   <script src="/assets/iconos-mapa.js?v=2"></script>
-  <script src="/assets/mapa.js?v=10"></script>`;
+  <script src="/assets/mapa.js?v=11"></script>`;
 };
 
 /** La distancia de «Cerca de mí»: una barra de 1 a 100 km (12-11-2026; antes,
@@ -738,7 +738,7 @@ const portada = (items) => items.map((o) => firstPhoto(o.images) || o.photo).fin
 
 /** La zona del mapa (assets/mapa.js, `camara`): con la misma, Planes y Sitios
  * abren el mapa donde estaba; con otra, en la suya. */
-const zonaDelMapa = (e) => (e.cerca ? (e.aprox ? 'aprox' : `celda:${e.celda}`)
+const zonaDelMapa = (e) => (e.cerca ? (e.aprox ? `aprox:${e.celda}` : `celda:${e.celda}`)
   : e.city ? `ciudad:${String(e.city).toLowerCase()}` : 'todas');
 
 /** Dónde se mira, para los textos de Sitios: «a 5 km», «en Madrid» o nada. */
@@ -749,13 +749,13 @@ const sinFiltrosSitio = (link) => link({ cat: '', cats: [], abierto: false, trai
 
 /** Explorar › Sitios: la lista (o el mapa y debajo la primera parte), o la
  * pantalla vacía centrada con sus salidas. */
-function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro }) {
+function sitiosHtml({ items, lang, S, TSi, e, link, mapa, pedirQ, centro, vista = null }) {
   const en = lang === 'en';
   const conFiltros = Boolean(e.q || e.cat || e.abierto || sitioSinNinos(e).length || e.preciosLocal?.length || e.menuDia || e.comerAhora || e.momento);
   const quitaSolo = e.q ? `<p class="chip-solo"><a class="chip on chip-quitar" href="${esc(link({ que: '' }))}" aria-label="${esc(TSi.removeOnlyPlaces)}"><span>${esc(TSi.onlyPlaces)}</span>${ic('x', 16)}</a></p>` : '';
   const zoom = e.cerca ? (e.km <= 1 ? 15 : e.km <= 3 ? 14 : 13) : 13;
   const mapaH = mapa ? mapaSitios({
-    lang, zoom, desde: e.cerca ? [e.lng, e.lat] : null, zona: zonaDelMapa(e),
+    lang, zoom, desde: e.cerca ? [e.lng, e.lat] : null, zona: zonaDelMapa(e), vista,
     centro: centro && Number.isFinite(Number(centro.lng)) ? [Number(centro.lng), Number(centro.lat)] : null,
     filtros: {
       ...(e.catIds?.length ? { p_categories: e.catIds } : e.cat ? { p_category: e.cat } : {}), ...(e.abierto ? { p_open_now: true } : {}),
@@ -1282,7 +1282,7 @@ function guardaFiltros(e, lang, base, explorar = false) {
   }).replace(/</g, '\\u003c');
   // En assets/filtros-guarda.js, sin `defer` (la CSP de scripts no deja nada en
   // línea, RUNBOOK §4zzz-csp): los datos, como JSON que no se ejecuta.
-  return `<script type="application/json" id="klFiltros">${datos}</script><script src="/assets/filtros-guarda.js?v=1"></script>`;
+  return `<script type="application/json" id="klFiltros">${datos}</script><script src="/assets/filtros-guarda.js?v=2"></script>`;
 }
 
 /** «El sitio» de la hoja: todo menos «Apto para niños», que es «Con niños»
@@ -2533,14 +2533,24 @@ ${GRUPOS_CSS}` : ''}`;
   }
 
   // ── Resultados de Explorar ──
+  // Dónde abre el mapa (assets/mapa.js, `zonaVista`), también sin nada que
+  // enseñar (Iván, 24-11: sin planes en Huelva salía Madrid): con «Cerca de
+  // mí» (o la zona aproximada), su centro y la distancia elegida, a la vista
+  // entera; con la celda, el navegador la pone desde tu punto si es suyo; con
+  // una ciudad o un municipio, su centro.
+  const zonaMapa = cerca && Number.isFinite(lat) && Number.isFinite(lng)
+    ? { c: [lng, lat], r: km * 1000, ...(enCelda ? { celda: e.celda, m: margen } : {}) }
+    : centroCiudad && Number.isFinite(Number(centroCiudad.lat)) && Number.isFinite(Number(centroCiudad.lng))
+      ? { c: [Number(centroCiudad.lng), Number(centroCiudad.lat)] } : null;
   let resultados;
   // Con la celda, por si con tu punto no queda nada a esa distancia: la
   // pantalla vacía de siempre, oculta (la enseña /assets/tarjetas.js).
   const vacioCelda = (h) => `<div data-celda-vacio hidden>${h.replace(/finTitulo/g, 'finTituloCelda')}</div>`;
   if (negocios) {
     resultados = sitiosHtml({
-      items, lang, S, TSi, e, link, page, paginas, mapa: sitiosMapa, pedirQ,
-      centro: cerca ? { lat, lng } : centroDe(klendarCities) || items[0] || null,
+      items, lang, S, TSi, e, link, page, paginas, mapa: sitiosMapa, pedirQ, vista: zonaMapa,
+      // El municipio elegido aunque no sea una Ciudad de Klendar («Busca tu municipio»).
+      centro: cerca ? { lat, lng } : centroCiudad || centroDe(klendarCities) || items[0] || null,
     });
     if (enCelda && !sitiosMapa && items.length) {
       resultados += vacioCelda(sitiosHtml({ items: [], lang, S, TSi, e: { ...e, q: '' }, link, page, paginas, mapa: false, pedirQ: '', centro: null }));
@@ -2567,7 +2577,7 @@ ${GRUPOS_CSS}` : ''}`;
       }),
     });
   } else if (mapa) {
-    resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S, zonaDelMapa(e))}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
+    resultados = `${ambienteHtml(e, lang, link)}${mapaHtml(items, lang, S, zonaDelMapa(e), zonaMapa)}${items.length ? `<h2 class="fin-h">${esc(S.onMap(items.length))}</h2>${rejilla(items, lang, { galeria: true })}` : ''}`;
   } else {
     const negArriba = (sitios?.items || []);
     // El orden de la búsqueda de la app: partidos, artistas, Sitios, Ofertas y

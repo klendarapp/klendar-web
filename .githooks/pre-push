@@ -35,6 +35,8 @@ if [ -n "$PW" ]; then
   PW="$PW" node tools/seguir_optimista_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/seguir_optimista_check.mjs; no se sube."; exit 1; }
   # Turnstile junto a su formulario y quitado al dejarlo; el admin, tras entrar, al Resumen (Iván, 18-11).
   PW="$PW" node tools/captcha_sitio_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/captcha_sitio_check.mjs; no se sube."; exit 1; }
+  # «Cerca de mí» sola con el permiso ya dado (§4zzz-ubicacion-web): Explorar y Descubre a su celda una vez, lo elegido sin pisar, sin permiso nada; y el mapa en su zona sin resultados (el mapa, solo en Chromium; unos 2 min).
+  PW="$PW" UBIC_RAPIDO=1 node tools/ubicacion_sola_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/ubicacion_sola_check.mjs (node tools/ubicacion_sola_check.mjs para ver qué); no se sube."; exit 1; }
   # «Imprimir cartel» y la pegatina de escaparate (§4zzz-cartel): el QR a la publicación o a la ficha, los 8 idiomas, una página al imprimir (unos 15 s).
   PW="$PW" node tools/cartel_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/cartel_check.mjs (node tools/cartel_check.mjs para ver qué); no se sube."; exit 1; }
   # El admin en su subdominio en Chromium y WebKit: la 404 de lo viejo, la sesión vieja borrada en klendar.app, entrar con el segundo factor, «Confirma que eres tú» y la sesión solo allí (unos 30 s).

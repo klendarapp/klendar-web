@@ -266,11 +266,14 @@
       // La cámara de Planes si se viene de allí con la misma zona (mapa.js).
       const cam = globalThis.KlendarAgrupa?.camara;
       const antes = cam ? cam.lee(d.zona) : null;
+      // La zona elegida (mapa.js, `zonaVista`): con «Cerca de mí», su distancia entera a la vista.
+      const vista = globalThis.KlendarAgrupa?.zonaVista ? globalThis.KlendarAgrupa.zonaVista(d.vista) : null;
       const m = new mb.Map({
         container: caja,
         style: oscuro ? 'mapbox://styles/mapbox/dark-v11' : 'mapbox://styles/mapbox/light-v11',
-        center: antes ? [antes.lng, antes.lat] : d.centro || [-3.7038, 40.4168],
-        zoom: antes ? antes.zoom : d.zoom || 14,
+        // Sin zona ni sitios («Todas las ciudades»), España entera, como la app (`mapStartZoom`).
+        center: antes ? [antes.lng, antes.lat] : vista ? [vista.lng, vista.lat] : d.centro || [-3.7, 40.2],
+        zoom: antes ? antes.zoom : vista || d.centro ? d.zoom || 14 : 5.2,
         performanceMetricsCollection: false,
         collectResourceTiming: false,
         cooperativeGestures: matchMedia('(pointer: coarse)').matches,
@@ -278,6 +281,7 @@
       m.addControl(new mb.NavigationControl({ showCompass: false }));
       // Para las pruebas (como `KlendarMapa` en Planes).
       window.KlendarMapaSitios = m;
+      if (!antes && vista && vista.r) globalThis.KlendarAgrupa.encuadra(m, vista);
       if (cam) cam.sigue(m, d.zona);
       const L = T[d.lang === 'en' ? 'en' : 'es'];
       const KA = globalThis.KlendarAgrupa;
