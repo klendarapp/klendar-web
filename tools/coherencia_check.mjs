@@ -34,8 +34,21 @@
 // 12. En el móvil, los botones del final de la página del municipio, del
 //     mismo ancho.
 //
+// Y el admin (parte 3, §4zzz-coherencia3), con la administradora de mentira de
+// _admin_simulado (en admin.localhost, como admin.klendar.app):
+//
+// 13. Resumen, listas, fichas y formularios de 360 a 1.920: los bloques llegan
+//     a los dos bordes, nada se sale de su caja y sin desplazamiento de lado.
+// 14. Los filtros (`.toolbar`) de borde a borde en cada renglón: los que llevan
+//     buscador, siempre; en el móvil, todos.
+// 15. Los campos con la misma letra (16 px) y el mismo alto.
+// 16. En el móvil, «Anterior», «Siguiente» y cuántas por página, en un renglón
+//     de borde a borde; y los botones de la cabecera, juntos.
+// 17. En una ficha, los botones de la cabecera al borde derecho (ordenador).
+// 18. Todas las pantallas con el mismo ancho (--admin-ancho, 1.400, a 1.920).
+//
 //   PW=<ruta a playwright> node tools/coherencia_check.mjs
-//   SOLO=web …    solo la parte 2;  SOLO=panel …   solo la parte 1
+//   SOLO=web …    solo la parte 2;  SOLO=panel …   solo la parte 1;  SOLO=admin …   solo la parte 3
 //   (arranca su serve_dev en PORT, 9411, con Supabase cortado)
 import { playwright } from './_supabase_simulado.mjs';
 import { webConDatos } from './_web_con_datos.mjs';
@@ -43,6 +56,8 @@ import { rpcs, conSesion } from './_panel_simulado.mjs';
 import { bordesPantalla } from './_bordes.mjs';
 import { conSesionCuenta } from './_cuenta_simulado.mjs';
 import { PANTALLAS, RPC_GUIA, raizDe } from './web_capturas.mjs';
+import { adminDe } from './_supabase_simulado.mjs';
+import { PANTALLAS_ADMIN, conSesionAdmin } from './_admin_simulado.mjs';
 
 const pw = playwright();
 let fallos = 0;
@@ -53,7 +68,7 @@ const SOLO = process.env.SOLO || '';
 const TAMANOS = [[1920, 1080], [1280, 800], [1024, 768], [768, 1024], [390, 844], [360, 780]];
 const RUTAS = ['hoy', 'validar', 'publicar', 'negocio'];
 try {
-  for (const tipo of SOLO === 'web' ? [] : ['chromium', 'webkit']) {
+  for (const tipo of SOLO && SOLO !== 'panel' ? [] : ['chromium', 'webkit']) {
     const nav = await pw[tipo].launch();
     for (const [w, h] of TAMANOS) {
       if (tipo === 'webkit' && ![1280, 390].includes(w)) continue;
@@ -111,7 +126,8 @@ try {
     }
     await nav.close();
   }
-  if (SOLO !== 'panel') await parteWeb();
+  if (!SOLO || SOLO === 'web') await parteWeb();
+  if (!SOLO || SOLO === 'admin') await parteAdmin();
 } finally {
   await web.cierra();
 }
@@ -192,6 +208,94 @@ async function parteWeb() {
         ok(!errores.length, `${tipo} ${w} ${zona}: sin errores (${errores.join(' | ')})`);
         await ctx.close();
       }
+    }
+    await nav.close();
+  }
+}
+/** La parte 3: el admin (admin.localhost, como admin.klendar.app). */
+async function parteAdmin() {
+  const LISTA = ['resumen', 'negocios', 'negocio', 'publicacion', 'canjes', 'usuarios', 'duplicados', 'avisos', 'festivos', 'configuracion']
+    .map((n) => PANTALLAS_ADMIN.find((x) => x[0] === n));
+  const ADMIN = adminDe(web.BASE);
+  const ATAM = [[1920, 1080], [1280, 800], [1024, 768], [768, 1024], [390, 844], [360, 780]];
+  for (const tipo of ['chromium', 'webkit']) {
+    const nav = await pw[tipo].launch();
+    for (const [w, h] of ATAM) {
+      if (tipo === 'webkit' && ![1280, 390].includes(w)) continue;
+      const ctx = await nav.newContext({ viewport: { width: w, height: h }, locale: 'es-ES', timezoneId: 'Europe/Madrid', hasTouch: w < 1000,
+        ...(tipo === 'chromium' ? { isMobile: w < 800 } : {}) });
+      await web.conDatos(ctx);
+      await conSesionAdmin(ctx);
+      const p = await ctx.newPage();
+      const errores = [];
+      p.on('pageerror', (e) => errores.push(e.message));
+      const anchos = new Set();
+      for (const [nombre, ruta] of LISTA) {
+        const t = `${tipo} ${w} admin ${nombre}`;
+        await p.goto(ADMIN + ruta, { waitUntil: 'networkidle' }).catch(() => {});
+        await p.waitForSelector('#view h1', { timeout: 15000 }).catch(() => {});
+        await p.waitForFunction(() => !document.querySelector('#view .loading'), null, { timeout: 6000 }).catch(() => {});
+        await p.waitForTimeout(400);
+        const b = await p.evaluate(bordesPantalla, '#view > div');
+        ok(!b.cortos.length, `${t}: todo llega a los dos bordes (${b.ancho} px)${b.cortos.length ? ` — ${b.cortos.map((c) => `${c.que} (${c.ancho} px, faltan ${c.izq}/${c.der})`).join(' | ')}` : ''}`);
+        ok(!b.salidos.length, `${t}: nada se sale de su caja${b.salidos.length ? ` — ${b.salidos.slice(0, 3).map((c) => `${c.que} de ${c.de || c.por}`).join(' | ')}` : ''}`);
+        const sobra = await p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+        ok(sobra <= 1, `${t}: sin desplazamiento de lado (${sobra} px)`);
+        anchos.add(b.ancho);
+        const r = await p.evaluate((movil) => {
+          const visible = (e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== 'hidden';
+          const caja = (e) => { const q = e.getBoundingClientRect(); const cs = getComputedStyle(e); return { l: q.left + parseFloat(cs.paddingLeft), r: q.right - parseFloat(cs.paddingRight) }; };
+          // 14. Cada renglón de filtros, de borde a borde (los que llevan
+          // buscador; en el móvil, todos los que llevan campos).
+          const filtros = [];
+          for (const tb of document.querySelectorAll('#view .toolbar')) {
+            const hijos = [...tb.children].filter(visible);
+            if (!visible(tb) || !hijos.some((x) => x.matches('input, select, label.f'))) continue;
+            if (!movil && !tb.querySelector(':scope > .grow')) continue;
+            const c = caja(tb);
+            const filas = [];
+            for (const x of hijos) {
+              const q = x.getBoundingClientRect();
+              const f = filas.find((y) => Math.abs(y.top - q.top) < 8);
+              if (f) { f.l = Math.min(f.l, q.left); f.r = Math.max(f.r, q.right); } else filas.push({ top: q.top, l: q.left, r: q.right });
+            }
+            for (const f of filas) if (f.l - c.l > 2 || c.r - f.r > 2) filtros.push(`${tb.firstElementChild?.id || tb.firstElementChild?.tagName} (faltan ${Math.round(f.l - c.l)}/${Math.round(c.r - f.r)})`);
+          }
+          // 15. Los campos: la misma letra y el mismo alto (los de las tablas,
+          // el pie de la lista y el estado de una sugerencia van en pequeño).
+          const campos = [...document.querySelectorAll('#view input, #view select')].filter((e) => visible(e)
+            && !/^(checkbox|radio|file|hidden|range|color)$/.test(e.type) && !e.closest('.pager, .estado-sel, table, .mfa-code'));
+          const letras = [...new Set(campos.map((e) => getComputedStyle(e).fontSize))];
+          const altos = campos.filter((e) => e.tagName === 'SELECT' || /^(text|search|email|date|number|url|tel|password)$/.test(e.type)).map((e) => Math.round(e.getBoundingClientRect().height));
+          // 16. El pie de las listas y los botones de la cabecera.
+          const pie = [...document.querySelectorAll('#view .pager')].filter(visible).map((pg) => {
+            const xs = [...pg.querySelectorAll(':scope > .btn, :scope > select')].map((e) => e.getBoundingClientRect());
+            const c = caja(pg);
+            return xs.length === 3 && xs.every((q) => Math.abs(q.top - xs[0].top) < 8) && Math.abs(Math.min(...xs.map((q) => q.left)) - c.l) <= 2 && Math.abs(Math.max(...xs.map((q) => q.right)) - c.r) <= 2;
+          });
+          const cab = [...document.querySelectorAll('#view .page-head')].filter(visible).map((ph) => {
+            const bs = [...ph.querySelectorAll(':scope > .btn, :scope > .menu')].filter(visible).map((e) => e.getBoundingClientRect().top);
+            return bs.length < 2 || bs.every((y) => Math.abs(y - bs[0]) < 8);
+          });
+          // 17. Los botones de la cabecera de una ficha, al borde derecho.
+          const ficha = document.querySelector('#view .detail-head');
+          const acc = ficha?.querySelector(':scope > .actions');
+          const derecha = acc ? Math.round(caja(ficha).r - acc.getBoundingClientRect().right) : null;
+          return { filtros, letras, altos: [Math.min(...altos), Math.max(...altos)], pie, cab, derecha };
+        }, w <= 560);
+        ok(!r.filtros.length, `${t}: los filtros, de borde a borde en cada renglón${r.filtros.length ? ` — ${r.filtros.join(' | ')}` : ''}`);
+        ok(r.letras.length <= 1 && (!r.letras.length || r.letras[0] === '16px'), `${t}: los campos, con la misma letra (${r.letras.join(', ')})`);
+        ok(!Number.isFinite(r.altos[0]) || r.altos[1] - r.altos[0] <= 3, `${t}: los campos, del mismo alto (${r.altos.join('–')} px)`);
+        if (w <= 560) {
+          ok(r.pie.every(Boolean), `${t}: el pie de la lista, en un renglón de borde a borde`);
+          ok(r.cab.every(Boolean), `${t}: los botones de la cabecera, juntos`);
+        }
+        if (w >= 1024 && r.derecha !== null) ok(Math.abs(r.derecha) <= 2, `${t}: los botones de la ficha, al borde derecho (faltan ${r.derecha} px)`);
+      }
+      ok(anchos.size === 1, `${tipo} ${w} admin: todas las pantallas con el mismo ancho (${[...anchos].join(', ')})`);
+      if (w === 1920) ok([...anchos][0] === 1400 - 56, `${tipo} ${w} admin: al ancho del admin (1.400 menos el relleno: ${[...anchos].join(', ')})`);
+      ok(!errores.length, `${tipo} ${w} admin: sin errores (${errores.join(' | ')})`);
+      await ctx.close();
     }
     await nav.close();
   }

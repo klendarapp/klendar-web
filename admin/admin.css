@@ -2,7 +2,7 @@
 [hidden] { display: none !important; }
 body { overflow-x: hidden; }
 body.admin-body { background: var(--surface); }
-.layout { display: grid; grid-template-columns: 250px 1fr; min-height: 100dvh; }
+.layout { display: grid; grid-template-columns: var(--admin-menu) 1fr; min-height: 100dvh; }
 /* Una tabla ancha se desplaza dentro de su caja (.tbl-wrap), nunca la página. */
 .layout > *, #view, #view > div { min-width: 0; }
 @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
@@ -200,7 +200,7 @@ table.tbl .sub { display: block; color: var(--ink-2); font-size: .75rem; font-we
 .tabs button.on { background: var(--ink); color: var(--surface); border-color: transparent; }
 
 /* Modal, toasts */
-dialog.modal { border: 0; border-radius: 22px; padding: 0; background: var(--elevated); color: var(--ink); width: min(560px, 94vw); box-shadow: 0 30px 80px -20px rgba(0,0,0,.5); }
+dialog.modal { border: 0; border-radius: 22px; padding: 0; background: var(--elevated); color: var(--ink); width: min(var(--admin-dialogo), 94vw); box-shadow: 0 30px 80px -20px rgba(0,0,0,.5); }
 dialog.modal::backdrop { background: rgba(0,0,0,.45); backdrop-filter: blur(4px); }
 dialog.modal form { padding: 22px 24px; display: grid; gap: 12px; }
 dialog.modal h2 { font-size: 1.25rem; margin: 0; }
@@ -210,7 +210,7 @@ dialog.modal .warn { background: rgba(255,92,92,.14); border-radius: 12px; paddi
 .toast { background: var(--ink); color: var(--surface); padding: 12px 16px; border-radius: 14px; font-weight: 600; font-size: .875rem; box-shadow: var(--shadow); max-width: 360px; animation: toast .2s ease; }
 .toast.bad { background: #b3261e; color: #fff; }
 @keyframes toast { from { transform: translateY(8px); opacity: 0 } to { transform: none; opacity: 1 } }
-.login { width: min(400px, calc(100% - 32px)); margin: 60px auto; display: grid; gap: 12px; }
+.login { width: min(var(--admin-acceso), calc(100% - 32px)); margin: 60px auto; display: grid; gap: 12px; }
 .login .btn { justify-content: center; }
 .login .brand { justify-content: center; margin-bottom: 8px; }
 /* .loading: el esqueleto común de site.css (filas grises con brillo). */
@@ -371,7 +371,7 @@ details.mas-cifras .card { background: var(--elevated); }
 @media (prefers-reduced-motion: reduce) { details.card.plegable > summary > .ms, details.mas-cifras > summary .ms { transition: none; } }
 
 /* Formularios por secciones (diálogos y «Enviar notificación»). */
-dialog.modal.ancho { width: min(680px, 94vw); }
+dialog.modal.ancho { width: min(var(--admin-dialogo-ancho), 94vw); }
 fieldset.grupo, details.grupo { border: 1px solid var(--glass-border); border-radius: 16px; padding: 10px 14px 14px; margin: 0; min-width: 0; }
 fieldset.grupo legend { font-weight: 800; font-size: .875rem; padding: 0 6px; margin-left: -6px; }
 details.grupo > summary { font-weight: 800; font-size: .875rem; cursor: pointer; padding: 2px 0; }
@@ -474,7 +474,7 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 
 /* «Festivos» › «Cualquier municipio» (admin/festivos.js): el buscador, las
    Populares y el municipio elegido con su provincia. */
-.fest-busca { position: relative; max-width: 520px; }
+.fest-busca { position: relative; }
 .fest-busca input { width: 100%; }
 .fest-res { display: grid; gap: 4px; margin-top: 6px; }
 .fest-res:empty { display: none; }
@@ -621,4 +621,72 @@ a.kpi:hover, a.kpi:focus-visible { border-color: var(--accent-text); }
    desde 1.700 px el contenido se queda en 1.400 y centrado en lo que deja el
    menú (las tablas siguen teniendo sitio de sobra). */
 main.content p.muted { max-width: 90ch; }
-@media (min-width: 1700px) { main#view.content { width: 100%; max-width: 1400px; justify-self: center; } }
+@media (min-width: 1700px) { main#view.content { width: 100%; max-width: var(--admin-ancho); justify-self: center; } }
+
+/* ── Tamaños coherentes (revisión de coherencia, parte 3; §4zzz-coherencia3) ──
+   Iván, 24-11: en cada pantalla, lo que va junto tiene el mismo ancho y los
+   bordes alineados, en el móvil, la tablet y el ordenador. Un solo sistema de
+   anchos para el admin, sin anchos sueltos por dentro:
+   - --admin-ancho (1.400): el de todas las pantallas (desde 1.700 px, centrado
+     en lo que deja el menú; por debajo, todo lo que deja el menú). Lo de dentro
+     (ayuda, filtros, tablas, tarjetas, formularios) va de borde a borde;
+   - --admin-menu (250, el menú lateral), --admin-acceso (400, «Entrar»),
+     --admin-dialogo (560) y --admin-dialogo-ancho (680, los diálogos).
+   admin.css también lo carga el panel (panel.html): lo que no debe tocarle va
+   bajo `.adm` (el <body> de admin.html). */
+:root { --admin-ancho: 1400px; --admin-menu: 250px; --admin-acceso: 400px; --admin-dialogo: 560px; --admin-dialogo-ancho: 680px; }
+
+/* Los campos, con la misma letra y el mismo alto en todas partes: dentro de
+   una etiqueta (`label.f`) heredaban sus 13 px y su negrita, y en Safari un
+   desplegable salía 7 px más alto que un campo de texto. */
+.adm label.f :is(input, select, textarea) { font-size: 1rem; font-weight: 400; }
+.adm :is(input:not([type=checkbox], [type=radio], [type=file], [type=range], [type=color]), select) { box-sizing: border-box; height: 2.875rem; }
+.adm .estado-sel select, .adm input.mfa-code { height: auto; }
+/* En Safari, un desplegable de alto fijo deja el texto abajo y lo corta: sin
+   relleno de arriba y abajo, centrado (en Chromium se ve igual). */
+.adm select:not(:is(.pager, .estado-sel) select) { padding-top: 0; padding-bottom: 0; }
+/* «Desde» y «Hasta» con su campo al lado (Canjes, Planes y pagos). */
+.adm label.f.f-linea { grid-template-columns: auto minmax(0, 1fr); align-items: center; }
+
+/* Los filtros: cada renglón de borde a borde. El buscador se lleva el sitio que
+   sobra; si no caben y bajan, los desplegables del renglón de abajo se reparten
+   el suyo (antes se quedaban a su tamaño y el renglón, a medias). */
+.adm .toolbar:has(> .grow) > :is(input, select, label.f):not(.grow) { flex: 1 0 auto; }
+.adm .toolbar > .grow { flex: 100 1 200px; }
+
+/* La cabecera de una ficha: los botones, al borde derecho (como «Exportar todo»
+   en las listas; el hueco estaba, pero sin estirarse). */
+.adm .detail-head .spacer { flex: 1; }
+.adm .detail-head .actions { align-items: center; }
+/* Si no caben al lado del título y bajan, también a la derecha (con el menú
+   lateral; en el móvil, debajo del título y a la izquierda). */
+@media (min-width: 901px) { .adm .detail-head > .actions { margin-left: auto; } }
+
+/* Las listas en tarjetas (Duplicados, Denuncias…): el texto se parte dentro de
+   la tarjeta (una etiqueta larga la sacaba de la pantalla en el móvil). */
+.adm .item { grid-template-columns: 56px minmax(0, 1fr); }
+.adm .den-ficha .item { grid-template-columns: 88px minmax(0, 1fr); }
+.adm .item .tag { white-space: normal; max-width: 100%; }
+
+/* «Pendiente de ti»: la línea de cada caso, con la letra del resto de la
+   tarjeta (iba a 16 px, más grande que su título). */
+.adm .bj .meta { font-size: .875rem; }
+
+/* El pie de las listas: «Anterior», «Siguiente» y cuántas por página, del alto
+   de los botones pequeños. */
+.adm .pager select { box-sizing: border-box; height: 1.875rem; padding: 0 10px; font-size: .8125rem; font-weight: 700; border-radius: 999px; }
+
+@media (max-width: 560px) {
+  /* En el móvil, los filtros a lo ancho: el buscador en su renglón y los
+     desplegables repartiéndose el suyo. */
+  .adm .toolbar > :is(input, select, label.f) { flex: 1 0 auto; }
+  .adm .toolbar > .grow { flex-basis: 100%; }
+  /* El pie de la lista: la cuenta arriba y debajo, en un renglón, los botones. */
+  .adm .pager > span:first-child { flex-basis: 100%; }
+  .adm .pager > .spacer { display: none; }
+  .adm .pager > .btn { flex: 1 1 0; justify-content: center; }
+  /* Con dos botones o más en la cabecera, juntos debajo del título (el
+     segundo bajaba solo y a la izquierda). */
+  .adm .page-head:has(> :is(.btn, .menu) ~ :is(.btn, .menu)) > h1 { flex-basis: 100%; }
+  .adm .page-head:has(> :is(.btn, .menu) ~ :is(.btn, .menu)) > .spacer { display: none; }
+}

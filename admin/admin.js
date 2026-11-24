@@ -514,7 +514,6 @@ function enfocaAviso(v) {
 
 const helpBox = (title, body) => `<details class="help"><summary>${esc(title)}</summary>${body}</details>`;
 const img = (url, ph = ms('storefront')) => url ? `<img class="thumb" src="${esc(url)}" alt="" loading="lazy">` : `<span class="ph">${ph}</span>`;
-const appLink = (path, label = I18N.lang === 'en' ? 'View in the app' : 'Ver en la app') => `<a class="btn sm ghost" href="${APP_URL}${path}" target="_blank" rel="noopener">${label} ↗</a>`;
 /** «Ver en la app ↗» como enlace (en la cabecera de una ficha, junto a los botones). */
 const appEnlace = (path) => `<a class="link ver-app" href="${APP_URL}${path}" target="_blank" rel="noopener">${I18N.lang === 'en' ? 'View in the app' : 'Ver en la app'} ↗</a>`;
 
@@ -2980,7 +2979,7 @@ async function offerDetail(v, id) {
         ${o.moderation_status !== 'rejected' ? '<button class="btn bad" data-a="reject">Retirar…</button>' : ''}
         <button class="btn" data-a="status">Cambiar estado…</button>
         ${o.is_boosted ? '<button class="btn" data-a="boost">Quitar boost</button>' : ''}
-        ${appLink('/o/' + o.id)}
+        ${appEnlace('/o/' + o.id)}
       </div>
     </div>
     <div class="grid2">
@@ -3048,8 +3047,8 @@ PAGES.canjes = async (v) => {
     <div class="toolbar">
       <input id="q" class="grow" placeholder="Buscar por email, negocio, título o código…" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos'], ['validated', 'Validados'], ['pending', 'Pendientes'], ['expired', 'Caducados'], ['cancelled', 'Cancelados']].map((o) => `<option value="${o[0]}" ${(s.status || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
-      <label class="f" style="grid-auto-flow:column;align-items:center">Desde <input type="date" id="from" value="${esc(s.from || '')}"></label>
-      <label class="f" style="grid-auto-flow:column;align-items:center">Hasta <input type="date" id="to" value="${esc(s.to || '')}"></label>
+      <label class="f f-linea">Desde <input type="date" id="from" value="${esc(s.from || '')}"></label>
+      <label class="f f-linea">Hasta <input type="date" id="to" value="${esc(s.to || '')}"></label>
     </div>
     <div id="list"><div class="loading">Cargando…</div></div>`;
   let rows = [];
@@ -4182,7 +4181,7 @@ PAGES.planes = async (v) => {
     }
     if (tab === 'payments') {
       const s = st.pagos;
-      tv.innerHTML = `<div class="toolbar"><label class="f" style="grid-auto-flow:column;align-items:center">Desde <input type="date" id="from" value="${esc(s.from || '')}"></label><label class="f" style="grid-auto-flow:column;align-items:center">Hasta <input type="date" id="to" value="${esc(s.to || '')}"></label></div><div id="sum"></div><div id="list"></div>`;
+      tv.innerHTML = `<div class="toolbar"><label class="f f-linea">Desde <input type="date" id="from" value="${esc(s.from || '')}"></label><label class="f f-linea">Hasta <input type="date" id="to" value="${esc(s.to || '')}"></label></div><div id="sum"></div><div id="list"></div>`;
       const r = await rpc('admin_payments', ultimos = { p_from: s.from || null, p_to: s.to || null, p_limit: s.limit, p_offset: s.offset });
       rows = r.rows; csvName = 'pagos'; csvFn = 'admin_payments';
       csvCols = [['paid_at', 'fecha'], ['business', 'negocio'], ['plan', 'plan'], [(x) => (x.amount_cents / 100).toFixed(2), 'importe (€)'], ['currency', 'moneda'], ['method', 'método'], ['period_start', 'periodo inicio'], ['period_end', 'periodo fin'], ['notes', 'notas'], ['recorded_by', 'registrado por']];
@@ -4442,7 +4441,7 @@ PAGES.avisos = async (v) => {
   const cargaLista = async () => {
     const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
     if (tab === 'send') {
-      tv.innerHTML = `<div class="card" style="max-width:680px"><form id="sendf" style="display:grid;gap:12px">
+      tv.innerHTML = `<div class="card"><form id="sendf" style="display:grid;gap:12px">
         <fieldset class="grupo"><legend>Destinatarios</legend><div class="grupo-campos c2">
           <label class="f"><span>A quién</span><select name="audience"><option value="all">Todos los usuarios</option><option value="users">Solo usuarios (no negocios)</option><option value="business_owners">Propietarios y encargados de negocios</option><option value="city">Negocios de una ciudad…</option></select></label>
           <label class="f" id="cityf" hidden><span>Ciudad</span><input name="city" placeholder="Madrid"></label>
