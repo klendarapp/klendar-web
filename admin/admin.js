@@ -91,7 +91,8 @@ const LABELS = {
 };
 // Quién recibió una notificación enviada desde aquí, como en el formulario.
 const AUDIENCIAS = { all: 'Todos los usuarios', users: 'Solo usuarios (no negocios)', business_owners: 'Propietarios y encargados de negocios', city: 'Negocios de una ciudad', ids: 'Equipo de un negocio' };
-const KIND_ICON = { flash_offer: ms('bolt'), future_event: ms('event') };
+// «Oferta», la etiqueta (no el rayo; Iván, 24-11, §4zzz-icono-oferta): el rayo queda para «Publicaciones».
+const KIND_ICON = { flash_offer: ms('local_offer'), future_event: ms('event') };
 const FLAGS = { alcohol: 'alcohol', tobacco: 'tabaco/vapeo', gambling: 'apuestas', offensive: 'lenguaje ofensivo' };
 const flagTags = (o) => (o.moderation_flags || []).map((f) => `<span class="tag warn" title="Detectado automáticamente en el texto">${esc(FLAGS[f] || f)}</span>`).join(' ');
 // Lenguaje ofensivo: qué ha encontrado (`text_offensive`) y en qué texto.
