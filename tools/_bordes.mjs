@@ -2,8 +2,9 @@
 // RUNBOOK §4zzz-coherencia1). Para evaluar en la página con Playwright:
 //
 //   const r = await page.evaluate(bordesPantalla);
+//   const r = await page.evaluate(bordesPantalla, '#view');   (otra raíz: «Tu cuenta», la web pública…)
 //
-// Devuelve el ancho de la pantalla (`#view > div`) y:
+// Devuelve el ancho de la pantalla (`#view > div`, o la raíz que se le pase) y:
 //  - `cortos`: las filas de bloques de primer nivel (con borde, fondo, campo,
 //    tabla o botón de bloque; o una rejilla o fila flex que los contiene)
 //    anchas (más del 40 % de la pantalla) que no llegan a su borde derecho o
@@ -11,10 +12,14 @@
 //    manda. Un botón en línea (ajustado a su texto) no cuenta.
 //  - `salidos`: lo que se sale por abajo o por la derecha de su caja (una
 //    tarjeta, un recuadro), más de 1 px, y lo que se sale de la pantalla.
-export function bordesPantalla() {
-  const raiz = document.querySelector('#view > div') || document.querySelector('#view');
+export function bordesPantalla(sel) {
+  const raiz = (typeof sel === 'string' && [...document.querySelectorAll(sel)].find((e) => e.getClientRects().length)) || document.querySelector('#view > div') || document.querySelector('#view');
   if (!raiz) return { ancho: 0, cortos: [], salidos: [] };
-  const R = raiz.getBoundingClientRect();
+  // La caja de dentro de la raíz (sin su relleno): `main` lleva sus 20 px a cada lado.
+  const rr = raiz.getBoundingClientRect();
+  const rcs = getComputedStyle(raiz);
+  const R = { left: rr.left + parseFloat(rcs.paddingLeft), right: rr.right - parseFloat(rcs.paddingRight) };
+  R.width = R.right - R.left;
   const nombre = (el) => `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${typeof el.className === 'string' && el.className.trim() ? `.${el.className.trim().split(/\s+/).slice(0, 3).join('.')}` : ''} «${(el.innerText || el.placeholder || '').trim().replace(/\s+/g, ' ').slice(0, 30)}»`;
   const visible = (el) => {
     const cs = getComputedStyle(el);

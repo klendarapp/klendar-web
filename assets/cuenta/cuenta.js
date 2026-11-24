@@ -2962,7 +2962,7 @@ RUTAS.gustos = async (_p, params) => {
     || (deAntes ? { code: null, slug: null, name: deAntes.name, cityId: deAntes.id } : null);
   pinta(`
     ${primera ? '' : `<p class="crumbs"><a href="/cuenta">${esc(t('Tu cuenta'))}</a> › <a href="/cuenta/ajustes">${esc(t('Ajustes'))}</a></p>`}
-    <div class="ticket" style="text-align:left">
+    <div class="gustos">
       <h1>${esc(t(primera ? '¿Qué te gusta?' : 'Tus gustos'))}</h1>
       <p class="muted">${esc(t('Elige de 3 a 5 y te lo enseñamos antes en Descubre. Lo demás sigue saliendo.'))}</p>
       <form id="fg" class="formu" novalidate>

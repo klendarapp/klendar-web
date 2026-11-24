@@ -237,8 +237,8 @@ def head(t, path, page_title=None, page_desc=None, extra=''):
 <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
 <link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="stylesheet" href="/assets/site.css?v=20261119a11y2">
-<link rel="stylesheet" href="/assets/public.css?v=20261123donde">
+<link rel="stylesheet" href="/assets/site.css?v=20261124coh2">
+<link rel="stylesheet" href="/assets/public.css?v=20261124coh2">
 {extra}
 </head>
 <body>

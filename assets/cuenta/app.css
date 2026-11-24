@@ -141,6 +141,11 @@ body:has(#view > .cargando) footer { display: none; }
 .motivos label { font-weight: 400; }
 
 .bloque { border-top: 1px solid var(--glass-border); margin-top: 26px; padding-top: 6px; }
+/* Una `<section>` de «Tu cuenta» no lleva los 72 px de arriba y abajo de las
+   secciones de la portada (site.css): en Ajustes dejaba huecos de casi 100 px
+   entre apartados, y en Planes › Calendario, entre el mes y lo del día. */
+#view section.bloque { padding-bottom: 0; }
+#view section.pl-lista { padding: 0; margin-top: 18px; }
 .bloque h2 { font-size: 20px; }
 .avatar-fila, .foto-fila { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .avatar { width: 64px; height: 64px; border-radius: 50%; overflow: hidden; display: grid; place-items: center;
@@ -151,10 +156,14 @@ label.pill { cursor: pointer; }
 .consen { display: grid; grid-template-columns: minmax(150px, 220px) 1fr; gap: 10px 16px; margin: 14px 0; }
 .consen dt { color: var(--ink-2); }
 .consen dd { margin: 0; }
+/* Un apartado con dos líneas (Personas bloqueadas: la explicación y la lista):
+   la segunda, también a la derecha; antes descolocaba todas las filas de debajo. */
+.consen dt { grid-column: 1; }
+.consen dd { grid-column: 2; }
 /* Personas bloqueadas (Ajustes → Privacidad): una por línea, «Desbloquear» a la derecha. */
 .bloqueadas { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .bloqueadas li { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-@media (max-width: 560px) { .consen { grid-template-columns: 1fr; } .consen dd { margin-bottom: 8px; } }
+@media (max-width: 560px) { .consen { grid-template-columns: 1fr; } .consen dt, .consen dd { grid-column: 1; } .consen dd { margin-bottom: 8px; } }
 /* Rojo legible en los dos temas (el #FF5C5C sobre blanco no llegaba a 3:1). */
 .pill.peligro { border-color: #B3261E; color: #B3261E; background: transparent; }
 @media (prefers-color-scheme: dark) { .pill.peligro { border-color: #FF9B9B; color: #FF9B9B; } }
@@ -223,7 +232,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
    La misma columna que la app en pantallas anchas (560 px de contenido),
    centrada; el mismo cristal en tarjetas, filas y campos; las mismas
    esquinas (22 tarjetas, 20 accesos, 16 campos) y los mismos iconos. */
-.cuenta { max-width: 600px; }
+.cuenta { max-width: var(--ancho-cuenta, 600px); }
 .cuenta h1 { font-size: clamp(26px, 4vw, 32px); line-height: 1.12; letter-spacing: -.5px; margin: 14px 0 16px; }
 .titulo-pagina { margin-top: 18px; }
 .ms { font-family: 'Material Symbols Outlined'; font-weight: normal; font-style: normal; font-size: 24px;
@@ -300,6 +309,9 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
    campos y se veía un recuadro dentro de la píldora (revisión 11-11). */
 .formu .buscador-campo input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]),
 .formu .buscador-campo input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):focus { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; height: 46px; }
+/* Y la caja, como los demás campos del formulario (esquinas de 16 y el mismo
+   fondo), no una píldora junto a recuadros (revisión de coherencia, 24-11). */
+.formu .buscador-campo { border-radius: 16px; background: var(--glass); min-height: 50px; }
 /* Lo que se ve y no se cambia (la fecha de nacimiento ya puesta): el campo de
    siempre, no el gris de desactivado, con un candado a la derecha (como la app). */
 .formu input[readonly]:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]) { cursor: default; }
@@ -309,7 +321,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 .candado .ms { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); font-size: 20px; color: var(--ink-2); pointer-events: none; }
 .formu > .pill.accent, .formu > button.pill { width: 100%; justify-content: center; }
 .bloque { border-top: 0; margin-top: 8px; padding-top: 0; }
-.bloque h2 { font-family: inherit; font-size: 14px; font-weight: 700; color: var(--ink-2); margin: 26px 4px 4px; }
+.bloque h2 { font-family: inherit; font-size: 14px; font-weight: 700; color: var(--ink-2); margin: 26px 0 4px; }
 .bloque .formu { margin-top: 8px; }
 
 /* Los textos de las filas y tarjetas, en el color del texto (no del enlace). */
@@ -889,3 +901,15 @@ a.pl-dia:hover { background: var(--soft); }
 .arriba-t { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .arriba-d { font-weight: 800; font-variant-numeric: tabular-nums; flex: none; }
 .arriba-d.coral { color: var(--accent-text); }
+
+/* Los encargos («Tus códigos › Tus encargos» y «¿Qué encargas?»): el texto
+   como el de las demás tarjetas (título en negrita, lo demás en pequeño),
+   no un párrafo de letra normal (revisión de coherencia, 24-11). */
+.ocard .otxt { display: grid; gap: 3px; min-width: 0; flex: 1; text-align: left; }
+.ocard .otxt b { font-size: 16px; font-weight: 700; }
+.ocard .otxt > span { font-size: 13px; }
+.ocard .otxt > span:not(.muted) { font-weight: 700; }
+/* Un botón suelto de un apartado («Cerrar sesión en todos los dispositivos»),
+   a la izquierda con su texto, como los demás de Ajustes (no centrado). */
+#view .bloque > .acciones { justify-content: flex-start; }
+#view .bloque > .acciones > :only-child { flex: 0 1 auto; }
