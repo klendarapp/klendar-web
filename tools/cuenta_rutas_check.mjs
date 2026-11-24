@@ -201,10 +201,10 @@ async function pruebaDireccion(nav, motor) {
   // rutaInterna: solo direcciones propias y sin datos.
   const casos = await p.evaluate(() => ({
     panel: rutaInterna('/panel'),
-    panelRuta: rutaInterna('/panel/validar?code=abc12345&biz=0e7717e0-0000-4000-8000-0000000097d4&x=1'),
+    panelRuta: rutaInterna('/panel/validar?codigo=abc12345&biz=0e7717e0-0000-4000-8000-0000000097d4&x=1'),
     panelAlta: rutaInterna('/panel?alta=1'),
     // Con `#` (antes del 24-11): el `#` ya no lleva a ninguna pantalla (§4zzz-panellimpio).
-    panelHash: rutaInterna('/panel#/validar?code=abc12345'),
+    panelHash: rutaInterna('/panel#/validar?codigo=abc12345'),
     panelBarra: rutaInterna('/panel/sellos/x/editar/?biz=0e7717e0-0000-4000-8000-0000000097d4'),
     cuenta: rutaInterna('/cuenta'),
     cuentaRuta: rutaInterna('/cuenta/ajustes/notificaciones?lang=en&x=1'),
@@ -222,7 +222,7 @@ async function pruebaDireccion(nav, motor) {
     normal: urlCuenta('/cuenta/codigo/x.y.z?rp=1'),
   }));
   ok(casos.panel === '/panel' && casos.panelAlta === '/panel?alta=1' && casos.cuenta === '/cuenta', `${motor} rutaInterna: las propias`, JSON.stringify(casos));
-  ok(casos.panelRuta === '/panel/validar?biz=0e7717e0-0000-4000-8000-0000000097d4&code=abc12345', `${motor} rutaInterna: el panel con su ruta y sin lo demás`, casos.panelRuta);
+  ok(casos.panelRuta === '/panel/validar?biz=0e7717e0-0000-4000-8000-0000000097d4&codigo=abc12345', `${motor} rutaInterna: el panel con su ruta y sin lo demás`, casos.panelRuta);
   ok(casos.panelHash === '/panel' && casos.panelBarra === '/panel/sellos/x/editar?biz=0e7717e0-0000-4000-8000-0000000097d4', `${motor} rutaInterna: el panel sin almohadilla ni barra final`, JSON.stringify([casos.panelHash, casos.panelBarra]));
   ok(casos.cuentaRuta === '/cuenta/ajustes/notificaciones?lang=en', `${motor} rutaInterna: la cuenta con su ruta`, casos.cuentaRuta);
   ok(![casos.fuera, casos.dobles, casos.subir, casos.subir2, casos.vieja, casos.admin].some(Boolean), `${motor} rutaInterna: nada de fuera ni /app/`, JSON.stringify(casos));

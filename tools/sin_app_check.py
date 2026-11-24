@@ -3,7 +3,8 @@
 `/app` se quitó del todo: ahora es `klendar.app/cuenta` y `/app/…` da la 404
 normal, así que cualquier enlace que vuelva a nombrarla es un enlace roto. Y que
 no se cuele `#/` en «Tu cuenta»: tiene una sola forma de ruta, la dirección
-(el panel y el admin sí van con `#/`). Barato: `git grep` sobre lo que hay en
+(el panel y el admin tampoco desde el 24-11: tools/panel_rutas_check.mjs y
+tools/admin_dominio_check.mjs). Barato: `git grep` sobre lo que hay en
 el repo.
 
 Se saltan este fichero y la prueba que comprueba que `/app/…` da 404.

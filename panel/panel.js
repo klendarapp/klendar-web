@@ -1024,7 +1024,7 @@ const SIN_LOCAL_FIJO = ['partidos', 'antes-de-cerrar', 'cartel-local', 'cerrados
  * de esta lista, cada uno con su forma. Siempre dentro de /panel. */
 const VUELTA_PARAMS = {
   biz: /^[0-9a-f-]{36}$/i,
-  code: /^[0-9a-f]{8,64}$/i,
+  codigo: /^[0-9a-f]{8,64}$/i,
   from: /^[0-9a-f-]{36}$/i,
   repeat: /^1$/,
   extend: /^[0-9a-f-]{36}$/i,
@@ -1500,7 +1500,7 @@ function renderNav(current) {
 // todas (functions/_lib/panel.js, `SECCIONES_PANEL`). Los enlaces de dentro
 // se abren sin recargar (`go`, con `history.pushState`) y «Atrás» y
 // «Adelante» vuelven a pintar (`popstate`). Los enlaces viejos con almohadilla
-// (`/panel#/validar`) ya no llevan a ningún apartado: el `#` se quita de la
+// (los de antes del 24-11) ya no llevan a ningún apartado: el `#` se quita de la
 // barra sin moverse de donde se está.
 const currentRoute = () => (location.pathname.replace(/^\/panel\/?/, '').replace(/\/+$/, '') || 'hoy').split('/');
 /** ¿Es `ruta` (sin `?`) una pantalla del panel? (`/panel`, `/panel/sellos/x`). */
@@ -5583,7 +5583,7 @@ PAGES.validar = async (v) => {
   // Desde klendar.app/r/<código> (el QR escaneado con la cámara del móvil,
   // sin la app): el código llega puesto y se enseña qué es; se valida con el
   // botón «Validar». La cámara de aquí sí valida directamente.
-  const desdeQr = new URLSearchParams(location.search).get('code');
+  const desdeQr = new URLSearchParams(location.search).get('codigo');
   // Desde klendar.app/c/<…> (el QR de cliente leído con la cámara del móvil):
   // sus bonos, al momento.
   const cliente = new URLSearchParams(location.search).get('cliente');

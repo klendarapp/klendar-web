@@ -715,7 +715,7 @@ const destinoTrasEntrar = () => rutaInterna(new URLSearchParams(location.search)
  * '' = no hay a dónde volver. */
 const VUELTA_PARAMS = {
   biz: /^[0-9a-f-]{36}$/i,
-  code: /^[0-9a-f]{8,64}$/i,
+  codigo: /^[0-9a-f]{8,64}$/i,
   from: /^[0-9a-f-]{36}$/i,
   repeat: /^1$/,
   extend: /^[0-9a-f-]{36}$/i,

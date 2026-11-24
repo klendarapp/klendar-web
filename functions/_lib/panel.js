@@ -18,7 +18,7 @@
 //   la buena, con su `?…`. Lo que no es una pantalla (`/panel/loquesea`): la
 //   404 normal de la web.
 // - Los enlaces con `#` ya no llevan a ningún sitio (decisión de Iván): el
-//   navegador no manda el `#`, así que `klendar.app/panel#/validar` abre
+//   navegador no manda el `#`, así que un enlace viejo (`/panel` con `#/validar` detrás) abre
 //   `/panel` (Hoy) y la página lo quita de la barra (panel/panel.js).
 //
 // En el navegador (panel/panel.js, «Direcciones»): `currentRoute()` lee

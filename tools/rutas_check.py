@@ -7,11 +7,11 @@ publica (no en tools/ ni en lo de terceros):
 
   - `//` pegado a `/cuenta/`, `/panel/` o `/admin/` (también `/panel/${… ? `/x` …}`,
     que da `//` al juntarse);
-  - `/panel/<algo>` y `/admin/<algo>` sin `#/`: el panel es una sola página y sus
-    pantallas van con `#/`; el admin no tiene `/admin/…` (salvo sus propios ficheros);
+  - `/panel/<pantalla>…`: desde el 24-11 el panel va con direcciones limpias (sin
+    `#`, §4zzz-panellimpio): que la pantalla exista (`PAGES.x = …`); el admin no
+    tiene `/admin/…` (salvo sus propios ficheros);
   - `/cuenta/<pantalla>`: que «Tu cuenta» tenga esa pantalla (`RUTAS.x = …`);
-  - `/panel/#/<pantalla>` y los `#/<pantalla>` de dentro del panel: que exista
-    (`PAGES.x = …`);
+  - ni `/panel#/x` ni un `#/x` dentro del panel (direcciones viejas);
   - el admin, desde el 24-11 en admin.klendar.app con direcciones limpias (sin
     `#`, §4zzz-adminlimpio): ni `/admin#/x` ni un `#/x` dentro; sus enlaces
     (`href="/x…"`, `go('/x…')`) llevan a una pantalla que existe (`PAGES.x`,
@@ -19,7 +19,7 @@ publica (no en tools/ ni en lo de terceros):
 
 Y, desde el 11-11 (Iván: todas las direcciones sin barra al final), que ningún
 enlace propio lleve la barra final (`/privacidad/`, `klendar.app/en/privacy/`,
-`/panel/#/x`, `${base}/`): la dirección buena es `/privacidad`, `/panel#/x`; la
+`/panel/hoy/`, `${base}/`): la dirección buena es `/privacidad`, `/panel/hoy`; la
 portada sigue siendo `/`. Las viejas siguen funcionando (301 en
 functions/_middleware.js, `_lib/direccion.js`), pero un enlace nuestro no debe
 pasar por ahí.
@@ -132,26 +132,30 @@ def main() -> int:
                 # El fichero de la carta imprimible (admin.klendar.app/carta lo sirve por dentro).
                 if m[1] == 'admin' and resto == 'carta':
                     continue
+                # El panel, con direcciones limpias (§4zzz-panellimpio): `/panel/<pantalla>…`.
+                if m[1] == 'panel':
+                    if (re.match(r'[a-z0-9-]*', resto)[0]) not in PANEL:
+                        malos.append(f'{donde}: «/panel/{resto}» (el panel no tiene esa pantalla)')
+                    continue
                 malos.append(f'{donde}: «/{m[1]}/{resto}» (el {m[1]} no tiene esa dirección; '
-                             + ('sus pantallas van con #/)' if m[1] == 'panel' else 'sus pantallas van en admin.klendar.app/<apartado>)'))
+                             + 'sus pantallas van en admin.klendar.app/<apartado>)')
             for m in A_CUENTA.finditer(linea):
                 if m[1] not in CUENTA:
                     malos.append(f'{donde}: «/cuenta/{m[1]}» («Tu cuenta» no tiene esa pantalla)')
             for m in A_HASH.finditer(linea):
                 if m[1] == 'admin':
                     malos.append(f'{donde}: «/admin#/{m[2]}» (dirección vieja: el admin va en admin.klendar.app/{m[2]}, sin #)')
-                elif m[2] not in PANEL:
-                    malos.append(f'{donde}: «/{m[1]}/#/{m[2]}» (el {m[1]} no tiene esa pantalla)')
+                else:
+                    malos.append(f'{donde}: «/panel#/{m[2]}» (dirección vieja: el panel va en /panel/{m[2]}, sin #)')
             if not LOGICA.search(linea) and not f.endswith('.md') and f not in ('functions/_lib/direccion.js',):
                 for m in CON_BARRA.finditer(linea):
                     malos.append(f'{donde}: «/{m[1]}/» lleva barra al final (va sin ella: «/{m[1]}»)')
                 if f.endswith('.js'):
                     for m in PIEZA_CON_BARRA.finditer(linea):
                         malos.append(f'{donde}: «{m[0]}» acaba en barra (las direcciones van sin ella)')
-            if propio == 'panel':
+            if propio == 'panel' or f == 'panel.html':
                 for m in HASH_DENTRO.finditer(linea):
-                    if m[1] not in PANEL:
-                        malos.append(f'{donde}: «#/{m[1]}» (el panel no tiene esa pantalla)')
+                    malos.append(f'{donde}: «#/{m[1]}» (el panel va sin #: «/panel/{m[1]}»)')
             if propio == 'admin' or f == 'admin.html':
                 for m in HASH_DENTRO.finditer(linea):
                     malos.append(f'{donde}: «#/{m[1]}» (el admin va sin #: «/{m[1]}»)')

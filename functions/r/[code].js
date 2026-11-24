@@ -13,9 +13,11 @@ export const onRequestGet = (ctx) => {
     return new Response(null, { status: 302, headers: { Location: '/' } });
   }
   // Relativa: se queda en el mismo sitio (klendar.app o el de pruebas).
+  // En `?codigo=`, no `?code=`: ese es el de Supabase (la vuelta de Google), que
+  // supabase-js canjearía y quitaría (§4zzz-panellimpio).
   return new Response(null, {
     status: 302,
-    headers: { Location: `/panel/validar?code=${code}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
+    headers: { Location: `/panel/validar?codigo=${code}`, 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
   });
 };
 
