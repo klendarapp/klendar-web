@@ -197,7 +197,9 @@ function negCabecera(b, pct) {
   const logo = b?.logo_url && window.KFotos?.mini
     ? `<img class="neg-logo" src="${esc(KFotos.mini(b.logo_url))}" alt="" width="56" height="56" loading="lazy">`
     : b?.logo_url ? `<img class="neg-logo" src="${esc(b.logo_url)}" alt="" width="56" height="56" loading="lazy">`
-      : `<span class="neg-logo neg-letra" aria-hidden="true">${esc(letra)}</span>`;
+      // Sin logo, el hueco de siempre (§4zzz-sinfoto): el icono de su tipo de negocio.
+      : window.KlendarSinFoto ? KlendarSinFoto.html({ categoria: b?.category_id ?? BIZ.category_id, nombre: BIZ.name, clase: 'neg-logo' })
+        : `<span class="neg-logo neg-letra" aria-hidden="true">${esc(letra)}</span>`;
   const donde = [b?.address, b?.city].filter(Boolean).join(', ');
   return `<div class="neg-cab">${logo}<div class="neg-cab-t">
       <p class="neg-nombre"><b translate="no">${esc(BIZ.name)}</b>${BIZ.entity?.kind ? ` <span class="tag badge-entidad">${icono('entidad')} ${esc(entSello(BIZ.entity.kind))}</span>` : ''}

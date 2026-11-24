@@ -1433,3 +1433,4 @@ body.en-panel header.top .top-acciones { flex: none; }
 /* Sin foto, el hueco de siempre en la lista de publicaciones (§4zzz-sinfoto;
    `.sin-foto` en /assets/tarjeta.css): el icono de su categoría. */
 table.tbl .ph.sin-foto { display: inline-grid; background: var(--sf-fondo); }
+.neg-logo.sin-foto { display: grid; background: var(--sf-fondo); }
