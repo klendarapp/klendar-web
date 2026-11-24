@@ -1248,7 +1248,7 @@ async function pideBadges(lanzar = false) {
 // `/negocios?status=pending`). El servidor sirve esta misma página en todas
 // (functions/_lib/admin.js, `SECCIONES_ADMIN`). Los enlaces de dentro se
 // abren sin recargar (`go`, con `history.pushState`) y «Atrás» y «Adelante»
-// vuelven a pintar (`popstate`). Los enlaces viejos con `#/x` ya no llevan a
+// vuelven a pintar (`popstate`). Los enlaces viejos con almohadilla ya no llevan a
 // ningún apartado: el `#` se quita de la barra sin moverse de donde se está.
 const currentRoute = () => (location.pathname.replace(/^\/+|\/+$/g, '') || 'resumen').split('/');
 /** La dirección de una pantalla (`resumen` → `/`, `negocios/x` → `/negocios/x`). */

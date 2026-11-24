@@ -1,11 +1,15 @@
-// El admin en la raíz de su propio subdominio, https://admin.klendar.app/
-// (Iván, 23-11; RUNBOOK §4zzz-admindom). Sin navegador (unos 0,5 s) y en
-// Chromium y WebKit con la base simulada (unos 30 s):
+// El admin en la raíz de su propio subdominio, https://admin.klendar.app
+// (Iván, 23-11; RUNBOOK §4zzz-admindom), con direcciones limpias, sin `#`
+// (Iván, 24-11; §4zzz-adminlimpio). Sin navegador (unos 0,5 s) y en
+// Chromium y WebKit con la base simulada (unos 40 s):
 //
 //  1. Qué hace cada host (functions/_lib/admin.js y el middleware de verdad):
-//     en admin.klendar.app, `/` y `/carta` se reescriben a sus ficheros sin
-//     cambiar la dirección, sus JS se sirven y lo demás va a klendar.app;
-//     `/admin…`, en los dos hosts, da la 404 normal (sin pistas).
+//     en admin.klendar.app, `/`, las rutas de los apartados (`/semanas`,
+//     `/negocios/<id>`…) y `/carta` se reescriben a sus ficheros sin cambiar
+//     la dirección; con barra final (y `/resumen`), un 301 a la buena; sus JS
+//     se sirven y lo demás va a klendar.app; `/admin…`, en los dos hosts, da
+//     la 404 normal (sin pistas). Los apartados del servidor son los
+//     `PAGES.x` de admin/*.js y en el admin no queda ningún `#/`.
 //  2. Las cabeceras: la CSP del admin, igual o más estricta (sin Mapbox ni
 //     WebSocket, `frame-ancestors 'none'`, `Cross-Origin-Opener-Policy`), la
 //     misma en `_headers` y en el middleware (CSP_ADMIN); robots.txt no nombra
@@ -23,14 +27,18 @@
 //     - «¿Has olvidado la contraseña?» vuelve por «Tu cuenta» de la web
 //       pública (`/cuenta/nueva-clave?destino=/admin`) y de ahí a la raíz del
 //       admin;
-//     - el logo de «Entrar» lleva a la web pública; sin violaciones de CSP.
+//     - el logo de «Entrar» lleva a la web pública; sin violaciones de CSP;
+//     - las direcciones: `/#/x` abre la raíz (el Resumen) y quita el `#`; cada
+//       apartado del menú, en su ruta y sin `#`; los logos del menú, a `/`
+//       sin recargar; «Atrás» y «Adelante»; recargar en un apartado (y en una
+//       lista con sus filtros) lo vuelve a abrir; con barra final, un 301.
 //
 //   PW=<ruta a playwright> node tools/admin_dominio_check.mjs
 //   node tools/admin_dominio_check.mjs --sin-navegador
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { decideHost, origenAdmin, origenPublico } from '../functions/_lib/admin.js';
+import { decideHost, origenAdmin, origenPublico, SECCIONES_ADMIN } from '../functions/_lib/admin.js';
 import { CABECERAS_ADMIN, CSP_ADMIN } from '../functions/_lib/csp.js';
 
 const RAIZ = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,6 +66,19 @@ const CASOS = [
   ['https://admin.klendar.app/', { reescribe: '/admin' }],
   ['https://admin.klendar.app/?inactividad=20', { reescribe: '/admin' }],
   ['https://admin.klendar.app/carta', { reescribe: '/admin/carta' }],
+  // Los apartados, cada uno en su ruta (sin `#`, §4zzz-adminlimpio).
+  ['https://admin.klendar.app/semanas', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/negocios', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/negocios?status=pending', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/negocios/0e7717e0-0000-4000-8000-000000000001', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/denuncias/offer/0e7717e0-0000-4000-8000-000000000001', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/ciudades/M%C3%A1laga', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/festivos/2027?m=torrent', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/usuarios', { reescribe: '/admin' }],
+  ['https://admin.klendar.app/resumen', { salto: 'https://admin.klendar.app/' }],
+  ['https://admin.klendar.app/resumen?x=1', { salto: 'https://admin.klendar.app/?x=1' }],
+  ['https://admin.klendar.app/negociosx', { salto: 'https://klendar.app/negociosx' }],
+  ['http://admin.localhost:8788/semanas', { reescribe: '/admin' }],
   ['https://admin.klendar.app/admin/admin.js', null],
   ['https://admin.klendar.app/admin/admin.css', null],
   ['https://admin.klendar.app/admin', NO],
@@ -77,6 +98,18 @@ const CASOS = [
 for (const [u, esperado] of CASOS) ok(`decideHost ${u}`, igual(d(u), esperado), `${JSON.stringify(d(u))} ≠ ${JSON.stringify(esperado)}`);
 ok('decideHost: /carta.html del admin, a /carta', igual(decideHost(new URL('https://admin.klendar.app/carta.html?n=1'), '/carta'), { salto: 'https://admin.klendar.app/carta?n=1' }));
 ok('decideHost: /admin.html de klendar.app, la 404', igual(decideHost(new URL('https://klendar.app/admin.html'), '/admin'), NO));
+ok('decideHost: /semanas/ del admin, a /semanas', igual(decideHost(new URL('https://admin.klendar.app/semanas/'), '/semanas'), { salto: 'https://admin.klendar.app/semanas' }));
+ok('decideHost: /negocios/x/?status=1 del admin, sin la barra', igual(decideHost(new URL('https://admin.klendar.app/negocios/x/?status=1'), '/negocios/x'), { salto: 'https://admin.klendar.app/negocios/x?status=1' }));
+// Los ficheros del admin (para buscar en ellos).
+const FICHEROS_ADMIN = readdirSync(path.join(RAIZ, 'admin')).filter((f) => f.endsWith('.js')).map((f) => `admin/${f}`);
+{
+  // Los apartados del servidor son los de admin/*.js (`PAGES.x = …`), menos el Resumen (la raíz).
+  const paginas = new Set();
+  for (const f of FICHEROS_ADMIN) for (const m of lee(f).matchAll(/\bPAGES\.([a-z][a-z0-9]*)\s*=(?!=)/g)) paginas.add(m[1]);
+  paginas.delete('resumen');
+  const servidor = [...SECCIONES_ADMIN].sort().join();
+  ok('SECCIONES_ADMIN son las pantallas de admin/*.js (menos el Resumen)', servidor === [...paginas].sort().join(), `servidor: ${servidor}\n      admin: ${[...paginas].sort().join()}`);
+}
 ok('origenAdmin de klendar.app', origenAdmin(new URL('https://klendar.app/x')) === 'https://admin.klendar.app');
 ok('origenPublico de admin.klendar.app', origenPublico(new URL('https://admin.klendar.app/')) === 'https://klendar.app');
 ok('origenPublico de admin.localhost', origenPublico(new URL('http://admin.localhost:9/')) === 'http://localhost:9');
@@ -112,6 +145,11 @@ ok('origenPublico de admin.localhost', origenPublico(new URL('http://admin.local
   ok('middleware: admin.klendar.app/ sirve el admin (fichero /admin, sin saltar)', a.status === 200 && pedidos.at(-1) === '/admin' && !a.headers.get('location') && /fichero \/admin/.test(await a.text()));
   for (const [k, v] of Object.entries(CABECERAS_ADMIN)) ok(`middleware: el admin con ${k}: ${v.slice(0, 40)}`, a.headers.get(k) === v, a.headers.get(k));
   ok('middleware: el admin sin nonce', !/'nonce-/.test(a.headers.get('content-security-policy') || ''));
+  for (const u of ['https://admin.klendar.app/semanas', 'https://admin.klendar.app/negocios/abc?ver=duplicados', 'https://admin.klendar.app/denuncias/offer/abc']) {
+    const r = await pide(u);
+    ok(`middleware: ${u} sirve el admin (fichero /admin, sin saltar)`, r.status === 200 && pedidos.at(-1) === '/admin' && !r.headers.get('location'));
+    ok(`middleware: …${u} con las cabeceras del admin`, Object.entries(CABECERAS_ADMIN).every(([k, v]) => r.headers.get(k) === v));
+  }
   const c = await pide('https://admin.klendar.app/carta?n=3');
   ok('middleware: admin.klendar.app/carta, la carta (fichero /admin/carta)', c.status === 200 && pedidos.at(-1) === '/admin/carta' && c.headers.get('content-security-policy') === CSP_ADMIN);
   const h = await pide('https://admin.klendar.app/', 'HEAD');
@@ -121,6 +159,10 @@ ok('origenPublico de admin.localhost', origenPublico(new URL('http://admin.local
   for (const [u, l] of [
     ['https://admin.klendar.app/index.html', 'https://admin.klendar.app/'],
     ['https://admin.klendar.app/carta.html?n=2', 'https://admin.klendar.app/carta?n=2'],
+    ['https://admin.klendar.app/semanas/', 'https://admin.klendar.app/semanas'],
+    ['https://admin.klendar.app/negocios/abc/?ver=duplicados', 'https://admin.klendar.app/negocios/abc?ver=duplicados'],
+    ['https://admin.klendar.app/carta/', 'https://admin.klendar.app/carta'],
+    ['https://admin.klendar.app/resumen', 'https://admin.klendar.app/'],
     ['https://admin.klendar.app/privacidad/', 'https://klendar.app/privacidad'],
     ['https://admin.klendar.app/explorar?que=sitios', 'https://klendar.app/explorar?que=sitios'],
   ]) {
@@ -156,13 +198,20 @@ ok('origenPublico de admin.localhost', origenPublico(new URL('http://admin.local
   ok('admin.js: la contraseña nueva, por «Tu cuenta» de la web pública', /redirectTo: `\$\{WEB\}\/cuenta\/nueva-clave\?destino=%2Fadmin`/.test(js) && !/location\.origin\}\/cuenta/.test(js));
   ok('admin.js: sin /admin a la vista (ni klendar.app/admin ni admin.klendar.app/admin)', !/klendar\.app\/admin/.test(js));
   ok('admin.js: admin.localhost cuenta como local', /\(admin\\\.\)\?localhost/.test(js));
+  // Sin `#` (§4zzz-adminlimpio): ni un `#/` en sus ficheros, ni `href="#"`, ni
+  // `location.hash` para moverse, ni `hashchange` para pintar.
+  const conHash = ['admin.html', 'admin/carta.html', ...FICHEROS_ADMIN]
+    .filter((f) => /#\//.test(lee(f)) || /href="#"/.test(lee(f)) || /location\.hash\s*=|location\.(replace|assign)\(['"`]#/.test(lee(f)));
+  ok('el admin sin `#/`, `href="#"` ni `location.hash =`', !conHash.length, conHash.join(', '));
+  ok('admin.js: pinta con popstate, no con hashchange', /addEventListener\('popstate'/.test(js) && !/addEventListener\('hashchange', route\)/.test(js));
+  ok('admin.html: los logos (los dos del menú y el de «Entrar»), a `/`', (lee('admin.html').match(/<a class="brand" href="\/">/g) || []).length === 3);
   ok('crecer.js: la carta en /carta', /`\/carta\?\$\{/.test(lee('admin/crecer.js')) && !/\/admin\/carta/.test(lee('admin/crecer.js')));
   const err = lee('assets/errores.js');
   ok('errores.js: borra la sesión vieja del admin fuera de su host', /VIEJO_ADMIN = \/\^\(sb-\[a-z0-9\]\+-admin-auth-token\|klendar\\\.admin\\\.\|kl_admin_\)\//.test(err) && /if \(!\/\^admin\\\.\/i\.test\(location\.hostname\)\)/.test(err));
   const v = /ERRORES_V = '([^']+)'/.exec(lee('functions/_lib/page.js'))?.[1];
   ok('errores.js: versión nueva (la vieja se guardaba un año)', v && v !== '20261112cadena' && lee('build_site.py').includes(`errores.js?v=${v}`), v);
   const cuenta = lee('assets/cuenta/app.js');
-  ok('«Tu cuenta»: tras la contraseña nueva, destino=/admin va a la raíz de admin.klendar.app', /'https:\/\/admin\.klendar\.app\/'/.test(cuenta));
+  ok('«Tu cuenta»: tras la contraseña nueva, destino=/admin va a la raíz de admin.klendar.app, sin barra', /'https:\/\/admin\.klendar\.app'\)/.test(cuenta) && !/admin\.klendar\.app\//.test(cuenta));
 }
 
 if (process.argv.includes('--sin-navegador')) {
@@ -287,7 +336,9 @@ try {
         ok(`${nombre}: un código malo no vale`, /incorrecto/i.test(await pg.textContent('#mfaErr')) && await pg.isHidden('#app'));
         await pg.fill('#mfaCode', '123456');
         await pg.waitForSelector('#app:not([hidden])');
-        ok(`${nombre}: con el bueno, al admin (y al Resumen)`, (await pg.evaluate(() => location.hash)) === '#/resumen' && estado.verify.includes('123456'));
+        // Venía de `/#/negocios`: el `#` no lleva a ningún apartado (Iván, 24-11).
+        ok(`${nombre}: con el bueno, al admin (y al Resumen, en la raíz y sin #)`, (await pg.evaluate(() => location.pathname + location.search + location.hash)) === '/' && estado.verify.includes('123456'), pg.url());
+        ok(`${nombre}: …el menú marca el Resumen`, (await pg.getAttribute('#nav a[aria-current="page"]', 'href')) === '/');
         const sesion = await pg.evaluate((k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } }, CLAVE_ADMIN);
         ok(`${nombre}: la sesión (aal2) se guarda en admin.localhost`, !!sesion && JSON.parse(Buffer.from(sesion.access_token.split('.')[1], 'base64url').toString()).aal === 'aal2');
         // «Confirma que eres tú»: contraseña con sesión aparte y confirm_identity.
@@ -318,6 +369,78 @@ try {
         ok(`${nombre}: admin.localhost/ es el admin, en la raíz`, new URL(pg.url()).pathname === '/', pg.url());
         ok(`${nombre}: en la barra nunca sale /admin`, !visitas.some((u) => new URL(u).pathname.startsWith('/admin')), visitas.join(' '));
         ok(`${nombre}: entrar sin errores`, !errores.length, errores.join(' | '));
+
+        // c) Direcciones limpias, sin `#` (Iván, 24-11; §4zzz-adminlimpio).
+        const aqui = () => pg.evaluate(() => ({ ruta: location.pathname, q: location.search, hash: location.hash, url: location.href, marca: window.__sinRecargar === 1, on: document.querySelector('#nav a[aria-current="page"]')?.getAttribute('href') || '' }));
+        // Que la pantalla se haya pintado (el menú marca la de la dirección).
+        const pintada = (h) => pg.waitForFunction((x) => document.querySelector('#nav a[aria-current="page"]')?.getAttribute('href') === x && !document.querySelector('#view .loading'), h, { timeout: 8000 }).catch(() => {});
+        await pg.evaluate(() => { window.__sinRecargar = 1; });
+        // Con el grupo «Sistema» abierto, todos los apartados del menú a la vista.
+        if (await pg.isVisible('#nav .group-toggle[aria-expanded="false"]')) await pg.click('#nav .group-toggle');
+        const hrefs = await pg.$$eval('#nav a.nav', (as) => as.map((a) => a.getAttribute('href')));
+        ok(`${nombre}: el menú, con todos los apartados en su ruta (sin #)`, hrefs.length >= 30 && hrefs[0] === '/' && hrefs.every((h) => /^\/[a-z]*$/.test(h)), hrefs.join(' '));
+        const malos = [];
+        for (const h of hrefs.slice(1)) {
+          await pg.click(`#nav a[href="${h}"]`);
+          await pintada(h);
+          const a = await aqui();
+          if (a.ruta !== h || a.hash || !a.url.includes(h) || a.url.includes('#') || !a.marca || a.on !== h) malos.push(`${h} → ${a.url} (${a.on}${a.marca ? '' : ', recargada'})`);
+        }
+        ok(`${nombre}: cada apartado del menú, en su ruta, sin # en la barra y sin recargar`, !malos.length, malos.join(' | '));
+        // El logo del menú: a la raíz (el Resumen), sin recargar.
+        await pg.click('.side a.brand');
+        await pintada('/');
+        let a = await aqui();
+        ok(`${nombre}: el logo del menú lleva a / (el Resumen), sin recargar`, a.ruta === '/' && !a.hash && a.marca && a.on === '/', JSON.stringify(a));
+        // Atrás y adelante.
+        await pg.goBack();
+        await pintada(hrefs.at(-1));
+        a = await aqui();
+        ok(`${nombre}: «Atrás» vuelve al último apartado (${hrefs.at(-1)})`, a.ruta === hrefs.at(-1) && a.on === hrefs.at(-1) && a.marca, JSON.stringify(a));
+        await pg.goBack();
+        await pintada(hrefs.at(-2));
+        a = await aqui();
+        ok(`${nombre}: …y otra vez, al de antes (${hrefs.at(-2)})`, a.ruta === hrefs.at(-2) && a.on === hrefs.at(-2) && a.marca, JSON.stringify(a));
+        await pg.goForward();
+        await pintada(hrefs.at(-1));
+        a = await aqui();
+        ok(`${nombre}: «Adelante» también`, a.ruta === hrefs.at(-1) && a.on === hrefs.at(-1) && a.marca, JSON.stringify(a));
+        // Un `#…` escrito a mano no lleva a ningún sitio: se quita y se sigue donde se estaba.
+        await pg.evaluate(() => { location.hash = '#/negocios'; });
+        await pg.waitForFunction(() => !location.hash, null, { timeout: 5000 }).catch(() => {});
+        a = await aqui();
+        ok(`${nombre}: un #/negocios escrito a mano se quita y no salta`, a.ruta === hrefs.at(-1) && !a.hash && a.on === hrefs.at(-1), JSON.stringify(a));
+        // Recargar en un apartado (con sus filtros) y en una ficha.
+        await pg.goto(`${ADMIN}/negocios?status=pending`);
+        await pg.waitForSelector('#app:not([hidden])');
+        await pintada('/negocios');
+        a = await aqui();
+        ok(`${nombre}: abrir /negocios?status=pending abre Negocios con su filtro`, a.ruta === '/negocios' && /status=pending/.test(a.q) && a.on === '/negocios', JSON.stringify(a));
+        await pg.reload();
+        await pg.waitForSelector('#app:not([hidden])');
+        await pintada('/negocios');
+        a = await aqui();
+        ok(`${nombre}: …y al recargar, lo mismo`, a.ruta === '/negocios' && /status=pending/.test(a.q) && a.on === '/negocios', JSON.stringify(a));
+        await pg.goto(`${ADMIN}/usuarios/${U}`);
+        await pg.waitForSelector('#app:not([hidden])');
+        await pintada('/usuarios');
+        await pg.reload();
+        await pg.waitForSelector('#app:not([hidden])');
+        await pintada('/usuarios');
+        a = await aqui();
+        ok(`${nombre}: recargar en una ficha (/usuarios/<id>) la vuelve a abrir`, a.ruta === `/usuarios/${U}` && a.on === '/usuarios', JSON.stringify(a));
+        // Con barra final, un 301 a la misma sin barra.
+        const r301 = await pg.goto(`${ADMIN}/semanas/`);
+        await pg.waitForSelector('#app:not([hidden])');
+        await pintada('/semanas');
+        a = await aqui();
+        ok(`${nombre}: /semanas/ → /semanas (301)`, a.ruta === '/semanas' && a.on === '/semanas' && r301.request().redirectedFrom()?.url() === `${ADMIN}/semanas/`, JSON.stringify(a));
+        // Un enlace viejo con `#/x`: la raíz (el Resumen) y sin el `#`.
+        await pg.goto(`${ADMIN}/#/semanas`);
+        await pg.waitForSelector('#app:not([hidden])');
+        await pintada('/');
+        a = await aqui();
+        ok(`${nombre}: /#/semanas abre la raíz (el Resumen) y quita el #`, a.ruta === '/' && !a.hash && !a.url.includes('#') && a.on === '/', JSON.stringify(a));
         await ctx.close();
       }
     } finally {
