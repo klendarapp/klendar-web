@@ -397,7 +397,7 @@ ACTUALIZADO = {
     # versión nueva ni aviso.
     # 2026-11-23 (§4zzz-admindom, aprobado por Iván el 23-11): la administración
     # vive en admin.klendar.app. Informativo, sin versión nueva ni aviso.
-    'cookies': {'es': '23 de noviembre de 2026', 'en': '23 November 2026'},
+    'cookies': {'es': '25 de noviembre de 2026', 'en': '25 November 2026'},  # aprobado por Iván el 25-11 (klendar.cerca al abrir Descubre/Explorar con permiso ya dado)
     # 2026-11-11 (CS2 y CS3, aprobados por Iván el 11-11 y publicados ese día,
     # «Privacidad - capturas en sugerencias.pdf»): se borran las capturas de
     # «Sugerencias y mejoras» y lo escrito se queda sin autor hasta 1 año
@@ -1013,6 +1013,10 @@ CAMBIOS = {
          'Service description brought up to date (section 2); honouring stamp rewards and the birthday gift, final price including VAT and the 30-day previous price in reductions (section 3); automatic moderation and 6 months to ask for a review (section 6).'),
         _INICIO],
     'cookies': [
+        ('25 de noviembre de 2026',
+         'Tu posición de «Cerca de mí» (klendar.cerca) también se guarda al abrir Descubre o Explorar si tu navegador ya nos había dado permiso de ubicación; nunca te la pedimos al entrar.',
+         '25 November 2026',
+         "Your “Near me” position (klendar.cerca) is also stored when you open Discover or Explore if your browser had already given us location permission; we never ask for it when you arrive."),
         ('23 de noviembre de 2026',
          'La administración de Klendar se hace ahora en admin.klendar.app: su almacenamiento local (sesión y preferencias del equipo de administración) se guarda en esa dirección, aparte de klendar.app.',
          '23 November 2026',
@@ -2479,7 +2483,7 @@ def textos(D, resaltar=False):
 <tr><td><code>klendar.filtros</code></td><td>Descubre y Explorar (almacenamiento local)</td><td>Recordar los filtros que pusiste (ciudad, tipo, categorías, precio…) para volver a ellos al abrir otra vez Descubre o Explorar</td><td>Hasta que los cambies o pulses «Quitar filtros»; ¿Cuándo? se quita a las 6:00 y tu posición deja de usarse a las 6 horas</td><td>Preferencia elegida por ti</td></tr>
 <tr><td><code>klendar.filtros.sin</code></td><td>Descubre y Explorar (almacenamiento de sesión)</td><td>Que, justo después de «Quitar filtros», no vuelvan los guardados</td><td>Hasta la siguiente página</td><td>Técnica</td></tr>
 <tr><td><code>klendar.explorar</code></td><td>Explorar (almacenamiento local)</td><td>La última vista que elegiste en Explorar (Planes o Sitios; lista, mapa o calendario), para abrirlo ahí la próxima vez</td><td>Hasta que la cambies</td><td>Preferencia elegida por ti</td></tr>
-<tr><td><code>klendar.cerca</code></td><td>Descubre, Explorar y las fichas (almacenamiento local)</td><td>Tu posición (latitud y longitud) cuando pulsas «Cerca de mí» o «Usar mi ubicación», para ordenar por cercanía y enseñarte a qué distancia está cada sitio</td><td>6 horas (después se borra)</td><td>Técnica (la pides tú, con el permiso de ubicación del navegador)</td></tr>
+<tr><td><code>klendar.cerca</code></td><td>Descubre, Explorar y las fichas (almacenamiento local)</td><td>Tu posición (latitud y longitud) cuando pulsas «Cerca de mí» o «Usar mi ubicación» o, si tu navegador ya nos ha dado permiso de ubicación, al abrir Descubre o Explorar, para ordenar por cercanía y enseñarte a qué distancia está cada sitio</td><td>6 horas (después se borra)</td><td>Técnica (con el permiso de ubicación del navegador, que das tú)</td></tr>
 <tr><td><code>klendar.sonido</code></td><td>Descubre, Explorar y las fichas (almacenamiento de sesión)</td><td>Recordar que has activado el sonido de los vídeos mientras navegas</td><td>Hasta cerrar la pestaña</td><td>Preferencia elegida por ti</td></tr>
 <tr><td><code>klendar.traducir</code></td><td>«Tu cuenta» y las fichas (almacenamiento local)</td><td>Recordar si has encendido «Traducir siempre automáticamente» cuando no has entrado</td><td>Hasta que lo cambies</td><td>Preferencia elegida por ti</td></tr>
 <tr><td><code>klendar.traducir.ok</code></td><td>Las fichas (almacenamiento de sesión)</td><td>Si la traducción automática está disponible ahora, para no preguntarlo en cada página</td><td>10 minutos, o hasta cerrar la pestaña</td><td>Técnica</td></tr>
@@ -2532,7 +2536,7 @@ def textos(D, resaltar=False):
 <tr><td><code>klendar.filtros</code></td><td>Discover and Explore (local storage)</td><td>Remember the filters you set (city, type, categories, price…) so they're there when you open Discover or Explore again</td><td>Until you change them or tap “Clear filters”; “When?” is cleared at 6:00 and your position stops being used after 6 hours</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.filtros.sin</code></td><td>Discover and Explore (session storage)</td><td>Make sure the saved filters don't come back right after “Clear filters”</td><td>Until the next page</td><td>Technical</td></tr>
 <tr><td><code>klendar.explorar</code></td><td>Explore (local storage)</td><td>The last view you chose in Explore (Plans or Places; list, map or calendar), so it opens there next time</td><td>Until you change it</td><td>Preference you chose</td></tr>
-<tr><td><code>klendar.cerca</code></td><td>Discover, Explore and publication pages (local storage)</td><td>Your position (latitude and longitude) when you tap “Near me” or “Use my location”, to sort by distance and show how far away each place is</td><td>6 hours (then deleted)</td><td>Technical (you ask for it, with the browser's location permission)</td></tr>
+<tr><td><code>klendar.cerca</code></td><td>Discover, Explore and publication pages (local storage)</td><td>Your position (latitude and longitude) when you tap “Near me” or “Use my location” or, if your browser has already given us location permission, when you open Discover or Explore, to sort by distance and show how far away each place is</td><td>6 hours (then deleted)</td><td>Technical (with the browser's location permission, which you give)</td></tr>
 <tr><td><code>klendar.sonido</code></td><td>Discover, Explore and publication pages (session storage)</td><td>Remember that you've turned on video sound while you browse</td><td>Until you close the tab</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.traducir</code></td><td>“Your account” and publication pages (local storage)</td><td>Remember whether you've turned on “Always translate automatically” when you're not logged in</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.traducir.ok</code></td><td>Publication and business pages (session storage)</td><td>Whether automatic translation is available right now, so it isn't checked on every page</td><td>10 minutes, or until you close the tab</td><td>Technical</td></tr>
