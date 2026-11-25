@@ -86,6 +86,8 @@
 <tr><td><code>klendar.filtros.sin</code></td><td>Descubre y Explorar (almacenamiento de sesión)</td><td>Que, justo después de «Quitar filtros», no vuelvan los guardados</td><td>Hasta la siguiente página</td><td>Técnica</td></tr>
 <tr><td><code>klendar.explorar</code></td><td>Explorar (almacenamiento local)</td><td>La última vista que elegiste en Explorar (Planes o Sitios; lista, mapa o calendario), para abrirlo ahí la próxima vez</td><td>Hasta que la cambies</td><td>Preferencia elegida por ti</td></tr>
 <tr><td><code>klendar.cerca</code></td><td>Descubre, Explorar y las fichas (almacenamiento local)</td><td>Tu posición (latitud y longitud) cuando pulsas «Cerca de mí» o «Usar mi ubicación» o, si tu navegador ya nos ha dado permiso de ubicación, al abrir Descubre o Explorar, para ordenar por cercanía y enseñarte a qué distancia está cada sitio</td><td>6 horas (después se borra)</td><td>Técnica (con el permiso de ubicación del navegador, que das tú)</td></tr>
+<tr><td><code>klendar.aviso.ubicacion</code></td><td>Descubre y Explorar (almacenamiento local)</td><td>Cuántas veces y cuándo te hemos enseñado el aviso «Mira lo que hay cerca de ti» y si tu navegador ya había contestado al permiso de ubicación, para no enseñarlo más de 3 veces ni antes de 14 días</td><td>Hasta que borres los datos del navegador</td><td>Técnica</td></tr>
+<tr><td><code>klendar.aviso.sesion</code></td><td>Descubre y Explorar (almacenamiento de sesión)</td><td>Que no te enseñemos más de un aviso opcional en cada visita</td><td>Hasta cerrar la pestaña</td><td>Técnica</td></tr>
 <tr><td><code>klendar.sonido</code></td><td>Descubre, Explorar y las fichas (almacenamiento de sesión)</td><td>Recordar que has activado el sonido de los vídeos mientras navegas</td><td>Hasta cerrar la pestaña</td><td>Preferencia elegida por ti</td></tr>
 <tr><td><code>klendar.traducir</code></td><td>«Tu cuenta» y las fichas (almacenamiento local)</td><td>Recordar si has encendido «Traducir siempre automáticamente» cuando no has entrado</td><td>Hasta que lo cambies</td><td>Preferencia elegida por ti</td></tr>
 <tr><td><code>klendar.traducir.ok</code></td><td>Las fichas (almacenamiento de sesión)</td><td>Si la traducción automática está disponible ahora, para no preguntarlo en cada página</td><td>10 minutos, o hasta cerrar la pestaña</td><td>Técnica</td></tr>
@@ -120,6 +122,7 @@
 
 <h2 class="cambios" id="historial">Historial de cambios</h2>
 <ul>
+  <li><strong>25 de noviembre de 2026</strong>: Dos claves para el aviso «Mira lo que hay cerca de ti»: cuántas veces te lo hemos enseñado (como mucho 3, y no antes de 14 días) y que no salga más de un aviso opcional en cada visita.</li>
   <li><strong>25 de noviembre de 2026</strong>: Tu posición de «Cerca de mí» (klendar.cerca) también se guarda al abrir Descubre o Explorar si tu navegador ya nos había dado permiso de ubicación; nunca te la pedimos al entrar.</li>
   <li><strong>23 de noviembre de 2026</strong>: La administración de Klendar se hace ahora en admin.klendar.app: su almacenamiento local (sesión y preferencias del equipo de administración) se guarda en esa dirección, aparte de klendar.app.</li>
   <li><strong>12 de noviembre de 2026</strong>: Clave nueva klendar.asistente.permiso, del asistente de ayuda (solo sin haber entrado).</li>

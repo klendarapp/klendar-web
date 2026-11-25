@@ -86,6 +86,8 @@
 <tr><td><code>klendar.filtros.sin</code></td><td>Discover and Explore (session storage)</td><td>Make sure the saved filters don't come back right after “Clear filters”</td><td>Until the next page</td><td>Technical</td></tr>
 <tr><td><code>klendar.explorar</code></td><td>Explore (local storage)</td><td>The last view you chose in Explore (Plans or Places; list, map or calendar), so it opens there next time</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.cerca</code></td><td>Discover, Explore and publication pages (local storage)</td><td>Your position (latitude and longitude) when you tap “Near me” or “Use my location” or, if your browser has already given us location permission, when you open Discover or Explore, to sort by distance and show how far away each place is</td><td>6 hours (then deleted)</td><td>Technical (with the browser's location permission, which you give)</td></tr>
+<tr><td><code>klendar.aviso.ubicacion</code></td><td>Discover and Explore (local storage)</td><td>How many times and when we've shown you the “See what's near you” notice, and whether your browser had already answered the location permission, so it isn't shown more than 3 times or within 14 days</td><td>Until you clear your browser data</td><td>Technical</td></tr>
+<tr><td><code>klendar.aviso.sesion</code></td><td>Discover and Explore (session storage)</td><td>Making sure we show you no more than one optional notice per visit</td><td>Until you close the tab</td><td>Technical</td></tr>
 <tr><td><code>klendar.sonido</code></td><td>Discover, Explore and publication pages (session storage)</td><td>Remember that you've turned on video sound while you browse</td><td>Until you close the tab</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.traducir</code></td><td>“Your account” and publication pages (local storage)</td><td>Remember whether you've turned on “Always translate automatically” when you're not logged in</td><td>Until you change it</td><td>Preference you chose</td></tr>
 <tr><td><code>klendar.traducir.ok</code></td><td>Publication and business pages (session storage)</td><td>Whether automatic translation is available right now, so it isn't checked on every page</td><td>10 minutes, or until you close the tab</td><td>Technical</td></tr>
@@ -120,6 +122,7 @@
 
 <h2 class="cambios" id="historial">Change history</h2>
 <ul>
+  <li><strong>25 November 2026</strong>: Two keys for the “See what's near you” notice: how many times we've shown it to you (at most 3, and not within 14 days) and that no more than one optional notice appears per visit.</li>
   <li><strong>25 November 2026</strong>: Your “Near me” position (klendar.cerca) is also stored when you open Discover or Explore if your browser had already given us location permission; we never ask for it when you arrive.</li>
   <li><strong>23 November 2026</strong>: Klendar's administration now lives at admin.klendar.app: its local storage (the admin team's session and preferences) is kept at that address, separate from klendar.app.</li>
   <li><strong>12 November 2026</strong>: New klendar.asistente.permiso key, for the help assistant (only when not logged in).</li>
