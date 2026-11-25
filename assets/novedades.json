@@ -2,6 +2,22 @@
  "_como": "Novedades de Klendar, de la más nueva a la más vieja. Para añadir una versión: un bloque arriba con 3 o 4 puntos cortos en es y en (sin precios ni fechas de cobro). «proxima»: true mientras esa versión no esté en las tiendas (la web la enseña como «Próximamente» y la app solo a quien ya la tiene). Después: python build_pages.py y subir. La app la lee de klendar.app/assets/novedades.json; no hace falta compilarla.",
  "versiones": [
   {
+   "version": "0.1.12",
+   "proxima": true,
+   "es": [
+    "«Tu código caduca en…» arriba y a todo el ancho, también en Explorar y Planes.",
+    "¿Ya no lo quieres? Anula el código de una oferta sin gastar tu uso; los caducados quedan en «Pasados».",
+    "«Ya la canjeaste» también en la búsqueda y en las colecciones.",
+    "Al tocar el aviso de tu código, el QR se abre en grande, siempre."
+   ],
+   "en": [
+    "“Your code expires in…” across the top, also in Explore and Plans.",
+    "Don't want it anymore? Cancel an offer code without using up your go; expired ones stay in “Past”.",
+    "“Already redeemed” also in search and in collections.",
+    "Tapping your code's notification always opens the QR full size."
+   ]
+  },
+  {
    "version": "0.1.11",
    "es": [
     "Las ofertas que ya canjeaste lo dicen, y «Ver tu código» o «Ver tu entrada» te lleva directo a él; al tocar el aviso de tu código, el QR se abre en grande.",
