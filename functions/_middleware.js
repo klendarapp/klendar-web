@@ -19,6 +19,7 @@ import { direccionBuena } from './_lib/direccion.js';
 import { EN_CACHE, desdeLaCache } from './_lib/cache.js';
 import { CABECERAS_ADMIN, CABECERAS_PANEL, CSP_PUBLICA, conNonce, nonceNuevo } from './_lib/csp.js';
 import { decideHost, esHostAdmin } from './_lib/admin.js';
+import { politicaPermisos } from './_lib/permisos.js';
 
 const INTERNO = /^\/(tools\/|README\.md$|build_[\w-]*\.py$|[\w-]+\.py$|__pycache__\/|node_modules\/|\.(?!well-known\/))/i;
 
@@ -59,7 +60,7 @@ const rutaReal = (pathname) => {
 // 0. Direcciones sin barra al final (Iván, 2026-11-11): ver _lib/direccion.js.
 
 export async function onRequest(ctx) {
-  const { pathname, searchParams } = new URL(ctx.request.url);
+  const { pathname } = new URL(ctx.request.url);
   if (INTERNO.test(pathname) || INTERNO.test(rutaReal(pathname))) {
     return new Response('Not found', {
       status: 404,
@@ -137,13 +138,9 @@ export async function onRequest(ctx) {
   }
   // El widget se incrusta en webs de negocios; el resto no se deja enmarcar.
   if (!pathname.startsWith('/widget/') && !cabeceras.has('x-frame-options')) cabeceras.set('x-frame-options', 'DENY');
-  if (!cabeceras.has('permissions-policy')) {
-    // La ficha abierta desde el QR del local (`?visita=`) mira si estás en
-    // el local para darte el sello: solo entonces puede pedir la ubicación.
-    const desdeQr = /^\/(en\/)?b\//.test(pathname) && searchParams.has('visita');
-    const ubicacion = desdeQr || /^\/(explorar|descubre|partidos|grupos|sorteos|en\/explore|en\/discover|en\/matches|en\/groups|en\/giveaways|cuenta|panel)(\/|$)/.test(pathname) ? '(self)' : '()';
-    cabeceras.set('permissions-policy', `geolocation=${ubicacion}, camera=${/^\/panel(\/|$)/.test(pathname) ? '(self)' : '()'}, microphone=()`);
-  }
+  // Dónde se puede usar la ubicación y la cámara (solo klendar.app, sin
+  // iframes): _lib/permisos.js.
+  if (!cabeceras.has('permissions-policy')) cabeceras.set('permissions-policy', politicaPermisos(pathname));
   // 5. Zonas con sesión (Tu cuenta, panel, admin): sin el contador de
   //    Cloudflare. `no-transform` no basta: Pages lo mete igual en el HTML
   //    estático (comprobado en producción, 2026-09-30), la CSP lo tendría que

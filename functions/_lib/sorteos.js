@@ -23,6 +23,7 @@ import KS from '../../assets/textos-sorteos.js';
 import KZ from '../../assets/zona.js';
 import { BASE, bizPath, breadcrumbLd, carrusel, historiaBoton, ldScript, publicPage } from './public.js';
 import { recuperaZona, zonaMenu } from './partidos.js';
+import { aSuCelda, celdaDeUrl, celdaDeZona, claveCelda, radioConCelda } from './celda_zona.js';
 import { MENU_JS, masMenu } from './views.js';
 import { GRUPOS_CSS } from './grupos.js';
 
@@ -100,16 +101,14 @@ ${sorteoScript(lang)}` : ''}`,
 // ── La zona (como «Dónde ver el partido» y «Grupos y empresas») ────────────
 const CLAVES = { es: { city: 'ciudad', mine: 'mios' }, en: { city: 'city', mine: 'mine' } };
 const plano = (x) => String(x || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
-const redondea = (x) => (Number.isFinite(x) ? Math.round(x * 1000) / 1000 : x);
-const posUrl = (x) => redondea(Number(x)).toFixed(3);
+// «Cerca de mí», con la celda de unos 5 km (_lib/celda_zona.js).
 function leeEstado(qs) {
-  const lat = redondea(Number.parseFloat(qs.get('lat') || ''));
-  const lng = redondea(Number.parseFloat(qs.get('lng') || ''));
-  const cerca = Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  const z = celdaDeUrl(qs);
+  const cerca = Boolean(z);
   const km = Number.parseInt(qs.get('km') || '', 10);
   return {
     city: cerca ? '' : (qs.get('ciudad') || qs.get('city') || '').slice(0, 60),
-    cerca, lat: cerca ? lat : null, lng: cerca ? lng : null,
+    cerca, lat: cerca ? z.lat : null, lng: cerca ? z.lng : null, celda: cerca ? z.celda : '', celdaVieja: Boolean(z?.vieja),
     km: [10, 25].includes(km) ? km : 10,
     mine: qs.get('mios') === '1' || qs.get('mine') === '1',
   };
@@ -117,7 +116,7 @@ function leeEstado(qs) {
 function query(e, lang) {
   const K = CLAVES[lang === 'en' ? 'en' : 'es'];
   const p = new URLSearchParams();
-  if (e.cerca) { p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng)); } else if (e.city) p.set(K.city, e.city);
+  if (e.cerca) p.set(claveCelda(lang), celdaDeZona(e)); else if (e.city) p.set(K.city, e.city);
   if (e.km && e.km !== 10) p.set('km', String(e.km));
   if (e.mine) p.set(K.mine, '1');
   return p.toString();
@@ -151,6 +150,8 @@ export async function sorteosPage(url, lang) {
   const base = sorteosBase(lang);
   if (!(await sorteosEncendidos())) return apagados(lang, `${base}`);
   const e = leeEstado(url.searchParams);
+  // Un enlace de antes con tu punto (`?lat=&lng=`): a su celda.
+  if (e.celdaVieja) return aSuCelda(url, lang, e.celda);
   const [ciudades, ciudadesK] = await Promise.all([
     rpcAll('public_cities', {}),
     rows('cities', 'select=id,name,lat,lng&order=position.asc').catch(() => []),
@@ -162,12 +163,12 @@ export async function sorteosPage(url, lang) {
     if (c && Number.isFinite(c.lat) && Number.isFinite(c.lng)) origen = { lat: c.lat, lng: c.lng };
   }
   const lista = e.mine ? [] : await rpcAll('giveaways_near', {
-    p_lat: origen ? origen.lat : null, p_lng: origen ? origen.lng : null, p_radius_m: e.km * 1000,
+    p_lat: origen ? origen.lat : null, p_lng: origen ? origen.lng : null, p_radius_m: e.cerca ? radioConCelda(e.celda, e.km * 1000) : e.km * 1000,
     p_city: !origen && e.city ? e.city : null, p_limit: 60,
   });
   const link = (cambios) => {
     const b = { ...e, ...cambios };
-    if (b.cerca === false) { b.lat = null; b.lng = null; }
+    if (b.cerca === false) { b.lat = null; b.lng = null; b.celda = ''; }
     return conQs(`${base}`, query(b, lang));
   };
   const seg = `<nav class="seg-pub" aria-label="${esc(S.title)}">

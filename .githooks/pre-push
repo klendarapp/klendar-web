@@ -37,6 +37,11 @@ if [ -n "$PW" ]; then
   PW="$PW" node tools/captcha_sitio_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/captcha_sitio_check.mjs; no se sube."; exit 1; }
   # «Cerca de mí» sola con el permiso ya dado (§4zzz-ubicacion-web): Explorar y Descubre a su celda una vez, lo elegido sin pisar, sin permiso nada; y el mapa en su zona sin resultados (el mapa, solo en Chromium; unos 2 min).
   PW="$PW" UBIC_RAPIDO=1 node tools/ubicacion_sola_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/ubicacion_sola_check.mjs (node tools/ubicacion_sola_check.mjs para ver qué); no se sube."; exit 1; }
+  # La ubicación como la app, 2.ª parte (§4zzz-ubicacion-web2): Partidos, Grupos, Sorteos y guías con la celda (y lat/lng de antes con 301), solas con el permiso ya dado;
+  # el sello por visita y «Estaba cerrado» sin pedirla al cargar; «Avísame si…» con tu ciudad (solo Chromium; unos 90 s).
+  PW="$PW" UBIC2_RAPIDO=1 node tools/ubicacion_web2_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/ubicacion_web2_check.mjs (node tools/ubicacion_web2_check.mjs para ver qué); no se sube."; exit 1; }
+  # La franja «Mira lo que hay cerca de ti · Activar» (§4zzz-ubicacion-web2): solo con el permiso por preguntar, topes de la app, sin saltos (solo Chromium).
+  PW="$PW" AVISO_RAPIDO=1 node tools/aviso_ubicacion_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/aviso_ubicacion_check.mjs (node tools/aviso_ubicacion_check.mjs para ver qué); no se sube."; exit 1; }
   # «Imprimir cartel» y la pegatina de escaparate (§4zzz-cartel): el QR a la publicación o a la ficha, los 8 idiomas, una página al imprimir (unos 15 s).
   PW="$PW" node tools/cartel_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/cartel_check.mjs (node tools/cartel_check.mjs para ver qué); no se sube."; exit 1; }
   # El admin en su subdominio en Chromium y WebKit: la 404 de lo viejo, la sesión vieja borrada en klendar.app, entrar con el segundo factor, «Confirma que eres tú» y la sesión solo allí (unos 30 s).

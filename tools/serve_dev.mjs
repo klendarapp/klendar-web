@@ -9,6 +9,7 @@ import { extname, join } from 'node:path';
 import { direccionBuena } from '../functions/_lib/direccion.js';
 import { CABECERAS_ADMIN, CABECERAS_PANEL, CSP_PUBLICA } from '../functions/_lib/csp.js';
 import { decideHost } from '../functions/_lib/admin.js';
+import { politicaPermisos } from '../functions/_lib/permisos.js';
 
 // En las pruebas (SUPABASE_BLOQUEADO, lo pone tools/_supabase_simulado.mjs a
 // los serve_dev que lanza; a mano, SUPABASE_BLOQUEADO=1): lo que las Functions
@@ -177,6 +178,9 @@ createServer(async (req, res) => {
     else if (/^\/(sorteos|giveaways)\/?$/.test(rest)) { mod = await load(`functions/${en}${en ? 'giveaways' : 'sorteos'}/index.js`); }
     else if ((m = rest.match(/^\/(sorteo\/([^/]+)\/bases|giveaway\/([^/]+)\/rules)\/?$/))) { mod = await load(`functions/${en}${en ? 'giveaway/[id]/rules' : 'sorteo/[id]/bases'}.js`); params = { id: m[2] || m[3] }; }
     else if ((m = rest.match(/^\/(sorteo|giveaway)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'giveaway' : 'sorteo'}/[id].js`); params = { id: m[2] }; }
+    // Las guías de temporada: /guia/<slug>[/<municipio>] y /en/guide/….
+    else if ((m = rest.match(/^\/(guia|guide)\/([^/]+)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'guide' : 'guia'}/[slug]/[city].js`); params = { slug: m[2], city: m[3] }; }
+    else if ((m = rest.match(/^\/(guia|guide)\/([^/]+)\/?$/))) { mod = await load(`functions/${en}${en ? 'guide' : 'guia'}/[slug].js`); params = { slug: m[2] }; }
     // El enlace de amigo: /amigo/<código> y /en/friend/<código>.
     else if ((m = path.match(/^\/amigo\/([^/]+)\/?$/))) { mod = await load('functions/amigo/[code].js'); params = { code: m[1] }; }
     else if ((m = path.match(/^\/en\/friend\/([^/]+)\/?$/))) { mod = await load('functions/en/friend/[code].js'); params = { code: m[1] }; }
@@ -226,6 +230,8 @@ createServer(async (req, res) => {
       // pública si no trae la suya (§4zzz-csp). Sin nonce: en local Cloudflare
       // no mete su script.
       if (!cabeceras['content-security-policy']) cabeceras['content-security-policy'] = CSP_PUBLICA;
+      // Y la misma Permissions-Policy (dónde se puede usar la ubicación; _lib/permisos.js).
+      if (!cabeceras['permissions-policy']) cabeceras['permissions-policy'] = politicaPermisos(path);
       if (cabeceras.location) cabeceras.location = cabeceras.location.replace(/^https:\/\/klendar\.app/, '');
       res.writeHead(out.status, cabeceras);
       // En local, sin el contador de Cloudflare (su servidor no acepta

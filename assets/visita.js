@@ -6,6 +6,9 @@
  * el de hoy, estás lejos…), o «Entra para llevarte el sello de hoy». Lo
  * mismo que la app. La sesión es la de «Tu cuenta» (mismo sitio). La
  * ubicación solo se usa para comprobar que estás en el local; no se guarda.
+ * Como la app, nunca se pide al abrir la ficha (Iván, 25-11; RUNBOOK
+ * §4zzz-ubicacion-web2): con el permiso ya dado, se usa; si no, el aviso
+ * ofrece «Usar mi ubicación» (y, si está bloqueado, cómo permitirlo).
  */
 (function () {
   'use strict';
@@ -102,19 +105,31 @@
   var sb = window.klendarSb || (window.klendarSb = window.supabase.createClient(window.KLENDAR_ENV.url, window.KLENDAR_ENV.key,
     { auth: { flowType: 'pkce', detectSessionInUrl: false } }));
 
-  function dondeEstoy() {
+  /** Dónde estás. Con [pedir] (se ha pulsado «Usar mi ubicación» o «Volver a
+   * probar»), se pregunta al navegador; si no, solo con el permiso ya dado:
+   * al abrir la ficha no sale el aviso del navegador. */
+  function posicion() {
     return new Promise(function (ok) {
-      if (!navigator.geolocation) { ok({ bloqueada: false }); return; }
       navigator.geolocation.getCurrentPosition(
         function (p) { ok({ lat: p.coords.latitude, lng: p.coords.longitude, precision: p.coords.accuracy }); },
         function (e) { ok({ bloqueada: e && e.code === 1 }); },
         { enableHighAccuracy: true, timeout: 12000, maximumAge: 120000 });
     });
   }
+  function dondeEstoy(pedir) {
+    if (!navigator.geolocation) return Promise.resolve({ bloqueada: false });
+    if (pedir) return posicion();
+    // Sin la API de permisos (Safari de antes) no se sabe: no se pide.
+    if (!navigator.permissions || !navigator.permissions.query) return Promise.resolve({ bloqueada: false });
+    return navigator.permissions.query({ name: 'geolocation' }).then(function (st) {
+      if (st.state === 'granted') return posicion();
+      return { bloqueada: st.state === 'denied' };
+    }, function () { return { bloqueada: false }; });
+  }
 
-  function sellar() {
+  function sellar(pedir) {
     pinta('⌛', [T.checking]);
-    return dondeEstoy().then(function (aqui) {
+    return dondeEstoy(pedir === true).then(function (aqui) {
       return sb.rpc('scan_visit_qr', {
         p_token: token,
         p_lat: aqui.lat == null ? null : aqui.lat,
@@ -139,10 +154,11 @@
       if (tarjetas.some(function (c) { return c.goal > 0 && c.stamps >= c.goal; })) lineas.push({ t: T.reward });
       pinta(r.stamp === 'stamped' ? '✓' : 'ⓘ', lineas, { texto: T.cards, href: cuenta('sellos') });
     } else if (r.stamp === 'too_far') {
-      pinta('ⓘ', [T.far(distancia(r.distance_m || 0))], { texto: T.retry, fn: sellar });
+      pinta('ⓘ', [T.far(distancia(r.distance_m || 0))], { texto: T.retry, fn: function () { sellar(true); } });
     } else if (r.stamp === 'no_location') {
-      if (aqui && aqui.bloqueada) pinta('ⓘ', [T.noLoc, { t: T.blocked }], { texto: T.retry, fn: sellar });
-      else pinta('ⓘ', [T.noLoc], { texto: T.useLoc, fn: sellar });
+      // Bloqueada: cómo permitirla en el navegador; si no, «Usar mi ubicación» (ahí sí se pregunta).
+      if (aqui && aqui.bloqueada) pinta('ⓘ', [T.noLoc, { t: T.blocked }], { texto: T.retry, fn: function () { sellar(true); } });
+      else pinta('ⓘ', [T.noLoc], { texto: T.useLoc, fn: function () { sellar(true); } });
     } else if (r.stamp === 'team') {
       pinta('ⓘ', [T.team]);
     } else {

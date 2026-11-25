@@ -321,7 +321,7 @@ function puertaEdad(lang, path) {
     <div class="vacio-botones"><button type="button" class="pill ink" data-edad-si>${esc(S.si)}</button>
       <button type="button" class="pill" data-edad-no>${esc(S.no)}</button></div>
   </section>
-  <script src="/assets/edad.js?v=1" defer></script>`;
+  <script src="/assets/edad.js?v=2" defer></script>`;
   const r = html(publicPage({
     lang, path, body, title: S.t, description: S.b, head: '<meta name="robots" content="noindex">',
   }), 200, 'no-store');
@@ -1664,7 +1664,7 @@ ${traducir(lang, `business:${b.id}`, '')}${ver === 'preguntas' ? `\n${PREGUNTAS_
   const conVisita = /^[A-Za-z0-9_-]{16}$/.test(visita)
     ? `<script src="/assets/vendor/supabase-js-2.117.2.js" integrity="sha384-Rj26LVGvoeRVR6+mwQmFfcR3QOBEwT+ZmuCWpuiqeTzJpCs0ER4ITAWGb4Hiy3Ok" crossorigin="anonymous" defer></script>
 <script src="/config.js?v=4" defer></script>
-<script src="/assets/visita.js?v=20261111sinbarra" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
+<script src="/assets/visita.js?v=20261125ubic" defer data-token="${esc(visita)}" data-lang="${en ? 'en' : 'es'}"></script>`
     : '';
   return deRevision(html(publicPage({
     lang, path, body: body + MENU_JS + COMPARTIR_JS, title: conCiudad ? `${b.name} · ${b.city}` : b.name, description, image: b.cover || b.logo,

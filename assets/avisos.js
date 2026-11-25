@@ -12,6 +12,8 @@
  *   solo lo quita (la visita sigue). Lo rellena este fichero.
  * - `viaje`: «Estás en Valencia · Lo mejor de hoy ›». Lo rellena
  *   /assets/gustos.js si estás lejos de tu ciudad; la × lo quita hasta mañana.
+ * - `ubicacion`: «Mira lo que hay cerca de ti · Activar» (como la app), sin
+ *   ubicación; cuándo sale, /assets/filtros-guarda.js.
  * «Según el tiempo» no es un aviso: cuando reordena, lo dice el chip de
  * orden, que va justo detrás de Filtros.
  *
@@ -97,6 +99,12 @@
       }
     }
   }
+
+  // «Mira lo que hay cerca de ti» (`ubicacion`): lo decide
+  // /assets/filtros-guarda.js en el <head> (marca `data-aviso-ubic` en
+  // <html>, y lo quita si no toca); aquí solo se apunta.
+  var ub = document.getElementById('ubic');
+  if (ub && document.documentElement.hasAttribute('data-aviso-ubic')) ub.setAttribute('data-quiere', '');
 
   // El de viaje lo enciende /assets/gustos.js (llama a `pinta()` al saber
   // dónde estás).

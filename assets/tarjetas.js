@@ -406,7 +406,7 @@
       var hueco = el.querySelector('.tj-dist') || (el.classList.contains('dist') ? el : null);
       if (!hueco || hueco.textContent.trim()) return;
       if (!isFinite(m) || m > 300000) return;
-      hueco.textContent = (el.matches('.tj-fila, .sitio-fila') ? ' · ' : '') + fmtDist(m);
+      hueco.textContent = (el.matches('.tj-fila, .sitio-fila') || hueco.hasAttribute('data-sep') ? ' · ' : '') + fmtDist(m);
       hueco.hidden = false;
     });
   }
@@ -708,10 +708,10 @@
         window.KL_CERCA(lat, lng);
         // `data-cerca-a`: los atajos de la lupa van a Descubre (no a esta página).
         var u = new URL(b.getAttribute('data-cerca-a') || location.href, location.href);
-        // En Explorar y Descubre, la celda (unos 5 km; assets/celda.js): tu
-        // punto se queda aquí. Partidos, grupos y guías siguen con el punto
-        // redondeado (unos 100 m).
-        var conCelda = KCe && /^\/(en\/)?(explorar|explore|descubre|discover)$/.test(u.pathname);
+        // La celda (unos 5 km; assets/celda.js): tu punto se queda aquí. En
+        // Explorar y Descubre y también en Partidos, Grupos y Sorteos (Iván,
+        // 25-11; RUNBOOK §4zzz-ubicacion-web2; antes, el punto redondeado).
+        var conCelda = KCe && /^\/(en\/)?(explorar|explore|descubre|discover|partidos|matches|grupos|groups|sorteos|giveaways)(\/|$)/.test(u.pathname);
         ['lat', 'lng', 'celda', 'cell'].forEach(function (k) { u.searchParams.delete(k); });
         if (conCelda) u.searchParams.set(/^\/en\//.test(u.pathname) ? 'cell' : 'celda', KCe.de(lat, lng));
         else { u.searchParams.set('lat', posUrl(lat)); u.searchParams.set('lng', posUrl(lng)); }

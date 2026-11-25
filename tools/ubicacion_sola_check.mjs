@@ -137,9 +137,12 @@ for (const tipo of ['chromium', 'webkit']) {
       }
       await p.goto(`${BASE}/explorar?vista=lista`);
       await quieto(p);
-      ok(await p.locator('[data-cerca-aviso] [data-cerca]').first().isVisible(), `${tipo}: sin permiso, el aviso «Usar mi ubicación» de siempre`);
+      // La franja «Mira lo que hay cerca de ti · Activar» (§4zzz-ubicacion-web2, tools/aviso_ubicacion_check.mjs),
+      // si el navegador dice cómo está el permiso (el WebKit de Playwright en Windows, no); si no, «¿Dónde?» › «Usar mi ubicación».
+      const sabe = await p.evaluate(async () => { try { await navigator.permissions.query({ name: 'geolocation' }); return true; } catch { return false; } });
+      ok(!sabe || await p.locator('[data-cerca-aviso] [data-cerca]').first().isVisible(), `${tipo}: sin permiso, la franja «Mira lo que hay cerca de ti · Activar»`);
       await ctx.grantPermissions(['geolocation']);
-      await p.locator('[data-cerca-aviso] [data-cerca]').first().click();
+      await p.evaluate((s) => document.querySelector(s ? '[data-cerca-aviso] [data-cerca]' : '.menu-d [data-cerca], [data-cerca]').click(), sabe);
       await p.waitForURL(/celda=/, { timeout: 10000 }).catch(() => {});
       ok(new URL(p.url()).searchParams.get('celda') === CELDA, `${tipo}: al pulsarlo, a tu celda`, p.url());
       ok(!errores.length, `${tipo}: sin permiso, sin errores`, errores.join(' | '));

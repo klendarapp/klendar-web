@@ -20,6 +20,22 @@ var A=d.A,t=Date.now();
 if(d.vi){var Z=['ciudad','city','lat','lng','celda','cell','km','todas'],P=/^(lat|lng|celda|cell)$/,o=g||{},vp=Date.now()-(o.t||0)<216e5,f=function(L){var u=new URLSearchParams(A[L]||''),w=new URLSearchParams(o[L]||'');Z.forEach(function(k){u.delete(k);});Z.forEach(function(k){if(!vp&&P.test(k))return;w.getAll(k).forEach(function(v){u.append(k,v);});});return u.toString();};A={es:f('es'),en:f('en')};if(vp&&o.t&&/(^|&)(lat|celda|cell)=/.test(o[d.L]||''))t=o.t;}
 ls.setItem(K,JSON.stringify({t:t,es:A.es,en:A.en}));
 if(gq!==d.g){window.KLENDAR_VA=1;location.replace(conG(location.href));return;}
+// «Mira lo que hay cerca de ti · Activar» (Iván, 25-11; RUNBOOK §4zzz-ubicacion-web2; como `LocationBannerNotice` y
+// `PromptGate` de la app): la franja de Descubre (`#ubic`) y Explorar (`[data-aviso-ubic]`), que el servidor pone oculta
+// (`d.u`: 1, ya; 2, tras la pregunta de la edad). Se decide aquí, antes de pintar, para que no mueva nada: como mucho
+// 3 veces, no antes de 14 días desde la última y un aviso opcional por visita (`klendar.aviso.ubicacion` en este
+// navegador: veces, cuándo y lo último que dijo el navegador del permiso; `klendar.aviso.sesion`: el de esta visita).
+// Solo con el permiso en «preguntar»: concedido, se usa solo; denegado (o un navegador que no dice cuál), no se molesta. En esta visita, sigue hasta su ×
+// o «Activar» (que pide la ubicación: /assets/tarjetas.js).
+if(d.u){var AU='klendar.aviso.ubicacion',AS='klendar.aviso.sesion',R=document.documentElement,au={};try{au=JSON.parse(ls.getItem(AU)||'{}')||{};}catch(e){au={};}
+var se=s.getItem(AS),api=!!(navigator.geolocation&&navigator.permissions&&navigator.permissions.query);
+var ok=api&&!/^(granted|denied|\?)$/.test(au.p||'')&&(se==='ubicacion'||(!se&&(au.n||0)<3&&!(Date.now()-(au.t||0)<12096e5)));
+var estado='',listo=d.u===1,gasta=function(){if(!ok||!listo||estado!=='prompt'||s.getItem(AS)==='ubicacion')return;s.setItem(AS,'ubicacion');au.n=(au.n||0)+1;au.t=Date.now();ls.setItem(AU,JSON.stringify(au));};
+var quita=function(x){ok=false;R.removeAttribute('data-aviso-ubic');document.querySelectorAll('[data-aviso-ubic]').forEach(function(el){el.hidden=true;el.removeAttribute('data-quiere');});if(window.KlendarAvisos)window.KlendarAvisos.pinta();if(x)try{s.setItem(AS,'ubicacion-x');}catch(e){}};
+window.KL_AVISO_UBIC={tras:function(){if(!ok)return;listo=true;R.setAttribute('data-aviso-ubic','');var u=document.getElementById('ubic');if(u)u.setAttribute('data-quiere','');if(window.KlendarAvisos)window.KlendarAvisos.pinta();gasta();}};
+if(ok&&listo)R.setAttribute('data-aviso-ubic','');
+if(api)navigator.permissions.query({name:'geolocation'}).then(function(p){estado=p.state;try{au.p=estado;ls.setItem(AU,JSON.stringify(au));}catch(e){}if(estado!=='prompt'){if(ok)quita(false);return;}gasta();}).catch(function(){try{au.p='?';ls.setItem(AU,JSON.stringify(au));}catch(e){}if(ok)quita(false);});
+if(ok)document.addEventListener('click',function(ev){var t=ev.target instanceof Element?ev.target:null;if(!t)return;if(t.closest('[data-ubic-x]'))quita(true);else if(t.closest('[data-aviso-ubic] [data-cerca]'))try{s.setItem(AS,'ubicacion-x');}catch(e){}});}
 // «Cerca de mí» sola (Iván, 24-11; RUNBOOK §4zzz-ubicacion-web): en Explorar y Descubre sin zona en la dirección
 // (ni ciudad, celda, punto, «Todas las ciudades», la visita de «Más planes en …» ni página), sin venir de un enlace
 // de la propia página ni con «Atrás», ni a punto de ir al otro idioma (assets/cabecera.js), y solo si el navegador YA

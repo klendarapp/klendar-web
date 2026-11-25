@@ -21,6 +21,7 @@ import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rp
 import KZ from '../../assets/zona.js';
 import KCe from '../../assets/celda.js';
 import { celdaDeConexion, zonaDeConexion } from './conexion.js';
+import { celdaDeZona, claveCelda } from './celda_zona.js';
 import {
   agendaBase, bizPath, cityLinks, collectionBase, decodeSeg, discoverBase, exploreBase, firstPhoto, historiaBoton, isVideo, kidsBase, ldScript,
   listingLd, negociosPublicos, publicPage, todayBase,
@@ -80,7 +81,7 @@ const T = (en) => en
       when: 'When?', anytime: 'Any time', now: 'Next 2 hours', today: 'Today', tomorrow: 'Tomorrow', next10: 'Next 10 days', nowShort: '2 hours', next10Short: '10 days',
       discount: 'Discounts only', openNow: 'Open now', soonest: 'Soonest', newest: 'Newest',
       nearOn: 'Near you', approx: 'Approximate location', nearNo: "We couldn't get your location. Allow it in your browser and try again.",
-      where: 'Where', useLoc: 'Use my location', useLocHint: "What's closest to where you are now", nearPrompt: 'See what’s closest to you first.', nearNeedsWhere: 'To see what’s closest first, tell us where you are.',
+      where: 'Where', useLoc: 'Use my location', useLocHint: "What's closest to where you are now", nearPrompt: 'See what’s near you', nearOn: 'Turn on', nearNeedsWhere: 'To see what’s closest first, tell us where you are.',
       ageQ: 'Are you 18 or over?', ageYes: 'I’m 18 or over', ageNo: 'I’m under 18', ageHidden: (n) => (n === 1 ? '1 result is for over-18s only.' : `${n} results are for over-18s only.`),
       view: 'View', listView: 'List', mapView: 'Map', calView: 'Calendar', distance: 'Distance',
       // El botón de vista de Explorar (`exploreSeeMap`, `exploreSeeCalendar`, `exploreSeeList` de la app).
@@ -233,7 +234,7 @@ const T = (en) => en
       when: '¿Cuándo?', anytime: 'Cuando sea', now: 'Próximas 2 horas', today: 'Hoy', tomorrow: 'Mañana', next10: 'Próximos 10 días', nowShort: '2 horas', next10Short: '10 días',
       discount: 'Solo con descuento', openNow: 'Abierto ahora', soonest: 'Más pronto', newest: 'Novedades',
       nearOn: 'Cerca de ti', approx: 'Ubicación aproximada', nearNo: 'No hemos podido saber dónde estás. Permítelo en el navegador y vuelve a probar.',
-      where: 'Dónde', useLoc: 'Usar mi ubicación', useLocHint: 'Lo más cercano a donde estás ahora', nearPrompt: 'Mira primero lo que tienes más cerca.', nearNeedsWhere: 'Para ver lo más cerca primero, dinos dónde estás.',
+      where: 'Dónde', useLoc: 'Usar mi ubicación', useLocHint: 'Lo más cercano a donde estás ahora', nearPrompt: 'Mira lo que hay cerca de ti', nearOn: 'Activar', nearNeedsWhere: 'Para ver lo más cerca primero, dinos dónde estás.',
       ageQ: '¿Tienes 18 años o más?', ageYes: 'Tengo 18 años o más', ageNo: 'Soy menor', ageHidden: (n) => (n === 1 ? 'Hay 1 resultado solo para mayores de 18.' : `Hay ${n} resultados solo para mayores de 18.`),
       view: 'Ver en', listView: 'Lista', mapView: 'Mapa', calView: 'Calendario', distance: 'Distancia',
       seeMap: 'Ver en el mapa', seeCal: 'Ver el calendario', seeList: 'Ver en lista',
@@ -439,7 +440,8 @@ const bizCard = (b, lang, S) => {
  * (tu posición o la ciudad; la distancia allí es la suya, 10 km). */
 const zonaGrupos = (e, lang) => {
   const p = new URLSearchParams();
-  if (e.cerca) { p.set('lat', posUrl(e.lat)); p.set('lng', posUrl(e.lng)); } else if (e.city) p.set(lang === 'en' ? 'city' : 'ciudad', e.city);
+  // La celda, como aquí (no el punto; _lib/celda_zona.js).
+  if (e.cerca) p.set(claveCelda(lang), celdaDeZona(e)); else if (e.city) p.set(lang === 'en' ? 'city' : 'ciudad', e.city);
   return p.toString();
 };
 
@@ -1276,13 +1278,13 @@ function guardaFiltros(e, lang, base, explorar = false) {
   if (e.vista === 'map' && e.ambiente) resto.set(K.buzz, '1');
   const vacia = !compartido.es;
   const datos = JSON.stringify({
-    A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}`, g: (e.gustos || []).join(','), vi: enVisita(e) ? 1 : 0,
+    A: compartido, L: lang, v: vacia, r: resto.toString(), b: `${base}`, g: (e.gustos || []).join(','), vi: enVisita(e) ? 1 : 0, u: e.avisoUbic || 0,
     // Una búsqueda (que se ve en lista) no cambia la vista que se recuerda.
     ...(explorar ? { ex: 1, ...(e.q ? {} : { x: { es: vistaDe('es'), en: vistaDe('en') } }) } : {}),
   }).replace(/</g, '\\u003c');
   // En assets/filtros-guarda.js, sin `defer` (la CSP de scripts no deja nada en
   // línea, RUNBOOK §4zzz-csp): los datos, como JSON que no se ejecuta.
-  return `<script type="application/json" id="klFiltros">${datos}</script><script src="/assets/filtros-guarda.js?v=2"></script>`;
+  return `<script type="application/json" id="klFiltros">${datos}</script><script src="/assets/filtros-guarda.js?v=3"></script>`;
 }
 
 /** «El sitio» de la hoja: todo menos «Apto para niños», que es «Con niños»
@@ -2350,6 +2352,10 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   // ubicación espera (`data-tras-edad`, oculta) y sale al contestar «Soy
   // menor»; con «18 o más» la página vuelve a cargarse y ya sale sola.
   const trasEdad = ocultos18 ? ' data-tras-edad hidden' : '';
+  // La franja de la ubicación (ver `invitaCerca`): sin «Cerca de ti» de
+  // verdad (la zona aproximada de la conexión sí), ciudad, «Todas las
+  // ciudades» ni la visita de «Más planes en …», en la primera página.
+  const avisoUbic = (!cerca || e.aprox) && !city && !e.todas && !enVisita(e) && page === 1;
   const avisoCerca = sinDondeCerca
     ? `<p class="cerca-aviso" data-cerca-falta${trasEdad}>${ic('cerca', 18)}<span>${esc(S.nearNeedsWhere)}</span>
         <button type="button" class="pill ink" data-cerca data-mas="${esc(`${K.sort}=${enIdioma('nearest', en)}`)}" data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
@@ -2360,11 +2366,21 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
     ? `<div class="cerca-aviso edad-aviso" data-edad><span>${esc(S.ageHidden(ocultos18))} <strong>${esc(S.ageQ)}</strong></span>
         <button type="button" class="pill ink" data-edad-si>${esc(S.ageYes)}</button>
         <button type="button" class="pill" data-edad-no>${esc(S.ageNo)}</button></div>
-  <script src="/assets/edad.js?v=1" defer></script>`
+  <script src="/assets/edad.js?v=2" defer></script>`
     : '';
-  const invitaCerca = !descubre && !cerca && !city
-    ? `<p class="cerca-aviso" data-cerca-aviso${ocultos18 ? ' data-tras-edad hidden' : ''}>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
-        <button type="button" class="pill ink" data-cerca data-err="${esc(S.nearNo)}">${esc(S.useLoc)}</button></p>`
+  // «Mira lo que hay cerca de ti · Activar» con su × (Iván, 25-11; RUNBOOK
+  // §4zzz-ubicacion-web2): la franja de la app (`LocationBannerNotice`), en
+  // Descubre (uno de sus avisos, `#ubic`) y aquí en Explorar (antes «Mira
+  // primero lo que tienes más cerca.», siempre). Sin «Cerca de ti» de verdad
+  // ni una ciudad ni «Todas las ciudades». Sale oculta: si toca la decide
+  // /assets/filtros-guarda.js en el <head>, antes de pintar (sin saltos):
+  // solo con el permiso en «preguntar», 3 veces como mucho, cada 14 días y
+  // un aviso opcional por visita, como la app (`PromptGate`). Con la
+  // pregunta de la edad, espera a que se conteste (un solo aviso a la vez).
+  const invitaCerca = !descubre && avisoUbic
+    ? `<p class="cerca-aviso" data-cerca-aviso data-aviso-ubic hidden>${ic('cerca', 18)}<span>${esc(S.nearPrompt)}</span>
+        <button type="button" class="pill ink" data-cerca data-err="${esc(S.nearNo)}">${esc(S.nearOn)}</button>
+        <button type="button" class="feed-aviso-x" data-ubic-x aria-label="${esc(S.travelClose)}" title="${esc(S.travelClose)}">${ic('x', 18)}</button></p>`
     : '';
 
   const alertaHref = `${enlaceCuenta(en ? 'en' : 'es', `alerta/nueva?${new URLSearchParams({
@@ -2478,7 +2494,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
       },
     } : {}),
   })}</script>` : '';
-  const head = `${guardaFiltros({ ...e, vista }, lang, base, !descubre)}${vistosJs}${celdaJson}
+  const head = `${guardaFiltros({ ...e, vista, avisoUbic: avisoUbic ? (ocultos18 ? 2 : 1) : 0 }, lang, base, !descubre)}${vistosJs}${celdaJson}
 <noscript><style>[data-cerca],[data-cerca-aviso]{display:none!important}</style></noscript>
 ${filtrado ? '<meta name="robots" content="noindex, follow">' : jsonLd}${descubre ? '' : `
 ${PARTIDOS_CSS}
@@ -2508,9 +2524,14 @@ ${GRUPOS_CSS}` : ''}`;
         data-populares="${esc(JSON.stringify(populares))}" data-iconos="${esc(JSON.stringify({ cerca: ic('cerca', 16), ciudad: ic('ciudad', 16), todas: ic('mundo', 16), x: ic('x', 18) }))}"
         data-textos="${esc(JSON.stringify({ near: S.visitNear, all: S.visitAll, to: S.visitTo, label: S.visitLabel.replace('{city}', e.cityName || PRETTY(city)), close: S.travelClose }))}"></div>`
     : '';
-  const avisos = visita || viaje
-    ? `<div class="feed-avisos" id="feed-avisos" hidden>${visita}${viaje}</div>
-  <script src="/assets/avisos.js?v=3" defer></script>`
+  // «Mira lo que hay cerca de ti · Activar» (ver `invitaCerca`): sin «Cerca
+  // de ti» de verdad, así que nunca a la vez que la visita ni que el viaje.
+  const ubic = descubre && avisoUbic
+    ? `<div id="ubic" class="feed-aviso" data-aviso="ubicacion" data-aviso-ubic hidden><button type="button" class="feed-aviso-t" data-cerca data-err="${esc(S.nearNo)}">${ic('cerca', 16)}<span>${esc(S.nearPrompt)}</span><b class="feed-aviso-acc">${esc(S.nearOn)}</b></button><button type="button" class="feed-aviso-x" data-ubic-x aria-label="${esc(S.travelClose)}" title="${esc(S.travelClose)}">${ic('x', 18)}</button></div>`
+    : '';
+  const avisos = visita || viaje || ubic
+    ? `<div class="feed-avisos" id="feed-avisos" hidden>${visita}${viaje}${ubic}</div>
+  <script src="/assets/avisos.js?v=4" defer></script>`
     : '';
   if (descubre) {
     return variaCon(conCookie(html(publicPage({
@@ -2600,7 +2621,7 @@ ${GRUPOS_CSS}` : ''}`;
 
   // La guía, con la misma zona que Descubre.
   const guiaHtml = vacio ? '' : bannerGuia(await guiaP, lang,
-    cerca ? `?lat=${encodeURIComponent(lat)}&lng=${encodeURIComponent(lng)}&km=${encodeURIComponent(km)}`
+    cerca ? `?${claveCelda(lang)}=${encodeURIComponent(celdaDeZona(e))}&km=${encodeURIComponent(km)}`
       : city ? `?${en ? 'city' : 'ciudad'}=${encodeURIComponent(String(city).toLowerCase())}` : '');
   const body = `
   <h1 class="sr" id="arriba">${esc(S.exp)}</h1>

@@ -4,8 +4,8 @@
 // puede apagar).
 //
 // /guia/<slug> (y /en/guide/<slug>): portada, texto y fechas, lo de la zona
-// del visitante (la elegida, `?lat=&lng=&km=` como Descubre, o la de su
-// conexión) y «Elige tu sitio» (los municipios con planes). `?ciudad=<m>`
+// del visitante (la elegida, `?celda=&km=` como Descubre —un enlace de antes
+// con `?lat=&lng=` va a su celda—, o la de su conexión) y «Elige tu sitio» (los municipios con planes). `?ciudad=<m>`
 // lleva con un 301 a la página del municipio.
 // /guia/<slug>/<municipio>: lo de ese municipio, «Navidad en Málaga»,
 // indexable y en el sitemap (lo que trae gente desde Google). Un municipio
@@ -22,6 +22,8 @@
 import { categoriasSinFoto } from './sinfoto.js';
 import { esc, html, rpc, rpcAll } from './page.js';
 import { zonaDeConexion } from './conexion.js';
+import { aSuCelda, celdaDeUrl, claveCelda, radioConCelda } from './celda_zona.js';
+import { recuperaZona } from './partidos.js';
 import { BASE, breadcrumbLd, discoverBase, ldScript, publicPage } from './public.js';
 import { rejilla } from './tarjeta.js';
 import { notFound } from './views.js';
@@ -112,7 +114,7 @@ export { GUIA_CSS };
 
 /** La franja de la guía, encima de Descubre (web): sobria, sin coral. Lleva
  *  a la guía con la misma zona que Descubre (`donde`: `?ciudad=…` o
- *  `?lat=&lng=&km=`). '' si no hay. */
+ *  `?celda=…&km=`). '' si no hay. */
 export function bannerGuia(g, lang, donde = '') {
   if (!g?.slug || !SLUG.test(g.slug)) return '';
   const en = lang === 'en';
@@ -153,14 +155,17 @@ export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
   if (!muniSlug && pedida && lista.some((m) => m.slug === pedida)) {
     return new Response(null, { status: 301, headers: { location: guiaPath(lang, slug, pedida), 'cache-control': 'public, max-age=300' } });
   }
-  // La zona, sin municipio: la de Descubre (`?lat=&lng=&km=`) o la conexión.
-  const lat = Number.parseFloat(q.get('lat') || '');
-  const lng = Number.parseFloat(q.get('lng') || '');
+  // La zona, sin municipio: la de Descubre (su celda, `?celda=&km=`;
+  // _lib/celda_zona.js) o la conexión. Un enlace de antes con `?lat=&lng=`,
+  // a su celda.
+  const z = muniSlug ? null : celdaDeUrl(q);
+  if (z?.vieja) return aSuCelda(url, lang, z.celda);
   const km = Math.min(100, Math.max(1, Number.parseInt(q.get('km') || '', 10) || RADIO_ZONA_M / 1000));
-  const puntoUrl = !muniSlug && Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  const puntoUrl = Boolean(z);
   const conexion = !muniSlug && !puntoUrl ? zonaDeConexion(request) : null;
-  const punto = puntoUrl ? { lat: Math.round(lat * 100) / 100, lng: Math.round(lng * 100) / 100 } : conexion;
-  const radio = puntoUrl ? km * 1000 : RADIO_ZONA_M;
+  const punto = puntoUrl ? { lat: z.lat, lng: z.lng } : conexion;
+  // Desde el centro de la celda, con su margen (no falta nada de lo que esté a esa distancia de ti).
+  const radio = puntoUrl ? radioConCelda(z.celda, km * 1000) : RADIO_ZONA_M;
   let sitio = elegido?.name || null;
   if (!sitio && punto) {
     const gz = await rpc('guide_info', { p_slug: slug, p_lat: punto.lat, p_lng: punto.lng, p_city: null }).catch(() => null);
@@ -217,11 +222,14 @@ export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
     })
     : { items: [] };
   const items = res?.items || [];
+  // Con la celda (o la zona de la conexión), la distancia desde su centro no
+  // es la tuya: sin ella (la pone el navegador si tiene tu punto).
+  if (punto) for (const o of items) if (o) o.distance_m = null;
 
   // Al cambiar un filtro se conserva la zona elegida en la dirección.
   const enlace = (c, t) => {
     const p = new URLSearchParams();
-    if (puntoUrl) { p.set('lat', String(punto.lat)); p.set('lng', String(punto.lng)); p.set('km', String(km)); }
+    if (puntoUrl) { p.set(claveCelda(lang), z.celda); p.set('km', String(km)); }
     if (c) p.set(en ? 'when' : 'cuando', c);
     for (const x of Object.keys(TIPO[L]).filter((k) => t.includes(k))) p.append(en ? 'type' : 'tipo', x);
     const s = p.toString();
@@ -276,13 +284,18 @@ export async function guiaPage(rawSlug, rawMuni, url, lang, request = null) {
     ],
   };
 
-  // Con la zona del visitante (su punto o su conexión) no va a ninguna caché
-  // compartida; la del municipio y la general sin zona, sí.
+  // Con la zona de la conexión de quien mira no va a ninguna caché
+  // compartida; la de la celda (la misma para todos los de esa celda, como
+  // Descubre), la del municipio y la general sin zona, sí. Sin municipio,
+  // la zona guardada de Descubre (o, con el permiso ya dado, la tuya) como
+  // en Partidos (/assets/recupera-zona.js); con la zona en la dirección, sin
+  // el contador de visitas.
   const r = html(publicPage({
     lang, path, body, title: titulo, description, image: foto || items.find((o) => o.images?.[0])?.images?.[0],
     head: `${GUIA_CSS}
-${filtrado || puntoUrl ? '<meta name="robots" content="noindex, follow">\n' : ''}${ldScript(jsonLd)}`,
-  }), 200, punto ? 'private, max-age=0' : 'public, max-age=120, s-maxage=300');
+${muniSlug ? '' : `${recuperaZona()}\n`}${filtrado || puntoUrl ? '<meta name="robots" content="noindex, follow">\n' : ''}${ldScript(jsonLd)}`,
+    contador: !puntoUrl,
+  }), 200, conexion ? 'private, max-age=0' : 'public, max-age=120, s-maxage=300');
   if (conexion) r.headers.set('vary', 'CF-Connecting-IP');
   return r;
 }

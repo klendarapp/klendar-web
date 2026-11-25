@@ -86,6 +86,10 @@ export function bordesPantalla(sel) {
     if (r.right > Math.max(R.right, document.documentElement.clientWidth) + 1) { salidos.push({ que: nombre(el), por: 'la derecha de la pantalla', px: Math.round(r.right - R.right) }); continue; }
     for (let p = el.parentElement; p && p !== raiz; p = p.parentElement) {
       if (!esCaja(p) || /^(TABLE|DETAILS|INPUT|SELECT|TEXTAREA)$/.test(p.tagName)) continue;
+      // Los avisos de Descubre van a propósito fuera de la fila de los filtros
+      // (a la derecha de la tarjeta, o sobre su foto en tablet en vertical):
+      // lo suyo se mira frente a la pantalla y dentro de cada aviso.
+      if (p.matches('.feed-cab') && el.closest('.feed-avisos')) break;
       const cs = getComputedStyle(p);
       if (/auto|scroll/.test(cs.overflowX + cs.overflowY)) break; // se desplaza: no es salirse
       const q = p.getBoundingClientRect();

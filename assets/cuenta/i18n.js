@@ -1493,6 +1493,8 @@ const APP_EN = {
   "Espera a que terminen de subirse las fotos y los vídeos.": "Wait for the photos and videos to finish uploading.",
   "El archivo pesa demasiado (fotos hasta 10 MB, vídeos hasta 60 MB).": "The file is too big (photos up to 10 MB, videos up to 60 MB).",
   "Vigilar esta zona": "Watch this area",
+  "Sin tu ubicación: ¿vigilamos {nombre}, tu ciudad?": "Without your location: shall we watch {nombre}, your city?",
+  "Vigilar {nombre}": "Watch {nombre}",
   "Se queda mirando aquí aunque estés de viaje.": "It keeps watching here even when you travel.",
   "Nombre, p. ej. «sushi cerca»": "Name, e.g. “sushi nearby”",
   "Asistente de ayuda con IA": "AI help assistant",

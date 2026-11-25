@@ -123,10 +123,18 @@ const ultima = (fn) => pedidas.filter((p) => p.u.endsWith(`/rpc/${fn}`)).pop()?.
   ok('2. …indexable y en caché compartida', !sinZona.h.includes('noindex') && /public/.test(sinZona.r.headers.get('cache-control')));
   const red = await pagina('/guia/navidad?ciudad=malaga');
   ok('2. ?ciudad= → 301 a la página del municipio', red.r.status === 301 && red.r.headers.get('location') === '/guia/navidad/malaga');
-  const zona = await pagina('/guia/navidad?lat=36.72&lng=-4.42&km=10');
-  ok('2. la zona de Descubre: «Navidad en Málaga» y lo de 10 km', zona.h.includes('<h1>Navidad en Málaga</h1>')
-    && ultima('guide_offers')?.p_filters?.radius_m === 10000 && ultima('guide_offers')?.p_lat === 36.72);
-  ok('2. …sin caché compartida ni buscadores', /private/.test(zona.r.headers.get('cache-control')) && zona.h.includes('noindex'));
+  // La zona de Descubre es su celda (§4zzz-ubicacion-web2): desde su centro, con la distancia y la mitad de su diagonal.
+  const KCe = (await import('../assets/celda.js')).default;
+  const celda = KCe.de(36.72, -4.42);
+  const vieja = await pagina('/guia/navidad?lat=36.72&lng=-4.42&km=10');
+  ok('2. un enlace de antes con ?lat=&lng=: 301 a su celda', vieja.r.status === 301 && vieja.r.headers.get('location') === `/guia/navidad?km=10&celda=${celda}`);
+  const zona = await pagina(`/guia/navidad?celda=${celda}&km=10`);
+  ok('2. la zona de Descubre: «Navidad en Málaga» y lo de 10 km (más la mitad de la celda)', zona.h.includes('<h1>Navidad en Málaga</h1>')
+    && ultima('guide_offers')?.p_filters?.radius_m === 10000 + KCe.margenM(celda) && ultima('guide_offers')?.p_lat === KCe.centro(celda).lat);
+  ok('2. …la misma para toda la celda: en caché compartida, sin buscadores ni contador', /public/.test(zona.r.headers.get('cache-control')) && zona.h.includes('noindex')
+    && !zona.h.includes('cloudflareinsights') && sinZona.h.includes('cloudflareinsights'));
+  ok('2. …los filtros conservan la celda', zona.h.includes(`?celda=${celda}&amp;km=10&amp;cuando=`));
+  ok('2. …recupera la zona guardada solo sin municipio', zona.h.includes('/assets/recupera-zona.js?v=2') && !(await pagina('/guia/navidad/malaga')).h.includes('recupera-zona'));
   const conexion = await pagina('/guia/navidad', 'es', new Request('https://klendar.app/guia/navidad', { cf: { country: 'ES', latitude: '36.7', longitude: '-4.4' } }));
   const req = new Request('https://klendar.app/guia/navidad');
   Object.defineProperty(req, 'cf', { value: { country: 'ES', latitude: '36.7', longitude: '-4.4' } });

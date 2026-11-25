@@ -531,6 +531,7 @@ RUTAS.alerta = async ([id], params, crudo) => {
         <input type="range" name="radius" min="500" max="${maxRadio}" step="500" value="${esc(a.radius_m)}"></label>
       <label class="check check-interruptor"><span><b>${esc(t('Vigilar esta zona'))}</b><br><small id="fija-txt"></small></span>
         <input type="checkbox" class="interruptor" role="switch" name="fija"${a.lat != null ? ' checked' : ''}></label>
+      <div class="aviso alerta" id="ciudad-oferta" role="status" hidden></div>
       <label class="check"><input type="checkbox" name="descuento"${a.discount_only ? ' checked' : ''}> ${esc(t('Solo con descuento'))}</label>
       <label>${esc(t('Precio máximo'))} <small>${esc(t('(opcional)'))}</small>
         <input name="precio" inputmode="decimal" value="${a.max_price_cents != null ? esc((a.max_price_cents / 100).toLocaleString(LOC, { minimumFractionDigits: 2 })) : ''}"></label>
@@ -555,13 +556,43 @@ RUTAS.alerta = async ([id], params, crudo) => {
   pintaFija();
   f.fija.addEventListener('change', pintaFija);
   f.radius.addEventListener('input', () => { $('#radio-txt').textContent = distancia(Number(f.radius.value)); });
-  /** Dónde estás ahora (para «Vigilar esta zona» en un aviso nuevo). */
-  const aqui = () => new Promise((ok, ko) => {
-    if (!navigator.geolocation) { ko(new Error(t('Este navegador no deja saber dónde estás.'))); return; }
-    navigator.geolocation.getCurrentPosition((pos) => ok({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-      () => ko(new Error(t('No hemos podido saber dónde estás. Revisa el permiso de ubicación del navegador.'))),
-      { enableHighAccuracy: true, timeout: 12000 });
-  });
+  /** Dónde estás ahora (para «Vigilar esta zona» en un aviso nuevo). Con el
+   * permiso bloqueado, ni se intenta. */
+  const sinUbicacion = () => new Error(t('No hemos podido saber dónde estás. Revisa el permiso de ubicación del navegador.'));
+  const aqui = async () => {
+    if (!navigator.geolocation) throw new Error(t('Este navegador no deja saber dónde estás.'));
+    const permiso = await navigator.permissions?.query({ name: 'geolocation' }).then((x) => x.state, () => '');
+    if (permiso === 'denied') throw sinUbicacion();
+    return new Promise((ok, ko) => {
+      navigator.geolocation.getCurrentPosition((pos) => ok({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        () => ko(sinUbicacion()), { enableHighAccuracy: true, timeout: 12000 });
+    });
+  };
+  // Sin tu ubicación (sin permiso, o denegado), tu ciudad de «Tus gustos»
+  // entera, con su centro y su radio (como la app, `resolveAlertPlace`;
+  // Iván, 25-11; RUNBOOK §4zzz-ubicacion-web2): se ofrece y se guarda al
+  // pulsarlo. Sin ciudad, el error de siempre.
+  let ciudadElegida = null;
+  const tuCiudad = async () => {
+    const srv = await llamar('my_tastes', {}).catch(() => null);
+    const m = srv?.home_municipality || window.KlendarGustos?.lee()?.home || null;
+    if (!m || !m.name || !Number.isFinite(Number(m.lat)) || !Number.isFinite(Number(m.lng))) return null;
+    const r = Number(m.radius_m);
+    return { lat: Number(m.lat), lng: Number(m.lng), place: String(m.name), radius: Number.isFinite(r) && r > 0 ? Math.min(Math.max(Math.round(r), 500), 25000) : null };
+  };
+  const ofreceCiudad = (c) => {
+    const caja = $('#ciudad-oferta');
+    const nombre = c.place;
+    caja.innerHTML = `<span>${esc(t(`Sin tu ubicación: ¿vigilamos ${nombre}, tu ciudad?`))}</span>
+      <span class="acciones"><button type="button" class="pill" id="usa-ciudad">${esc(t(`Vigilar ${nombre}`))}</button></span>`;
+    caja.hidden = false;
+    $('#usa-ciudad').addEventListener('click', () => {
+      ciudadElegida = c;
+      caja.hidden = true;
+      f.requestSubmit();
+    });
+  };
+  f.fija.addEventListener('change', () => { if (!f.fija.checked) { $('#ciudad-oferta').hidden = true; ciudadElegida = null; } });
 
   f.addEventListener('submit', (ev) => {
     ev.preventDefault();
@@ -572,9 +603,24 @@ RUTAS.alerta = async ([id], params, crudo) => {
     const precio = precioTxt ? Number(precioTxt) : null;
     if (precioTxt && (!Number.isFinite(precio) || precio < 0)) { err.textContent = t('El precio máximo tiene que ser un número.'); return; }
     ocupado($('#guardar'), async () => {
-      // Al editar se queda el sitio que ya tenía; si no, «Aquí».
+      // Al editar se queda el sitio que ya tenía; si no, «Aquí» o, sin tu
+      // ubicación, tu ciudad (si la eliges).
       let zona = null;
-      if (fija) zona = a.lat != null ? { lat: a.lat, lng: a.lng, place: a.place_label || t('Aquí') } : { ...(await aqui()), place: t('Aquí') };
+      let radio = Number(f.radius.value);
+      if (fija && a.lat != null) zona = { lat: a.lat, lng: a.lng, place: a.place_label || t('Aquí') };
+      else if (fija && ciudadElegida) {
+        zona = ciudadElegida;
+        if (zona.radius) radio = zona.radius;
+      } else if (fija) {
+        try {
+          zona = { ...(await aqui()), place: t('Aquí') };
+        } catch (e) {
+          const c = await tuCiudad();
+          if (!c) throw e;
+          ofreceCiudad(c);
+          return;
+        }
+      }
       await llamar('save_offer_alert', paramsAlerta({
         id: a.id,
         label: f.label.value.trim(),
@@ -584,7 +630,7 @@ RUTAS.alerta = async ([id], params, crudo) => {
         kind: ((k) => (k.length === 1 ? k[0] : null))($$('input[name=kind]:checked', f).map((x) => x.value)),
         max_price_cents: precio == null ? null : Math.round(precio * 100),
         discount_only: f.descuento.checked,
-        radius_m: Number(f.radius.value),
+        radius_m: radio,
         lat: zona ? zona.lat : null,
         lng: zona ? zona.lng : null,
         place_label: zona ? zona.place : null,

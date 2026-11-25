@@ -42,6 +42,7 @@
 
 import { dependeDeLaConexion } from './explore.js';
 import { celdaDeConexion, zonaDeConexion } from './conexion.js';
+import { celdaDeUrl } from './celda_zona.js';
 
 // v4 (23-11, §4zzz-csp): lo guardado antes llevaba <script> en línea, que la
 // CSP nueva ya no deja correr; con la clave nueva no se sirve.
@@ -109,11 +110,9 @@ export function extraDeClave(url, request) {
   return extra;
 }
 
-const conPuntoEnUrl = (qs) => {
-  const lat = Number.parseFloat(qs.get('lat') || '');
-  const lng = Number.parseFloat(qs.get('lng') || '');
-  return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
-};
+// La zona en la dirección: la celda de «Cerca de mí» (o un `?lat=&lng=` de
+// antes, que la guía manda a su celda con un 301). _lib/celda_zona.js.
+const conPuntoEnUrl = (qs) => Boolean(celdaDeUrl(qs));
 
 /** { frescos, reserva } en segundos para guardar esta respuesta, o null. */
 export function tiempos(pathname, res) {

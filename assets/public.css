@@ -817,8 +817,17 @@ body.pagina-feed.solo-foto .tj--pantalla.con-solo .tj-panel { opacity: 0; visibi
   background: none; color: inherit; cursor: pointer; }
 .feed-aviso-x::after { content: ""; position: absolute; inset: -6px; }
 .feed-aviso :is(.feed-aviso-t, .feed-aviso-x):focus-visible { outline: 2px solid currentColor; outline-offset: -2px; border-radius: 999px; }
+/* «Mira lo que hay cerca de ti · Activar» (2026-11-25, como la app): sale
+   oculta y, si toca, /assets/filtros-guarda.js marca <html data-aviso-ubic>
+   antes de pintar: así se ve desde el principio, sin mover nada después. */
+html[data-aviso-ubic] #feed-avisos { display: flex !important; }
+html[data-aviso-ubic] #ubic { display: inline-flex !important; }
+html[data-aviso-ubic] .cerca-aviso[data-aviso-ubic] { display: flex !important; }
+.feed-aviso-acc { margin-left: 4px; flex: none; }
+[data-aviso="ubicacion"] .feed-aviso-t span { font-weight: 500; }
+.cerca-aviso .feed-aviso-x { margin: -6px -6px -6px 0; }
 @media (max-width: 760px) {
-  body.pagina-feed.con-aviso { --feed-arriba: 158px; }
+  body.pagina-feed.con-aviso, html[data-aviso-ubic] body.pagina-feed { --feed-arriba: 158px; }
   .pagina-feed .feed-cab .feed-avisos { margin: 4px 16px 0; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .feed-aviso { background: rgba(10,10,10,.6); color: #fff;
     border-color: rgba(255,255,255,.16); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
@@ -826,6 +835,15 @@ body.pagina-feed.solo-foto .tj--pantalla.con-solo .tj-panel { opacity: 0; visibi
 @media (min-width: 761px) {
   .pagina-feed .feed-cab .feed-avisos { position: absolute; top: calc(100% + var(--hueco)); left: calc(50% + var(--feed-w) / 2 + 20px);
     max-width: min(320px, calc(50% - var(--feed-w) / 2 - 40px)); }
+}
+/* Tablet en vertical (y lo que se le parece): a la derecha de la tarjeta no
+   cabe (en 768 × 1024, 89 px); dentro de la tarjeta, arriba a la izquierda y
+   en cristal oscuro, como en el móvil (2026-11-25). */
+@media (min-width: 761px) and (max-aspect-ratio: 6/5) {
+  .pagina-feed .feed-cab .feed-avisos { top: calc(100% + var(--hueco) + 12px); left: calc(50% - var(--feed-w) / 2 + 12px);
+    max-width: calc(var(--feed-w) - 76px); z-index: 2; }
+  body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .feed-aviso { background: rgba(10,10,10,.6); color: #fff;
+    border-color: rgba(255,255,255,.16); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 }
 
 /* ══ La hoja de filtros por orden de uso (2026-10-06) ═══════════════════════
