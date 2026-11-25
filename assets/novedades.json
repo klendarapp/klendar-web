@@ -5,15 +5,18 @@
    "version": "0.1.11",
    "proxima": true,
    "es": [
-    "Las ofertas que ya canjeaste lo dicen, y «Ver tu código» o «Ver tu entrada» te lleva directo a él; al tocar el aviso de tu código, el QR se abre en grande."
+    "Las ofertas que ya canjeaste lo dicen, y «Ver tu código» o «Ver tu entrada» te lleva directo a él; al tocar el aviso de tu código, el QR se abre en grande.",
+    "Tu código se quita solo de la pantalla de bloqueo del iPhone en cuanto lo validan.",
+    "Pantallas más ordenadas, también con la letra grande."
    ],
    "en": [
-    "Offers you've already redeemed now say so, and “See your code” or “See your ticket” takes you straight to it; tapping your code's notification opens the QR full size."
+    "Offers you've already redeemed now say so, and “See your code” or “See your ticket” takes you straight to it; tapping your code's notification opens the QR full size.",
+    "Your code disappears from your iPhone lock screen as soon as it's validated.",
+    "Tidier screens, also with large text."
    ]
   },
   {
    "version": "0.1.10",
-   "proxima": true,
    "es": [
     "Para negocios: una barra propia con Hoy, Validar, Publicar y Negocio, y además encargos, preguntas al reservar y aviso cuando abren las reservas.",
     "Elige hasta dónde buscar (de 1 a 100 km) y el precio máximo, y marca varias opciones a la vez.",
