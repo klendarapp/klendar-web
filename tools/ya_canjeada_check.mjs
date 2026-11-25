@@ -11,10 +11,15 @@
 //   3. Con sesión, en Explorar: lo gastado sigue a la vista, con «Ya la
 //      canjeaste» en gris y sin enlace.
 //   4. Un código que ya ha caducado no cuenta: el botón de siempre.
+//   5. La lupa (Explorar con `?q=`): lo gastado sale (se ha buscado), con
+//      «Ya la canjeaste» (Iván, 25-11, visto en la 0.1.11).
+//   6. «Tu cuenta» › Planes: «Ver tu entrada» (lleva al código) y «Ya has
+//      entrado» en las tarjetas.
 //
 //   PW=<ruta a playwright> node tools/ya_canjeada_check.mjs
 import { playwright, REF, SUPA } from './_supabase_simulado.mjs';
-import { webConDatos } from './_web_con_datos.mjs';
+import { webConDatos, PLANES } from './_web_con_datos.mjs';
+import { conSesionCuenta } from './_cuenta_simulado.mjs';
 
 const { chromium } = playwright();
 // Lo tuyo, por publicación (se rellena al ver qué tarjetas hay).
@@ -105,6 +110,36 @@ const hecha = p.locator(`[data-o="${OTRA}"] .tj-mio--hecha`).first();
 ok(await p.locator(`[data-o="${OTRA}"]`).count() >= 1, 'Explorar: la gastada sigue a la vista');
 ok(await hecha.count() === 1 && /Ya la canjeaste/.test(await hecha.innerText()), 'Explorar: «Ya la canjeaste»');
 ok(await hecha.evaluate((e) => e.tagName) === 'SPAN', 'sin enlace (no se puede pulsar para sacar otro)');
+
+// ── 5. La lupa ─────────────────────────────────────────────────────────────
+const buscada = PLANES.find((o) => o.kind === 'flash_offer' && enExplorar.includes(o.id)) || PLANES.find((o) => enExplorar.includes(o.id));
+const palabra = String(buscada.title).split(/\s+/)[0];
+MIOS[buscada.id] = { offer_id: buscada.id, state: 'used_up', kind: buscada.kind, expires_at: null, used: 1, max_per_user: 1 };
+await p.goto(`${BASE}/explorar?q=${encodeURIComponent(palabra)}`, { waitUntil: 'networkidle' });
+await p.waitForFunction((id) => document.querySelector(`[data-o="${id}"] .tj-mio`), buscada.id, { timeout: 15000 }).catch(() => {});
+ok(await p.locator(`[data-o="${buscada.id}"]`).count() >= 1, `la lupa («${palabra}»): la gastada sale`);
+ok(/Ya la canjeaste|Ya has entrado/.test(await p.locator(`[data-o="${buscada.id}"] .tj-mio--hecha`).first().innerText().catch(() => '')),
+  'la lupa: con «Ya la canjeaste»');
+await ctx.close();
+
+// ── 6. «Tu cuenta» › Planes ────────────────────────────────────────────────
+const eventos = PLANES.filter((o) => o.kind === 'future_event' && !o.imported);
+const conEntrada = eventos[0].id;
+const entrado = eventos[1].id;
+ctx = await nav.newContext({ viewport: { width: 390, height: 844 }, locale: 'es-ES', timezoneId: 'Europe/Madrid' });
+await web.conDatos(ctx);
+await conSesionCuenta(ctx, {
+  my_offer_states: (a) => (a.p_offers || []).filter((id) => id === conEntrada || id === entrado).map((id) => (id === conEntrada
+    ? { offer_id: id, state: 'code', kind: 'future_event', expires_at: hora(30), used: 0, max_per_user: 1 }
+    : { offer_id: id, state: 'used_up', kind: 'future_event', expires_at: null, used: 1, max_per_user: 1 })),
+});
+p = await ctx.newPage();
+await p.goto(`${BASE}/cuenta/planes`, { waitUntil: 'networkidle' });
+await p.waitForSelector('a.ocard .tag-mio', { timeout: 15000 }).catch(() => {});
+const tarjetaEntrada = p.locator(`a.ocard[data-o="${conEntrada}"]`).first();
+ok(/Ver tu entrada/.test(await tarjetaEntrada.innerText().catch(() => '')), '«Tu cuenta»: «Ver tu entrada»');
+ok((await tarjetaEntrada.getAttribute('href').catch(() => '') || '').endsWith(`/cuenta/codigo/${conEntrada}`), 'y la tarjeta lleva a tu código');
+ok(/Ya has entrado/.test(await p.locator(`a.ocard[data-o="${entrado}"]`).first().innerText().catch(() => '')), '«Tu cuenta»: «Ya has entrado»');
 await ctx.close();
 
 await nav.close();

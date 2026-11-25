@@ -2,6 +2,11 @@
 'use strict';
 
 const APP_EN = {
+  // «Ya la canjeaste» en las tarjetas (cuenta, 2026-11-25), como la app.
+  "Ver tu código": "See your code",
+  "Ver tu entrada": "See your ticket",
+  "Ya la canjeaste": "Already redeemed",
+  "Ya has entrado": "Already checked in",
   // «Ayuda guiada» (cuenta, 2026-11-18): los vacíos que enseñan y el primer código, como la app.
   "Aquí tendrás lo que guardas, tus reservas y tus códigos, por fechas. Cuando algo te guste, dale a «Guardar».": "This is where you’ll have what you save, your bookings and your codes, by date. When you like something, tap “Save”.",
   "Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí para enseñarlo en el local.": "When you get the code for an offer or reserve a place at an event, it’ll be here for you to show at the venue.",

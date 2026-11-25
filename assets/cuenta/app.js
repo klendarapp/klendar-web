@@ -2025,13 +2025,49 @@ function tarjeta(o, tz) {
     : `${fecha(o.redeem_start_at, undefined, tz)} – ${mismoDia ? fecha(o.redeem_end_at, { hour: '2-digit', minute: '2-digit' }, tz) : fecha(o.redeem_end_at, undefined, tz)}`;
   const tag = beneficio(o.discount, o.price_cents, o.currency);
   const exclusiva = etiquetaExclusiva(o.audience);
-  return `<a class="ocard" href="${pre}/o/${esc(o.id)}">
+  return `<a class="ocard" href="${pre}/o/${esc(o.id)}" data-o="${esc(o.id)}">
     ${img ? `<img src="${esc(img)}" alt="" loading="lazy">` : sinFoto(o.category_id, o.business_name)}
     <span class="ocard-body"><b>${esc(o.title)}</b>
       <span class="muted">${esc(o.business_name || '')}</span>
       <span class="ocard-meta">${tag ? `<span class="tag">${esc(tag)}</span>` : ''}${exclusiva ? `<span class="tag off">${esc(exclusiva)}</span>` : ''}<span class="muted">${esc(cuando)}</span></span>
     </span></a>`;
 }
+
+// ── Lo tuyo en cada tarjeta ───────────────────────────────────────────────
+// Como la app y la web pública (Iván, 25-11; `my_offer_states`): con tu
+// código o tu plaza vivos, «Ver tu código» / «Ver tu entrada» y la tarjeta
+// lleva al código; con todos los usos gastados, «Ya la canjeaste» / «Ya has
+// entrado» en gris. Mira las tarjetas que se pintan (también las que llegan
+// con «Ver más»), de una vez por tanda.
+const MIO_MAX = 300;
+let mioEspera = null;
+function misEstados() {
+  mioEspera = null;
+  const tarjetas = [...view.querySelectorAll('a.ocard[data-o]:not([data-mio])')];
+  const ids = [...new Set(tarjetas.map((a) => a.getAttribute('data-o')))].slice(0, MIO_MAX);
+  if (!ids.length || !sb) return;
+  tarjetas.forEach((a) => a.setAttribute('data-mio', ''));
+  llamar('my_offer_states', { p_offers: ids }).then((filas) => {
+    (filas || []).forEach((f) => {
+      const vivo = f.state === 'code' && Date.parse(f.expires_at) > Date.now();
+      if (!vivo && f.state !== 'used_up') return;
+      const evento = f.kind === 'future_event';
+      view.querySelectorAll(`a.ocard[data-o="${f.offer_id}"]`).forEach((a) => {
+        if (a.querySelector('.tag-mio')) return;
+        const meta = a.querySelector('.ocard-meta') || a.querySelector('.ocard-body') || a;
+        const tag = document.createElement('span');
+        tag.className = vivo ? 'tag tag-mio' : 'tag off tag-mio';
+        tag.textContent = vivo ? t(evento ? 'Ver tu entrada' : 'Ver tu código') : t(evento ? 'Ya has entrado' : 'Ya la canjeaste');
+        meta.prepend(tag);
+        a.setAttribute('data-mio', vivo ? 'code' : 'used_up');
+        if (vivo) a.setAttribute('href', `/cuenta/codigo/${encodeURIComponent(f.offer_id)}`);
+      });
+    });
+  }).catch(() => { /* sin la función (o sin red): las tarjetas tal cual */ });
+}
+new MutationObserver(() => {
+  if (!mioEspera && view.querySelector('a.ocard[data-o]:not([data-mio])')) mioEspera = setTimeout(misEstados, 80);
+}).observe(view, { childList: true, subtree: true });
 
 // ── Tus planes ────────────────────────────────────────────────────────────
 // Como «Planes» en la app (my_plans_screen): lo guardado y lo canjeado en
