@@ -33,6 +33,8 @@ node tools/panel_rutas_check.mjs --sin-navegador >/dev/null 2>&1 || { echo "pre-
 [ -n "${PW:-}" ] || PW=$(ls -d "$HOME"/AppData/Local/npm-cache/_npx/*/node_modules/playwright 2>/dev/null | head -1)
 if [ -n "$PW" ]; then
   PW="$PW" node tools/seguir_optimista_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/seguir_optimista_check.mjs; no se sube."; exit 1; }
+  # «Ya la canjeaste» en las tarjetas (§4zzz-canjeada de la app): con sesión, «Ver tu código» / «Ver tu entrada», lo gastado fuera de Descubre y en gris en lo demás; sin sesión, nada y la página del borde sin nada personal (unos 15 s).
+  PW="$PW" node tools/ya_canjeada_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/ya_canjeada_check.mjs (node tools/ya_canjeada_check.mjs para ver qué); no se sube."; exit 1; }
   # Turnstile junto a su formulario y quitado al dejarlo; el admin, tras entrar, al Resumen (Iván, 18-11).
   PW="$PW" node tools/captcha_sitio_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/captcha_sitio_check.mjs; no se sube."; exit 1; }
   # «Cerca de mí» sola con el permiso ya dado (§4zzz-ubicacion-web): Explorar y Descubre a su celda una vez, lo elegido sin pisar, sin permiso nada; y el mapa en su zona sin resultados (el mapa, solo en Chromium; unos 2 min).

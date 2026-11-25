@@ -16,6 +16,10 @@
  *   por persona, «Te quedan 2 de 3».
  * - En la ficha de un negocio: «Editar mi reseña» si ya tienes una y, en
  *   cada tarjeta de sellos, los tuyos («3 de 10 sellos · Te faltan 7»).
+ * - En cada tarjeta de una publicación (`[data-o]`), lo tuyo, como la app
+ *   (Iván, 25-11; `my_offer_states`): con el código o la plaza vivos, «Ver
+ *   tu código» / «Ver tu entrada», que lo abre; con todos los usos gastados,
+ *   «Ya la canjeaste» en gris y, en Descubre (`#feed`), fuera.
  *
  * Sin sesión guardada no carga nada más: ni la configuración ni Supabase
  * (quien no ha entrado no paga por esto).
@@ -71,7 +75,8 @@
     sinT: "You don't have any friends on Klendar yet",
     sinB: 'With “Friends going” you see which plans your friends are going to. Add them with your friend link or QR code: only people who have it can find you.',
     verAmigos: 'See your friends', anadir: 'Add friends', quitar: 'Turn off “Friends going”', free: 'Free',
-    myCode: 'See my code', waitLeave: 'Leave the waiting list',
+    myCode: 'See your code', myTicket: 'See your ticket', waitLeave: 'Leave the waiting list',
+    mineUsed: 'Already redeemed', mineUsedEvent: 'Already checked in',
     notifyOn: 'You’ll be notified', notifyOnHint: 'We’ll notify you when reservations open. Tap to cancel.',
     usedUp: "You've already redeemed this offer", usedUpEvent: "You've already got in with this reservation",
     waitIn: function (n) { return n > 1 ? 'You\'re on the waiting list (' + n + ' people in total)' : 'You\'re on the waiting list'; },
@@ -111,7 +116,8 @@
     sinT: 'Aún no tienes amigos en Klendar',
     sinB: 'Con «Van mis amigos» ves a qué planes van tus amigos. Añádelos con tu enlace de amigo o tu QR: solo te encuentra quien lo tiene.',
     verAmigos: 'Ver tus amigos', anadir: 'Añadir amigos', quitar: 'Quitar «Van mis amigos»', free: 'Gratis',
-    myCode: 'Ver mi código', waitLeave: 'Salir de la lista de espera',
+    myCode: 'Ver tu código', myTicket: 'Ver tu entrada', waitLeave: 'Salir de la lista de espera',
+    mineUsed: 'Ya la canjeaste', mineUsedEvent: 'Ya has entrado',
     notifyOn: 'Ya te aviso', notifyOnHint: 'Te avisaremos cuando abran. Toca para quitar el aviso.',
     usedUp: 'Ya has canjeado esta oferta', usedUpEvent: 'Ya has entrado con esta reserva',
     waitIn: function (n) { return n > 1 ? 'Estás en la lista de espera, con ' + n + ' personas en total' : 'Estás en la lista de espera'; },
@@ -224,6 +230,7 @@
             edadDeCuenta(sb);
             if (ficha) social(sb);
             if (tarjetas.length) enTarjetas(sb);
+            if (tarjetas.length || document.getElementById('feed')) misEstados(sb);
             var uid = r.data.session.user && r.data.session.user.id;
             if (botonFav) yaLoTienes(sb, uid, botonFav, 'favorites', 'business_id', botonFav.getAttribute('data-fav'), 'seguir/', T.favOn);
             if (botonPlan) yaLoTienes(sb, uid, botonPlan, 'saved_offers', 'offer_id', botonPlan.getAttribute('data-plan'), 'guardar/', T.planOn);
@@ -305,8 +312,9 @@
       }
       if (!principal) return;
       if (mio) {
-        // Ya tienes el código (o la plaza): el botón lo enseña.
-        principal.textContent = T.myCode;
+        // Ya tienes el código (o la plaza): el botón lo enseña («Ver tu
+        // código» o, en un evento, «Ver tu entrada», como las tarjetas).
+        principal.textContent = o.kind === 'future_event' ? T.myTicket : T.myCode;
         principal.setAttribute('href', cuenta('codigo/' + id));
         if (nota) nota.hidden = true;
         return;
@@ -686,6 +694,120 @@
         });
       }, function () { /* sin red: sin la línea */ });
     }
+  }
+
+  // ── Lo tuyo en cada tarjeta: «Ver tu código», «Ya la canjeaste» ─────────
+  // La página va en caché y no sabe quién mira: aquí, con tu sesión, lo
+  // dice la base (`my_offer_states`, migración 20261289800000 de la app),
+  // con los ids de las tarjetas que hay (hasta 300 por llamada). Lo que
+  // llega después (la página siguiente de Descubre, «Van mis amigos») se
+  // mira al llegar; al volver a la pestaña (o con «Atrás» desde tu código)
+  // se pregunta otra vez, por si lo has canjeado mientras.
+  var QR = 'M3 11h8V3H3v8zm2-6h4v4H5V5zM3 21h8v-8H3v8zm2-6h4v4H5v-4zM13 3v8h8V3h-8zm6 6h-4V5h4v4zM19 19h2v2h-2zM13 13h2v2h-2zM15 15h2v2h-2zM13 17h2v2h-2zM15 19h2v2h-2zM17 17h2v2h-2zM17 13h2v2h-2zM19 15h2v2h-2z';
+  var ENTRADA = 'M22 10V6c0-1.11-.9-2-2-2H4c-1.1 0-1.99.89-1.99 2v4c1.1 0 1.99.9 1.99 2s-.89 2-2 2v4c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2v-4c-1.1 0-2-.9-2-2s.9-2 2-2zm-2-1.46c-1.19.69-2 1.99-2 3.46s.81 2.77 2 3.46V18H4v-2.54c1.19-.69 2-1.99 2-3.46 0-1.48-.8-2.77-1.99-3.46L4 6h16v2.54zM11 15h2v2h-2zm0-4h2v2h-2zm0-4h2v2h-2z';
+  var HECHA = 'M16.59 7.58 10 14.17l-3.59-3.58L5 12l5 5 8-8zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z';
+  function icono(d, s) {
+    return '<svg class="ic" viewBox="0 0 24 24" width="' + s + '" height="' + s + '" aria-hidden="true"><path fill="currentColor" d="' + d + '"/></svg>';
+  }
+
+  function misEstados(sb) {
+    var feedEl = document.getElementById('feed');
+    var relojes = {};
+    function pide(cards) {
+      var ids = [];
+      cards.forEach(function (c) {
+        var id = c.getAttribute('data-o');
+        if (UUID.test(id || '') && ids.indexOf(id) < 0) ids.push(id);
+      });
+      for (var j = 0; j < ids.length; j += 300) {
+        (function (lote) {
+          sb.rpc('my_offer_states', { p_offers: lote }).then(function (res) {
+            if (!res || res.error) return;
+            var por = {};
+            (res.data || []).forEach(function (f) { if (f && f.offer_id) por[f.offer_id] = f; });
+            lote.forEach(function (id) {
+              document.querySelectorAll('[data-o="' + id + '"]').forEach(function (card) { pinta(card, por[id] || null); });
+            });
+          }, function () { /* sin red: las tarjetas tal cual */ });
+        })(ids.slice(j, j + 300));
+      }
+    }
+    function pinta(card, f) {
+      var id = card.getAttribute('data-o');
+      var vivo = !!f && f.state === 'code' && Date.parse(f.expires_at) > Date.now();
+      var estado = vivo ? 'code' : f && f.state === 'used_up' ? 'used_up' : '';
+      card.setAttribute('data-mio', estado);
+      // Descubre: lo que ya no puedes volver a sacar, fuera (como la app).
+      if (estado === 'used_up' && feedEl && feedEl.contains(card)) { card.remove(); return; }
+      var cta = card.querySelector('.tj-cta:not(.tj-mio)');
+      var viejo = card.querySelector('.tj-mio');
+      if (viejo) viejo.remove();
+      var fila = card.querySelector('.tj-mio-fila');
+      if (fila) fila.remove();
+      if (cta) cta.hidden = false;
+      clearTimeout(relojes[id]);
+      if (!estado) return;
+      var evento = f.kind === 'future_event';
+      var texto = estado === 'code' ? (evento ? T.myTicket : T.myCode) : (evento ? T.mineUsedEvent : T.mineUsed);
+      var dib = estado === 'code' ? (evento ? ENTRADA : QR) : HECHA;
+      var el;
+      if (estado === 'code') {
+        // Por encima del enlace de la tarjeta (que lleva a la ficha): este
+        // lleva a tu código, en grande.
+        el = document.createElement('a');
+        el.href = cuenta('codigo/' + id);
+      } else {
+        el = document.createElement('span');
+      }
+      if (cta) {
+        // En lugar del botón, con su misma forma (y su plantilla).
+        el.className = cta.className + ' tj-mio ' + (estado === 'code' ? 'tj-mio--codigo' : 'tj-mio--hecha');
+        el.innerHTML = icono(dib, 18) + '<span>' + esc(texto) + '</span>';
+        cta.hidden = true;
+        cta.parentNode.insertBefore(el, cta.nextSibling);
+      } else {
+        // La fila de un día (la agenda) no lleva botón: una línea debajo.
+        el.className = 'tj-mio tj-mio-chip ' + (estado === 'code' ? 'tj-mio--codigo' : 'tj-mio--hecha');
+        el.innerHTML = icono(dib, 16) + '<span>' + esc(texto) + '</span>';
+        var linea = document.createElement('p');
+        linea.className = 'tj-mio-fila';
+        linea.appendChild(el);
+        var donde = card.querySelector('.tj-cuerpo') || card.querySelector('.tj-panel') || card;
+        donde.appendChild(linea);
+      }
+      // Cuando caduca el código, otra vez (vuelve a «Conseguir el código» o
+      // pasa a «Ya la canjeaste»).
+      if (estado === 'code') {
+        var falta = Date.parse(f.expires_at) - Date.now();
+        if (falta < 6 * 3600e3) relojes[id] = setTimeout(function () { pide([card]); }, falta + 1000);
+      }
+    }
+    pide(Array.prototype.slice.call(document.querySelectorAll('[data-o]')));
+    // Lo que llega después: la página siguiente de Descubre, «Van mis amigos».
+    if ('MutationObserver' in window) {
+      var nuevas = [];
+      var espera = null;
+      new MutationObserver(function (cambios) {
+        cambios.forEach(function (c) {
+          Array.prototype.forEach.call(c.addedNodes, function (n) {
+            if (n.nodeType !== 1) return;
+            if (n.hasAttribute('data-o') && !n.hasAttribute('data-mio')) nuevas.push(n);
+            Array.prototype.forEach.call(n.querySelectorAll('[data-o]:not([data-mio])'), function (x) { nuevas.push(x); });
+          });
+        });
+        if (!nuevas.length || espera) return;
+        espera = setTimeout(function () { var l = nuevas; nuevas = []; espera = null; pide(l); }, 120);
+      }).observe(document.body, { childList: true, subtree: true });
+    }
+    // Al volver (otra pestaña, o «Atrás» desde tu código): otra vez.
+    var ultima = Date.now();
+    function otraVez() {
+      if (Date.now() - ultima < 10000) return;
+      ultima = Date.now();
+      pide(Array.prototype.slice.call(document.querySelectorAll('[data-o]')));
+    }
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'visible') otraVez(); });
+    window.addEventListener('pageshow', function (e) { if (e.persisted) { ultima = 0; otraVez(); } });
   }
 
   // ── Ficha: quién va, «Vas» y las invitaciones ───────────────────────────

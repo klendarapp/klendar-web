@@ -424,3 +424,17 @@ html.con-visor { overflow: hidden; }
 .mini-play { position: absolute; left: 50%; top: 50%; width: 36px; height: 36px; margin: -18px 0 0 -18px; display: grid; place-items: center;
   border-radius: 50%; background: rgba(10,10,10,.6); color: #fff; pointer-events: none; }
 @media (hover: hover) { :is(.mini, .carta-foto, .nov-media):hover img { filter: brightness(.94); } }
+
+/* ── Lo tuyo (/assets/amigos.js, con sesión; Iván, 25-11) ──────────────── */
+/* «Ver tu código» / «Ver tu entrada»: el botón de siempre, por encima del
+   enlace de la tarjeta (lleva a tu código, no a la ficha). «Ya la
+   canjeaste»: en gris, con el color del panel al 18 % (como lo apagado de
+   la app) y sin poder pulsarlo. En la fila de un día, una pastilla debajo. */
+.tj-cta[hidden] { display: none; }
+.tj-mio--codigo { position: relative; z-index: 3; text-decoration: none; }
+.tj-cta.tj-mio--hecha { background: color-mix(in srgb, currentColor 18%, transparent); color: inherit; font-weight: 700; }
+.tj:hover .tj-cta.tj-mio--hecha { filter: none; }
+.tj-mio-fila { margin: 4px 0 0; }
+.tj-mio-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border-radius: 999px; font-size: 13px; font-weight: 700; }
+a.tj-mio-chip { background: var(--ink); color: var(--surface); }
+span.tj-mio-chip { background: color-mix(in srgb, var(--ink) 12%, transparent); color: var(--ink-2); }

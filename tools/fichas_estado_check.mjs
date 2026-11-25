@@ -155,12 +155,12 @@ async function publicacion(nav, nombre, t, vp) {
   ok(errores.length === 0, `${tag} o/ sin errores ${errores.join(' | ')}`);
   await ctx.close();
 
-  // Con sesión y el código ya cogido (2 de 3 usados): «Ver mi código».
+  // Con sesión y el código ya cogido (2 de 3 usados): «Ver tu código».
   ({ ctx, p, errores } = await pagina(nav, vp, { vivo: true, oferta: { my_redemptions: 1 } }));
   await p.goto(`http://localhost:${FICHA_PORT}/o/${VIVA}`, { waitUntil: 'networkidle' });
-  await p.waitForFunction(() => /Ver mi código/.test(document.querySelector('[data-principal]')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
-  ok(/Ver mi código/.test(await p.locator('[data-principal]').innerText())
-    && /\/cuenta\/codigo\/a1000000/.test(await p.locator('[data-principal]').getAttribute('href')), `${tag} o/ con sesión: «Ver mi código»`);
+  await p.waitForFunction(() => /Ver tu código/.test(document.querySelector('[data-principal]')?.textContent || ''), null, { timeout: 8000 }).catch(() => {});
+  ok(/Ver tu código/.test(await p.locator('[data-principal]').innerText())
+    && /\/cuenta\/codigo\/a1000000/.test(await p.locator('[data-principal]').getAttribute('href')), `${tag} o/ con sesión: «Ver tu código»`);
   ok(/Te quedan 2 de 3/.test(await p.locator('#por-persona').innerText()), `${tag} o/ con sesión: «Te quedan 2 de 3»`);
   await p.screenshot({ path: `${OUT}/web-o-mi-codigo-${nombre}-${t}.png`, fullPage: false });
   ok(errores.length === 0, `${tag} o/ con sesión sin errores ${errores.join(' | ')}`);
