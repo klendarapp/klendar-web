@@ -594,7 +594,14 @@
   </article>`;
     }
 
-    const { plantilla, acento } = estiloDe(o);
+    // «Foto grande» y «Cartel» son para encima de una foto: sin foto, vídeo,
+    // portada ni arte de la agenda, la tarjeta va como «Clásica» (su panel con
+    // marco y el botón principal coral a lo ancho), como en la app
+    // (§4zzz-pildoras, Iván, 25-11: salía sin marco y el botón blanco y corto).
+    const estiloPedido = estiloDe(o);
+    const sinMedios = !soloWeb(o.images).length && !o.business_cover && !arteDe(o);
+    const plantilla = sinMedios && (estiloPedido.plantilla === 'photo' || estiloPedido.plantilla === 'poster') ? 'glass' : estiloPedido.plantilla;
+    const { acento } = estiloPedido;
     const estilo = acento ? ` style="--tj-acento:${acento};--tj-sobre:${sobreAcento(acento)}"` : '';
     const titulo = `<${h} class="tj-titulo"><a class="tj-enlace" href="${esc(href)}">${esc(o.title)}</a></${h}>`;
     // «Cartel»: la fecha arriba, en un bloque del color (mayúsculas).

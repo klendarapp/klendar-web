@@ -57,12 +57,27 @@
 //     icono pintado (la fuente del panel lo lleva: no sale su nombre).
 // 21. Carteles de mesa: «Imprimir carteles de mesa» en color.
 //
+// Y las píldoras y el botón de la tarjeta (§4zzz-pildoras de la app, Iván,
+// 25-11), en Descubre y Explorar con su propia web de mentira (publicaciones
+// «Foto grande» y «Cartel» sin foto y con foto, «Minimal» sin foto, y tus
+// códigos con `my_offer_states` simulada), de 360 a 1.280, claro y oscuro:
+//
+// 22. El aviso de debajo de los filtros (ubicación, y la visita y el viaje con
+//     su misma forma) a todo el ancho de su hueco; en el móvil, con los bordes
+//     de la fila de filtros; el texto a la izquierda y la × al final. En el
+//     ordenador va al lado de la tarjeta, a su texto.
+// 23. Una tarjeta sin foto ni vídeo no es «Foto grande» ni «Cartel» (iría sin
+//     marco): lleva su panel con borde y el botón principal a lo ancho.
+// 24. El botón principal de cada tarjeta, del mismo color y ancho sin sesión
+//     («Conseguir el código», «Ver evento») y con tu código («Ver tu código»,
+//     «Ver tu entrada»).
+//
 //   PW=<ruta a playwright> node tools/coherencia_check.mjs
 //   SOLO=web …    solo la parte 2;  SOLO=panel …   solo la parte 1;  SOLO=admin …   solo la parte 3
-//   SOLO=propuestas …   solo 19–21
+//   SOLO=propuestas …   solo 19–21;  SOLO=pildoras …   solo 22–24
 //   (arranca su serve_dev en PORT, 9411, con Supabase cortado)
-import { playwright, SUPA } from './_supabase_simulado.mjs';
-import { webConDatos } from './_web_con_datos.mjs';
+import { playwright, SUPA, REF } from './_supabase_simulado.mjs';
+import { webConDatos, DATOS, PLANES } from './_web_con_datos.mjs';
 import { rpcs, conSesion } from './_panel_simulado.mjs';
 import { bordesPantalla } from './_bordes.mjs';
 import { conSesionCuenta } from './_cuenta_simulado.mjs';
@@ -140,6 +155,7 @@ try {
   if (!SOLO || SOLO === 'web') await parteWeb();
   if (!SOLO || SOLO === 'admin') await parteAdmin();
   if (!SOLO || SOLO === 'propuestas') await partePropuestas();
+  if (!SOLO || SOLO === 'pildoras') await partePildoras();
 } finally {
   await web.cierra();
 }
@@ -418,6 +434,133 @@ async function partePropuestas() {
     }
     await nav.close();
   }
+}
+
+/** Las píldoras de la franja y el botón de la tarjeta (§4zzz-pildoras). */
+async function partePildoras() {
+  // «Foto grande» y «Cartel» sin foto (oferta y evento), «Foto grande» con
+  // foto y «Minimal» sin foto; lo demás, como siempre.
+  const flash = PLANES.filter((o) => o.kind === 'flash_offer');
+  const eventos = PLANES.filter((o) => o.kind === 'future_event');
+  const cambia = new Map([
+    [flash[0].id, { style: { template: 'photo' }, images: [] }],
+    [flash[1].id, { style: { template: 'poster' }, images: [] }],
+    [flash[2].id, { style: { template: 'photo' } }],
+    [flash[3].id, { style: { template: 'minimal' }, images: [] }],
+    [eventos[0].id, { style: { template: 'poster' }, images: [] }],
+    [eventos[1].id, { style: { template: 'photo' }, images: [] }],
+  ]);
+  const planes = PLANES.map((o) => (cambia.has(o.id) ? { ...o, ...cambia.get(o.id) } : o));
+  const hora = (h) => new Date(Date.now() + h * 3600e3).toISOString();
+  // Con sesión, de todo «tu código» (o «tu entrada»): el botón cambia de texto, no de forma.
+  const mios = Object.fromEntries(planes.map((o) => [o.id, { offer_id: o.id, state: 'code', kind: o.kind, expires_at: hora(2), used: 0, max_per_user: 1 }]));
+  const w2 = await webConDatos({ puerto: Number(process.env.PORT || 9411) + 30, datos: { ...DATOS, PLANES: planes },
+    rpc: { my_offer_states: (a) => (a.p_offers || []).map((id) => mios[id]).filter(Boolean) } });
+  const U = '0e7717e0-0000-4000-8000-0000000b1d0a';
+  const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+  const USER = { id: U, aud: 'authenticated', role: 'authenticated', email: 'pildoras@example.com', app_metadata: { provider: 'email' }, user_metadata: {}, created_at: '2026-01-01T00:00:00Z' };
+  const sesion = JSON.stringify({ access_token: `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: U, role: 'authenticated', aud: 'authenticated', exp: 4102444800 })}.firma`,
+    refresh_token: 'r', token_type: 'bearer', expires_in: 3600, expires_at: 4102444800, user: USER });
+  // Cada tarjeta: su plantilla, si va sin foto, su panel y su botón principal.
+  const tarjetas = () => [...document.querySelectorAll('[data-o].tj:not(.tj-fila)')].filter((c) => c.getClientRects().length).map((c) => {
+    const cta = [...c.querySelectorAll('.tj-cta')].find((b) => !b.hidden && b.getClientRects().length);
+    const panel = c.querySelector('.tj-panel'); const cp = getComputedStyle(panel);
+    const contenido = panel.getBoundingClientRect().width - parseFloat(cp.paddingLeft) - parseFloat(cp.paddingRight) - parseFloat(cp.borderLeftWidth) - parseFloat(cp.borderRightWidth);
+    return { id: c.getAttribute('data-o'), clase: [...c.classList].filter((k) => /^tj--(glass|photo|poster|bold|minimal)$/.test(k)).join(''),
+      pantalla: c.classList.contains('tj--pantalla'), sinFoto: !!c.querySelector('.tj-media :is(.sin-foto, .tj-ph)'),
+      borde: parseFloat(cp.borderTopWidth), contenido: Math.round(contenido),
+      cta: cta ? { fondo: getComputedStyle(cta).backgroundColor, ancho: Math.round(cta.getBoundingClientRect().width), mio: cta.classList.contains('tj-mio--codigo'), texto: cta.textContent.trim() } : null };
+  });
+  // Un aviso de la franja: dónde está, su hueco, los filtros, el texto y la ×.
+  const mideAviso = (cual) => {
+    const av = [...document.querySelectorAll(`.feed-aviso[data-aviso="${cual}"]`)].find((e) => e.getClientRects().length);
+    if (!av) return null;
+    const r = (e) => e.getBoundingClientRect();
+    const caja = r(av.parentElement); const q = r(av);
+    const txt = av.querySelector('.feed-aviso-t span:not([aria-hidden])'); const ic = av.querySelector('.feed-aviso-t .ic');
+    const x = av.querySelector('.feed-aviso-x');
+    const chip = document.querySelector('.feed-cab .barra-filtros summary.chip'); const fil = document.querySelector('.feed-cab .barra-filtros .chip-filtros');
+    const rango = document.createRange(); rango.selectNodeContents(txt);
+    return { izq: Math.round(q.left), der: Math.round(q.right), cajaIzq: Math.round(caja.left), cajaDer: Math.round(caja.right),
+      filtrosIzq: chip && Math.round(r(chip).left), filtrosDer: fil && Math.round(r(fil).right),
+      hueco: Math.round(rango.getBoundingClientRect().left - (ic ? r(ic).right : q.left)), xFinal: x ? Math.round(q.right - r(x).right) : 0,
+      lado: getComputedStyle(av.parentElement).position === 'absolute' && innerWidth / innerHeight > 1.2 };
+  };
+  // La visita, con la forma que le da /assets/avisos.js (el viaje, de gustos.js, es igual).
+  const ponVisita = () => {
+    const caja = document.getElementById('feed-avisos'); if (!caja) return;
+    caja.querySelectorAll('.feed-aviso').forEach((a) => { a.hidden = true; a.style.setProperty('display', 'none', 'important'); });
+    const v = document.createElement('div'); v.className = 'feed-aviso'; v.setAttribute('data-aviso', 'visita');
+    v.innerHTML = '<a class="feed-aviso-t" href="/"><svg class="ic" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"></svg><span>Volver a cerca de mí</span><span aria-hidden="true">›</span></a><button type="button" class="feed-aviso-x" aria-label="Cerrar">×</button>';
+    caja.hidden = false; caja.appendChild(v);
+  };
+  const TAM = [[1280, 800], [1024, 768], [768, 1024], [412, 915], [390, 844], [360, 780]];
+  for (const tipo of ['chromium', 'webkit']) {
+    const nav = await pw[tipo].launch();
+    for (const [w, h] of TAM) {
+      if (tipo === 'webkit' && ![1280, 390].includes(w)) continue;
+      for (const tema of ['dark', 'light']) {
+        if (tipo === 'webkit' && tema === 'light') continue;
+        const t = `${tipo} ${w} ${tema}`;
+        const opc = { viewport: { width: w, height: h }, colorScheme: tema, locale: 'es-ES', timezoneId: 'Europe/Madrid', hasTouch: w < 1000,
+          ...(tipo === 'chromium' ? { isMobile: w < 800 } : {}) };
+        const antes = {};
+        for (const conSesion of [false, true]) {
+          const ctx = await nav.newContext(opc);
+          await w2.conDatos(ctx);
+          if (conSesion) {
+            await ctx.addInitScript(([k, v]) => { try { localStorage.setItem(k, v); } catch { /* */ } }, [`sb-${REF}-auth-token`, sesion]);
+            await ctx.route(`${SUPA}/auth/v1/**`, (route) => route.fulfill({ status: 200, contentType: 'application/json',
+              body: JSON.stringify(new URL(route.request().url()).pathname.startsWith('/auth/v1/user') ? USER : {}) }));
+          }
+          const p = await ctx.newPage();
+          const errores = [];
+          p.on('pageerror', (e) => errores.push(e.message));
+          for (const dir of ['/descubre', '/explorar?vista=lista']) {
+            const d = `${t}${conSesion ? ' con tu código' : ''} ${dir}`;
+            await p.goto(`${w2.BASE}${dir}`, { waitUntil: 'networkidle' }).catch(() => {});
+            if (conSesion) await p.waitForSelector('.tj-mio--codigo', { timeout: 8000 }).catch(() => {});
+            await p.waitForTimeout(400);
+            const ts = await p.evaluate(tarjetas);
+            const sinFoto = ts.filter((c) => c.sinFoto);
+            ok(sinFoto.length >= 3, `${d}: hay tarjetas sin foto que mirar (${sinFoto.length})`);
+            // 23. Sin foto: con marco y el botón a lo ancho, nunca «Foto grande» ni «Cartel».
+            const malas = sinFoto.filter((c) => /photo|poster/.test(c.clase) || !(c.borde > 0) || !c.cta || c.cta.ancho < c.contenido - 2);
+            ok(!malas.length, `${d}: sin foto, con marco y el botón principal a lo ancho${malas.length ? ` — ${malas.map((c) => `${c.clase} borde ${c.borde}, botón ${c.cta?.ancho} de ${c.contenido}`).join(' | ')}` : ''}`);
+            // 24. El mismo botón en todos sus estados.
+            if (!conSesion) {
+              for (const c of ts) if (c.cta) antes[`${dir} ${c.id} ${c.pantalla}`] = c.cta;
+            } else {
+              const suyos = ts.filter((c) => c.cta?.mio);
+              ok(suyos.length >= 3, `${d}: «Ver tu código» / «Ver tu entrada» en las tarjetas (${suyos.length})`);
+              // «Foto grande» con foto lleva el botón a su texto (así es la
+              // plantilla; propuesta aparte en §4zzz-pildoras): ahí, el color.
+              const distintos = suyos.filter((c) => { const a = antes[`${dir} ${c.id} ${c.pantalla}`]; const asuTexto = c.clase === 'tj--photo' && !c.sinFoto;
+                return a && (a.fondo !== c.cta.fondo || (!asuTexto && Math.abs(a.ancho - c.cta.ancho) > 1)); });
+              ok(!distintos.length, `${d}: el botón principal, del mismo color y ancho con tu código${distintos.length ? ` — ${distintos.map((c) => { const a = antes[`${dir} ${c.id} ${c.pantalla}`]; return `${c.clase} «${a.texto}» ${a.fondo} ${a.ancho} / «${c.cta.texto}» ${c.cta.fondo} ${c.cta.ancho}`; }).join(' | ')}` : ''}`);
+            }
+            // 22. El aviso de la franja (el de la ubicación sale sin zona elegida).
+            if (dir === '/descubre' && !conSesion) {
+              for (const cual of ['ubicacion', 'visita']) {
+                if (cual === 'visita') await p.evaluate(ponVisita);
+                const a = await p.evaluate(mideAviso, cual);
+                // WebKit no tiene la consulta del permiso: ahí no sale el de la ubicación.
+                if (!a) { ok(tipo === 'webkit' && cual === 'ubicacion', `${t} Descubre: sale el aviso de ${cual}`); continue; }
+                if (a.lado) continue; // En el ordenador, al lado de la tarjeta y a su texto.
+                ok(Math.abs(a.izq - a.cajaIzq) <= 1 && Math.abs(a.der - a.cajaDer) <= 1, `${t} Descubre: el aviso de ${cual}, a todo el ancho de su hueco (${a.izq}–${a.der} en ${a.cajaIzq}–${a.cajaDer})`);
+                if (w <= 760) ok(Math.abs(a.izq - a.filtrosIzq) <= 1 && Math.abs(a.der - a.filtrosDer) <= 1, `${t} Descubre: el aviso de ${cual}, con los bordes de los filtros (${a.izq}–${a.der} y ${a.filtrosIzq}–${a.filtrosDer})`);
+                ok(a.hueco <= 12 && a.xFinal <= 2, `${t} Descubre: el aviso de ${cual}, el texto a la izquierda (${a.hueco} px) y la × al final (${a.xFinal} px)`);
+              }
+            }
+          }
+          ok(!errores.length, `${t}${conSesion ? ' con sesión' : ''} píldoras: sin errores (${errores.join(' | ')})`);
+          await ctx.close();
+        }
+      }
+    }
+    await nav.close();
+  }
+  await w2.cierra();
 }
 
 console.log(fallos ? `\n${fallos} fallo(s)` : '\nTodo bien.');

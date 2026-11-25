@@ -373,7 +373,7 @@ ${privada ? '' : `<meta property="og:url" content="${BASE}${esc(path)}">
 ${preconectar}<link rel="preload" href="/assets/fonts/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="/assets/fonts/sora-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/assets/site.css?v=20261125p1p2">
-<link rel="stylesheet" href="/assets/public.css?v=20261125solapes">
+<link rel="stylesheet" href="/assets/public.css?v=20261125pildoras">
 <link rel="stylesheet" href="/assets/tarjeta.css?v=20261125canjeada">
 ${cabeza}
 </head>
@@ -383,7 +383,7 @@ ${siteHeader(lang, esc(es + (consultas ? consultas.es : consulta)), esc(enPath +
 ${siteFooter(lang)}
 ${conTarjetas || conAmigos ? `<script src="/assets/celda.js?v=1" defer></script>
 ` : ''}${conAmigos ? `<script src="/assets/amigos.js?v=20261125canjeada" defer data-lang="${en ? 'en' : 'es'}"></script>
-` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261124marco" defer></script>
+` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261125pildoras" defer></script>
 ` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261125zona" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}

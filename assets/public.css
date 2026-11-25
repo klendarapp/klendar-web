@@ -826,6 +826,16 @@ html[data-aviso-ubic] .cerca-aviso[data-aviso-ubic] { display: flex !important; 
 .feed-aviso-acc { margin-left: 4px; flex: none; }
 [data-aviso="ubicacion"] .feed-aviso-t span { font-weight: 500; }
 .cerca-aviso .feed-aviso-x { margin: -6px -6px -6px 0; }
+/* En el móvil y en la tablet en vertical, el aviso a todo el ancho de su
+   franja (con los bordes de la fila de filtros), con el texto que llena y lo
+   de la derecha («Activar», «›», la ×) al final, como la píldora de la app
+   (§4zzz-pildoras, Iván, 25-11). En el ordenador va al lado de la tarjeta, a
+   su texto. */
+@media (max-width: 760px), (min-width: 761px) and (max-aspect-ratio: 6/5) {
+  .pagina-feed .feed-cab .feed-aviso { flex: 1 1 auto; min-width: 0; }
+  .pagina-feed .feed-cab .feed-aviso-t { flex: 1 1 auto; }
+  .pagina-feed .feed-cab .feed-aviso-t span:not([aria-hidden]) { flex: 1 1 auto; text-align: start; }
+}
 @media (max-width: 760px) {
   body.pagina-feed.con-aviso, html[data-aviso-ubic] body.pagina-feed { --feed-arriba: 158px; }
   .pagina-feed .feed-cab .feed-avisos { margin: 4px 16px 0; }
@@ -841,7 +851,7 @@ html[data-aviso-ubic] .cerca-aviso[data-aviso-ubic] { display: flex !important; 
    en cristal oscuro, como en el móvil (2026-11-25). */
 @media (min-width: 761px) and (max-aspect-ratio: 6/5) {
   .pagina-feed .feed-cab .feed-avisos { top: calc(100% + var(--hueco) + 12px); left: calc(50% - var(--feed-w) / 2 + 12px);
-    max-width: calc(var(--feed-w) - 76px); z-index: 2; }
+    width: calc(var(--feed-w) - 76px); max-width: calc(var(--feed-w) - 76px); z-index: 2; }
   body.pagina-feed:not([data-cromo="tema"]):not([data-cromo="fuera"]) .feed-cab .feed-aviso { background: rgba(10,10,10,.6); color: #fff;
     border-color: rgba(255,255,255,.16); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 }
