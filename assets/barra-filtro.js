@@ -45,13 +45,35 @@
   }
 
   // Si dos marcas se pisan (letra grande, «100» junto a «Sin límite»), se
-  // separan lo justo sin salirse por los lados.
+  // separan lo justo sin salirse por los lados. Si ni así caben todas (la letra
+  // al 200 %), se esconden las del medio, primero las más apretadas, hasta que
+  // quepan: siempre quedan las de los extremos y la elegida (`.on`); la barra y
+  // la casilla siguen llegando a todo. Con la letra normal caben y no cambia nada.
   function separa(caja) {
     var ms = Array.prototype.filter.call(caja.children, function (m) { return !m.hidden; });
+    ms.forEach(function (m) { m.style.translate = ''; m.classList.remove('barra-m-sobra'); });
     if (ms.length < 2) return;
-    ms.forEach(function (m) { m.style.translate = ''; });
     var ancho = caja.getBoundingClientRect();
+    if (!ancho.width) return;
     var r = ms.map(function (m) { return m.getBoundingClientRect(); });
+    var centro = r.map(function (x) { return x.left + x.width / 2; });
+    var quedan = ms.map(function (m, k) { return k; });
+    var ocupa = function () {
+      return quedan.reduce(function (s, k) { return s + r[k].width; }, 0) + 4 * (quedan.length - 1);
+    };
+    while (ocupa() > ancho.width) {
+      var peor = -1, hueco = Infinity;
+      for (var q = 1; q < quedan.length - 1; q++) {
+        if (ms[quedan[q]].classList.contains('on')) continue;
+        var h = Math.min(centro[quedan[q]] - centro[quedan[q - 1]], centro[quedan[q + 1]] - centro[quedan[q]]);
+        if (h < hueco) { hueco = h; peor = q; }
+      }
+      if (peor < 0) break;
+      ms[quedan[peor]].classList.add('barra-m-sobra');
+      quedan.splice(peor, 1);
+    }
+    ms = quedan.map(function (k) { return ms[k]; });
+    r = quedan.map(function (k) { return r[k]; });
     var izq = r.map(function (x) { return x.left - ancho.left; });
     var i;
     for (i = 1; i < ms.length; i++) izq[i] = Math.max(izq[i], izq[i - 1] + r[i - 1].width + 4);
@@ -106,6 +128,8 @@
       if (!desdeCampo) campo.value = v == null ? '' : String(v);
       err.hidden = true;
       campo.removeAttribute('aria-invalid');
+      // La elegida nueva, a la vista aunque sobre (letra muy grande).
+      if (caja) separa(caja);
     }
     // Aplicar el valor (soltar, marca, casilla).
     function aplica(v) {
@@ -184,7 +208,13 @@
     });
     if (caja) {
       separa(caja);
-      if (window.ResizeObserver) new ResizeObserver(function () { separa(caja); }).observe(caja);
+      // También si crece la letra de las marcas (esconderlas no cambia su tamaño:
+      // van con `visibility`, y así esto no se llama a sí mismo).
+      if (window.ResizeObserver) {
+        var ro = new ResizeObserver(function () { separa(caja); });
+        ro.observe(caja);
+        Array.prototype.forEach.call(marcas, function (m) { ro.observe(m); });
+      }
     }
   });
 })();

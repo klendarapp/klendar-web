@@ -103,13 +103,9 @@ const CONC = Number(process.env.CONC || (RAPIDO ? 4 : 6));
 // aprobarse y aplicarse, se quita de aquí. Solo con la letra al 200 %. (La barra
 // de abajo y «Entrar» en el móvil también salían, pero era la página ensanchada
 // por otra cosa: arreglado, ya no está aquí.)
-const PENDIENTES = [
-  // P1. Las marcas de las barras de distancia y precio (☰): la app no deja crecer su letra; aquí se pisan.
-  { id: 'P1 marcas de distancia y precio', perfil: /^letra2-/, zona: /^pub$/, como: /^se pisan$/, firma: /^button\.barra-m/ },
-  // P2. La cabecera del ordenador con la letra al 200 %: no cabe en una fila (pestañas, «Para negocios», idioma, «Entrar»).
-  { id: 'P2 cabecera del ordenador', perfil: /^letra2-(1024|1280)$/, zona: /^(pub|cuenta)$/, como: /./,
-    firma: /^(div\.top-acciones|texto en (span\.idioma-cod|a\.pill\.top-entrar|a\.top-negocios)( de la pantalla)?)$/ },
-];
+// P1 (las marcas de distancia y precio) y P2 (la cabecera del ordenador),
+// aprobadas por Iván y aplicadas el 25-11: ya no están aquí (la prueba las vigila).
+const PENDIENTES = [];
 
 const web = await webConDatos({ puerto: Number(process.env.PORT || 9431), rpc: RPC_GUIA });
 const ADMIN_BASE = adminDe(web.BASE);

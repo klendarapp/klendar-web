@@ -746,3 +746,19 @@ section.junto { padding-top: 0; }
 /* «Más planes en Marbella» al final de la ficha: su botón, separado de las
    reseñas (como en la app). */
 .mas-planes, .pub p.mas-planes { margin-top: 20px; }
+
+/* La cabecera del ordenador con la letra muy grande (P2 de §4zzz-solapes-web,
+   aprobada por Iván el 25-11): su letra crece como mucho ×1,25, como la barra
+   de la app (withClampedTextScaling); si no, al 200 % no cabe en una fila. Con
+   la letra normal no cambia nada: cada `min()` da el tamaño de siempre hasta
+   que la letra crece más de ×1,25. */
+@media (min-width: 1101px) {
+  .pestana, .top-negocios, .pill.top-entrar { font-size: min(14px, 1.36vw); }
+  .idioma-b { font-size: min(13px, 1.26vw); }
+  .brand { font-size: min(20px, 1.95vw); }
+}
+@media (min-width: 761px) and (max-width: 1100px) {
+  .pestana, .pill.top-entrar { font-size: min(14px, 1.85vw); }
+  .idioma-b { font-size: min(13px, 1.72vw); }
+  .brand { font-size: min(20px, 2.63vw); }
+}

@@ -38,6 +38,9 @@
 /* La elegida, en negrita sin cambiar de ancho (`text-shadow`, no `font-weight`). */
 .barra-m.on { color: var(--ink); text-shadow: 0 0 .6px currentColor, 0 0 .6px currentColor; }
 .barra-m[hidden] { display: none; }
+/* Las del medio que no caben con la letra muy grande (lo decide barra-filtro.js):
+   sin verse ni tocarse, pero con su tamaño (para seguir midiéndolas). */
+.barra-m.barra-m-sobra { visibility: hidden; }
 .barra-m-ini { left: 0; transform: none; padding-left: 0; }
 .barra-m-fin { left: auto; right: 0; transform: none; padding-right: 0; }
 .barra-campo { display: grid; gap: 6px; max-width: 240px; font-size: 13px; color: var(--ink-2); }
