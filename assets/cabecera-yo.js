@@ -149,7 +149,11 @@
       var b = cab.querySelector('.brand');
       // La cabecera escondida (la del otro idioma en «Tu cuenta») no mide.
       if (!a || !b || !fila.offsetParent) return;
-      if (b.getBoundingClientRect().right + 8 > a.getBoundingClientRect().left || fila.scrollWidth > fila.clientWidth + 1) cab.classList.add('top-justa');
+      // También si lo de la derecha pasa del borde de la pantalla: en el móvil,
+      // lo que no cabe ensancha la página entera y la fila «cabe» en ella
+      // (con la letra grande del navegador; §4zzz-solapes-web).
+      if (b.getBoundingClientRect().right + 8 > a.getBoundingClientRect().left || fila.scrollWidth > fila.clientWidth + 1
+        || a.getBoundingClientRect().right > document.documentElement.clientWidth + 1) cab.classList.add('top-justa');
     });
   }
 
@@ -177,6 +181,15 @@
   window.KL_YO = { sesion: sesion, clave: clave, proyecto: proyecto, refDe: refDe, pinta: pinta, justa: justa, vueltaDe: vueltaDe };
   pinta();
   justa();
+  // Y cada vez que cambia lo de la derecha (la campana o tu inicial que llegan
+  // después) o el logo (al llegar su fuente): con la letra grande del
+  // navegador, la cabecera se salía de la pantalla hasta recargar
+  // (§4zzz-solapes-web).
+  if (window.ResizeObserver) {
+    var ro = new ResizeObserver(function () { justa(); });
+    document.querySelectorAll('header.top .top-acciones, header.top .brand').forEach(function (e) { ro.observe(e); });
+  }
+  if (document.fonts && document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', justa);
 
   // «Abrir en la app» en el móvil (Iván, 11-11): una barra discreta debajo de
   // la cabecera, que se pone antes del primer pintado (este script va justo

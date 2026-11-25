@@ -195,7 +195,7 @@ a.aviso:hover { text-decoration: none; border-color: var(--ink-2); }
 [dir="rtl"] .quitable > .aviso-borrar { right: auto; left: 8px; }
 .seccion-quitar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .seccion-quitar .seccion-t { flex: 1; }
-.seccion-quitar .pill { margin-top: 14px; }
+.seccion-quitar .pill { margin: 14px 0 8px; } /* abajo, el hueco del título: sin él, pegada a la primera tarjeta (§4zzz-solapes-web) */
 /* «Tus datos»: lo que guardamos, en puntos. */
 .tus-datos-puntos { list-style: none; margin: 0; padding: 14px 16px 4px; }
 .tus-datos-puntos li { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 10px; line-height: 1.45; }
@@ -381,6 +381,10 @@ button.codigo.copiar .ms { font-size: 18px; color: var(--ink-2); letter-spacing:
 /* ── Planes con amigos ─────────────────────────────────────────────────── */
 /* «Amigos», una fila a lo ancho debajo de los accesos rápidos. */
 .lista-arriba { margin-top: 14px; }
+/* Dos listas seguidas (Tus códigos… y «Has ahorrado…»), con su hueco: juntas se veían pegadas (§4zzz-solapes-web). */
+.lista + .lista { margin-top: 14px; }
+/* Una palabra que no cabe (un correo largo con la letra grande) se parte en vez de salirse de la pantalla (§4zzz-solapes-web). */
+.cuenta { overflow-wrap: break-word; }
 /* Tu enlace de amigo: el QR, el enlace (se toca y se copia) y los botones. */
 .enlace-amigo { background: var(--glass); border: 1px solid var(--glass-border); border-radius: 22px; padding: 18px 16px;
   text-align: center; margin-top: 8px; }

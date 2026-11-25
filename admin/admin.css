@@ -21,6 +21,7 @@ body.admin-body { background: var(--surface); }
 .side a.nav:hover { opacity: 1; text-decoration: none; background: var(--nav-hover); }
 .side a.nav.on { opacity: 1; background: var(--nav-on); color: var(--ink); font-weight: 800; }
 .side a.nav .ic { width: 20px; text-align: center; opacity: .9; }
+.side a.nav { min-width: 0; overflow-wrap: anywhere; } /* el nombre, dentro de su fila con la letra grande (§4zzz-solapes-web) */
 .side a.nav .badge { margin-left: auto; background: var(--accent); color: var(--on-accent); font-size: .6875rem; font-weight: 800; padding: 2px 7px; border-radius: 999px; }
 .side .group { font-size: .6875rem; letter-spacing: .1em; text-transform: uppercase; opacity: .7; margin: 14px 12px 4px; font-weight: 700; }
 .side .me { margin-top: auto; padding: 12px; border-top: 1px solid var(--glass-border); font-size: .8125rem; opacity: .85; display: grid; gap: 6px; }
@@ -92,6 +93,9 @@ textarea { min-height: 90px; resize: vertical; }
 label.f { display: grid; align-content: start; gap: 5px; font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
 label.f > span small { font-weight: 500; }
 .btn { border: 1px solid var(--glass-border); background: var(--elevated); color: var(--ink); padding: 8px 14px; border-radius: 999px; font: inherit; font-weight: 700; font-size: .875rem; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+/* Con la letra muy grande, un botón que ya no cabe parte su texto en dos renglones en vez de ensanchar la página (§4zzz-solapes-web). */
+.btn { max-width: 100%; }
+.btn:not(.nowrap) { white-space: normal; }
 .btn:hover { text-decoration: none; filter: brightness(1.05); }
 .btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; }
 .btn.ok { background: #2ECC71; color: #07321a; border-color: transparent; }
@@ -106,6 +110,10 @@ label.f > span small { font-weight: 500; }
 
 /* Etiquetas */
 .tag { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: .75rem; font-weight: 700; background: var(--soft); color: var(--ink); white-space: nowrap; }
+/* Etiquetas y botones pequeños seguidos o que bajan de renglón: 4 px como poco entre uno y otro (§4zzz-solapes-web). */
+.tag { margin-block: 2px; }
+.tag + .tag, .tag + .btn { margin-left: 2px; }
+.tag + .btn { margin-top: 2px; }
 .tag.warn, .tag.st-pending, .tag.st-trial, .tag.st-reviewing, .tag.st-draft, .tag.st-past_due { background: rgba(255,184,77,.25); color: #8a5200; }
 .tag.bad, .tag.st-rejected, .tag.st-open, .tag.st-failed, .tag.st-cancelled, .tag.st-banned, .tag.st-inactive { background: rgba(255,92,92,.2); color: #b3261e; }
 .tag.ok, .tag.st-verified, .tag.st-resolved, .tag.st-approved, .tag.st-active, .tag.st-validated, .tag.st-sent { background: rgba(46,204,113,.2); color: #146c3a; }
@@ -133,9 +141,15 @@ label.f > span small { font-weight: 500; }
 /* Las cifras se reparten la fila: la última nunca se queda sola y estrecha. */
 .kpis { display: flex; flex-wrap: wrap; gap: 10px; }
 .kpis > * { flex: 1 1 180px; min-width: 0; }
+.kpis + .tbl-wrap { margin-top: 14px; }
+table.tbl td { overflow-wrap: break-word; } /* una palabra larga, dentro de su celda con la letra grande (§4zzz-solapes-web) */ /* Condiciones: las cifras y la tabla, separadas (§4zzz-solapes-web). */
 .kpi { background: var(--elevated); border: 1px solid var(--glass-border); border-radius: 16px; padding: 12px 14px; }
 .kpi b { display: block; font-family: var(--display); font-size: 1.5rem; letter-spacing: -.5px; }
 .kpi span { color: var(--ink-2); font-size: .75rem; }
+/* Con la letra grande, la cifra y su nombre se parten dentro de su casilla en vez de salirse (§4zzz-solapes-web). */
+.kpi { min-width: 0; }
+.kpi b { overflow-wrap: anywhere; }
+.kpi span { overflow-wrap: break-word; }
 .kpi.accent b { color: var(--accent-text); }
 /* minmax(0, 1fr): la columna no crece con lo que lleva dentro (un correo o un
    enlace largo sacaban la tarjeta de la pantalla en el móvil). */
@@ -178,6 +192,8 @@ table.tbl td:has(> .thumb:first-child, > .ph:first-child) > .title { display: bl
 table.tbl .sub { display: block; color: var(--ink-2); font-size: .75rem; font-weight: 500; margin: 0; max-width: none; }
 .pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; font-size: .875rem; color: var(--ink-2); flex-wrap: wrap; }
 .pager .spacer { flex: 1; }
+/* Lo que va después de una lista (Errores › Tareas programadas), separado de su pie (§4zzz-solapes-web). */
+#list > .pager:last-child { margin-bottom: 14px; }
 .empty { padding: 30px; text-align: center; color: var(--ink-2); }
 
 /* Elementos de lista (denuncias, reseñas) */
@@ -385,6 +401,7 @@ details.grupo[open] > summary { margin-bottom: 8px; }
 /* Sugerencias: el estado en un desplegable. */
 .estado-sel { display: inline-flex; align-items: center; gap: 6px; font-size: .8125rem; font-weight: 600; color: var(--ink-2); }
 .estado-sel select { padding: 5px 10px; font-size: .8125rem; border-radius: 999px; font-weight: 700; color: var(--ink); }
+.estado-sel { max-width: 100%; flex-wrap: wrap; } .estado-sel select { min-width: 0; max-width: 100%; } /* con la letra grande, dentro de la pantalla (§4zzz-solapes-web) */
 .sug-acciones { align-items: center; }
 
 /* Menú lateral: «Sistema» se pliega. */
@@ -544,7 +561,7 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 .lim-lleno { display: block; height: 100%; border-radius: 4px; background: #5c9e6f; }
 .lim-lleno.warn { background: #e0a030; }
 .lim-lleno.bad { background: #c0392b; }
-.med-cita { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--soft); white-space: pre-wrap; word-break: break-word; }
+.card .med-cita, .med-cita { margin: 8px 0; padding: 8px 12px; border-left: 3px solid var(--soft); white-space: pre-wrap; word-break: break-word; }
 
 /* Sugerencias: las capturas (revisión 10-11). */
 .sug-capturas { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
@@ -575,8 +592,9 @@ table.tbl .art-thumb, .art-celda .art-thumb { border-radius: 50%; margin: 0; fle
 .bj-mini { flex: 0 0 56px; width: 56px; height: 56px; border-radius: 12px; overflow: hidden; background: var(--soft); display: grid; place-items: center; }
 .bj-mini img, .bj-mini video { width: 100%; height: 100%; object-fit: cover; display: block; }
 .bj-mini .ph { width: 100%; height: 100%; display: grid; place-items: center; }
-.bj-cita { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--soft); white-space: pre-wrap; overflow-wrap: anywhere; font-size: .875rem; }
-.bj-maquina { margin: 8px 0 0; padding: 7px 10px; border-radius: 10px; font-size: .875rem; background: var(--soft); color: var(--ink); overflow-wrap: anywhere; }
+/* `.card .bj-…`: `.card p { margin: 0 }` (site.css) les quitaba el hueco y se veían pegadas (§4zzz-solapes-web). */
+.card .bj-cita, .bj-cita { margin: 8px 0 0; padding: 6px 10px; border-left: 3px solid var(--soft); white-space: pre-wrap; overflow-wrap: anywhere; font-size: .875rem; }
+.card .bj-maquina, .bj-maquina { margin: 8px 0 0; padding: 7px 10px; border-radius: 10px; font-size: .875rem; background: var(--soft); color: var(--ink); overflow-wrap: anywhere; }
 .bj-maquina.ok { background: rgba(46,204,113,.14); color: #146c3a; }
 .bj-maquina.warn { background: rgba(255,184,77,.18); color: #7a4800; }
 .bj-maquina.bad { background: rgba(255,92,92,.16); color: #b3261e; }

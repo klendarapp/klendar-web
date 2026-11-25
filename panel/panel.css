@@ -51,7 +51,7 @@
   background: #b3261e; color: #fff; font-weight: 800; cursor: pointer;
 }
 .photos label.add {
-  width: 104px; height: 104px; border-radius: 14px;
+  width: 104px; min-height: 104px; border-radius: 14px; overflow-wrap: anywhere; /* crece con la letra grande (§4zzz-solapes-web) */
   border: 1px dashed var(--glass-border);
   display: grid; place-items: center; cursor: pointer; color: var(--ink-2);
   font-size: .8125rem; text-align: center; padding: 8px;
@@ -59,7 +59,7 @@
 .photos label.add input { display: none; }
 
 /* Validación de códigos */
-.scan-box { display: grid; gap: 12px; }
+.scan-box { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); } /* con la letra grande, dentro de la pantalla (§4zzz-solapes-web) */
 /* En el ordenador y la tablet (§4zzz-coherencia1): el campo y «Validar» en
    una fila, de borde a borde de la pantalla, como los dos botones de
    arriba y «Últimos validados»; en el móvil, uno debajo de otro. */
@@ -71,7 +71,7 @@
 /* Los botones ocupan el ancho de la caja: el texto, centrado. */
 .scan-box > .btn { justify-content: center; }
 /* «Escanear con la cámara» y «Dar en el momento»: dos iguales, lado a lado. */
-.validar-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.validar-dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .validar-dos > .btn { justify-content: center; text-align: center; min-height: 48px; white-space: normal; }
 /* Sin cámara (el botón se esconde), «Dar en el momento» a lo ancho. */
 .validar-dos:has(> [hidden]) { grid-template-columns: 1fr; }
@@ -154,13 +154,14 @@
 
 /* El cartel del local: el QR (sobre blanco, que es lo que lee cualquier
    cámara) y al lado qué da y cómo imprimirlo. En el móvil, uno encima de otro. */
-.cartel-local { display: grid; grid-template-columns: 200px 1fr; gap: 20px; align-items: start; }
+.cartel-local { display: grid; grid-template-columns: 200px minmax(0, 1fr); gap: 20px; align-items: start; } /* el texto, dentro de la tarjeta con la letra grande (§4zzz-solapes-web) */
 .cl-qr { background: #fff; border-radius: 16px; padding: 14px; }
 .cl-qr svg { width: 100%; height: auto; display: block; }
 .cl-txt p { margin: 0 0 10px; }
+.cartel-url { overflow-wrap: anywhere; } /* la dirección se parte en vez de salirse con la letra grande (§4zzz-solapes-web) */
 .cl-txt .acciones { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 640px) {
-  .cartel-local { grid-template-columns: 1fr; }
+  .cartel-local { grid-template-columns: minmax(0, 1fr); }
   .cl-qr { max-width: 220px; }
 }
 
@@ -244,6 +245,7 @@ table.tbl .actions { align-items: flex-start; }
   /* Cada dato con su etiqueta, en una línea: «Vistas ········ 12». */
   table.tbl td[data-label]:not(:first-child) { display: flex; justify-content: space-between; gap: 12px; font-size: .875rem; }
   table.tbl td[data-label]:not(:first-child)::before { content: attr(data-label); color: var(--ink-2); font-size: .8125rem; }
+  table.tbl td[data-label]:not(:first-child) > * { min-width: 0; overflow-wrap: anywhere; } /* el dato, dentro de su línea con la letra grande (§4zzz-solapes-web) */
   /* La publicación: icono a la izquierda, título y fecha al lado. */
   table.tbl td:first-child { position: relative; min-height: 40px; padding: 0 0 10px 52px; text-align: left; }
   table.tbl td:first-child > .ph, table.tbl td:first-child > .thumb { position: absolute; left: 0; top: 0; transform: none; margin: 0; }
@@ -511,9 +513,9 @@ main.content:focus { outline: none; }
    los datos empiezan a la misma altura. */
 .pubs { display: grid; gap: 0 18px; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); margin-bottom: 18px; }
 @media (max-width: 600px) { .pubs { grid-template-columns: minmax(0, 1fr); } }
-.pub-item { display: grid; grid-row: span 2; grid-template-rows: subgrid; row-gap: 0; min-width: 0; margin-bottom: 28px; }
+.pub-item { display: grid; grid-row: span 2; grid-template-rows: subgrid; grid-template-columns: minmax(0, 1fr); row-gap: 0; min-width: 0; margin-bottom: 28px; }
 .pub-item .tjv { display: flex; }
-.pub-item .tj { flex: 1; }
+.pub-item .tj { flex: 1; min-width: 0; } .pub-meta { min-width: 0; } /* cada tarjeta en su columna con la letra grande (§4zzz-solapes-web) */
 /* En la rejilla de Tarjetas, la tarjeta entera dentro de un marco: la foto
    arriba y el recuadro del texto (negocio, título, precio y botón) dentro,
    sin salirse por debajo (§4zzz-coherencia1; en la web pública el recuadro
@@ -718,7 +720,7 @@ label.f.casilla small { display: block; font-weight: 500; margin-top: 2px; }
 .pub-form .help { margin: 0; }
 .ideas .ideas-fila { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .ideas .ideas-fila::-webkit-scrollbar { display: none; }
-.ideas .ideas-fila .btn { flex: none; white-space: nowrap; }
+.ideas .ideas-fila .btn { flex: none; white-space: nowrap; max-width: none; }
 /* Una elección en píldoras (radio): la marcada en tinta. */
 .elige { display: flex; flex-wrap: wrap; gap: 8px; }
 .elige label { position: relative; display: inline-flex; }
@@ -1005,7 +1007,7 @@ details.plegable > summary::after { content: ''; position: absolute; right: 4px;
   border-right: 2px solid var(--ink-2); border-bottom: 2px solid var(--ink-2); transform: rotate(45deg); transition: transform .2s; }
 details.plegable[open] > summary::after { transform: rotate(-135deg); top: 10px; }
 details.plegable > summary .pl-tit { font-size: 1.0625rem; font-weight: 800; }
-details.plegable > summary .pl-res { color: var(--ink-2); }
+details.plegable > summary .pl-res { color: var(--ink-2); min-width: 0; overflow-wrap: anywhere; }
 details.plegable[open] > summary .pl-res { display: none; }
 details.plegable[open] > summary { margin-bottom: 12px; }
 @media (prefers-reduced-motion: reduce) { details.plegable > summary::after { transition: none; } }
@@ -1299,6 +1301,7 @@ body[data-cabecera] nav.tabbar:not(#tabbar) { display: none; }
 .hoy-cifra b { font-family: Sora, Manrope, sans-serif; font-size: 1.625rem; line-height: 1.1; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
 .hoy-cifra b small { font-size: .9375rem; color: var(--ink-2); font-weight: 700; }
 .hoy-cifra span { color: var(--ink-2); font-size: .8125rem; font-weight: 600; }
+.hoy-cifra { min-width: 0; } .hoy-cifra span, .hoy-cifra b { overflow-wrap: anywhere; } /* dentro de su casilla con la letra grande (§4zzz-solapes-web) */
 .hoy-bloque { margin: 18px 0 0; }
 .hoy-tit { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; }
 .hoy-tit h2 { font-size: 1.0625rem; margin: 0; }

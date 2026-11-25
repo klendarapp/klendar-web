@@ -106,7 +106,7 @@ export async function queueScreenPage(rawCode, lang) {
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>${esc(S.title)} · ${esc(info?.business?.name || 'Klendar')}</title>
-<link rel="stylesheet" href="/assets/site.css?v=20261124coh2">
+<link rel="stylesheet" href="/assets/site.css?v=20261125solapes">
 <style>
   :root { color-scheme: dark; }
   html, body { margin: 0; height: 100%; background: #0A0A0A; color: #FFFFFF; font-family: Manrope, system-ui, sans-serif; }

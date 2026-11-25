@@ -227,7 +227,7 @@ body.con-hoja .tabbar { display: none; }
 .card { background: var(--glass); border: 1px solid var(--glass-border); border-radius: var(--radius); padding: 22px; backdrop-filter: blur(18px); }
 .card h3 { margin: 10px 0 6px; font-size: 18px; }
 .card p { margin: 0; color: var(--ink-2); font-size: 15px; }
-.card .ic { width: 42px; height: 42px; border-radius: 14px; background: var(--soft); display: grid; place-items: center; color: var(--ink); font-size: 20px; }
+.card .ic { width: 2.1em; height: 2.1em; border-radius: 14px; background: var(--soft); display: grid; place-items: center; color: var(--ink); font-size: 20px; }
 @media (max-width: 760px) { .steps { grid-template-columns: 1fr; } }
 
 /* ── Capturas ────────────────────────────────────────────────────────── */
@@ -691,7 +691,7 @@ header.top.top-justa .brand { font-size: 0; gap: 0; }
 .pasos > div { border: 1px solid var(--glass-border); border-radius: 20px; padding: 20px; background: var(--glass); }
 .pasos h3 { font-size: 18px; margin: 10px 0 4px; }
 .pasos p { margin: 0; color: var(--ink-2); font-size: 15px; }
-.paso-num { display: inline-grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--ink); color: var(--surface); font-weight: 800; }
+.paso-num { display: inline-grid; place-items: center; width: 1.875em; height: 1.875em; border-radius: 50%; background: var(--ink); color: var(--surface); font-weight: 800; }
 .screens.compactas { margin-top: 28px; }
 .screens.compactas .phone { max-width: 220px; }
 .mas { margin: 16px 0 0; font-weight: 600; }
