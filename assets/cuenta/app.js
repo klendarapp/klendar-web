@@ -3137,6 +3137,7 @@ RUTAS.codigo = async ([id], params, crudo) => {
       ${primerCodigo() ? `<p class="primer-codigo">${ic('storefront')} ${esc(t('Enséñalo en el local para que te lo validen. Lo tienes en Tus códigos.'))}</p>` : ''}
       <div class="tus-respuestas" id="tusRespuestas" hidden></div>
       ${largo && (tk.offer_kind ?? 'future_event') === 'future_event' ? `<p><button class="pill" id="anular" type="button">${esc(t('Ya no voy: anular la reserva'))}</button></p>` : ''}
+      ${(tk.offer_kind ?? 'future_event') !== 'future_event' ? `<p><button class="pill" id="ya-no" type="button">${esc(t('Ya no lo quiero'))}</button></p>` : ''}
     </div>`);
   // «Tus respuestas» (preguntas al reservar), en un evento con reserva.
   if ((tk.offer_kind ?? 'future_event') === 'future_event' && typeof pintaTusRespuestas === 'function') {
@@ -3168,6 +3169,30 @@ RUTAS.codigo = async ([id], params, crudo) => {
     } catch (e) {
       // `llamar` ya trae el texto traducido; «not_pending» tiene el suyo.
       toast(e.clave === 'not_pending' ? t('Esta reserva ya no se podía anular (se usó o ha caducado).') : e.message, true);
+      if (boton.isConnected) boton.disabled = false;
+    }
+  });
+  // «Ya no lo quiero» (el código de una oferta): deja de valer y no gasta el
+  // uso; la misma `cancel_redemption` que «Ya no voy». Sale en «Pasados»
+  // como anulado (migración 20261291100000, como la app).
+  $('#ya-no')?.addEventListener('click', async (ev) => {
+    const boton = ev.currentTarget;
+    if (boton.disabled) return;
+    if (!(await confirma({
+      titulo: t('¿Anular este código?'),
+      texto: t('El código deja de valer y no gasta tu uso. Puedes volver a pedirlo mientras la oferta siga y te queden usos.'),
+      aceptar: t('Anular'),
+      cancelar: t('Mantenerlo'),
+      peligro: true,
+    }))) return;
+    boton.disabled = true;
+    try {
+      await llamar('cancel_redemption', { p_code: tk.code });
+      olvidaCodigo(id);
+      toast(t('Código anulado.'));
+      vuelve('codigos');
+    } catch (e) {
+      toast(e.clave === 'not_pending' ? t('Este código ya no se podía anular (se usó o ha caducado).') : e.message, true);
       if (boton.isConnected) boton.disabled = false;
     }
   });

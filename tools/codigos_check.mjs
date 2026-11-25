@@ -10,6 +10,9 @@
 //   5. «Ya no voy: anular la reserva» solo en un evento.
 //   6. En la ficha, con el límite por persona gastado, el botón se apaga y
 //      dice por qué (assets/amigos.js).
+//   7. «Ya no lo quiero» en el código de una oferta (2026-11-25, como la
+//      app): fuera de los eventos, con confirmación, `cancel_redemption` y
+//      sus textos en los 8 idiomas.
 //
 //   node tools/codigos_check.mjs
 import { readFileSync } from 'node:fs';
@@ -73,6 +76,22 @@ ok('5. «Ya no voy» solo en un evento', /largo && \(tk\.offer_kind \?\? 'future
 const amigos = readFileSync(new URL('assets/amigos.js', raiz), 'utf8');
 ok('6. ficha: el botón se apaga con el límite gastado', /Number\(o\.my_redemptions\) >= maxUsos/.test(amigos)
   && /setAttribute\('aria-disabled', 'true'\)/.test(amigos) && amigos.includes("usedUp: 'Ya has canjeado esta oferta'"));
+
+// 7
+ok('7. «Ya no lo quiero» solo fuera de un evento',
+  /\(tk\.offer_kind \?\? 'future_event'\) !== 'future_event' \? `<p><button class="pill" id="ya-no"/.test(app));
+const yaNo = app.slice(app.indexOf("$('#ya-no')"), app.indexOf("$('#otro-codigo')"));
+ok('7. confirma y anula con cancel_redemption', yaNo.includes('confirma(') && yaNo.includes("llamar('cancel_redemption'")
+  && yaNo.includes("t('Mantenerlo')") && yaNo.includes("e.clave === 'not_pending'"));
+const enDic = readFileSync(new URL('assets/cuenta/i18n.js', raiz), 'utf8');
+for (const es of ['Ya no lo quiero', '¿Anular este código?', 'Mantenerlo', 'Código anulado.',
+  'Este código ya no se podía anular (se usó o ha caducado).']) {
+  ok(`7. «${es}» en en`, enDic.includes(`${JSON.stringify(es)}:`));
+  for (const l of ['ca', 'gl', 'eu', 'fr', 'de', 'it']) {
+    const dic = readFileSync(new URL(`assets/cuenta/i18n/${l}.js`, raiz), 'utf8');
+    ok(`7. «${es}» en ${l}`, dic.includes(`${JSON.stringify(es)}:`));
+  }
+}
 
 console.log(fallos ? `\n${fallos} fallo(s)` : '\ntodo bien');
 process.exit(fallos ? 1 : 0);

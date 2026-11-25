@@ -7,6 +7,13 @@ const APP_EN = {
   "Ver tu entrada": "See your ticket",
   "Ya la canjeaste": "Already redeemed",
   "Ya has entrado": "Already checked in",
+  // «Ya no lo quiero» en el código de una oferta (cuenta, 2026-11-25), como la app.
+  "Ya no lo quiero": "I don’t want it anymore",
+  "¿Anular este código?": "Cancel this code?",
+  "El código deja de valer y no gasta tu uso. Puedes volver a pedirlo mientras la oferta siga y te queden usos.": "The code stops working and doesn’t use up your go. You can get it again while the offer is still on and you have uses left.",
+  "Mantenerlo": "Keep it",
+  "Código anulado.": "Code cancelled.",
+  "Este código ya no se podía anular (se usó o ha caducado).": "This code could no longer be cancelled (it’s been used or has expired).",
   // «Ayuda guiada» (cuenta, 2026-11-18): los vacíos que enseñan y el primer código, como la app.
   "Aquí tendrás lo que guardas, tus reservas y tus códigos, por fechas. Cuando algo te guste, dale a «Guardar».": "This is where you’ll have what you save, your bookings and your codes, by date. When you like something, tap “Save”.",
   "Cuando consigas el código de una oferta o reserves plaza en un evento, lo tendrás aquí para enseñarlo en el local.": "When you get the code for an offer or reserve a place at an event, it’ll be here for you to show at the venue.",
