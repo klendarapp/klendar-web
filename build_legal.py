@@ -41,7 +41,7 @@ TITULAR_DATOS = {
     'nombre_comercial': 'Klendar',      # sale junto a la razón social (solo 'empresa')
 
     'nif': '79288717N',                 # empresa: NIF de la sociedad (B + 7 cifras + control)
-    'domicilio': 'Calle Crianza, 30, 29130 Alhaurín de la Torre (Málaga)',  # empresa: domicilio social completo (calle, n.º, CP, municipio, provincia)
+    'domicilio': 'Calle Alejandro Dumas, 17, Oficinas, 29004 Málaga',  # empresa: domicilio social completo (calle, n.º, CP, municipio, provincia)
     'municipio': 'Málaga',              # municipio de ese domicilio: fuero de las condiciones para negocios
 
     'registro': {                       # solo 'empresa' (LSSI-CE art. 10.1.b). Salen de la nota
@@ -55,7 +55,7 @@ TITULAR_DATOS = {
 
     'email': 'info@klendar.app',        # contacto general: aviso legal, soporte, bajas, recursos, punto de contacto DSA
     'email_privacidad': 'info@klendar.app',  # derechos RGPD y eliminar la cuenta por correo
-    'telefono': '+34 674 69 89 54',     # opcional: la LSSI pide un medio de contacto directo y efectivo,
+    'telefono': '+34 672 92 45 87',     # opcional: la LSSI pide un medio de contacto directo y efectivo,
                                         # y el correo lo es si se contesta (STJUE C-298/07)
 
     # Delegado de Protección de Datos (DPD). None = no hay, y no se menciona.
@@ -428,7 +428,7 @@ ACTUALIZADO = {
     # publicado ese día): NIF, domicilio y teléfono del titular (puestos el
     # 4-11 en a6e8936) y «NIF» en lugar de «NIF/CIF» para la persona física.
     # Informativo, sin re-aceptación.
-    'aviso-legal': {'es': '4 de noviembre de 2026', 'en': '4 November 2026'},
+    'aviso-legal': {'es': '26 de noviembre de 2026', 'en': '26 November 2026'},  # aprobado por Iván el 26-11 (domicilio BeWorking y teléfono de Klendar)
     # 2026-11-04 (IC1, aprobado por Iván el 4-11 y publicado ese día,
     # incoherencias del paquete del abogado): la cabecera dice la versión de
     # las condiciones (VERSIONES_NEGOCIOS) y un apartado nuevo cuenta desde
@@ -577,6 +577,10 @@ _INICIO = ('29 de septiembre de 2026', 'Versión vigente de los términos (2026-
            '29 September 2026', 'Current version of the terms (2026-09-29).')
 CAMBIOS = {
     'aviso-legal': [
+        ('26 de noviembre de 2026',
+         'Nuevo domicilio (Calle Alejandro Dumas, 17, Oficinas, 29004 Málaga) y nuevo teléfono de contacto (+34 672 92 45 87).',
+         '26 November 2026',
+         'New address (Calle Alejandro Dumas, 17, Oficinas, 29004 Málaga) and new contact phone (+34 672 92 45 87).'),
         ('4 de noviembre de 2026',
          'Se completan el NIF, el domicilio y el teléfono del titular.',
          '4 November 2026',
