@@ -2555,10 +2555,10 @@ PAGES.publicar = async (v) => {
     }
     // Con un solo chip que no sea «Archivadas», pulsarlo no cambia nada.
     const conChips = chips.length > 1 || chips.some(([k]) => k === 'archivada');
-    $('#filtroArch').innerHTML = conChips ? `<div class="pills" role="group" aria-label="${esc(I18N.t('Filtrar por estado'))}">
+    $('#filtroArch', v).innerHTML = conChips ? `<div class="pills" role="group" aria-label="${esc(I18N.t('Filtrar por estado'))}">
       ${chips.map(([k, nombre]) => `<button type="button" data-filtro="${k}" class="${elegidos.has(k) ? 'on' : ''}" aria-pressed="${elegidos.has(k)}" translate="no">${esc(nombre)} <span class="n">${fmtNum(cuenta(k))}</span></button>`).join('')}
     </div>${elegidos.has('archivada') ? `<p class="hint" style="margin:10px 0 0">${esc(I18N.t('Se borraron con canjes validados: ya no se ven en ninguna parte, pero siguen contando en Cifras.'))}</p>` : ''}` : '';
-    $$('[data-filtro]', $('#filtroArch')).forEach((b) => {
+    $$('[data-filtro]', $('#filtroArch', v)).forEach((b) => {
       b.onclick = async () => {
         const k = b.dataset.filtro;
         b.disabled = true;
@@ -2570,27 +2570,27 @@ PAGES.publicar = async (v) => {
           b.disabled = false;
           return;
         }
-        $(`[data-filtro="${k}"]`, $('#filtroArch'))?.focus();
+        $(`[data-filtro="${k}"]`, $('#filtroArch', v))?.focus();
       };
     });
-    $('#vistaSw').innerHTML = nTotal ? `<div class="pills vista-sw" role="group" aria-label="${esc(I18N.t('Cómo verlas'))}">
+    $('#vistaSw', v).innerHTML = nTotal ? `<div class="pills vista-sw" role="group" aria-label="${esc(I18N.t('Cómo verlas'))}">
       <button type="button" data-vista="tarjetas" class="${vista === 'tarjetas' ? 'on' : ''}" aria-pressed="${vista === 'tarjetas'}">${svg('rejilla', 18)}${esc(I18N.t('Tarjetas'))}</button>
       <button type="button" data-vista="lista" class="${vista === 'lista' ? 'on' : ''}" aria-pressed="${vista === 'lista'}">${svg('lista', 18)}${esc(I18N.t('Lista'))}</button></div>` : '';
-    $$('[data-vista]', $('#vistaSw')).forEach((b) => {
+    $$('[data-vista]', $('#vistaSw', v)).forEach((b) => {
       b.onclick = () => {
         vista = b.dataset.vista;
         try { localStorage.setItem('klendar.panel.vista', vista); } catch { /* sin permisos */ }
-        render(); $(`[data-vista="${vista}"]`, $('#vistaSw'))?.focus();
+        render(); $(`[data-vista="${vista}"]`, $('#vistaSw', v))?.focus();
       };
     });
     const filas = offers;
-    $('#list').innerHTML = !nTotal && !offers.length
+    $('#list', v).innerHTML = !nTotal && !offers.length
       // Qué publicar ya está justo encima (un solo camino).
       ? `<div class="card sin-pubs"><h3>${esc(I18N.t('Todavía no has publicado nada.'))}</h3>
           <p class="muted">${esc(I18N.t('Lo que publiques sale aquí con la misma tarjeta que verá la gente, con su estado y sus cifras.'))}</p></div>`
       : (vista === 'lista' ? tablaPublicaciones(filas) : tarjetasPublicaciones(filas)) + (hayMas ? botonVerMas('pubs') : '');
-    activaVideos($('#list'));
-    const mas = $('[data-ver-mas="pubs"]', $('#list'));
+    activaVideos($('#list', v));
+    const mas = $('[data-ver-mas="pubs"]', $('#list', v));
     if (mas) {
       mas.onclick = async () => {
         mas.disabled = true;
@@ -2601,11 +2601,11 @@ PAGES.publicar = async (v) => {
           hayMas = parte.length >= POR_PARTE;
           render();
           // El foco, en la primera de las nuevas (o en lo que quede).
-          ($$('.tj, tbody tr a', $('#list'))[antes] || $('[data-ver-mas="pubs"]', $('#list')))?.focus?.();
+          ($$('.tj, tbody tr a', $('#list', v))[antes] || $('[data-ver-mas="pubs"]', $('#list', v)))?.focus?.();
         } catch (e) { toast(friendly(e.message), true); mas.disabled = false; }
       };
     }
-    $$('[data-act]', $('#list')).forEach((b) => {
+    $$('[data-act]', $('#list', v)).forEach((b) => {
       b.onclick = async () => {
         const id = b.dataset.id;
         try {
@@ -7242,7 +7242,7 @@ PAGES.equipo = async (v) => {
       <p class="muted full" style="margin:0">${esc(I18N.t('Le llega una invitación (en la app y por correo) que tiene que aceptar. Si aún no tiene cuenta, la verá al crearla con ese correo. Caduca a los 14 días. Tiene que tener 16 años (18 si tu negocio es +18).'))}</p>
       <div class="actions full"><button class="btn primary" type="submit">Añadir</button></div>
     </form></div>` : quienPuedeQue()}`;
-  $('#list').innerHTML = table({
+  $('#list', v).innerHTML = table({
     cols: [
       { h: 'Persona', r: (m) => `<b class="title">${esc(m.display_name || m.email || '')}</b><span class="sub">${esc(m.email || '')}</span>` },
       { h: 'Rol', r: (m) => tag(m.role) },
