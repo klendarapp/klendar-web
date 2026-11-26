@@ -95,15 +95,18 @@
     } catch { return new Map(); }
   };
 
-  async function pintar(ciudad) {
+  // `vigente`: si entretanto se ha elegido otra ciudad, esta ya no pinta
+  // (si no, la respuesta que llegaba tarde dejaba la lista de otra ciudad).
+  async function pintar(ciudad, vigente = () => true) {
     const items = await rpc('public_city_agenda', { p_city: ciudad, p_limit: MAX });
-    if (!Array.isArray(items) || !items.length) return false;
+    if (!Array.isArray(items) || !items.length || !vigente()) return false;
     // A la vez: las zonas horarias y el arte de las que no tienen foto no
     // dependen la una del otro (§4zzz-cargas).
     const [tz, KT] = await Promise.all([
       zonas(items.slice(0, MAX).map((o) => o.business_id)),
       items.slice(0, MAX).some((o) => !foto(o.images)) ? conArte() : null,
     ]);
+    if (!vigente()) return false;
     const sinFoto = (o) => {
       const cat = KT && KT.arteDe(o);
       return cat ? `<span class="ph" style="position:relative">${KT.arteHtml(cat)}</span>` : '<span class="ph">✦</span>';
@@ -158,7 +161,20 @@
         donde.innerHTML = `<select id="liveSelect" aria-label="${en ? 'City' : 'Ciudad'}" style="font:700 15px/1.2 var(--display);color:var(--ink);background-color:var(--elevated);border:1px solid var(--field-border);border-radius:999px;padding:0 12px;min-height:44px;margin-left:6px;vertical-align:middle;cursor:pointer;color-scheme:light dark;letter-spacing:0">`
           + ciudades.map((c) => `<option value="${esc(c.slug || c.city)}">${esc(c.city)}</option>`).join('')
           + '</select>';
-        document.getElementById('liveSelect').onchange = (e) => pintar(e.target.value);
+        // Otra ciudad: si no llega (sin red) o no tiene nada, el selector
+        // vuelve a la que se ve (antes decía una y enseñaba la otra).
+        const sel = document.getElementById('liveSelect');
+        let pintada = inicial;
+        let turno = 0;
+        sel.onchange = async () => {
+          const yo = ++turno;
+          const ciudad = sel.value;
+          let bien = false;
+          try { bien = await pintar(ciudad, () => yo === turno); } catch { /* sin red */ }
+          if (yo !== turno) return;
+          if (bien) pintada = ciudad;
+          else sel.value = pintada;
+        };
       } else {
         donde.textContent = `${en ? 'in' : 'en'} ${ciudades[0].city}`;
       }
