@@ -83,6 +83,24 @@ export const jsonEnScript = (v) => (JSON.stringify(v) ?? 'null')
 /** El servidor no ha contestado (caído, sin red, 500). No es que no exista. */
 export class BackendDown extends Error {}
 
+/** Lo más que se espera a la base al pintar una página (ms): si no contesta,
+ * `BackendDown` («Ahora mismo no podemos cargar…», 503), no una página que
+ * no acaba de llegar. Sin tope, una petición colgada de la base dejaba
+ * esperando a esa visita y a todas las que compartían su llamada en `memo`.
+ * (Las pruebas lo bajan con `KLENDAR_ESPERA_MS`.) */
+export const esperaBase = () => (typeof process !== 'undefined' && Number(process?.env?.KLENDAR_ESPERA_MS)) || 10_000;
+/** `fetch` a la base con el tope de `esperaBase()`; el cuerpo, también dentro. */
+export async function fetchBase(quien, url, init) {
+  try {
+    const r = await fetch(url, { ...init, signal: AbortSignal.timeout(esperaBase()) });
+    if (!r.ok) throw new BackendDown(`${quien}: ${r.status}`);
+    return await r.text();
+  } catch (e) {
+    if (e instanceof BackendDown) throw e;
+    throw new BackendDown(`${quien}: ${e.message}`);
+  }
+}
+
 // ── Listas comunes, un rato en memoria (rendimiento, Iván, 18-11) ─────────
 // Las ciudades, las categorías, las colecciones, las «Populares» de «Busca tu
 // municipio» y el municipio de un slug las piden casi todas las páginas (y
@@ -154,21 +172,12 @@ export const olvidaMemo = () => memo.clear();
 
 async function postRpc(fn, args, extra) {
   const ms = msDeMemo(fn, args, extra);
-  const texto = await conMemo(fn, JSON.stringify(args ?? {}), ms, async () => {
-    let r;
-    try {
-      r = await fetch(`${CFG.url}/rest/v1/rpc/${fn}`, {
-        method: 'POST',
-        // `extra`: p. ej. «18 o más» (`x-klendar-18`, ver `cabeceraEdad`).
-        headers: { apikey: CFG.key, 'Content-Type': 'application/json', ...(extra || {}) },
-        body: JSON.stringify(args),
-      });
-    } catch (e) {
-      throw new BackendDown(`${fn}: ${e.message}`);
-    }
-    if (!r.ok) throw new BackendDown(`${fn}: ${r.status}`);
-    return r.text();
-  });
+  const texto = await conMemo(fn, JSON.stringify(args ?? {}), ms, () => fetchBase(fn, `${CFG.url}/rest/v1/rpc/${fn}`, {
+    method: 'POST',
+    // `extra`: p. ej. «18 o más» (`x-klendar-18`, ver `cabeceraEdad`).
+    headers: { apikey: CFG.key, 'Content-Type': 'application/json', ...(extra || {}) },
+    body: JSON.stringify(args),
+  }));
   return JSON.parse(texto);
 }
 
@@ -187,18 +196,9 @@ export async function rpcAll(fn, args, extra = null) {
  * `query` va tal cual detrás del `?`: `select=...&business_id=eq.X`. */
 export async function rows(table, query) {
   const ms = msDeMemo(`tabla:${table}`, null, null);
-  const texto = await conMemo(`tabla:${table}`, query, ms, async () => {
-    let r;
-    try {
-      r = await fetch(`${CFG.url}/rest/v1/${table}?${query}`, {
-        headers: { apikey: CFG.key },
-      });
-    } catch (e) {
-      throw new BackendDown(`${table}: ${e.message}`);
-    }
-    if (!r.ok) throw new BackendDown(`${table}: ${r.status}`);
-    return r.text();
-  });
+  const texto = await conMemo(`tabla:${table}`, query, ms, () => fetchBase(table, `${CFG.url}/rest/v1/${table}?${query}`, {
+    headers: { apikey: CFG.key },
+  }));
   const data = JSON.parse(texto);
   return Array.isArray(data) ? data : [];
 }

@@ -4,7 +4,7 @@
 // Lo que entra lo decide la base (`calendar_feed`); el formato,
 // `_lib/calendario.js`.
 
-import { configure, supabasePublic, BackendDown } from '../_lib/page.js';
+import { configure, supabasePublic, fetchBase } from '../_lib/page.js';
 import { icsDePlanes, tokenDe } from '../_lib/calendario.js';
 
 const PRIVADO = {
@@ -26,13 +26,11 @@ export const onRequestGet = async (ctx) => {
     // Sin `rpc()` de page.js: ese trata el null de la base como «no hay fila»
     // igual que un error; aquí null es «el token no existe» (404).
     const cfg = supabasePublic();
-    const r = await fetch(`${cfg.url}/rest/v1/rpc/calendar_feed`, {
+    const datos = JSON.parse(await fetchBase('calendar_feed', `${cfg.url}/rest/v1/rpc/calendar_feed`, {
       method: 'POST',
       headers: { apikey: cfg.key, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_token: token }),
-    });
-    if (!r.ok) throw new BackendDown(`calendar_feed: ${r.status}`);
-    const datos = await r.json();
+    }));
     if (!datos) return texto(404, 'Este enlace de calendario no existe o se ha cambiado. Cópialo de nuevo en Klendar: Ajustes → Tus planes en tu calendario.\n');
     return new Response(icsDePlanes(datos), {
       status: 200,
