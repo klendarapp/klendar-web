@@ -1,5 +1,5 @@
 {
- "version": "2972e11384cf",
+ "version": "8e824c517023",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -104,6 +104,36 @@
     "a": [
      {
       "t": "Los códigos caducan al cabo de un rato (normalmente pocos minutos; lo elige cada negocio). Pulsa \"Generar otro código\" en la misma pantalla."
+     }
+    ]
+   },
+   {
+    "id": "ya-no-lo-quiero",
+    "c": "ofertas",
+    "q": "Ya no quiero el código, ¿cómo lo anulo?",
+    "a": [
+     {
+      "t": "En la pantalla del código (desde Tus códigos, en la app o en la web), debajo del código, pulsa «Ya no lo quiero». Deja de valer y no gasta tu uso: puedes volver a pedirlo mientras la oferta siga y te queden usos. Pasa a «Pasados» como «Anulado». Si es una reserva, el botón es «Ya no voy: anular la reserva», y tus plazas quedan libres para otra persona."
+     }
+    ]
+   },
+   {
+    "id": "ya-la-canjeaste",
+    "c": "ofertas",
+    "q": "¿Qué significa «Ya la canjeaste»?",
+    "a": [
+     {
+      "t": "Que ya has usado todos los canjes por persona que permite el negocio en esa oferta: te validaron tus códigos y no puedes sacar otro. Por eso sale en gris en lugar del botón y deja de salir en Descubre. En un evento dice «Ya has entrado». Los códigos usados están en Tus códigos → «Pasados». Si crees que es un error (por ejemplo, te validaron el código por equivocación), díselo al negocio enseguida: puede deshacer la validación en los 10 minutos siguientes y tu código vuelve a valer."
+     }
+    ]
+   },
+   {
+    "id": "codigo-pantalla-bloqueo",
+    "c": "ofertas",
+    "q": "¿Por qué me sale el código en la pantalla de bloqueo?",
+    "a": [
+     {
+      "t": "Para que lo tengas a mano en la puerta sin buscar la app. Sale el código que antes vas a usar, cuando le quedan 6 horas o menos o, si es una reserva, desde 2 horas antes del evento. En Android es una notificación fija con la cuenta atrás que no enseña el código: tócala y, al desbloquear, lo tienes. En iPhone es una actividad en directo con la cuenta atrás (y su QR en el Apple Watch); si has puesto el widget de Klendar en la pantalla de bloqueo, también sale ahí la cuenta atrás, nunca el código. Se quita sola al caducar y en cuanto te lo validan o lo anulas, aunque tengas la app cerrada (en iPhone, el widget puede tardar hasta unos 15 minutos). Se apaga en Cuenta → Ajustes → Notificaciones → «Pantalla de bloqueo» (en cada móvil)."
      }
     ]
    },
@@ -221,6 +251,26 @@
     "a": [
      {
       "t": "En la ficha, pulsa Compartir y elige «Compartir en historias» o «Estado de WhatsApp»: es una imagen vertical con el diseño del plan y un QR que lleva a su ficha. En la web, en la ficha, «Compartir en historias» y allí «Estado de WhatsApp» la descarga para que la subas desde WhatsApp."
+     }
+    ]
+   },
+   {
+    "id": "sellos-y-bonos",
+    "c": "sellos",
+    "q": "¿Cómo funcionan los sellos y los bonos?",
+    "a": [
+     {
+      "t": "Los sellos, como las tarjetas de cartón: en un sitio con tarjeta, cada canje (o cada visita con el QR del local, si lo tiene) suma un sello y, al completarla, pulsas «Pedir el premio» y enseñas el código. Las tienes en Cuenta → «Tarjetas de sellos». Los bonos («10 cafés», «5 clases») los compras y los pagas en el local: el negocio te lo carga escaneando «Tu QR de cliente» (en Tus códigos) y te descuenta un uso cada vez que lo enseñas. Klendar solo lleva la cuenta: el bono lo vende y lo cumple el negocio. Los avisos, en Ajustes → Notificaciones («Sellos y premios» y «Tus bonos»)."
+     }
+    ]
+   },
+   {
+    "id": "regalo-cumpleanos",
+    "c": "sellos",
+    "q": "¿Hay regalo de cumpleaños?",
+    "a": [
+     {
+      "t": "Si un negocio que tienes en favoritos lo ofrece, sí: el día de tu cumpleaños, a partir de las 9:00, te llega un aviso y un código de regalo, que tienes en Tus códigos → «Regalos y cupones» y enseñas en el local. Uno al año por negocio, y vale los días que diga el negocio. Hace falta tener tu fecha de nacimiento en el perfil y el negocio en favoritos desde antes de ese día. Si apagas «Regalo de cumpleaños» en Ajustes → Notificaciones, no te llega. Si el regalo menciona alcohol, solo es para mayores de edad."
      }
     ]
    },
@@ -461,6 +511,16 @@
     ]
    },
    {
+    "id": "varios-locales",
+    "c": "alta",
+    "q": "¿Puedo llevar varios locales con una cuenta?",
+    "a": [
+     {
+      "t": "Sí. Con la misma cuenta das de alta otro negocio desde el nombre de tu local ▾ → «Nuevo negocio» (también en el panel web), y lo revisamos como el primero. Con ese mismo ▾ cambias de uno a otro. Cada local tiene su ficha, su equipo, sus publicaciones, sus códigos y sus cifras; para validar no hace falta elegir local. Si eres propietario o encargado de varios, lo que publicas en uno lo puedes copiar a los demás con «Publicar en otros locales…», en el menú de la publicación."
+     }
+    ]
+   },
+   {
     "id": "comision",
     "c": "alta",
     "q": "¿Klendar se lleva una comisión de lo que vendo?",
@@ -491,6 +551,16 @@
      },
      {
       "t": "."
+     }
+    ]
+   },
+   {
+    "id": "dar-de-baja-negocio",
+    "c": "alta",
+    "q": "¿Cómo doy de baja mi negocio?",
+    "a": [
+     {
+      "t": "Solo el propietario, en Mi negocio → «Dar de baja el negocio» (también en el panel web). Ahí tienes, de menos a más: «Cerrar hasta nuevo aviso» (nadie ve tu ficha ni tus publicaciones y lo abres cuando quieras), «Traspasar el negocio» a alguien de tu equipo, que tiene 14 días para aceptarlo, o «Eliminar el negocio», para siempre: anulamos las reservas y los códigos sin usar y avisamos a cada persona, a quien tiene sellos o regalos y a tu equipo. Antes, guarda tus datos con «Descargar los datos del negocio». Los bonos vendidos sin gastar tienes que cumplirlos. Para borrar tu cuenta, antes tienes que dar de baja o traspasar tus negocios."
      }
     ]
    },
@@ -555,6 +625,16 @@
     ]
    },
    {
+    "id": "deshacer-validacion",
+    "c": "validar",
+    "q": "Me he equivocado al validar, ¿se puede deshacer?",
+    "a": [
+     {
+      "t": "Sí, durante 10 minutos: debajo del código recién validado o en «Últimos validados», pulsa «Deshacer la validación» (también en el panel web). El código vuelve a valer (si la oferta ya ha terminado, queda caducado), deja de contar en tus cifras y se quitan el sello o el cupón que hubiera dado. Se puede una sola vez por código, y no si ese sello ya está en un premio pedido o el cupón ya se ha usado. Puede hacerlo cualquiera del equipo que valida, y queda apuntado quién. En los bonos, cada venta y cada uso también se deshacen durante 10 minutos, y los sellos puestos de más se quitan desde la tarjeta del cliente."
+     }
+    ]
+   },
+   {
     "id": "equipo",
     "c": "validar",
     "q": "¿Puede mi equipo validar códigos?",
@@ -578,6 +658,56 @@
      },
      {
       "t": "."
+     }
+    ]
+   },
+   {
+    "id": "sellos-negocio",
+    "c": "fidelizar",
+    "q": "¿Cómo funcionan los sellos?",
+    "a": [
+     {
+      "t": "En Mi negocio → «Tarjetas de sellos» (también en el panel web) creas hasta 5 tarjetas, cada una con su nombre, cuántos sellos hacen falta y su premio, y eliges qué da sello: todas las publicaciones, solo ofertas, solo eventos o ciertas categorías o publicaciones. Cada canje que validas suma un sello solo y, si lo activas, también cada visita con el QR del cartel del local (uno al día como mucho). Al completarla, el cliente pide el premio y te enseña un código, que validas como cualquier otro. Tu equipo puede poner o quitar sellos a mano (a quien ya ha canjeado algo aquí), y queda apuntado quién; cambiar la tarjeta, ponerla a 0 o entregar el premio sin código es del propietario o un encargado."
+     }
+    ]
+   },
+   {
+    "id": "bonos-negocio",
+    "c": "fidelizar",
+    "q": "¿Qué es un bono?",
+    "a": [
+     {
+      "t": "Un paquete de varios usos que vendes en tu local, como «10 cafés» o «5 clases». Lo creas en Mi negocio → «Bonos» (también en el panel web) con sus usos, su caducidad (o sin caducidad) y sus condiciones. Lo cobras tú en el local, como siempre: Klendar no cobra nada y solo lleva la cuenta de los usos. Para cargarlo o descontar un uso, escanea con «Validar códigos» el QR de cliente de la persona (lo tiene en Tus códigos). Cada venta y cada uso se pueden deshacer durante 10 minutos. Si pausas o quitas un bono, deja de venderse, pero los vendidos siguen valiendo y tienes que cumplirlos."
+     }
+    ]
+   },
+   {
+    "id": "cupon-proxima-visita",
+    "c": "fidelizar",
+    "q": "¿Qué es el cupón para la próxima visita?",
+    "a": [
+     {
+      "t": "Un detalle para que vuelvan: lo activas en Mi negocio → «Cupón para la próxima visita» (también en el panel web) y, cada vez que validas un canje, esa persona recibe un cupón para su próxima visita: un descuento (del 5 al 50 %) o un regalo. Vale desde el día siguiente durante los días que elijas y se valida en «Validar códigos», como los demás. Uno por visita (dos códigos el mismo día dan uno) y como mucho de 1 a 4 al mes por persona, lo que elijas. Tu equipo no los recibe y, si menciona alcohol, solo lo reciben mayores de edad."
+     }
+    ]
+   },
+   {
+    "id": "primera-visita",
+    "c": "fidelizar",
+    "q": "¿Puedo hacer una oferta solo para clientes nuevos?",
+    "a": [
+     {
+      "t": "Sí, una oferta de primera visita: en Publicar, «Oferta de primera visita» (o en Mi negocio → «Ofertas de primera visita»; también en el panel web). Solo la puede canjear quien nunca ha canjeado nada en tu negocio, y en la publicación pone «Primera visita». Es lo más parecido a una bienvenida: Klendar no da ningún cupón automático a quien viene por primera vez."
+     }
+    ]
+   },
+   {
+    "id": "cumpleanos-negocio",
+    "c": "fidelizar",
+    "q": "¿Puedo hacer un regalo de cumpleaños?",
+    "a": [
+     {
+      "t": "Sí, en Mi negocio → «Regalo de cumpleaños» (también en el panel web): activa «Dar un regalo de cumpleaños» y escribe qué regalas y cuántos días vale. El día de su cumpleaños, a partir de las 9:00 en la hora de tu negocio, a quien te tiene en favoritos le llega un aviso y un código de regalo, que validas como cualquier otro. Uno al año por persona, y tu equipo no lo recibe. No puede ser tabaco ni apuestas y, si menciona alcohol, solo lo reciben mayores de edad. Ahí ves a cuántas personas puede llegar en el año y cuántos se han canjeado. Lo cambia el propietario o un encargado."
      }
     ]
    },
@@ -750,6 +880,36 @@
     ]
    },
    {
+    "id": "ya-no-lo-quiero",
+    "c": "ofertas",
+    "q": "I don't want the code any more: how do I cancel it?",
+    "a": [
+     {
+      "t": "On the code screen (from Your codes, in the app or on the web), below the code, tap “I don't want it anymore”. It stops working and doesn't use up your go: you can get it again while the offer is still on and you have uses left. It moves to “Past” as “Cancelled”. If it's a reservation, the button is “Can't make it: cancel the reservation”, and your places go to someone else."
+     }
+    ]
+   },
+   {
+    "id": "ya-la-canjeaste",
+    "c": "ofertas",
+    "q": "What does “Already redeemed” mean?",
+    "a": [
+     {
+      "t": "That you've used all the redemptions per person the business allows for that offer: your codes have been validated and you can't get another one. That's why it shows in grey instead of the button and no longer appears in Discover. For an event it says “Already checked in”. Used codes are in Your codes → “Past”. If you think it's a mistake (say, your code was validated by accident), tell the business straight away: they can undo the validation within 10 minutes and your code works again."
+     }
+    ]
+   },
+   {
+    "id": "codigo-pantalla-bloqueo",
+    "c": "ofertas",
+    "q": "Why does my code show up on my lock screen?",
+    "a": [
+     {
+      "t": "So you have it to hand at the door without looking for the app. It shows the code you'll use first, when it has 6 hours or less left or, for a reservation, from 2 hours before the event. On Android it's a pinned notification with the countdown that doesn't show the code: tap it and, once unlocked, there it is. On iPhone it's a Live Activity with the countdown (and its QR code on your Apple Watch); if you've added the Klendar widget to your lock screen, it shows the countdown too, never the code. It goes away by itself when it expires and, once it's validated, as soon as the app finds out (if the app is closed, maybe when you open it again). Turn it off in Account → Settings → Notifications → “Lock screen” (on each phone)."
+     }
+    ]
+   },
+   {
     "id": "antes-de-cerrar",
     "c": "ofertas",
     "q": "What is “Before closing”?",
@@ -863,6 +1023,26 @@
     "a": [
      {
       "t": "On the page, tap Share and choose “Share to stories” or “WhatsApp status”: it's a vertical image with the plan's design and a QR code that leads to its page. On the web, on the page, “Share to stories” and then “WhatsApp status” downloads it so you can post it from WhatsApp."
+     }
+    ]
+   },
+   {
+    "id": "sellos-y-bonos",
+    "c": "sellos",
+    "q": "How do stamps and passes work?",
+    "a": [
+     {
+      "t": "Stamps work like paper loyalty cards: at a place with a card, each redemption (or each visit with the venue's QR code, if it has one) adds a stamp and, when the card is full, you tap “Claim the reward” and show the code. You'll find them in Account → “Stamp cards”. Passes (“10 coffees”, “5 classes”) are bought and paid for at the venue: the business adds yours by scanning “Your customer QR code” (in Your codes) and takes off one use each time you show it. Klendar only keeps count: the business sells the pass and honours it. Alerts are in Settings → Notifications (“Stamps and rewards” and “Your passes”)."
+     }
+    ]
+   },
+   {
+    "id": "regalo-cumpleanos",
+    "c": "sellos",
+    "q": "Is there a birthday gift?",
+    "a": [
+     {
+      "t": "If a business in your favourites offers one, yes: on your birthday, from 9:00, you get an alert and a gift code, which you'll find in Your codes → “Gifts and coupons” and show at the venue. One a year per business, valid for the days the business chooses. You need your date of birth in your profile and the business in your favourites since before that day. If you turn off “Birthday gift” in Settings → Notifications, you won't get it. If the gift mentions alcohol, it's only for adults."
      }
     ]
    },
@@ -1103,6 +1283,16 @@
     ]
    },
    {
+    "id": "varios-locales",
+    "c": "alta",
+    "q": "Can I run several venues with one account?",
+    "a": [
+     {
+      "t": "Yes. With the same account you register another business from your venue's name ▾ → “New business” (also on the web dashboard), and we review it like the first. You switch between them with that same ▾. Each venue has its own page, team, publications, codes and stats; you don't need to pick a venue to validate. If you're the owner or a manager of several, what you publish at one you can copy to the others with “Post at other venues…”, in the publication's menu."
+     }
+    ]
+   },
+   {
     "id": "comision",
     "c": "alta",
     "q": "Does Klendar take a commission on what I sell?",
@@ -1133,6 +1323,16 @@
      },
      {
       "t": "."
+     }
+    ]
+   },
+   {
+    "id": "dar-de-baja-negocio",
+    "c": "alta",
+    "q": "How do I take my business off Klendar?",
+    "a": [
+     {
+      "t": "Only the owner can, in My business → “Leave Klendar” (also on the web dashboard). There you have, from least to most: “Close until further notice” (nobody sees your page or your publications and you reopen whenever you like), “Hand over the business” to someone on your team, who has 14 days to accept, or “Delete the business”, for good: we cancel unused reservations and codes and let each person know, as well as anyone with stamps or gifts and your team. Before that, keep your data with “Download the business data”. Unused passes you've sold still have to be honoured. To delete your account, you first have to take your businesses off Klendar or hand them over."
      }
     ]
    },
@@ -1197,6 +1397,16 @@
     ]
    },
    {
+    "id": "deshacer-validacion",
+    "c": "validar",
+    "q": "I validated by mistake: can I undo it?",
+    "a": [
+     {
+      "t": "Yes, for 10 minutes: below the code you've just validated or in “Recently validated”, tap “Undo the validation” (also on the web dashboard). The code works again (if the offer has already ended, it stays expired), stops counting in your stats, and any stamp or coupon it gave is removed. It can only be done once per code, and not if that stamp is already in a claimed reward or the coupon has been used. Anyone on your team who validates can do it, and who did is recorded. With passes, each sale and each use can also be undone for 10 minutes, and extra stamps are removed from the customer's card."
+     }
+    ]
+   },
+   {
     "id": "equipo",
     "c": "validar",
     "q": "Can my team validate codes?",
@@ -1220,6 +1430,56 @@
      },
      {
       "t": "."
+     }
+    ]
+   },
+   {
+    "id": "sellos-negocio",
+    "c": "fidelizar",
+    "q": "How do stamps work?",
+    "a": [
+     {
+      "t": "In My business → “Stamp cards” (also on the web dashboard) you create up to 5 cards, each with its name, how many stamps it takes and its reward, and you choose what earns a stamp: all publications, only offers, only events or certain categories or publications. Each redemption you validate adds a stamp by itself and, if you turn it on, so does each visit with the QR code on your venue poster (one a day at most). When the card is full, the customer claims the reward and shows you a code, which you validate like any other. Your team can add or remove stamps by hand (for people who have already redeemed something here), and who did it is recorded; changing the card, resetting it to 0 or handing over the reward without a code is for the owner or a manager."
+     }
+    ]
+   },
+   {
+    "id": "bonos-negocio",
+    "c": "fidelizar",
+    "q": "What is a pass?",
+    "a": [
+     {
+      "t": "A bundle of several uses that you sell at your venue, like “10 coffees” or “5 classes”. You create it in My business → “Passes” (also on the web dashboard) with its uses, its expiry (or none) and its conditions. You charge for it at your venue, as always: Klendar charges nothing and only keeps count of the uses. To add one or take off a use, scan the person's customer QR code (they have it in Your codes) with “Validate codes”. Each sale and each use can be undone for 10 minutes. If you pause or remove a pass, it stops being sold, but the ones already sold are still valid and you have to honour them."
+     }
+    ]
+   },
+   {
+    "id": "cupon-proxima-visita",
+    "c": "fidelizar",
+    "q": "What is the coupon for the next visit?",
+    "a": [
+     {
+      "t": "A little something to bring people back: turn it on in My business → “Coupon for the next visit” (also on the web dashboard) and, every time you validate a redemption, that person gets a coupon for their next visit: a discount (5 to 50%) or a gift. It's valid from the next day for the number of days you choose, and you validate it in “Validate codes”, like the others. One per visit (two codes on the same day give one) and at most 1 to 4 a month per person, as you choose. Your team doesn't get them and, if it mentions alcohol, only adults get it."
+     }
+    ]
+   },
+   {
+    "id": "primera-visita",
+    "c": "fidelizar",
+    "q": "Can I make an offer just for new customers?",
+    "a": [
+     {
+      "t": "Yes, a first-visit offer: in Publish, “First-visit offer” (or in My business → “First-visit offers”; also on the web dashboard). Only people who have never redeemed anything at your place can redeem it, and the publication says “First visit”. It's the closest thing to a welcome: Klendar doesn't give an automatic coupon to first-time visitors."
+     }
+    ]
+   },
+   {
+    "id": "cumpleanos-negocio",
+    "c": "fidelizar",
+    "q": "Can I give a birthday gift?",
+    "a": [
+     {
+      "t": "Yes, in My business → “Birthday gift” (also on the web dashboard): turn on “Give a birthday gift” and write what you're giving and how many days it's valid. On their birthday, from 9:00 your business's time, people who have you in their favourites get an alert and a gift code, which you validate like any other. One a year per person, and your team doesn't get it. It can't be tobacco or gambling and, if it mentions alcohol, only adults get it. There you can see how many people it can reach in the year and how many have been redeemed. The owner or a manager can change it."
      }
     ]
    },
@@ -1318,6 +1578,11 @@
     "en": "Your plans"
    },
    {
+    "id": "sellos",
+    "es": "Sellos y regalos",
+    "en": "Stamps and gifts"
+   },
+   {
     "id": "avisos",
     "es": "Avisos y ubicación",
     "en": "Alerts and location"
@@ -1348,6 +1613,11 @@
     "id": "validar",
     "es": "Validar y clientes",
     "en": "Validating and customers"
+   },
+   {
+    "id": "fidelizar",
+    "es": "Fidelizar",
+    "en": "Loyalty"
    },
    {
     "id": "aforo",
