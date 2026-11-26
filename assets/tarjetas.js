@@ -1206,7 +1206,11 @@
     var trae = function (enlace) {
       if (enlace.dataset.cargando) return;
       enlace.dataset.cargando = '1';
-      fetch(enlace.href, { credentials: 'same-origin' }).then(function (r) { return r.text(); }).then(function (txt) {
+      fetch(enlace.href, { credentials: 'same-origin' }).then(function (r) {
+        // Un 4xx no se arregla reintentando (un 503, «no podemos cargar», sí).
+        if (r.status >= 400 && r.status < 500) enlace.dataset.fin = '1';
+        return r.text();
+      }).then(function (txt) {
         var doc = new DOMParser().parseFromString(txt, 'text/html');
         var nuevo = doc.getElementById('feed');
         var caja = enlace.closest('.feed-mas');
@@ -1224,7 +1228,23 @@
         caja.replaceWith.apply(caja, hijos);
         hijos.forEach(function (h) { iniciar(h); if (ojo && (h.classList.contains('tj') || h.classList.contains('feed-fin'))) ojo.observe(h); });
         hijos.forEach(function (h) { var m = h.querySelector && h.querySelector('[data-feed-mas]'); if (m) observaMas(m); if (h.matches && h.matches('.feed-mas')) { var mm = h.querySelector('[data-feed-mas]'); if (mm) observaMas(mm); } });
-      }).catch(function () { delete enlace.dataset.cargando; });
+      }).catch(function () {
+        // Sin red o la página no ha llegado: se vuelve a intentar al volver
+        // la red o, si no, cada vez más tarde (4, 8, 16… hasta 60 s). Antes
+        // se dejaba de vigilar y el scroll se paraba para siempre (quedaba
+        // «Ver más», que recarga la página).
+        delete enlace.dataset.cargando;
+        if (enlace.dataset.fin) return;
+        var n = Number(enlace.dataset.fallos || 0) + 1;
+        enlace.dataset.fallos = String(n);
+        var otraVez = function () {
+          clearTimeout(t);
+          removeEventListener('online', otraVez);
+          if (enlace.isConnected) observaMas(enlace);
+        };
+        var t = setTimeout(otraVez, Math.min(60000, 2000 * Math.pow(2, n)));
+        addEventListener('online', otraVez);
+      });
     };
     // Con el <body> haciendo scroll, el margen ha de ser el suyo (con la
     // ventana de raíz, lo de debajo está recortado por el <body> y nunca se

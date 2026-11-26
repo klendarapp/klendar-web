@@ -384,7 +384,7 @@ ${siteFooter(lang)}
 ${conTarjetas || conAmigos ? `<script src="/assets/celda.js?v=1" defer></script>
 ` : ''}${conAmigos ? `<script src="/assets/amigos.js?v=20261125canjeada" defer data-lang="${en ? 'en' : 'es'}"></script>
 ` : ''}${conVisor ? `<script src="/assets/tarjeta.js?v=20261125pildoras" defer></script>
-` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261125zona" defer></script>
+` : ''}${conTarjetas ? `<script src="/assets/tarjetas.js?v=20261126revweb" defer></script>
 ` : ''}${/class="detail[" ]/.test(body) ? `<script src="/assets/barra.js?v=4" defer></script>
 ` : ''}${/^\/(en\/)?(o|b|coleccion|collection)\//.test(path) || /^\/(sorteo|en\/giveaway)\/[^/]+$/.test(path) ? desdeHistorias() : ''}${contador ? CONTADOR : ''}
 </body></html>`;
