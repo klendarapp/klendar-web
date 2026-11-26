@@ -2,6 +2,13 @@
 'use strict';
 
 const APP_EN = {
+  // Borrar la propia reseña (cuenta, 2026-11-26), como la app.
+  "Borrar mi reseña": "Delete my review",
+  "¿Borrar tu reseña?": "Delete your review?",
+  "Se borran también sus fotos y vídeos. No se puede deshacer.": "Its photos and videos are deleted too. This can’t be undone.",
+  "Borrar": "Delete",
+  "Mantenerla": "Keep it",
+  "Reseña borrada.": "Review deleted.",
   // «Ya la canjeaste» en las tarjetas (cuenta, 2026-11-25), como la app.
   "Ver tu código": "See your code",
   "Ver tu entrada": "See your ticket",

@@ -130,6 +130,36 @@ async function cuentaResena(nav, nombre, t, vp) {
   await ctx.close();
 }
 
+// Borrar la propia reseña (P8 de la revisión del cliente, 26-11; como la app):
+// sale solo si ya la tienes, pide confirmar y quita sus ficheros.
+async function cuentaBorrarResena(nav, nombre, t, vp) {
+  const { ctx, p, estado, errores } = await contexto(nav, vp, `sb-${REF}-auth-token`, CUENTA({
+    business_profile: [{ id: BIZ, name: 'Bar Sonda', city: 'Madrid', time_zone: 'Europe/Madrid' }],
+    my_review: { id: 'r1', rating: 4, comment: 'Muy bien', media: [] },
+    business_reviews: [],
+    delete_my_review: { ok: true, deleted: true, files: [] },
+  }));
+  await p.goto(`${BASE}/cuenta/opinar/${BIZ}`, { waitUntil: 'networkidle' });
+  await p.waitForSelector('#borrarResena');
+  await p.click('#borrarResena');
+  await p.waitForSelector('dialog button[value=si], button[value=si]');
+  ok(/¿Borrar tu reseña\?/.test(await p.locator('body').innerText()), `${nombre}/${t} borrar: pide confirmar`);
+  await p.click('button[value=si]');
+  await p.waitForSelector('text=Reseña borrada.');
+  ok(estado.llamadas.some(([fn, b]) => fn === 'delete_my_review' && b.p_business === BIZ), `${nombre}/${t} borrar: llama a delete_my_review`);
+  ok(errores.length === 0, `${nombre}/${t} borrar sin errores JS ${errores.join(' | ')}`);
+  await ctx.close();
+  // Sin reseña todavía: no hay nada que borrar.
+  const sin = await contexto(nav, vp, `sb-${REF}-auth-token`, CUENTA({
+    business_profile: [{ id: BIZ, name: 'Bar Sonda', city: 'Madrid', time_zone: 'Europe/Madrid' }],
+    my_review: null, business_reviews: [],
+  }));
+  await sin.p.goto(`${BASE}/cuenta/opinar/${BIZ}`, { waitUntil: 'networkidle' });
+  await sin.p.waitForSelector('#n5');
+  ok(await sin.p.locator('#borrarResena').count() === 0, `${nombre}/${t} sin reseña: sin «Borrar mi reseña»`);
+  await sin.ctx.close();
+}
+
 const PANEL = (x = {}) => ({
   my_consents: { terms_accepted_at: '2026-01-01T00:00:00Z', terms_outdated: false, has_display_name: true },
   my_businesses: [{ id: BIZ, name: 'Bar Sonda', role: 'owner', verification_status: 'verified', is_active: true, time_zone: 'Europe/Madrid', city: 'Madrid', opening_hours: { 1: [['09:00', '14:00']] } }],
@@ -251,7 +281,7 @@ if (!SOLO || SOLO.includes('ficha')) {
   await new Promise((r) => setTimeout(r, 2000));
 }
 
-const PRUEBAS = { cuentaAjustes, cuentaResena, panelCerrado, panelHorario, ficha };
+const PRUEBAS = { cuentaAjustes, cuentaResena, cuentaBorrarResena, panelCerrado, panelHorario, ficha };
 for (const [nombre, tipo] of [['chromium', chromium], ['webkit', webkit]]) {
   const nav = await tipo.launch();
   for (const [t, vp] of [['movil', { width: 390, height: 844 }], ['escritorio', { width: 1280, height: 900 }]]) {

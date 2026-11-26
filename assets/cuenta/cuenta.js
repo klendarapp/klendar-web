@@ -1940,7 +1940,31 @@ RUTAS.opinar = async ([id], params) => {
       <p class="err" id="err" role="alert"></p>
       <button class="pill accent" id="publicar">${esc(t('Publicar'))}</button>
       ${params?.get?.('desde') === 'quetal' ? `<p class="ahora-no"><a href="${pre}/b/${esc(id)}">${esc(t('Ahora no'))}</a></p>` : ''}
+      ${mia.id ? `<p><button type="button" class="pill peligro" id="borrarResena">${esc(t('Borrar mi reseña'))}</button></p>` : ''}
     </form>`);
+  // Borrar la propia (P8 de la revisión del cliente, 26-11; como la app): con
+  // sus fotos y vídeos. La base dice qué ficheros eran y se quitan del
+  // almacenamiento (si no se puede, los recoge la limpieza de huérfanos).
+  $('#borrarResena')?.addEventListener('click', async () => {
+    const ok = await confirma({
+      titulo: t('¿Borrar tu reseña?'),
+      texto: t('Se borran también sus fotos y vídeos. No se puede deshacer.'),
+      aceptar: t('Borrar'), peligro: true, cancelar: t('Mantenerla'),
+    });
+    if (!ok) return;
+    ocupado($('#borrarResena'), async () => {
+      const res = await llamar('delete_my_review', { p_business: id });
+      if (!res || res.ok !== true) throw new Error(amable(res?.error || ''));
+      const ficheros = Array.isArray(res.files) ? res.files : [];
+      if (ficheros.length) await sb.storage.from('business-images').remove(ficheros).catch(() => {});
+      hecho({
+        titulo: t('Reseña borrada.'),
+        texto: '',
+        volver: `${pre}/b/${encodeURIComponent(id)}#resenas`, volverTxt: t('Volver al sitio'),
+        lista: '/cuenta', listaTxt: t('Tu cuenta'),
+      });
+    });
+  });
   const f = $('#f');
   const subiendo = () => medios.some((m) => m.subiendo);
   const vivo = (txt) => { $('#mVivo').textContent = txt; };
