@@ -6283,31 +6283,36 @@ async function tarjetaClientes(v, id) {
     I18N.translate(caja);
     const cuantos = () => Math.min(20, Math.max(1, Math.round(Number($('#fp [name=n]', v).value) || 1)));
     $('#cierra', v).onclick = () => { elegido = null; pintaPersona(); };
-    $('#pone', v).onclick = () => {
+    // Enter en «¿Cuántos sellos?» suma (antes mandaba el formulario y
+    // recargaba la página entera, sin sumar nada).
+    $('#fp', v).onsubmit = (e) => { e.preventDefault(); $('#pone', v).click(); };
+    // Cada botón, una vez cada vez: con doble clic se sumaban dos veces los
+    // sellos o se entregaban dos premios (enBoton).
+    $('#pone', v).onclick = (e) => enBoton(e.currentTarget, () => {
       const n = cuantos();
-      accion('adjust_stamps', { p_card: c.id, p_user: p.user_id, p_delta: n }, bi(n === 1 ? 'Sello añadido' : `${n} sellos añadidos`, n === 1 ? 'Stamp added' : `${n} stamps added`));
-    };
-    $('#quita', v).onclick = async () => {
+      return accion('adjust_stamps', { p_card: c.id, p_user: p.user_id, p_delta: n }, bi(n === 1 ? 'Sello añadido' : `${n} sellos añadidos`, n === 1 ? 'Stamp added' : `${n} stamps added`));
+    });
+    $('#quita', v).onclick = (e) => enBoton(e.currentTarget, async () => {
       const n = Math.min(cuantos(), p.stamps);
       if (!await confirmDlg(bi(`¿Quitar ${n === 1 ? '1 sello' : `${n} sellos`} a ${nombre}?`, `Remove ${n === 1 ? '1 stamp' : `${n} stamps`} from ${nombre}?`),
         esc(I18N.t('Queda apuntado quién lo ha hecho y cuándo.')), { danger: true, submit: 'Quitar' })) return;
-      accion('adjust_stamps', { p_card: c.id, p_user: p.user_id, p_delta: -n }, bi(n === 1 ? 'Sello quitado' : `${n} sellos quitados`, n === 1 ? 'Stamp removed' : `${n} stamps removed`));
-    };
-    if (edita) $('#da', v).onclick = async () => {
+      await accion('adjust_stamps', { p_card: c.id, p_user: p.user_id, p_delta: -n }, bi(n === 1 ? 'Sello quitado' : `${n} sellos quitados`, n === 1 ? 'Stamp removed' : `${n} stamps removed`));
+    });
+    if (edita) $('#da', v).onclick = (e) => enBoton(e.currentTarget, async () => {
       if (!await confirmDlg(bi(`¿Entregar el premio a ${nombre}?`, `Hand over the reward to ${nombre}?`),
         esc(p.rewards_pending
           ? bi(`«${c.reward}». Ya lo había pedido: su código queda canjeado.`, `“${c.reward}”. They had already claimed it: their code is marked as redeemed.`)
           : bi(`«${c.reward}». Se gastan ${meta} sellos y queda apuntado como entregado.`, `“${c.reward}”. ${meta} stamps are used and it is recorded as handed over.`)),
         { submit: 'Entregar' })) return;
-      accion('give_stamp_reward', { p_card: c.id, p_user: p.user_id }, 'Premio entregado');
-    };
-    if (edita) $('#cero', v).onclick = async () => {
+      await accion('give_stamp_reward', { p_card: c.id, p_user: p.user_id }, 'Premio entregado');
+    });
+    if (edita) $('#cero', v).onclick = (e) => enBoton(e.currentTarget, async () => {
       if (!await confirmDlg(bi(`¿Poner a 0 la tarjeta de ${nombre}?`, `Reset ${nombre}’s card to 0?`),
         esc(bi(`${p.stamps === 1 ? 'Se le quita su sello.' : `Se le quitan sus ${p.stamps} sellos.`} Un premio ya pedido y sin recoger no se toca. Queda apuntado quién lo ha hecho y cuándo.`,
           `${p.stamps === 1 ? 'Their stamp is removed.' : `Their ${p.stamps} stamps are removed.`} A reward already claimed and not collected is kept. Who did it and when is recorded.`)),
         { danger: true, submit: 'Poner a 0' })) return;
-      accion('reset_stamps', { p_card: c.id, p_user: p.user_id }, 'Tarjeta a 0');
-    };
+      await accion('reset_stamps', { p_card: c.id, p_user: p.user_id }, 'Tarjeta a 0');
+    });
     caja.scrollIntoView({ behavior: scrollSuave(), block: 'start' });
   }
 
