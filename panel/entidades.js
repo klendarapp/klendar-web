@@ -351,12 +351,14 @@ async function entAlta(v, param) {
     ])) return;
     const boton = $('#enviar', v);
     boton.disabled = true;
+    let creado = false;
     try {
       if (A.ia) await rpc('set_ai_consent', { p_granted: true, p_use: 'document_review' });
       const r = await rpc('register_entity', {
         ...entParams(A, A.city.trim()), p_lat: A.punto.lat, p_lng: A.punto.lng, p_city: A.city.trim(),
       });
       if (!r?.ok) throw Object.assign(new Error(entError(r?.error)), { yaDicho: true });
+      creado = true;
       const id = r.business_id;
       const punto = A.punto;
       ALTA_ENT = null;
@@ -371,6 +373,9 @@ async function entAlta(v, param) {
       toast('Solicitud enviada. Te avisamos cuando la revisemos.');
       if (aqui() === '/panel/hoy') route(); else go('/panel/hoy');
     } catch (e2) {
+      // Ya dada de alta y falló lo de después: otro «Enviar» la daba de alta
+      // dos veces. Se entra en el panel de nuevo, que ya la tiene.
+      if (creado) { location.assign('/panel/hoy'); return; }
       $('#err', v).textContent = e2.yaDicho ? e2.message : I18N.t(friendly(e2.message));
       boton.disabled = false;
     }

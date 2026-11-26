@@ -1084,9 +1084,10 @@ PAGES.alta = async (v, param) => {
   async function enviar() {
     const boton = $('#enviar', v);
     boton.disabled = true;
+    let creado = null;
     try {
       const social = socialDe(A);
-      const id = await rpc('register_business', {
+      const id = creado = await rpc('register_business', {
         p_name: A.name.trim(), p_category_id: A.category_id,
         p_lat: A.punto.lat, p_lng: A.punto.lng,
         p_address: A.sin_local ? null : A.address.trim(), p_city: A.city.trim(),
@@ -1138,6 +1139,10 @@ PAGES.alta = async (v, param) => {
       // primera oferta y lo que le falta a la ficha), como la app.
       if (aqui() === '/panel/negocio') route(); else go('/panel/negocio');
     } catch (e2) {
+      // El negocio ya está creado y falló lo de después (leer tus negocios,
+      // prepararlo): otro «Enviar» lo daba de alta dos veces. Se entra en
+      // el panel de nuevo, que ya lo tiene.
+      if (creado) { location.assign('/panel/negocio'); return; }
       $('#err', v).textContent = I18N.t(friendly(e2.message));
       boton.disabled = false;
     }
