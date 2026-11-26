@@ -167,14 +167,21 @@ PAGES['menu-del-dia'] = async (v) => {
     pintaFin();
   };
   if (s.until?.[comida]?.until) $('#hasta', v).placeholder = hhmm(s.until[comida].until);
+  // «Publicar» espera a la foto que aún sube (antes salía sin ella).
+  let subiendo = null;
   $('#foto', v).onchange = async (e) => {
     if (!e.target.files?.[0]) return;
-    foto = await mesaSubeFoto(e.target.files[0]);
+    const esta = (subiendo = mesaSubeFoto(e.target.files[0]));
+    try { foto = await esta; } finally { if (subiendo === esta) subiendo = null; }
     $('#fotoVista', v).innerHTML = foto ? `<img src="${esc(foto)}" alt="" style="max-width:180px;border-radius:14px;margin-top:8px">` : '';
   };
   const publica = async (b, args) => {
     b.disabled = true;
     try {
+      if (subiendo) {
+        await subiendo.catch(() => null);
+        if ('p_image' in args) args = { ...args, p_image: foto };
+      }
       const r = await rpc('publish_daily_menu', { p_business: BIZ.id, ...args });
       if (!r?.ok) { toast(mesaError(r?.error), true); return; }
       toast(bi('Menú del día publicado', 'Daily menu posted'));

@@ -194,7 +194,20 @@ function pedTarjetaFestivo(q, alContestar) {
       <label class="f"><span>${esc(I18N.t('Cierra'))}</span><input type="time" name="to" required value="${esc((q.usual_hours?.[0] || [])[1] || '14:00')}"></label>
       <div class="full"><button class="btn primary" type="submit">Guardar</button> <span class="err" data-msg></span></div>
     </form>`;
+  // Una respuesta cada vez: con doble clic en «Cerrado» se mandaba dos veces
+  // (y salía dos veces «¿cancelar los eventos?» o un error).
+  let ocupado = false;
+  const botones = () => [...$$('[data-r]', caja), ...$$('.ped-otro button', caja)];
   const responde = async (answer, horas) => {
+    if (ocupado) return;
+    ocupado = true;
+    botones().forEach((x) => { x.disabled = true; });
+    try { await respondeYa(answer, horas); } finally {
+      ocupado = false;
+      botones().forEach((x) => { x.disabled = false; });
+    }
+  };
+  const respondeYa = async (answer, horas) => {
     const r = await rpc('answer_holiday', { p_business: BIZ.id, p_day: q.day, p_answer: answer, ...(horas ? { p_hours: horas } : {}) })
       .catch((err) => ({ ok: false, error: err.message }));
     if (!r?.ok) { toast(I18N.t(PED_ERR_DIA[r?.error] || ERR_CIERRE?.[r?.error] || 'No se ha podido guardar'), true); return; }
