@@ -597,7 +597,7 @@ const sinKlendarHtml = ({ S, lang, lat, lng, cobertura, link }) => {
 /** Lo que dice /assets/avisame.js (el formulario y lo que pasa después). */
 const avisameTextos = (en) => (en
   ? {
-      email: 'Your email', send: 'Tell me', login: 'Log in with my account', busy: 'One moment…',
+      email: 'Your email', send: 'Tell me', login: 'Log in with my account',
       note: "Only to tell you once. You'll get an email to confirm it and you can unsubscribe whenever you like.",
       privacy: 'Privacy', privacyUrl: '/en/privacy',
       badEmail: "Check the email: it doesn't look valid.", tooMany: 'Too many attempts. Try again in a while.',
@@ -611,7 +611,7 @@ const avisameTextos = (en) => (en
       seeMine: 'See what you have asked for', liveTitle: 'Klendar is already here', liveBody: 'Reload the page to see it.', reload: 'Reload',
     }
   : {
-      email: 'Tu correo', send: 'Avísame', login: 'Entrar con mi cuenta', busy: 'Un momento…',
+      email: 'Tu correo', send: 'Avísame', login: 'Entrar con mi cuenta',
       note: 'Solo para avisarte una vez. Te llegará un correo para confirmarlo y podrás borrarte cuando quieras.',
       privacy: 'Privacidad', privacyUrl: '/privacidad',
       badEmail: 'Revisa el correo: no parece válido.', tooMany: 'Demasiados intentos. Prueba dentro de un rato.',
