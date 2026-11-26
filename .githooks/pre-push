@@ -41,6 +41,8 @@ if [ -n "$PW" ]; then
   PW="$PW" node tools/feed_reintenta_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/feed_reintenta_check.mjs; no se sube."; exit 1; }
   # «Tu cuenta» (§4zzz-revweb): #view sin región viva y el título anunciado, una consulta de zonas, «Algo ha fallado» reintentado al volver la red (unos 5 s).
   PW="$PW" node tools/cuenta_revweb_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/cuenta_revweb_check.mjs; no se sube."; exit 1; }
+  # La web pública (§4zzz-revweb): «Busca tu municipio» con Intro deprisa… (unos 5 s).
+  PW="$PW" node tools/revweb_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/revweb_check.mjs; no se sube."; exit 1; }
   # «Ya la canjeaste» en las tarjetas (§4zzz-canjeada de la app): con sesión, «Ver tu código» / «Ver tu entrada», lo gastado fuera de Descubre y en gris en lo demás; sin sesión, nada y la página del borde sin nada personal (unos 15 s).
   PW="$PW" node tools/ya_canjeada_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/ya_canjeada_check.mjs (node tools/ya_canjeada_check.mjs para ver qué); no se sube."; exit 1; }
   # Turnstile junto a su formulario y quitado al dejarlo; el admin, tras entrar, al Resumen (Iván, 18-11).

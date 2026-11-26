@@ -2296,7 +2296,7 @@ export async function explorePage(url, lang, modo = 'explorar', request = null) 
   <p id="cercaErr" class="aviso-error" role="alert" hidden></p>
   <script src="/assets/categorias.js?v=7" defer></script>
   <script src="/assets/gustos.js?v=20261113lupa" defer data-lang="${en ? 'en' : 'es'}"></script>
-  <script src="/assets/municipios.js?v=20261111sinbarra" defer></script>
+  <script src="/assets/municipios.js?v=20261126revweb" defer></script>
   <link rel="stylesheet" href="/assets/barra-filtro.css?v=20261125p1p2">
   <script src="/assets/barra-filtro.js?v=20261125p1p2" defer></script>`;
 

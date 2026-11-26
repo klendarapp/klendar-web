@@ -88,6 +88,7 @@
     var pide = 0;
     var t = null;
     var pinta = function (lista, q) {
+      res.dataset.q = q || '';
       if (!q) {
         res.innerHTML = '';
         if (sin) sin.hidden = false;
@@ -127,8 +128,25 @@
       }, 250);
     });
     // Intro: el primero (sin JavaScript, el formulario manda el texto).
+    // Si lo de debajo es de lo escrito antes (Intro antes de los 250 ms), se
+    // busca lo de ahora: antes se elegía el primero de la búsqueda vieja
+    // («Mad» → Madrid al escribir «Madrigal» deprisa).
     campo.addEventListener('keydown', function (ev) {
       if (ev.key !== 'Enter') return;
+      var q = campo.value.trim();
+      if (q && q !== res.dataset.q) {
+        ev.preventDefault();
+        clearTimeout(t);
+        var yo = ++pide;
+        busca(q).then(function (l) {
+          if (yo !== pide) return;
+          pinta(l, q);
+          var p = res.querySelector('a, button');
+          if (p) p.click();
+          else if (l === null && campo.form) campo.form.submit();
+        });
+        return;
+      }
       var primero = res.querySelector('a, button');
       if (primero) { ev.preventDefault(); primero.click(); }
     });
