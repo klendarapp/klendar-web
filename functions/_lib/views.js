@@ -736,7 +736,7 @@ async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
   // 30 minutos, `offer_views_dedupe`): assets/oferta.js, sin <script> en línea
   // (CSP de scripts, RUNBOOK §4zzz-csp); lo de cada ficha, en la etiqueta.
   const sp = supabasePublic();
-  const fichaJs = `<script src="/assets/oferta.js?v=1" defer data-lang="${en ? 'en' : 'es'}" data-over="${esc(S.over)}" data-abre-en="${esc(S.opensIn)}"${porAbrir ? ' data-abren="1"' : ''} data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-oferta="${esc(o.id)}"></script>`;
+  const fichaJs = `<script src="/assets/oferta.js?v=20261126revweb" defer data-lang="${en ? 'en' : 'es'}" data-over="${esc(S.over)}" data-abre-en="${esc(S.opensIn)}"${porAbrir ? ' data-abren="1"' : ''} data-url="${esc(sp.url)}" data-key="${esc(sp.key)}" data-oferta="${esc(o.id)}"></script>`;
 
   if (privada) {
     const res = html(publicPage({

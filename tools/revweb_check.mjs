@@ -6,9 +6,11 @@
 //  · Portada, «Ahora mismo»: cambiar de ciudad deprisa enseña la última
 //    elegida (no la que llega tarde) y, si no llega, el selector vuelve a
 //    la que se ve.
+//  · La ficha de una oferta: la cuenta atrás dice «Terminada» al acabar,
+//    no «Quedan 1 min» hasta 30 s después.
 //
 //   node tools/revweb_check.mjs
-import { webConDatos } from './_web_con_datos.mjs';
+import { webConDatos, PLANES } from './_web_con_datos.mjs';
 import { playwright, SUPA } from './_supabase_simulado.mjs';
 
 const web = await webConDatos({ puerto: 8977 });
@@ -69,6 +71,21 @@ const ok = (nombre, cond, extra = '') => { console.log(`${cond ? '  ok  ' : '  F
   await p.waitForTimeout(800);
   const [v2, p2] = await p.evaluate(() => [document.getElementById('liveSelect').value, document.querySelector('#liveList b')?.textContent]);
   ok('portada: sin red, el selector vuelve a la ciudad que se ve', v2 === 'barcelona' && p2 === 'Plan de barcelona', `${v2} · ${p2}`);
+  await ctx.close();
+}
+
+// La cuenta atrás de la ficha de una oferta, al acabar.
+{
+  const oferta = PLANES.find((o) => o.kind === 'flash_offer' && o.redeem_end_at);
+  const ctx = await nav.newContext();
+  const p = await ctx.newPage();
+  await p.clock.install({ time: new Date(Date.parse(oferta.redeem_end_at) - 40_000) });
+  await p.goto(`${web.BASE}/o/${oferta.id}`);
+  await p.waitForSelector('#cuenta:not([hidden])');
+  const antes = await p.textContent('#cuenta');
+  await p.clock.runFor(45_000);
+  const despues = (await p.textContent('#cuenta')).trim();
+  ok('ficha: «Quedan 1 min» y, a su hora, terminada', /1 min/.test(antes) && despues && !/\d+ min/.test(despues), `${antes} → ${despues}`);
   await ctx.close();
 }
 

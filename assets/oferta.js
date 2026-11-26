@@ -18,7 +18,9 @@
       var n = Date.now();
       if (n >= fin) { el.textContent = D.over || ''; return; }
       el.textContent = n < ini ? (en ? 'Starts in ' : 'Empieza en ') + dur(ini - n) : (en ? dur(fin - n) + ' left' : 'Quedan ' + dur(fin - n));
-      el.style.fontWeight = n < ini ? 600 : fin - n < 900e3 ? 800 : fin - n < 3600e3 ? 700 : 600; el.hidden = false; setTimeout(tic, 30000);
+      el.style.fontWeight = n < ini ? 600 : fin - n < 900e3 ? 800 : fin - n < 3600e3 ? 700 : 600; el.hidden = false;
+      // Cada 30 s, y justo al empezar o al acabar (antes, «Quedan 1 min» hasta 30 s después de acabar).
+      setTimeout(tic, Math.max(1000, Math.min(30000, (n < ini ? ini : fin) - n + 50)));
     }
     tic();
   })();
@@ -47,7 +49,7 @@
   // veces a la misma persona en 30 minutos (`offer_views_dedupe`).
   try {
     if (!navigator.webdriver && D.url && D.key && D.oferta) {
-      fetch(D.url + '/rest/v1/offer_views', { method: 'POST', keepalive: true, headers: { apikey: D.key, Authorization: 'Bearer ' + D.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify({ offer_id: D.oferta }) });
+      fetch(D.url + '/rest/v1/offer_views', { method: 'POST', keepalive: true, headers: { apikey: D.key, Authorization: 'Bearer ' + D.key, 'Content-Type': 'application/json', Prefer: 'return=minimal' }, body: JSON.stringify({ offer_id: D.oferta }) }).catch(function () { /* sin red: no cuenta */ });
     }
   } catch (e) { /* sin red */ }
 })();
