@@ -1712,6 +1712,9 @@ export async function agendaPage(rawCity, lang) {
     // la lista de todos, unos minutos en memoria: no es una llamada más).
     lugarSeo(raw),
   ]);
+  // Sin nada y sin ser un municipio (mal escrito o inventado): 404, como
+  // `/hoy/<ciudad>`. Antes, 200 con «Qué hacer en Xyz esta semana».
+  if (!offers.length && !negocios?.items?.length && !mun.nombre) return notFound(lang, path, 'c');
   const city = mun.nombre || PRETTY(offers[0]?.city || negocios?.items?.[0]?.city || raw);
   // La agenda no trae coordenadas: la zona de cada negocio se lee aparte.
   // Cada tarjeta va en la hora de su negocio; los días, en la de la ciudad
