@@ -2,7 +2,7 @@
  "_como": "Novedades de Klendar, de la más nueva a la más vieja. Para añadir una versión: un bloque arriba con 3 o 4 puntos cortos en es y en (sin precios ni fechas de cobro). «proxima»: true mientras esa versión no esté en las tiendas (la web la enseña como «Próximamente» y la app solo a quien ya la tiene). Después: python build_pages.py y subir. La app la lee de klendar.app/assets/novedades.json; no hace falta compilarla.",
  "versiones": [
   {
-   "version": "0.1.12",
+   "version": "0.1.13",
    "proxima": true,
    "es": [
     "«Tu código caduca en…» arriba y a todo el ancho, también en Explorar y Planes.",
