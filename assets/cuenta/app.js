@@ -3321,11 +3321,13 @@ RUTAS.codigo = async ([id], params, crudo) => {
   }));
 
   // La cuenta atrás, o hasta cuándo vale si queda más de una hora. Un código
-  // largo (una entrada para el sábado) se mira cada 30 s, como en la app.
+  // largo (una entrada para el sábado) se mira cada 30 s, como en la app, y
+  // al bajar de la hora, cada segundo (antes seguía de 30 en 30 s:
+  // «Válido durante 59:30», «59:00»…; la app, `ticketTickDelay`).
   let reloj = null;
   const pintaCuenta = () => {
     const el = $('#cuenta');
-    if (!el) { clearInterval(reloj); return; }
+    if (!el) return;
     const falta = caduca.getTime() - ahora();
     if (falta <= 0) {
       el.textContent = '';
@@ -3333,16 +3335,19 @@ RUTAS.codigo = async ([id], params, crudo) => {
       $('#caducado').hidden = false;
       $('#instrucciones').hidden = true;
       $('#anular')?.remove();
-      clearInterval(reloj);
       return;
     }
-    if (falta >= 3600 * 1000) { el.textContent = `${t('Vale hasta el')} ${fecha(tk.expires_at, undefined, tz)}`; return; }
+    if (falta >= 3600 * 1000) {
+      el.textContent = `${t('Vale hasta el')} ${fecha(tk.expires_at, undefined, tz)}`;
+      reloj = setTimeout(pintaCuenta, Math.max(1000, Math.min(30000, falta - 3600 * 1000 + 50)));
+      return;
+    }
     const m = Math.floor(falta / 60000);
     const s = Math.floor((falta % 60000) / 1000);
     el.textContent = `${t('Válido durante')} ${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    reloj = setTimeout(pintaCuenta, 1000);
   };
-  reloj = setInterval(pintaCuenta, largo ? 30000 : 1000);
-  alSalir(() => clearInterval(reloj));
+  alSalir(() => clearTimeout(reloj));
   pintaCuenta();
 };
 

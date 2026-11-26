@@ -11,6 +11,8 @@
 //  · Una pantalla de una cosa concreta sin su id o con uno roto
 //    (`/cuenta/codigo`, `/cuenta/reservar/xyz`): «Ese enlace no está
 //    completo», sin pedir entrar con `?siguiente=codigo/undefined`.
+//  · «Tu código» abierto con más de una hora: al bajar de la hora, la
+//    cuenta atrás va de segundo en segundo (antes, de 30 en 30 s).
 // Con datos de mentira y la sesión de _cuenta_simulado (Chromium, ~15 s).
 //
 //   node tools/cuenta_revweb_check.mjs
@@ -117,6 +119,25 @@ for (const ruta of ['/cuenta/planes', '/cuenta/codigos']) {
   await p.goto(`${web.BASE}/cuenta/codigo/${oferta.id}`);
   await p.waitForSelector('#view h1');
   ok('con su id, como siempre', (await p.textContent('#view h1')).trim() !== 'Ese enlace no está completo.');
+  await ctx.close();
+}
+
+// 6. La cuenta atrás de un código largo, al bajar de la hora.
+{
+  const oferta = PLANES.find((o) => o.kind === 'flash_offer');
+  const t0 = Date.now();
+  const ctx = await contexto({ start_redemption: { code: 'K9AB9C', status: 'pending', expires_at: new Date(t0 + 3600_000 + 20_000).toISOString(),
+    offer_title: oferta.title, business_name: oferta.business_name, seats: 1, offer_kind: 'flash_offer' } });
+  const p = await ctx.newPage();
+  await p.clock.install({ time: new Date(t0) });
+  await p.goto(`${web.BASE}/cuenta/codigo/${oferta.id}`);
+  await p.click('#confirmaEnlace');
+  await p.waitForSelector('#cuenta');
+  await p.clock.runFor(30_000);
+  const a = (await p.textContent('#cuenta')).trim();
+  await p.clock.runFor(3_000);
+  const b = (await p.textContent('#cuenta')).trim();
+  ok('código largo: bajando de la hora, cada segundo', /59:\d\d/.test(a) && a !== b, `${a} → ${b}`);
   await ctx.close();
 }
 
