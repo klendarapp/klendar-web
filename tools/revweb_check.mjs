@@ -5,7 +5,7 @@
 //    escrito elige de lo escrito, no el primero de la búsqueda de antes.
 //  · Portada, «Ahora mismo»: cambiar de ciudad deprisa enseña la última
 //    elegida (no la que llega tarde) y, si no llega, el selector vuelve a
-//    la que se ve.
+//    la que se ve; si no tiene nada en los próximos días, lo dice (P2).
 //  · La ficha de una oferta: la cuenta atrás dice «Terminada» al acabar,
 //    no «Quedan 1 min» hasta 30 s después. Lo mismo en las tarjetas de
 //    Descubre (y su «Conseguir el código»).
@@ -55,10 +55,10 @@ const ok = (nombre, cond, extra = '') => { console.log(`${cond ? '  ok  ' : '  F
     const c = r.request().postDataJSON()?.p_city;
     if (cortar) return r.abort('internetdisconnected');
     await new Promise((x) => setTimeout(x, espera[c] ?? 0));
-    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([plan(1, c), plan(2, c)]) });
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(c === 'sevilla' ? [] : [plan(1, c), plan(2, c)]) });
   });
   await ctx.route(`${SUPA}/rest/v1/rpc/public_cities`, (r) => r.fulfill({ status: 200, contentType: 'application/json',
-    body: JSON.stringify([{ slug: 'madrid', city: 'Madrid' }, { slug: 'malaga', city: 'Málaga' }, { slug: 'barcelona', city: 'Barcelona' }]) }));
+    body: JSON.stringify([{ slug: 'madrid', city: 'Madrid' }, { slug: 'malaga', city: 'Málaga' }, { slug: 'barcelona', city: 'Barcelona' }, { slug: 'sevilla', city: 'Sevilla' }]) }));
   const p = await ctx.newPage();
   await p.goto(`${web.BASE}/`);
   await p.waitForSelector('#liveSelect', { timeout: 10000 });
@@ -72,7 +72,40 @@ const ok = (nombre, cond, extra = '') => { console.log(`${cond ? '  ok  ' : '  F
   await p.waitForTimeout(800);
   const [v2, p2] = await p.evaluate(() => [document.getElementById('liveSelect').value, document.querySelector('#liveList b')?.textContent]);
   ok('portada: sin red, el selector vuelve a la ciudad que se ve', v2 === 'barcelona' && p2 === 'Plan de barcelona', `${v2} · ${p2}`);
+  // Una ciudad sin nada en los próximos días: se dice, con su agenda (P2;
+  // antes el selector volvía solo a la de antes).
+  cortar = false;
+  await p.selectOption('#liveSelect', 'sevilla');
+  await p.waitForFunction(() => document.querySelector('#liveList .live-vacio'), null, { timeout: 5000 }).catch(() => {});
+  const [v3, t3, a3, todo3] = await p.evaluate(() => [document.getElementById('liveSelect').value,
+    document.querySelector('#liveList')?.textContent.trim(), document.querySelector('#liveList a')?.getAttribute('href'),
+    document.getElementById('liveAll')?.getAttribute('href')]);
+  ok('portada: ciudad sin nada, «Nada publicado en Sevilla en los próximos días» y el selector se queda',
+    v3 === 'sevilla' && t3 === 'Nada publicado en Sevilla en los próximos días. Ver la agenda' && a3 === '/agenda/sevilla' && todo3 === '/agenda/sevilla',
+    `${v3} · ${t3} · ${a3} · ${todo3}`);
+  // Y se vuelve a una con planes.
+  await p.selectOption('#liveSelect', 'madrid');
+  await p.waitForFunction(() => document.querySelector('#liveList b')?.textContent === 'Plan de madrid', null, { timeout: 5000 }).catch(() => {});
+  ok('portada: de una sin nada a otra con planes', await p.evaluate(() => document.querySelector('#liveList b')?.textContent === 'Plan de madrid'
+    && !document.querySelector('#liveList .live-vacio')));
   await ctx.close();
+  // En inglés.
+  const ctxEn = await nav.newContext();
+  await ctxEn.route(`${SUPA}/rest/v1/rpc/public_city_agenda`, (r) => {
+    const c = r.request().postDataJSON()?.p_city;
+    return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(c === 'sevilla' ? [] : [plan(1, c)]) });
+  });
+  await ctxEn.route(`${SUPA}/rest/v1/rpc/public_cities`, (r) => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify([{ slug: 'madrid', city: 'Madrid' }, { slug: 'sevilla', city: 'Sevilla' }]) }));
+  const pe = await ctxEn.newPage();
+  await pe.goto(`${web.BASE}/en`);
+  await pe.waitForSelector('#liveSelect', { timeout: 10000 });
+  await pe.selectOption('#liveSelect', 'sevilla');
+  await pe.waitForFunction(() => document.querySelector('#liveList .live-vacio'), null, { timeout: 5000 }).catch(() => {});
+  const [te, ae] = await pe.evaluate(() => [document.querySelector('#liveList')?.textContent.trim(), document.querySelector('#liveList a')?.getAttribute('href')]);
+  ok('portada en inglés: «Nothing posted in Sevilla in the next few days»',
+    te === "Nothing posted in Sevilla in the next few days. See what's on" && ae === '/en/whats-on/sevilla', `${te} · ${ae}`);
+  await ctxEn.close();
 }
 
 // La cuenta atrás de la ficha de una oferta, al acabar.

@@ -33,6 +33,11 @@ const politicaPermisos = await import('../functions/_lib/permisos.js').then((m) 
 let fallos = 0;
 const ok = (c, m, extra = '') => { if (c) console.log(`ok: ${m}`); else { fallos += 1; console.log(`FALLO: ${m} ${extra}`); } };
 const espera = (ms) => new Promise((r) => setTimeout(r, ms));
+// Con el ordenador ocupado (otras pruebas a la vez) todo va más lento: se
+// espera a que pase lo que se mira (como mucho [ms]) en vez de un tiempo fijo
+// (§4zzz-revweb, 26-11). Para lo que NO debe pasar se sigue esperando un rato.
+const hasta = async (cond, ms = 30000) => { const fin = Date.now() + ms; while (!(await cond()) && Date.now() < fin) await espera(100); };
+const LARGO = 30000;
 
 const MADRID = { lat: 40.41123, lng: -3.70687 };
 const CELDA = KCe.de(MADRID.lat, MADRID.lng);
@@ -168,7 +173,7 @@ for (const tipo of tipos) {
       const concedido = await p.evaluate(async () => { try { return (await navigator.permissions.query({ name: 'geolocation' })).state; } catch (e) { return String(e); } });
       if (concedido !== 'granted') { ok(false, `${tipo}: el navegador de prueba dice el permiso concedido`, concedido); await ctx.close(); continue; }
       await p.goto(`${BASE}${ruta}`);
-      await p.waitForURL(new RegExp(`[?&]${clave}=${CELDA}`), { timeout: 10000 }).catch(() => {});
+      await p.waitForURL(new RegExp(`[?&]${clave}=${CELDA}`), { timeout: LARGO }).catch(() => {});
       const u = new URL(await quieto(p));
       const l = await nav0(p);
       const largos = l.map((x) => x.split('|')[1]);
@@ -189,7 +194,7 @@ for (const tipo of tipos) {
       // Guardado en Explorar: una ciudad (aunque sea de hace días) o «Todas las ciudades».
       await p.evaluate(() => localStorage.setItem('klendar.filtros', JSON.stringify({ t: Date.now() - 30 * 3600e3, es: 'ciudad=malaga', en: 'city=malaga' })));
       await p.goto(`${BASE}/partidos`);
-      await p.waitForURL(/ciudad=malaga/, { timeout: 8000 }).catch(() => {});
+      await p.waitForURL(/ciudad=malaga/, { timeout: LARGO }).catch(() => {});
       ok(new URL(await quieto(p)).searchParams.get('ciudad') === 'malaga', `${tipo}: con una ciudad guardada en Explorar, esa ciudad (no tu celda)`, p.url());
       await p.evaluate(() => localStorage.setItem('klendar.filtros', JSON.stringify({ t: Date.now(), es: 'todas=1', en: 'todas=1' })));
       await p.goto(`${BASE}/grupos`);
@@ -197,7 +202,7 @@ for (const tipo of tipos) {
       // La celda guardada (menos de 6 h), con su distancia.
       await p.evaluate((c) => localStorage.setItem('klendar.filtros', JSON.stringify({ t: Date.now(), es: `celda=${c}&km=12`, en: `cell=${c}&km=12` })), KCe.de(36.72, -4.42));
       await p.goto(`${BASE}/en/matches`);
-      await p.waitForURL(/cell=/, { timeout: 8000 }).catch(() => {});
+      await p.waitForURL(/cell=/, { timeout: LARGO }).catch(() => {});
       const g = new URL(await quieto(p));
       ok(g.searchParams.get('cell') === KCe.de(36.72, -4.42) && g.searchParams.get('km') === '12' && !g.searchParams.has('lat'), `${tipo}: la celda guardada en Explorar, como celda (no lat/lng)`, g.search);
       await ctx.close();
@@ -210,7 +215,7 @@ for (const tipo of tipos) {
       // (Sin abrir el desplegable: el WebKit de Playwright en Windows se cae al
       // navegar desde un <details> abierto, también con el código de antes.)
       await p.evaluate(() => [...document.querySelectorAll('.menu-d a.op')].find((a) => /Todas las ciudades/.test(a.textContent)).click());
-      await p.waitForURL(`${BASE}/partidos`, { timeout: 8000 }).catch(() => {});
+      await p.waitForURL(`${BASE}/partidos`, { timeout: LARGO }).catch(() => {});
       ok(await quieto(p) === `${BASE}/partidos`, `${tipo}: «Todas las ciudades» en Partidos se queda (no vuelve a tu celda)`, p.url());
       // (Recargar ahí tumba el WebKit de Playwright en Windows, también con el código de antes: solo Chromium.)
       if (tipo === 'chromium') {
@@ -245,7 +250,7 @@ for (const tipo of tipos) {
         await p.goto(`${BASE}/partidos?ciudad=madrid`);
         await quieto(p);
         await p.evaluate(() => document.querySelector('[data-cerca]').click());
-        await p.waitForURL(/celda=/, { timeout: 10000 }).catch(() => {});
+        await p.waitForURL(/celda=/, { timeout: LARGO }).catch(() => {});
         const u = new URL(p.url());
         ok(u.searchParams.get('celda') === CELDA && !u.searchParams.has('lat') && !u.searchParams.has('ciudad'), `${tipo}: «Cerca de mí» en Partidos, a tu celda (antes, lat/lng)`, p.url());
       }
@@ -262,8 +267,10 @@ for (const tipo of tipos) {
       const { ctx, p, errores } = await contexto(nav, { permiso });
       const llam = await conSesion(ctx, visitaRpc());
       await p.goto(`${BASE}/b/${BAR.slug}?visita=${TOKEN}`);
-      await p.waitForSelector('.visita:not([hidden])', { timeout: 10000 }).catch(() => {});
-      await espera(800);
+      await p.waitForSelector('.visita:not([hidden])', { timeout: LARGO }).catch(() => {});
+      // Hasta que diga en qué ha quedado (el sello, «Usar mi ubicación» o cómo permitirla).
+      await p.waitForFunction((re) => new RegExp(re).test(document.querySelector('.visita')?.innerText || ''),
+        { granted: '[+]1 sello', prompt: 'Usar mi ubicación', denied: 'Permite la ubicación' }[permiso], { timeout: LARGO }).catch(() => {});
       const txt = await p.locator('.visita').innerText().catch(() => '');
       const scan = llam.filter(([f]) => f === 'scan_visit_qr');
       if (permiso === 'granted') {
@@ -276,7 +283,7 @@ for (const tipo of tipos) {
           if (process.env.OUT) await p.screenshot({ path: `${process.env.OUT}/sello-usar-ubicacion-${tipo}.png` });
           await ctx.grantPermissions(['geolocation']);
           await p.locator('.visita .v-go').click();
-          await p.waitForFunction(() => /\+1 sello/.test(document.querySelector('.visita')?.innerText || ''), null, { timeout: 10000 }).catch(() => {});
+          await p.waitForFunction(() => /\+1 sello/.test(document.querySelector('.visita')?.innerText || ''), null, { timeout: LARGO }).catch(() => {});
           const s2 = llam.filter(([f]) => f === 'scan_visit_qr');
           ok(s2.length === 2 && typeof s2[1][1].p_lat === 'number' && /\+1 sello/.test(await p.locator('.visita').innerText()), `${tipo} sello, al pulsar «Usar mi ubicación»: se pide y cae el sello`, JSON.stringify(s2));
         } else {
@@ -297,11 +304,11 @@ for (const tipo of tipos) {
       });
       const r = await p.goto(`${BASE}/b/${BAR.slug}`);
       ok(/^geolocation=\(self\)/.test(r.headers()['permissions-policy'] || ''), `${tipo} cerrado: la ficha puede usar la ubicación`, r.headers()['permissions-policy']);
-      await p.waitForSelector('[data-cerrado-boton]', { timeout: 10000 }).catch(() => {});
+      await p.waitForSelector('[data-cerrado-boton]', { timeout: LARGO }).catch(() => {});
       if (!(await p.locator('[data-cerrado-boton]').count())) { ok(false, `${tipo} cerrado: sale «Estaba cerrado»`); await ctx.close(); continue; }
       await p.click('[data-cerrado-boton]');
       await p.click('.horario-check [data-si]');
-      await p.waitForFunction(() => /Se lo hemos dicho/.test(document.querySelector('.horario-check')?.innerText || ''), null, { timeout: 10000 }).catch(() => {});
+      await p.waitForFunction(() => /Se lo hemos dicho/.test(document.querySelector('.horario-check')?.innerText || ''), null, { timeout: LARGO }).catch(() => {});
       const rc = llam.find(([f]) => f === 'report_closed');
       if (permiso === 'granted') {
         ok(rc && Math.abs(rc[1].p_lat - MADRID.lat) < 1e-6 && Math.abs(rc[1].p_lng - MADRID.lng) < 1e-6, `${tipo} cerrado, con permiso: manda dónde estás (para comprobar que estás cerca)`, JSON.stringify(rc));
@@ -324,7 +331,8 @@ for (const tipo of tipos) {
       await p.waitForSelector('#f input[name=fija]');
       await p.check('#f input[name=fija]');
       await p.click('#guardar');
-      await espera(1200);
+      // Con permiso, hasta que se guarda; sin él, hasta que ofrece tu ciudad.
+      await hasta(async () => llam.some(([f]) => f === 'save_offer_alert') || await p.locator('#ciudad-oferta').isVisible().catch(() => false));
       let g = llam.find(([f]) => f === 'save_offer_alert');
       if (permiso === 'granted') {
         ok(g && Math.abs(g[1].p_lat - MADRID.lat) < 1e-6 && g[1].p_place_label === 'Aquí', `${tipo} «Avísame si…», con permiso: «Aquí»`, JSON.stringify(g));
@@ -334,7 +342,7 @@ for (const tipo of tipos) {
         if (process.env.OUT) await p.screenshot({ path: `${process.env.OUT}/avisame-ciudad-${permiso}-${tipo}.png` });
         ok(permiso !== 'denied' || (await p.evaluate(() => window.__geo)) === 0, `${tipo} «Avísame si…», denegado: ni se intenta`);
         await p.click('#usa-ciudad');
-        await espera(1200);
+        await hasta(() => llam.some(([f]) => f === 'save_offer_alert'));
         g = llam.find(([f]) => f === 'save_offer_alert');
         ok(g && g[1].p_lat === MALAGA.lat && g[1].p_lng === MALAGA.lng && g[1].p_place_label === 'Málaga' && g[1].p_radius_m === MALAGA.radius_m,
           `${tipo} «Avísame si…», ${permiso}: guarda tu ciudad con su centro y su radio`, JSON.stringify(g && g[1]));

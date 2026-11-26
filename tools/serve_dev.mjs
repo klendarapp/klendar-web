@@ -86,7 +86,8 @@ createServer(async (req, res) => {
   // Para las pruebas (servidorSeguro de _supabase_simulado): ¿corta Supabase y dónde lo apunta?
   if (path === '/__supabase_bloqueado') {
     res.writeHead(200, { 'content-type': 'application/json' });
-    res.end(JSON.stringify({ bloqueado: Boolean(SB), registro: SB ? SB.REGISTRO : null }));
+    // `pid`: la prueba que lo ha lanzado sabe que contesta él y no otro en ese puerto.
+    res.end(JSON.stringify({ bloqueado: Boolean(SB), registro: SB ? SB.REGISTRO : null, pid: process.pid }));
     return;
   }
   // Como functions/_middleware.js: las direcciones van sin barra al final

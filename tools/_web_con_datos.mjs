@@ -27,8 +27,17 @@
 //   const ctx = await nav.newContext(); await web.conDatos(ctx);
 //   …
 //   await web.cierra();
+//
+// **Los puertos, libres** (§4zzz-revweb, 26-11): con el ordenador ocupado
+// suele ser porque otra copia de las pruebas (otro worktree, otro agente)
+// está a la vez, con los mismos puertos fijos: el serve_dev nuevo no podía
+// escuchar y la prueba hablaba con el de la otra (o salía «EADDRINUSE»). Si
+// el pedido está cogido se usa otro libre (`web.BASE` lo dice), se espera a
+// que conteste ESTE serve_dev (su pid), y hasta 60 s: arrancar las Functions
+// con el ordenador cargado pasaba de los 15 de antes.
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:http';
+import { createServer as servidorTcp } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { SUPA, playwright, servidorSeguro } from './_supabase_simulado.mjs';
 
@@ -291,7 +300,26 @@ function tabla(filas, sp) {
  * respuestas (una función recibe los argumentos, la petición y los DATOS).
  * [datos]: otros datos en vez de DATOS (p. ej. `{ ...DATOS, PLANES: [] }`).
  */
-export async function webConDatos({ puerto = 8901, puertoFalso = puerto + 1, rpc = {}, tablas = {}, datos = DATOS, entorno = {} } = {}) {
+/** [preferido] si se puede escuchar en él; si no, uno libre (que no esté en [no]). */
+export async function puertoLibre(preferido, no = []) {
+  const prueba = (p) => new Promise((ok) => {
+    const s = servidorTcp();
+    s.once('error', () => ok(null));
+    s.listen(p, () => { const q = s.address().port; s.close(() => ok(q)); });
+  });
+  if (preferido && !no.includes(preferido)) {
+    const p = await prueba(preferido);
+    if (p) return p;
+  }
+  for (;;) {
+    const p = await prueba(0);
+    if (p && !no.includes(p)) return p;
+  }
+}
+
+export async function webConDatos({ puerto: pedido = 8901, puertoFalso: pedidoFalso, rpc = {}, tablas = {}, datos = DATOS, entorno = {} } = {}) {
+  const puerto = await puertoLibre(pedido);
+  let puertoFalso = await puertoLibre(pedidoFalso ?? pedido + 1, [puerto]);
   const D = datos;
   const R = { ...respuestas(D), ...rpc };
   const T = {
@@ -343,17 +371,37 @@ export async function webConDatos({ puerto = 8901, puertoFalso = puerto + 1, rpc
       }
     });
   });
-  await new Promise((r) => falso.listen(puertoFalso, r));
-  const FALSO = `http://localhost:${puertoFalso}`;
-  const BASE = `http://localhost:${puerto}`;
-  const servidor = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
-    env: { ...process.env, PORT: String(puerto), SUPABASE_URL: FALSO, SUPABASE_KEY: 'falsa', SUPABASE_URL_NAVEGADOR: SUPA, ...entorno },
-    stdio: 'ignore',
+  // Si entretanto lo ha cogido otro, otro libre.
+  puertoFalso = await new Promise((ok) => {
+    falso.once('error', async () => { const q = await puertoLibre(0, [puerto]); falso.listen(q, () => ok(q)); });
+    falso.listen(puertoFalso, () => ok(puertoFalso));
   });
-  // Hasta que conteste (como mucho 15 s).
-  for (let i = 0; i < 150; i += 1) {
-    try { if ((await globalThis.fetch(`${BASE}/__supabase_bloqueado`)).ok) break; } catch { /* aún no */ }
-    await new Promise((r) => setTimeout(r, 100));
+  const FALSO = `http://localhost:${puertoFalso}`;
+  let BASE = '';
+  let servidor = null;
+  // Arranca el serve_dev y espera a que conteste él (no otro en ese puerto),
+  // como mucho 60 s; si no puede escuchar (se lo han quitado), en otro.
+  for (let intento = 0; intento < 3; intento += 1) {
+    const p = intento ? await puertoLibre(0, [puertoFalso]) : puerto;
+    BASE = `http://localhost:${p}`;
+    servidor = spawn(process.execPath, [fileURLToPath(new URL('./serve_dev.mjs', import.meta.url))], {
+      env: { ...process.env, PORT: String(p), SUPABASE_URL: FALSO, SUPABASE_KEY: 'falsa', SUPABASE_URL_NAVEGADOR: SUPA, ...entorno },
+      stdio: 'ignore',
+    });
+    let salio = false;
+    servidor.once('exit', () => { salio = true; });
+    let listo = false;
+    let otro = false;
+    for (let i = 0; i < 600 && !salio && !listo && !otro; i += 1) {
+      try {
+        const pid = (await (await globalThis.fetch(`${BASE}/__supabase_bloqueado`)).json()).pid;
+        listo = pid === servidor.pid;
+        otro = !listo; // contesta otro serve_dev (o uno viejo, sin pid)
+      } catch { /* aún no */ }
+      if (!listo && !otro) await new Promise((r) => setTimeout(r, 100));
+    }
+    if (listo) break;
+    try { servidor.kill(); } catch { /* ya */ }
   }
   await servidorSeguro(BASE);
   const cierra = async () => {

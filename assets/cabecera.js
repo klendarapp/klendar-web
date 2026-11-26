@@ -446,3 +446,125 @@
     });
   });
 })();
+
+// «Sin conexión a internet» (§4zzz-revweb, P1; como `OfflineBanner` de la
+// app, con su mismo texto en sus 8 idiomas; la web pública va en es/en):
+// una franja abajo mientras el navegador no tiene red (`offline`/`online`),
+// que se va sola al volver. Antes la web no lo decía en ningún sitio y cada
+// pantalla fallaba a su manera. En todas las páginas con cabecera: la web
+// pública, «Tu cuenta» y el panel.
+//
+//  · A todo el ancho (16 y 16, como los avisos de debajo de los filtros;
+//    560 como mucho en pantallas anchas) y en una línea, encima de lo que
+//    esté fijo abajo (la barra de pestañas, la del botón principal de una
+//    ficha, la del panel, el aviso de cookies…), sin taparlo.
+//  · No tapa nada: la página gana ese hueco al final (`body::after`) y, en
+//    Descubre, el panel de la tarjeta sube (`--feed-abajo`).
+//  · Lectores de pantalla: la región (`role=status`) está siempre; al
+//    quedarse sin red cambia su texto y se lee.
+(() => {
+  'use strict';
+  if (window.KL_SIN_RED) return;
+  const TEXTO = {
+    es: 'Sin conexión a internet', en: 'No internet connection', ca: 'Sense connexió a internet',
+    gl: 'Sen conexión a internet', eu: 'Ez dago interneteko konexiorik', fr: 'Pas de connexion internet',
+    de: 'Keine Internetverbindung', it: 'Nessuna connessione a internet',
+  };
+  const ALTO = 40;
+  const raiz = document.documentElement;
+  const texto = () => TEXTO[(raiz.lang || 'es').slice(0, 2).toLowerCase()] || TEXTO.es;
+  // Solo si cambia: el traductor de «Tu cuenta» y del panel (i18n.js) vuelve
+  // a poner `lang` cada vez que traduce algo nuevo, y un texto puesto de nuevo
+  // es algo nuevo (se llamaban el uno al otro sin parar).
+  const ponTexto = (t) => { const s = caja.querySelector('span'); if (s.textContent !== t) s.textContent = t; };
+
+  const css = document.createElement('style');
+  css.id = 'sin-red-css';
+  css.textContent = `
+.sin-red-zona { position: fixed; left: 0; right: 0; bottom: var(--sin-red-abajo, 16px); z-index: 45;
+  width: calc(100% - 32px); max-width: 560px; margin: 0 auto; pointer-events: none; }
+.sin-red { display: flex; align-items: center; justify-content: center; gap: 8px; height: ${ALTO}px; padding: 0 16px;
+  border-radius: 999px; background: var(--ink, #0A0A0A); color: var(--surface, #F5F5F5); font-size: 14px; font-weight: 700;
+  line-height: 1.2; box-shadow: 0 12px 30px rgba(0,0,0,.3); }
+.sin-red[hidden] { display: none; }
+.sin-red svg { flex: none; width: 20px; height: 20px; }
+.sin-red span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+html[data-sin-red] body::after { content: ""; display: block; height: ${ALTO + 8}px; }
+html[data-sin-red] body.pagina-feed::after { content: none; }
+html[data-sin-red] body.pagina-feed { --feed-abajo: calc(78px + env(safe-area-inset-bottom) + ${ALTO + 8}px); }
+@media (min-width: 761px) { html[data-sin-red] body.pagina-feed { --feed-abajo: ${12 + ALTO + 8}px; } }
+html[data-sin-red] .toast { bottom: calc(var(--sin-red-abajo, 16px) + ${ALTO + 8}px); }
+html[data-sin-red] .toasts { bottom: calc(var(--sin-red-abajo, 16px) + ${ALTO + 8}px); }
+@media print { .sin-red-zona { display: none; } }`;
+  document.head.appendChild(css);
+
+  const zona = document.createElement('div');
+  zona.className = 'sin-red-zona';
+  zona.setAttribute('role', 'status');
+  zona.setAttribute('aria-live', 'polite');
+  const caja = document.createElement('div');
+  caja.className = 'sin-red';
+  caja.hidden = true;
+  caja.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M22.99 9C19.15 5.16 13.8 3.76 8.84 4.78l2.52 2.52c3.47-.17 6.99 1.05 9.63 3.7l2-2zm-4 4c-1.29-1.29-2.84-2.13-4.49-2.56l3.53 3.53.96-.97zM2 3.05 5.07 6.1C3.6 6.82 2.22 7.78 1 9l1.99 2c1.24-1.24 2.67-2.16 4.2-2.77l2.24 2.24C7.81 10.89 6.27 11.73 5 13v.01L6.99 15c1.36-1.36 3.14-2.04 4.92-2.06L18.98 20l1.27-1.26L3.29 1.79 2 3.05zM9 17l3 3 3-3c-1.65-1.66-4.34-1.66-6 0z"/></svg><span></span>';
+  zona.appendChild(caja);
+
+  // Lo fijo pegado abajo (más bajo que media pantalla: la tarjeta de
+  // Descubre no cuenta), mirando en tres puntos del borde.
+  function abajo() {
+    const h = window.innerHeight;
+    let alto = 0;
+    for (const x of [0.1, 0.5, 0.9]) {
+      for (const el of document.elementsFromPoint(window.innerWidth * x, h - 1)) {
+        if (zona.contains(el)) continue;
+        for (let n = el; n && n !== document.body && n !== raiz; n = n.parentElement) {
+          const pos = getComputedStyle(n).position;
+          if (pos !== 'fixed' && pos !== 'sticky') continue;
+          const r = n.getBoundingClientRect();
+          if (r.bottom >= h - 2 && r.height > 0 && r.height < h / 2) alto = Math.max(alto, h - r.top);
+          break;
+        }
+      }
+    }
+    return Math.round(alto) + (alto ? 8 : 16);
+  }
+  let tic = 0;
+  function coloca() {
+    if (caja.hidden || tic) return;
+    tic = requestAnimationFrame(() => {
+      tic = 0;
+      raiz.style.setProperty('--sin-red-abajo', abajo() + 'px');
+    });
+  }
+  function pon() {
+    const fuera = navigator.onLine === false;
+    if (fuera) {
+      if (!zona.isConnected) document.body.appendChild(zona);
+      ponTexto(texto());
+      caja.hidden = false;
+      raiz.setAttribute('data-sin-red', '');
+      coloca();
+    } else if (!caja.hidden) {
+      caja.hidden = true;
+      ponTexto('');
+      raiz.removeAttribute('data-sin-red');
+    }
+  }
+  window.KL_SIN_RED = pon;
+  window.addEventListener('offline', pon);
+  window.addEventListener('online', pon);
+  window.addEventListener('pageshow', pon);
+  window.addEventListener('resize', coloca, { passive: true });
+  window.addEventListener('scroll', coloca, { passive: true, capture: true });
+  // «Tu cuenta» y el panel cambian de idioma sin recargar.
+  new MutationObserver(() => { if (!caja.hidden) ponTexto(texto()); })
+    .observe(raiz, { attributes: true, attributeFilter: ['lang'] });
+  // La región, desde el principio (los lectores no leen una que aparece ya
+  // con texto). Las barras de abajo salen y se van (la del botón principal,
+  // una hoja…): se vuelve a mirar al cambiar las clases de `body`.
+  const empieza = () => {
+    if (!zona.isConnected) document.body.appendChild(zona);
+    new MutationObserver(coloca).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    pon();
+  };
+  if (document.body) empieza(); else document.addEventListener('DOMContentLoaded', empieza);
+})();

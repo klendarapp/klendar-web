@@ -128,6 +128,11 @@ try {
   if (!pw) console.log('sin Playwright (PW=…): me salto el QR dibujado y la impresión');
   else {
     const nav = await pw.chromium.launch();
+    // Con el ordenador ocupado (otras pruebas a la vez) todo va más lento: se
+    // espera a lo que se mira (el QR dibujado), con margen (§4zzz-revweb, 26-11).
+    const LARGO = 60000;
+    const contexto = nav.newContext.bind(nav);
+    nav.newContext = async (o) => { const c = await contexto(o); c.setDefaultTimeout(LARGO); c.setDefaultNavigationTimeout(LARGO); return c; };
     try {
       const casos = [
         [`/cartel/${flash.id}`, `https://klendar.app/o/${flash.id}`, 'M', '.folio'],
@@ -145,6 +150,7 @@ try {
         await p.goto(`${web.BASE}${ruta}`, { waitUntil: 'networkidle' });
         // Los módulos del QR (el `d` de su trazado), como los saca la librería para esa dirección.
         const modulos = (svg) => [...svg.matchAll(/ d="([^"]+)"/g)].map((m) => m[1]).join('|');
+        await p.waitForSelector('[data-qr] svg').catch(() => {});
         const dibujados = await p.$$eval('[data-qr] svg', (l) => l.map((el) => el.outerHTML));
         const esperado = modulos(svgDe(url, nivel));
         ok(esperado.length > 100 && dibujados.length > 0 && dibujados.every((s) => modulos(s) === esperado), `${ruta}: el QR dibujado es el de ${url}`, `${dibujados.length} QR`);

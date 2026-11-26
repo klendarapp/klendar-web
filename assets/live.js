@@ -95,11 +95,25 @@
     } catch { return new Map(); }
   };
 
+  const enlaceAgenda = (ciudad) => `${base}${en ? '/whats-on/' : '/agenda/'}${encodeURIComponent(ciudad.toLowerCase())}`;
+
   // `vigente`: si entretanto se ha elegido otra ciudad, esta ya no pinta
   // (si no, la respuesta que llegaba tarde dejaba la lista de otra ciudad).
-  async function pintar(ciudad, vigente = () => true) {
+  // `nombre`: la ciudad elegida en el selector. Si no tiene nada, se dice
+  // (P2, §4zzz-revweb, Iván 26-11; antes el selector volvía solo a la de
+  // antes). Sin él (al cargar), sin nada no hay sección.
+  async function pintar(ciudad, vigente = () => true, nombre = null) {
     const items = await rpc('public_city_agenda', { p_city: ciudad, p_limit: MAX });
-    if (!Array.isArray(items) || !items.length || !vigente()) return false;
+    if (!Array.isArray(items) || !vigente()) return false;
+    if (!items.length) {
+      if (!nombre) return false;
+      lista.innerHTML = `<p class="live-vacio" style="grid-column:1/-1;margin:0">${en
+        ? `Nothing posted in ${esc(nombre)} in the next few days.`
+        : `Nada publicado en ${esc(nombre)} en los próximos días.`} <a href="${enlaceAgenda(ciudad)}">${en ? 'See what&#39;s on' : 'Ver la agenda'}</a></p>`;
+      const todas = document.getElementById('liveAll');
+      if (todas) todas.href = enlaceAgenda(ciudad);
+      return true;
+    }
     // A la vez: las zonas horarias y el arte de las que no tienen foto no
     // dependen la una del otro (§4zzz-cargas).
     const [tz, KT] = await Promise.all([
@@ -129,9 +143,7 @@
     }).join('');
 
     const todas = document.getElementById('liveAll');
-    if (todas) {
-      todas.href = `${base}${en ? '/whats-on/' : '/agenda/'}${encodeURIComponent(ciudad.toLowerCase())}`;
-    }
+    if (todas) todas.href = enlaceAgenda(ciudad);
     return true;
   }
 
@@ -161,8 +173,9 @@
         donde.innerHTML = `<select id="liveSelect" aria-label="${en ? 'City' : 'Ciudad'}" style="font:700 15px/1.2 var(--display);color:var(--ink);background-color:var(--elevated);border:1px solid var(--field-border);border-radius:999px;padding:0 12px;min-height:44px;margin-left:6px;vertical-align:middle;cursor:pointer;color-scheme:light dark;letter-spacing:0">`
           + ciudades.map((c) => `<option value="${esc(c.slug || c.city)}">${esc(c.city)}</option>`).join('')
           + '</select>';
-        // Otra ciudad: si no llega (sin red) o no tiene nada, el selector
-        // vuelve a la que se ve (antes decía una y enseñaba la otra).
+        // Otra ciudad: si no llega (sin red), el selector vuelve a la que se
+        // ve (antes decía una y enseñaba la otra); si no tiene nada, se dice.
+        const nombreDe = (slug) => (ciudades.find((c) => (c.slug || c.city) === slug) || {}).city || slug;
         const sel = document.getElementById('liveSelect');
         let pintada = inicial;
         let turno = 0;
@@ -170,7 +183,7 @@
           const yo = ++turno;
           const ciudad = sel.value;
           let bien = false;
-          try { bien = await pintar(ciudad, () => yo === turno); } catch { /* sin red */ }
+          try { bien = await pintar(ciudad, () => yo === turno, nombreDe(ciudad)); } catch { /* sin red */ }
           if (yo !== turno) return;
           if (bien) pintada = ciudad;
           else sel.value = pintada;

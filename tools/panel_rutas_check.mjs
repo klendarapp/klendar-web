@@ -258,8 +258,14 @@ async function abre(nav, { sesion = true } = {}) {
   });
   const pg = await ctx.newPage();
   const errores = [];
-  pg.on('pageerror', (e) => errores.push(e.message));
-  pg.setDefaultTimeout(15000);
+  // Una petición que sigue en vuelo al navegar (recargar, atrás…) WebKit la
+  // cuenta como error («Fetch API cannot load … due to access control
+  // checks»); con el ordenador ocupado pasa más (ruido de WebKit, como en
+  // cuenta_rutas_check: no es de la página).
+  pg.on('pageerror', (e) => { if (!/Fetch API cannot load[\s\S]* due to access control checks/.test(e.message)) errores.push(e.message); });
+  // Con el ordenador ocupado (otras pruebas a la vez) todo va más lento: se
+  // espera a que pase lo que se mira, con margen (§4zzz-revweb, 26-11).
+  pg.setDefaultTimeout(30000);
   return { ctx, pg, errores };
 }
 const cspDe = (pg) => pg.evaluate(() => window.__csp || []).catch(() => []);
@@ -274,7 +280,7 @@ try {
         on: document.querySelector('#nav a.nav[aria-current]')?.getAttribute('href') || '', pagina: document.querySelector('#view > div')?.dataset.pagina || '',
       }));
       // Que la pantalla `pagina` se haya pintado (y no siga «Cargando…»).
-      const pintada = (pagina) => pg.waitForFunction((x) => document.querySelector('#view > div')?.dataset.pagina === x && !document.querySelector('#view .loading, #view .esq-p'), pagina, { timeout: 10000 }).catch(() => {});
+      const pintada = (pagina) => pg.waitForFunction((x) => document.querySelector('#view > div')?.dataset.pagina === x && !document.querySelector('#view .loading, #view .esq-p'), pagina, { timeout: 30000 }).catch(() => {});
       // a) /panel abre Hoy, en /panel.
       await pg.goto(`${BASE}/panel`);
       await pg.waitForSelector('#view h1');
@@ -320,8 +326,9 @@ try {
       ok(`${nombre}: «Adelante» dos veces, otra vez en Sellos`, a.ruta === '/panel/sellos' && a.pagina === 'sellos' && a.marca, JSON.stringify(a));
       // e) Un `#…` escrito a mano: se quita y no salta.
       await pg.evaluate(() => { location.hash = '#/validar'; });
-      await pg.waitForFunction(() => !location.hash, null, { timeout: 5000 }).catch(() => {});
-      await pg.waitForTimeout(300);
+      await pg.waitForFunction(() => !location.hash, null, { timeout: 15000 }).catch(() => {});
+      // Y que no salte a otra: la pantalla de antes sigue pintada.
+      await pintada('sellos');
       a = await aqui();
       ok(`${nombre}: un #/validar escrito a mano se quita y no salta`, a.ruta === '/panel/sellos' && !a.hash && !a.url.includes('#') && a.pagina === 'sellos', JSON.stringify(a));
       // f) Recargar en una pantalla de dentro, con su `?…`.
@@ -356,7 +363,7 @@ try {
       if (nombre === 'Chromium') {
         const s = await abre(nav, { sesion: false });
         await s.pg.goto(`${BASE}/panel/validar?codigo=abc12345`);
-        await s.pg.waitForURL(/\/cuenta\/entrar/, { timeout: 15000 }).catch(() => {});
+        await s.pg.waitForURL(/\/cuenta\/entrar/, { timeout: 30000 }).catch(() => {});
         const u = new URL(s.pg.url());
         ok(`${nombre}: sin sesión, a entrar con destino=/panel/validar?codigo=…`, u.pathname === '/cuenta/entrar' && u.searchParams.get('destino') === '/panel/validar?codigo=abc12345', s.pg.url());
         await s.ctx.close();
