@@ -8,6 +8,9 @@
 //  · «Tu código» sin conexión (la copia guardada): si el local lo valida
 //    mientras tanto, al volver la red sale «¡Canjeado!» (antes, la copia
 //    se quedaba como si nada).
+//  · Una pantalla de una cosa concreta sin su id o con uno roto
+//    (`/cuenta/codigo`, `/cuenta/reservar/xyz`): «Ese enlace no está
+//    completo», sin pedir entrar con `?siguiente=codigo/undefined`.
 // Con datos de mentira y la sesión de _cuenta_simulado (Chromium, ~15 s).
 //
 //   node tools/cuenta_revweb_check.mjs
@@ -93,6 +96,27 @@ for (const ruta of ['/cuenta/planes', '/cuenta/codigos']) {
   await p.waitForSelector('#view .canjeado', { timeout: 9000 }).catch(() => {});
   ok('«Tu código» sin red: la copia guardada', copia === 1);
   ok('validado mientras tanto: «¡Canjeado!» al volver la red', (await p.locator('#view .canjeado').count()) === 1);
+  await ctx.close();
+}
+
+// 5. Enlaces sin id o con uno roto.
+{
+  const oferta = PLANES.find((o) => o.kind === 'flash_offer');
+  for (const [ruta, sesion] of [['/cuenta/codigo', true], ['/cuenta/reservar/xyz', true], ['/cuenta/opinar', true], ['/cuenta/guardar', false], ['/cuenta/respuestas', false]]) {
+    const ctx = sesion ? await contexto() : await nav.newContext();
+    const p = await ctx.newPage();
+    await p.goto(`${web.BASE}${ruta}`);
+    await p.waitForSelector('#view h1', { timeout: 8000 }).catch(() => {});
+    await p.waitForTimeout(300);
+    const [h1, url] = await p.evaluate(() => [document.querySelector('#view h1')?.textContent.trim(), location.pathname + location.search]);
+    ok(`${ruta}${sesion ? '' : ' (sin sesión)'}: «Ese enlace no está completo.»`, h1 === 'Ese enlace no está completo.' && url === ruta, `${h1} · ${url}`);
+    await ctx.close();
+  }
+  const ctx = await contexto();
+  const p = await ctx.newPage();
+  await p.goto(`${web.BASE}/cuenta/codigo/${oferta.id}`);
+  await p.waitForSelector('#view h1');
+  ok('con su id, como siempre', (await p.textContent('#view h1')).trim() !== 'Ese enlace no está completo.');
   await ctx.close();
 }
 

@@ -620,6 +620,19 @@ function apagaPantalla() {
   for (const fn of lista) { try { fn(); } catch { /* ya estaba apagado */ } }
 }
 
+// Las pantallas de una cosa concreta (`/cuenta/codigo/<id>`…) sin su id o
+// con uno que no lo es (un enlace cortado o mal copiado): «Ese enlace no está
+// completo», como «bloquear» o «voy». Antes pedían entrar con
+// `?siguiente=codigo/undefined`, preguntaban «¿Conseguir tu código?» de nada
+// o salía «Algo ha fallado» con un «Reintentar» que no arreglaba nada.
+const CON_ID = new Set(['guardar', 'seguir', 'regalo', 'codigo', 'reservar', 'espera', 'recibo', 'bono', 'opinar', 'encargo',
+  'encargar', 'preguntar', 'respuestas', 'reclamar']);
+const ES_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const idIncompleto = (nombre, id) => (CON_ID.has(nombre) && !ES_UUID.test(id || '')) || (nombre === 'momento' && !id);
+async function enlaceIncompleto() {
+  pinta(pantallaVacia({ icono: 'link', titulo: t('Ese enlace no está completo.'), h: 'h1', botones: botonTuCuenta() }));
+}
+
 // El esqueleto que sale si una pantalla nueva tarda (ver navegar).
 let esqueletoT = null;
 async function navegar() {
@@ -650,7 +663,7 @@ async function navegar() {
     ({ partes, params, crudo } = { partes: ['ultimo-paso'], params: new URLSearchParams({ siguiente: crudo }), crudo });
   }
   const nombre = partes[0] || '';
-  const pagina = RUTAS[nombre] || RUTAS[''];
+  const pagina = idIncompleto(nombre, partes[1]) ? enlaceIncompleto : RUTAS[nombre] || RUTAS[''];
   // Cambiar de vista (Lista ↔ Calendario) también es una pantalla nueva.
   const ruta = `${partes.join('/')}?${params?.get('vista') || ''}`;
   movNueva = ruta !== movRuta;
