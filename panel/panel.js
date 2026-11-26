@@ -5374,11 +5374,13 @@ PAGES.validar = async (v) => {
   };
   // `rpc` ya lo trae traducido («No hay conexión…»); se mira también el crudo.
   const sinRed = (msg) => !navigator.onLine || /fetch|network|NetworkError|Load failed|No hay conexión/i.test(String(msg || ''));
-  let enviando = false;
+  // Uno a la vez en toda la página (no por pintado): volver a entrar en
+  // Validar mientras se mandaban los guardados los mandaba otra vez y salían
+  // como «rechazados» los que sí se habían validado.
   const enviaCola = async () => {
     const c = leeCola();
-    if (!c.length || enviando || !navigator.onLine) return;
-    enviando = true;
+    if (!c.length || window.KL_COLA_ENVIANDO || !navigator.onLine) return;
+    window.KL_COLA_ENVIANDO = true;
     let ok = 0; let mal = 0; const quedan = [];
     for (const item of c) {
       try {
@@ -5391,8 +5393,10 @@ PAGES.validar = async (v) => {
         if (sinRed(e.message)) quedan.push(item); else mal++;
       }
     }
-    guardaCola(quedan);
-    enviando = false;
+    // Los que se guardaron mientras tanto, también (antes se perdían).
+    const nuevos = leeCola().filter((x) => !c.some((y) => y.code === x.code && y.at === x.at));
+    guardaCola([...quedan, ...nuevos]);
+    window.KL_COLA_ENVIANDO = false;
     pintaCola();
     if (ok || mal) {
       toast(I18N.lang === 'en' ? `Pending codes sent: ${ok} valid, ${mal} rejected.`
