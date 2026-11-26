@@ -4,7 +4,8 @@
 De aquí salen:
 
 - `/preguntas` y `/en/faq` (`build_pages.py`), con las pestañas «Para ti»
-  y «Para negocios» y un buscador que ignora las tildes (`assets/ayuda.js`);
+  y «Para negocios», en cada una sus categorías (`CATEGORIAS`, abajo) con un
+  índice arriba, y un buscador que ignora las tildes (`assets/ayuda.js`);
 - `assets/ayuda.json` (`build_pages.py`), que la app descarga, guarda en
   caché y lleva una copia dentro por si no hay conexión (en el repo de la
   app: `python tool/sync_help.py`);
@@ -367,9 +368,109 @@ PESTANAS = {
 }
 
 
+# ── Categorías (Iván, 26-11): en cada pestaña, en el orden de quien llega por
+# primera vez. Cada pregunta del centro de ayuda va en UNA categoría de su
+# pestaña (`comprueba_categorias`, también en el pre-push): una pregunta nueva
+# se añade aquí en su sitio. El orden de aquí es el de la web y el de la app
+# (las de `app=False` no salen en la app). Los nombres en la app, en sus 8
+# idiomas, salen de sus `.arb` (`helpCat_<id>`); los de aquí (es/en) son el
+# respaldo si la app aún no conoce una categoría.
+CATEGORIAS = {
+    'ti': [
+        ('empezar', 'Empezar', 'Getting started',
+         ['cuanto-cuesta', 'cuenta-para-mirar', 'ciudades', 'por-que-veo-esto']),
+        ('ofertas', 'Ofertas y códigos', 'Deals and codes',
+         ['canjear', 'no-me-deja-canjear', 'codigo-no-funciona', 'codigo-caducado', 'antes-de-cerrar', 'carne']),
+        ('reservas', 'Reservas y colas', 'Bookings and queues',
+         ['reservar-plaza', 'que-ve-el-negocio-reserva', 'cola-virtual', 'te-aviso-listo', 'avisame-hay-sitio']),
+        ('planes', 'Tus planes', 'Your plans',
+         ['voy', 'planes-en-el-calendario', 'dejar-de-seguir-serie', 'compartir-historias-whatsapp']),
+        ('avisos', 'Avisos y ubicación', 'Alerts and location',
+         ['notificaciones', 'que-tal', 'ubicacion']),
+        ('cuenta', 'Tu cuenta y privacidad', 'Your account and privacy',
+         ['no-puedo-entrar', 'cambiar-correo', 'borrar-cuenta', 'mis-datos', 'rrpp-que-ve', 'ia']),
+        ('problemas', 'Si algo falla', 'If something goes wrong',
+         ['traduccion-no-correcta', 'algo-que-no-deberia', 'contenido-ilegal', 'oferta-no-respetada', 'asistente']),
+    ],
+    'negocios': [
+        ('alta', 'Alta y condiciones', 'Signing up and terms',
+         ['alta-negocio', 'precio-negocio', 'comision', 'si-no-pago', 'pausar-plan', 'permanencia', 'orden', 'kit']),
+        ('publicaciones', 'Publicar', 'Publishing',
+         ['publicar', 'repetir-cada-semana', 'antes-de-cerrar-negocio', 'rellenar-desde', 'ayudas-ia']),
+        ('validar', 'Validar y clientes', 'Validating and customers',
+         ['validar-codigos', 'equipo', 'avisar-a-quien-reserva']),
+        ('aforo', 'Aforo y colas', 'Capacity and queues',
+         ['hay-sitio', 'aforo-en-directo', 'cola-virtual-negocio', 'te-aviso-listo-negocio']),
+        ('resultados', 'Cifras y ficha', 'Figures and your page',
+         ['cifras', 'cuanto-te-ha-traido', 'horario-sin-confirmar']),
+    ],
+}
+# Las que solo están si su texto legal tiene fecha (`legal_ia.py`, `legal_contacto.py`):
+# pueden faltar sin que sea un error.
+CONDICIONALES = {'ia', 'asistente', 'rellenar-desde', 'ayudas-ia', 'que-ve-el-negocio-reserva', 'avisar-a-quien-reserva'}
+
+
+def categoria_de(id):
+    for para, cats in CATEGORIAS.items():
+        for c in cats:
+            if id in c[3]:
+                return c[0]
+    return None
+
+
+def comprueba_categorias():
+    """Toda pregunta del centro de ayuda en una categoría de su pestaña, y nada de más."""
+    errores = []
+    visibles = {p['id']: p for p in PREGUNTAS if p.get('ayuda', True)}
+    ids_cat, puestas = set(), {}
+    for para, cats in CATEGORIAS.items():
+        for cid, n_es, n_en, ids in cats:
+            if not cid or not n_es or not n_en:
+                errores.append(f'categoría sin id o sin nombre en {para}')
+            if cid in ids_cat:
+                errores.append(f'categoría repetida: {cid}')
+            ids_cat.add(cid)
+            if f'cat-{cid}' in visibles or cid in visibles:
+                errores.append(f'la categoría «{cid}» se llama como una pregunta (sus anclas chocarían)')
+            if not any(i in visibles for i in ids):
+                errores.append(f'categoría vacía: {para}/{cid}')
+            for i in ids:
+                if i in puestas:
+                    errores.append(f'«{i}» está en dos categorías ({puestas[i]} y {cid})')
+                puestas[i] = cid
+                p = visibles.get(i)
+                if p is None:
+                    if i not in CONDICIONALES:
+                        errores.append(f'«{i}» está en la categoría {cid} pero no es una pregunta del centro de ayuda')
+                elif p['para'] != para:
+                    errores.append(f'«{i}» es de «{p["para"]}» y está en una categoría de «{para}»')
+    for i, p in visibles.items():
+        if i not in puestas:
+            errores.append(f'«{i}» ({p["para"]}) no tiene categoría: ponla en CATEGORIAS (ayuda.py)')
+    assert not errores, 'categorías de la ayuda: ' + '; '.join(errores)
+
+
+comprueba_categorias()
+
+
 def de(para, lang=None, ayuda=True):
-    """Las preguntas de una pestaña, en orden."""
-    return [p for p in PREGUNTAS if p['para'] == para and (p.get('ayuda', True) or not ayuda)]
+    """Las preguntas de una pestaña, en orden: por categorías, como en CATEGORIAS
+    (con `ayuda=False`, las que solo están en Soporte, al final)."""
+    orden = {i: n for n, i in enumerate(i for c in CATEGORIAS[para] for i in c[3])}
+    xs = [p for p in PREGUNTAS if p['para'] == para and (p.get('ayuda', True) or not ayuda)]
+    return sorted(xs, key=lambda p: orden.get(p['id'], len(orden)))
+
+
+def categorias(para, lang, app=False):
+    """[(id, nombre, [preguntas])] de una pestaña, sin las vacías (en la app, sin las `app=False`)."""
+    por_id = {p['id']: p for p in de(para) if not app or p.get('app', True)}
+    k = 1 if lang == 'es' else 2
+    out = []
+    for c in CATEGORIAS[para]:
+        xs = [por_id[i] for i in c[3] if i in por_id]
+        if xs:
+            out.append((c[0], c[k], xs))
+    return out
 
 
 def soporte(lang):
@@ -443,35 +544,56 @@ def texto_plano(html):
 
 
 def comprueba_app(datos):
-    """Falla si la copia de la app habla de precios o lleva a pagar."""
+    """Falla si la copia de la app habla de precios o lleva a pagar, o si una
+    pregunta no tiene una categoría de su pestaña."""
     malas = []
+    cats = datos.get('categories') or {}
+    for para in ('ti', 'negocios'):
+        for c in cats.get(para, []):
+            for lang in ('es', 'en'):
+                m = PROHIBIDO_EN_LA_APP.search(c.get(lang) or '')
+                if m:
+                    malas.append(f"categoría {c['id']}: «{m.group(0)}»")
     for lang in ('es', 'en'):
         for para in ('ti', 'negocios'):
+            validas = {c['id'] for c in cats.get(para, [])}
             for e in datos[lang][para]:
                 texto = e['q'] + ' ' + ''.join(x['t'] + ' ' + x.get('u', '') for x in e['a'])
                 m = PROHIBIDO_EN_LA_APP.search(texto)
                 if m:
                     malas.append(f"{lang}/{e['id']}: «{m.group(0)}»")
-    assert not malas, 'la ayuda de la app habla de precios o lleva a pagar: ' + '; '.join(malas)
+                if e.get('c') not in validas:
+                    malas.append(f"{lang}/{e['id']}: sin categoría válida de «{para}» ({e.get('c')!r})")
+    assert not malas, 'la ayuda de la app habla de precios, lleva a pagar o va sin categoría: ' + '; '.join(malas)
 
 
 def json_para_la_app():
+    """Lo que descarga la app. Las preguntas, en el orden de sus categorías y con
+    `c` (la categoría); `categories`, por pestaña y en orden, con su nombre en
+    español e inglés. Las versiones ya instaladas no miran ni `c` ni
+    `categories`: ven la misma lista, solo en otro orden."""
     datos = {
         lang: {
-            para: [{'id': p['id'], 'q': p[f'q_{lang}'],
+            para: [{'id': p['id'], 'c': cid, 'q': p[f'q_{lang}'],
                     'a': trozos(p.get(f'a_app_{lang}') or p[f'a_{lang}'], app=True)}
-                   for p in de(para) if p.get('app', True)]
+                   for cid, _, xs in categorias(para, lang, app=True) for p in xs]
             for para in ('ti', 'negocios')
         }
         for lang in ('es', 'en')
     }
-    comprueba_app(datos)
-    cuerpo = json.dumps(datos, ensure_ascii=False, sort_keys=True)
+    cats = {
+        para: [{'id': cid, 'es': nombre, 'en': dict((c[0], c[2]) for c in CATEGORIAS[para])[cid]}
+               for cid, nombre, _ in categorias(para, 'es', app=True)]
+        for para in ('ti', 'negocios')
+    }
+    datos_y_cats = {**datos, 'categories': cats}
+    comprueba_app(datos_y_cats)
+    cuerpo = json.dumps(datos_y_cats, ensure_ascii=False, sort_keys=True)
     return {
         'version': hashlib.sha1(cuerpo.encode('utf-8')).hexdigest()[:12],
         'contact': CORREO,
         'tabs': PESTANAS,
-        **datos,
+        **datos_y_cats,
     }
 
 

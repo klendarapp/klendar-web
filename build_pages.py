@@ -333,23 +333,25 @@ PAGINAS['precios'] = (
 # ── Preguntas frecuentes (centro de ayuda) ───────────────────────────────────
 # El contenido vive en `ayuda.py` (una sola fuente para esta página, Soporte y
 # la app, que se descarga `assets/ayuda.json`). Aquí solo se pinta: pestañas
-# «Para ti» / «Para negocios» y buscador (`assets/ayuda.js`, `assets/ayuda.css`).
+# «Para ti» / «Para negocios», en cada una un índice de sus categorías (saltos a
+# `#cat-<id>`) y las preguntas por categorías (`ayuda.CATEGORIAS`), y buscador
+# (`assets/ayuda.js`, `assets/ayuda.css`). Cada pregunta sigue en `#<id>`.
 import ayuda  # noqa: E402
 
-AYUDA_V = 2  # ?v= de assets/ayuda.js y ayuda.css
+AYUDA_V = 'cat1'  # ?v= de assets/ayuda.js y ayuda.css (uno que nunca se haya pedido; §4zzz-faq)
 ASISTENTE_V = 4  # ?v= de assets/asistente.css (apagado no sale nada; RUNBOOK §4zi de la app)
 ASISTENTE_JS_V = '20261126cargas'  # ?v= de assets/asistente.js (§4zzz-cargas: una sola aguja)
 
 AYUDA_T = {
     'es': dict(lead='Lo que más nos preguntan, para quien busca planes y para los negocios.',
                buscar='Buscar en la ayuda', ph='Buscar: código, reserva, calendario…',
-               pestanas='Preguntas frecuentes', nada_h='¿No lo encuentras?',
+               pestanas='Preguntas frecuentes', indice='Categorías', nada_h='¿No lo encuentras?',
                nada_p='Escríbenos y te respondemos en 2 días laborables como mucho. Si es algo que se pregunta a menudo, lo añadimos aquí.',
                boton='Escríbenos', sugerencias='/cuenta/sugerencias',
                correo='O por correo a <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/soporte">Soporte</a>'),
     'en': dict(lead='What we get asked most, for people looking for plans and for businesses.',
                buscar='Search help', ph='Search: code, reservation, calendar…',
-               pestanas='Frequently asked questions', nada_h="Can't find it?",
+               pestanas='Frequently asked questions', indice='Categories', nada_h="Can't find it?",
                nada_p="Write to us and we'll reply within 2 working days at most. If it's something people often ask, we'll add it here.",
                boton='Write to us', sugerencias='/cuenta/sugerencias?lang=en',
                correo='Or by email at <a href="mailto:info@klendar.app">info@klendar.app</a> · <a href="/en/support">Support</a>'),
@@ -362,13 +364,21 @@ def ayuda_html(lang):
     pestanas = ''.join(
         f'<button type="button" role="tab" id="tab-{k}" aria-controls="ayuda-{k}" aria-selected="{str(i == 0).lower()}">{nombres[k]}</button>'
         for i, k in enumerate(('ti', 'negocios')))
-    paneles = ''.join(
-        f'<section id="ayuda-{k}" role="tabpanel" aria-labelledby="tab-{k}">\n'
-        f'<h2 class="ayuda-titulo">{nombres[k]}</h2>\n'
-        + '\n'.join(f'<details class="faq" id="{p["id"]}"><summary>{p[f"q_{lang}"]}</summary><p>{p[f"a_{lang}"]}</p></details>'
-                    for p in ayuda.de(k))
-        + '\n</section>\n'
-        for k in ('ti', 'negocios'))
+    def panel(k):
+        cats = ayuda.categorias(k, lang)
+        indice = ''.join(f'<li><a href="#cat-{cid}">{nombre}</a></li>' for cid, nombre, _ in cats)
+        cuerpo = ''.join(
+            f'<section class="ayuda-cat" id="cat-{cid}" aria-labelledby="cat-{cid}-t">\n'
+            f'<h3 id="cat-{cid}-t">{nombre}</h3>\n'
+            + '\n'.join(f'<details class="faq" id="{p["id"]}"><summary>{p[f"q_{lang}"]}</summary><p>{p[f"a_{lang}"]}</p></details>'
+                        for p in xs)
+            + '\n</section>\n'
+            for cid, nombre, xs in cats)
+        return (f'<section id="ayuda-{k}" role="tabpanel" aria-labelledby="tab-{k}">\n'
+                f'<h2 class="ayuda-titulo">{nombres[k]}</h2>\n'
+                f'<nav class="ayuda-indice" aria-label="{t["indice"]}: {nombres[k]}"><ul>{indice}</ul></nav>\n'
+                f'{cuerpo}</section>\n')
+    paneles = ''.join(panel(k) for k in ('ti', 'negocios'))
     return f'''
 <link rel="stylesheet" href="/assets/ayuda.css?v={AYUDA_V}">
 <link rel="stylesheet" href="/assets/asistente.css?v={ASISTENTE_V}">

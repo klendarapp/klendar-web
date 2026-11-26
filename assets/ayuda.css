@@ -1,6 +1,8 @@
 /* Centro de ayuda (/preguntas/, /en/faq/): pestañas «Para ti» / «Para
-   negocios» y buscador. Sin JavaScript se ven las dos listas seguidas, con
-   su título, y sin buscador. Sobrio: neutros, la pestaña elegida en tinta. */
+   negocios», en cada una un índice de sus categorías y las preguntas por
+   categorías, y buscador. Sin JavaScript se ven las dos listas seguidas, con
+   su título y su índice, y sin buscador. Sobrio: neutros, la pestaña elegida
+   en tinta. */
 .ayuda-buscar { display: block; margin: 18px 0 12px; }
 .ayuda-buscar input { width: 100%; box-sizing: border-box; padding: 12px 16px; border-radius: 999px;
   border: 1px solid var(--field-border); background: var(--elevated); color: var(--ink); font: inherit; font-size: 16px; }
@@ -20,3 +22,23 @@
 .ayuda-escribenos p { margin: 0 0 14px; color: var(--ink-2); }
 .ayuda-escribenos .note { margin: 14px 0 0; }
 .ayuda mark { background: var(--accent-soft); color: inherit; border-radius: 3px; }
+/* Índice de categorías: a todo el ancho, en rejilla (de 2 en el móvil a 4
+   en el ordenador), cada salto con 44 px para el dedo. */
+.ayuda-indice { margin: 14px 0 4px; }
+.ayuda-indice ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 150px), 1fr)); }
+.ayuda-indice li { margin: 0; min-width: 0; }
+.ayuda .ayuda-indice li a, .ayuda .ayuda-indice li a:hover { display: flex; align-items: center; min-height: 44px; height: 100%; box-sizing: border-box;
+  padding: 8px 14px; border-radius: 14px; border: 1px solid var(--glass-border); background: var(--elevated);
+  color: var(--ink); font-weight: 700; font-size: 15px; line-height: 1.25; text-decoration: none; overflow-wrap: anywhere; }
+.ayuda .ayuda-indice li a:hover { border-color: var(--ink-2); }
+.ayuda-indice a:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.ayuda-indice[hidden] { display: none; }
+/* Cada categoría con su título; el salto deja el título bajo la cabecera fija. */
+/* Sin el relleno de 72 px de `section` (site.css): el índice pegado a las pestañas y las categorías seguidas. */
+.ayuda [role=tabpanel] { padding: 6px 0 0; }
+.ayuda-cat { padding: 0; scroll-margin-top: 84px; }
+.ayuda-cat[hidden] { display: none; }
+.doc .ayuda-cat h3 { font-family: var(--display); font-size: 20px; letter-spacing: -.2px; margin: 30px 0 2px; }
+.ayuda details.faq { scroll-margin-top: 84px; }
+.ayuda-cat h3:focus:not(:focus-visible) { outline: none; }

@@ -2,7 +2,10 @@
 // Lo mismo que la app (Cuenta → Ayuda): dos pestañas, «Para ti» y «Para
 // negocios»; el buscador ignora tildes y mayúsculas y busca en preguntas y
 // respuestas; si en la pestaña no hay nada y en la otra sí, lo dice y deja
-// saltar. `#negocios` abre esa pestaña y `#<id>` abre esa pregunta.
+// saltar. En cada pestaña, un índice de sus categorías arriba (saltos a
+// `#cat-<id>`); al buscar se esconden el índice y las categorías sin nada.
+// `#negocios` abre esa pestaña, `#cat-<id>` lleva a esa categoría (en su
+// pestaña) y `#<id>` abre esa pregunta.
 (function () {
   var raiz = document.querySelector('[data-ayuda]');
   if (!raiz) return;
@@ -15,6 +18,10 @@
   var paneles = tabs.map(function (b) { return document.getElementById(b.getAttribute('aria-controls')); });
   var q = raiz.querySelector('#ayuda-q');
   var estado = raiz.querySelector('.ayuda-estado');
+  var cats = paneles.map(function (p) {
+    return Array.prototype.slice.call(p.querySelectorAll('.ayuda-cat'));
+  });
+  var indices = paneles.map(function (p) { return p.querySelector('.ayuda-indice'); });
   var items = paneles.map(function (p) {
     return Array.prototype.slice.call(p.querySelectorAll('details.faq')).map(function (d) {
       return { d: d, texto: pliega(d.textContent) };
@@ -51,6 +58,10 @@
       });
       return n;
     });
+    cats.forEach(function (lista) {
+      lista.forEach(function (c) { c.hidden = !c.querySelector('details.faq:not([hidden])'); });
+    });
+    indices.forEach(function (x) { if (x) x.hidden = palabras.length > 0; });
     estado.textContent = '';
     if (!palabras.length) return;
     var aqui = cuentas[actual];
@@ -87,11 +98,18 @@
     var k = paneles.findIndex(function (p) { return p.id === 'ayuda-' + h; });
     if (k >= 0) { elige(k); return; }
     var d = document.getElementById(h);
-    if (d && d.tagName === 'DETAILS') {
+    var esCat = d && d.classList.contains('ayuda-cat');
+    if (d && (d.tagName === 'DETAILS' || esCat)) {
       var i = paneles.findIndex(function (p) { return p.contains(d); });
       if (i >= 0) elige(i);
-      d.open = true;
+      // Si la búsqueda la esconde, se borra la búsqueda: se va a donde se pidió.
+      if ((d.hidden || (d.closest('.ayuda-cat') || d).hidden) && q && q.value) { q.value = ''; filtra(); }
+      if (!esCat) d.open = true;
       d.scrollIntoView();
+      if (esCat) {
+        var t = d.querySelector('h3');
+        if (t) { t.tabIndex = -1; t.focus({ preventScroll: true }); }
+      }
     }
   }
   addEventListener('hashchange', desdeHash);
