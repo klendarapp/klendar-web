@@ -1,5 +1,5 @@
 {
- "version": "a214956ad475",
+ "version": "2972e11384cf",
  "contact": "info@klendar.app",
  "tabs": {
   "es": {
@@ -1357,7 +1357,7 @@
    {
     "id": "resultados",
     "es": "Cifras y ficha",
-    "en": "Figures and your page"
+    "en": "Stats and your page"
    }
   ]
  }

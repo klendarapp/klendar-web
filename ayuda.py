@@ -401,7 +401,7 @@ CATEGORIAS = {
          ['validar-codigos', 'equipo', 'avisar-a-quien-reserva']),
         ('aforo', 'Aforo y colas', 'Capacity and queues',
          ['hay-sitio', 'aforo-en-directo', 'cola-virtual-negocio', 'te-aviso-listo-negocio']),
-        ('resultados', 'Cifras y ficha', 'Figures and your page',
+        ('resultados', 'Cifras y ficha', 'Stats and your page',
          ['cifras', 'cuanto-te-ha-traido', 'horario-sin-confirmar']),
     ],
 }
