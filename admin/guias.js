@@ -140,7 +140,7 @@ function editaGuia(g) {
         p_starts_on: form.elements.desde.value || null, p_ends_on: form.elements.hasta.value || null,
         p_title_place: form.elements.title_place.checked,
       });
-      boton.disabled = true;
+      ocupa(boton, true);
       try {
         let id = g?.id || null;
         // Nueva con foto: primero sin ella, para tener su id (la ruta lo lleva).
@@ -156,7 +156,7 @@ function editaGuia(g) {
         cerrar(true);
       } catch (e2) {
         err.textContent = e2.message || errGuia(null);
-      } finally { boton.disabled = false; }
+      } finally { ocupa(boton, false); }
     };
     I18N.translate(d);
     d.showModal();

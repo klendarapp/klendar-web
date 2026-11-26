@@ -575,6 +575,21 @@ async function faltaConsentimiento() {
 
 // ── Rutas ─────────────────────────────────────────────────────────────────
 const RUTAS = {};
+/** El esqueleto de cada pantalla mientras carga (§4zzz-cargas, P3; los tipos,
+ * assets/esqueleto.js). Una pantalla nueva: aquí también (lo mira
+ * tools/esqueletos_check.py en el pre-push). `''` es el inicio. */
+const ESQUELETO_DE = {
+  tarjetas: ['', 'codigos', 'favoritos', 'planes', 'sellos', 'sorteos', 'series', 'pedidos', 'listo', 'cola', 'rrpp', 'guardar',
+    'seguir', 'sugerencias'],
+  lista: ['alertas', 'amigos', 'invitaciones', 'equipos', 'artistas', 'grupos', 'invitar'],
+  filas: ['avisos', 'notificaciones'],
+  formulario: ['ajustes', 'alerta', 'avisame', 'avisame-palabra', 'bloquear', 'denunciar', 'entrar', 'codigo-correo', 'idioma',
+    'movil', 'nueva-clave', 'opinar', 'pedir-local', 'perfil', 'preguntar', 'reclamar', 'recuperar', 'registro', 'tus-datos',
+    'ultimo-paso', 'gustos', 'respuestas'],
+  ficha: ['amigo', 'bono', 'codigo', 'encargar', 'encargo', 'momento', 'qr-cliente', 'recibo', 'regalo', 'reservar', 'serie',
+    'sorteo', 'visita', 'voy', 'espera', 'escanear'],
+  resumen: ['ahorro'],
+};
 function rutaActual() {
   const partes = sinBase(location.pathname).split('/').filter(Boolean);
   // `crudo`: la ruta tal cual, sin los fijos. Es lo que se manda en
@@ -642,7 +657,8 @@ async function navegar() {
       view.classList.remove('mov-entra');
       // `role="status"` sin `aria-busy`: con él, algunos lectores se callan
       // el «Cargando…» (§4zzz-cargas).
-      view.innerHTML = `<div class="esq tarjetas" role="status"><span class="sr">${esc(t('Cargando…'))}</span></div>`;
+      // Con la forma de esta pantalla (P3 de §4zzz-cargas).
+      view.innerHTML = window.KL_ESQUELETO(Object.keys(ESQUELETO_DE).find((x) => ESQUELETO_DE[x].includes(nombre)) || 'tarjetas', t('Cargando…'), false, true);
     }, 200);
   }
   try {

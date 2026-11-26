@@ -351,7 +351,7 @@ function downloadCsv(name, rows, cols) {
  * §3g). `args`: lo último que se pidió a `fn`. */
 async function exportaTodo(boton, name, fn, args, cols) {
   if (!args) return;
-  boton.disabled = true;
+  ocupa(boton, true);
   try {
     const filas = [];
     const tam = 200;
@@ -362,7 +362,7 @@ async function exportaTodo(boton, name, fn, args, cols) {
       if (!parte.length || parte.length < tam || filas.length >= (Number(r?.total) || Infinity) || filas.length >= 50000) break;
     }
     downloadCsv(name, filas, cols);
-  } catch (e) { toast(e.message, true); } finally { boton.disabled = false; }
+  } catch (e) { toast(e.message, true); } finally { ocupa(boton, false); }
 }
 
 // Gráfica de barras simple.
@@ -710,12 +710,21 @@ function showLogin() {
 // Entrar: los mismos mensajes que la app, «Tu cuenta» y el panel
 // (assets/auth-errors.js).
 const errAuth = (error) => window.KL_AUTH_ERROR(error, I18N.lang);
+/** Un botón ocupado (`true`) o libre: desactivado, la aguja de Klendar en su
+ * sitio (`.mov-ocupado`, site.css) y `aria-busy`. */
+function ocupa(boton, si) {
+  if (!boton) return;
+  boton.disabled = si;
+  boton.classList.toggle('mov-ocupado', si);
+  if (si) boton.setAttribute('aria-busy', 'true'); else boton.removeAttribute('aria-busy');
+}
 async function esperando(boton, trabajo) {
   if (boton.disabled) return;
-  boton.disabled = true;
-  // El lector oye «ocupado» (§4zzz-cargas; como `ocupado()` de «Tu cuenta»).
-  boton.setAttribute('aria-busy', 'true');
-  try { await trabajo(); } finally { boton.disabled = false; boton.removeAttribute('aria-busy'); }
+  // La aguja en su sitio, sin cambiar de ancho, y el lector oye «ocupado»
+  // (§4zzz-cargas, P1 aprobada por Iván el 26-11; como `ocupado()` de «Tu
+  // cuenta» y `enBoton()` del panel).
+  ocupa(boton, true);
+  try { await trabajo(); } finally { ocupa(boton, false); }
 }
 // «Cargando más…» (§4zzz-cargas): mientras un «Ver más» pide la parte
 // siguiente (desactivado), la aguja pequeña en su sitio (`.mov-ocupado`).

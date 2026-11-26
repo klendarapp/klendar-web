@@ -103,7 +103,7 @@ function editaArtista(a) {
       err.textContent = '';
       if (nombre.length < 2) { err.textContent = I18N.t(ERR_ARTISTA.name_invalid); form.elements.name.focus(); return; }
       const enlaces = Object.fromEntries(KAa().REDES.map(([k]) => [k, form.elements[`l_${k}`].value.trim()]).filter(([, x]) => x));
-      boton.disabled = true;
+      ocupa(boton, true);
       try {
         let id = a?.id || null;
         // Nuevo con foto: primero sin ella, para tener su id (la ruta lo lleva).
@@ -121,7 +121,7 @@ function editaArtista(a) {
         cerrar(true);
       } catch (e2) {
         err.textContent = e2.message || I18N.t('No se ha podido completar. Prueba otra vez.');
-      } finally { boton.disabled = false; }
+      } finally { ocupa(boton, false); }
     };
     I18N.translate(d);
     d.showModal();

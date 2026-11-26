@@ -73,6 +73,7 @@
     'border-radius:22px;box-shadow:var(--shadow,0 20px 60px -30px rgba(10,10,10,.35));padding:12px 8px 8px 16px;' +
     'display:grid;grid-template-columns:auto 1fr auto;gap:4px 10px;align-items:start;font-size:15px;line-height:1.35}' +
     '.visita[hidden]{display:none!important}.visita .v-ic{font-size:20px;line-height:1.2}.visita p{margin:0 0 4px}' +
+    '.visita .v-ic .mov-cargando{width:24px;height:24px;margin:0}' +
     '.visita p.v-2{color:var(--ink-2,#636363);font-size:13px;font-weight:400}.visita p b{font-weight:700}' +
     '.visita .v-x{background:none;border:0;color:var(--ink-2,#636363);font-size:20px;line-height:1;padding:4px 8px;cursor:pointer}' +
     '.visita .v-acc{grid-column:1/-1;text-align:right}.visita .v-acc a,.visita .v-acc button{font:inherit;font-weight:700;' +
@@ -86,6 +87,8 @@
   caja.hidden = true;
 
   /** lineas: [texto], la primera en negrita; accion: {texto, href} o {texto, fn}. */
+  var AGUJA = '<svg class="mov-cargando" viewBox="0 0 64 64" aria-hidden="true"><path d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/>' +
+    '<g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg>';
   function pinta(icono, lineas, accion) {
     caja.innerHTML = '<span class="v-ic" aria-hidden="true">' + icono + '</span><div>' +
       lineas.map(function (l, i) { return '<p class="' + (i === 0 || l.fuerte ? '' : 'v-2') + '">' + (i === 0 || l.fuerte ? '<b>' : '') + esc(l.t || l) + (i === 0 || l.fuerte ? '</b>' : '') + '</p>'; }).join('') +
@@ -128,7 +131,9 @@
   }
 
   function sellar(pedir) {
-    pinta('⌛', [T.checking]);
+    // Mientras comprueba: la aguja de Klendar, el único indicador de carga
+    // (§4zzz-cargas, P2 aprobada por Iván el 26-11; antes, un reloj de arena).
+    pinta(AGUJA, [T.checking]);
     return dondeEstoy(pedir === true).then(function (aqui) {
       return sb.rpc('scan_visit_qr', {
         p_token: token,

@@ -1177,7 +1177,7 @@ async function boot() {
   cabeceraDePanel();
   $('#app').hidden = false;
   // Mientras llegan tus negocios: la aguja, no la zona en blanco.
-  if (!$('#view').childElementCount) $('#view').innerHTML = '<div class="loading" role="status">Cargando…</div>';
+  if (!$('#view').childElementCount) $('#view').innerHTML = esqueletoPanel(currentRoute()[0] || 'hoy');
 
   const negocios = await negociosP;
   if (negocios.e) {
@@ -1536,6 +1536,24 @@ function go(destino, reemplaza = false) {
   setTimeout(cambiaDePantalla, 0);
 }
 const PAGES = {};
+/** El esqueleto de cada pantalla mientras carga (§4zzz-cargas, P3; los tipos,
+ * assets/esqueleto.js). Una pantalla nueva: aquí también (lo mira
+ * tools/esqueletos_check.py en el pre-push). */
+const ESQUELETO_DE = {
+  hoy: ['hoy'],
+  publicar: ['publicar', 'publicaciones'],
+  cifras: ['informe'],
+  menu: ['negocio'],
+  calendario: ['calendario'],
+  validar: ['validar'],
+  lista: ['resenas', 'preguntas', 'equipo', 'asistentes', 'mensajes', 'habituales', 'grupos', 'rrpp', 'sorteos', 'bonos',
+    'sellos', 'series', 'cola', 'pedidos', 'encargos', 'encargos-cosas', 'partidos', 'fidelizar'],
+  filas: ['ficha', 'novedades', 'cerrados', 'estaba-cerrado', 'ayuda'],
+  formulario: ['alta', 'plan', 'baja', 'cumpleanos', 'cupon', 'festivo', 'menu-del-dia', 'wifi-clientes', 'tele',
+    'cartel', 'cartel-local', 'carta', 'antes-de-cerrar', 'momento', 'aforo'],
+};
+const esqueletoPanel = (pagina) => window.KL_ESQUELETO(
+  Object.keys(ESQUELETO_DE).find((t) => ESQUELETO_DE[t].includes(pagina)) || 'lista', I18N.t('Cargando…'), true);
 // Cada pintada lleva su número: si mientras carga una se pide otra (cambiar
 // de negocio y de pantalla seguido), lo que termine tarde no pisa ni saca
 // errores sobre la nueva.
@@ -1691,7 +1709,7 @@ async function route() {
   // Qué pantalla es: las de lista y las de formulario van en una columna
   // de lectura en una pantalla ancha (panel.css, `data-pagina`).
   v.dataset.pagina = page;
-  v.innerHTML = '<div class="loading" role="status">Cargando…</div>';
+  v.innerHTML = esqueletoPanel(page);
   $('#view').replaceChildren(v);
   try {
     await (PAGES[page] || PAGES.hoy)(v, param);
