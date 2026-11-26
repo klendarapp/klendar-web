@@ -505,13 +505,44 @@ function cargaJsQR() {
   return JSQR;
 }
 let PARA_CAMARA = null;
-function paraCamara() { if (PARA_CAMARA) { PARA_CAMARA(); PARA_CAMARA = null; } }
+/** Cada arranque de la cámara tiene su turno: parar (o salir de la pantalla)
+ * mientras se pide el permiso deja el arranque sin efecto. Antes la cámara
+ * se encendía igual sobre un vídeo que ya no estaba y no se apagaba nunca
+ * (y un segundo toque abría otra). */
+let CAMARA_TURNO = 0;
+let CAMARA_ARRANCA = false;
+function paraCamara() {
+  CAMARA_TURNO++;
+  CAMARA_ARRANCA = false;
+  if (PARA_CAMARA) { PARA_CAMARA(); PARA_CAMARA = null; }
+}
 async function escanerQR(video, alLeer) {
   paraCamara();
-  const flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+  const turno = CAMARA_TURNO;
+  const sigue = () => turno === CAMARA_TURNO && video.isConnected;
+  CAMARA_ARRANCA = true;
+  let flujo;
+  try {
+    flujo = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+  } finally {
+    if (turno === CAMARA_TURNO) CAMARA_ARRANCA = false;
+  }
+  if (!sigue()) { flujo.getTracks().forEach((t) => t.stop()); return null; }
+  let vivo = true;
+  let despierta = null;
+  let alVolver = null;
+  PARA_CAMARA = () => {
+    vivo = false;
+    flujo.getTracks().forEach((t) => t.stop());
+    video.srcObject = null;
+    if (alVolver) document.removeEventListener('visibilitychange', alVolver);
+    if (despierta) despierta.release().catch(() => {});
+    despierta = null;
+  };
   video.srcObject = flujo;
   video.setAttribute('playsinline', '');
   await video.play();
+  if (!vivo) return null;
   let detector = null;
   if ('BarcodeDetector' in window) {
     try {
@@ -520,9 +551,9 @@ async function escanerQR(video, alLeer) {
     } catch { detector = null; }
   }
   const jsqr = detector ? null : await cargaJsQR();
+  if (!vivo) return null;
   const lienzo = document.createElement('canvas');
   const ctx = lienzo.getContext('2d', { willReadFrequently: true });
-  let vivo = true;
   let ultimo = '';
   let pausa = 0;
   const vuelta = async () => {
@@ -554,22 +585,13 @@ async function escanerQR(video, alLeer) {
   vuelta();
   // Con la cámara puesta, la pantalla no se apaga (como el escáner de la
   // app). El navegador la suelta al cambiar de pestaña: se vuelve a pedir.
-  let despierta = null;
   const pideDespierta = async () => {
     if (!vivo || document.visibilityState !== 'visible' || !navigator.wakeLock) return;
     try { despierta = await navigator.wakeLock.request('screen'); } catch { despierta = null; }
   };
-  const alVolver = () => { if (document.visibilityState === 'visible') pideDespierta(); };
+  alVolver = () => { if (document.visibilityState === 'visible') pideDespierta(); };
   document.addEventListener('visibilitychange', alVolver);
   pideDespierta();
-  PARA_CAMARA = () => {
-    vivo = false;
-    flujo.getTracks().forEach((t) => t.stop());
-    video.srcObject = null;
-    document.removeEventListener('visibilitychange', alVolver);
-    if (despierta) despierta.release().catch(() => {});
-    despierta = null;
-  };
   return PARA_CAMARA;
 }
 
@@ -5647,7 +5669,8 @@ PAGES.validar = async (v) => {
     boton.hidden = true;
   } else {
     boton.onclick = async () => {
-      if (PARA_CAMARA) {
+      // También mientras pide el permiso (el botón ya dice «Parar la cámara»).
+      if (PARA_CAMARA || CAMARA_ARRANCA) {
         paraCamara();
         $('#camara-caja').hidden = true;
         boton.innerHTML = ms('photo_camera') + esc(I18N.t('Escanear con la cámara'));
