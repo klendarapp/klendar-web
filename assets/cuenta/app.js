@@ -2615,6 +2615,21 @@ function pintaCodigoGuardado(g) {
   qr.addData(`https://klendar.app/r/${g.code}`);
   qr.make();
   $('#qr').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 2, scalable: true });
+  // En cuanto vuelva la red: si el local ya lo validó mientras tanto,
+  // «¡Canjeado!» (antes la copia se quedaba como si nada); si sigue sin usar,
+  // la pantalla de siempre (con «anular»), sin volver a preguntar.
+  const ruta = rutaActual().crudo;
+  alSalir(vigilaCanje(g.code, (at) => pintaCanjeado({
+    titulo: g.offer_title, negocio: g.business_name, benef, at, tz: g.tz || undefined, code: g.code,
+  })));
+  const vuelve = async () => {
+    try {
+      const { data } = await sb.from('redemptions').select('status').eq('code', g.code).maybeSingle();
+      if (data?.status === 'pending' && $('#qr') && rutaActual().crudo === ruta) { marcaIntencion(ruta); navegar(); }
+    } catch { /* aún sin red: sigue la copia */ }
+  };
+  addEventListener('online', vuelve);
+  alSalir(() => removeEventListener('online', vuelve));
 }
 
 // ── «Quitar de tu lista» (migración 20261281000000 de la app) ────────────

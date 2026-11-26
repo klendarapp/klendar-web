@@ -5,10 +5,13 @@
 //  · La zona de los negocios, una consulta por pantalla aunque haya turnos
 //    de cola (antes, dos seguidas en Planes y en «Tus códigos»).
 //  · «Algo ha fallado» se reintenta solo al volver la red.
+//  · «Tu código» sin conexión (la copia guardada): si el local lo valida
+//    mientras tanto, al volver la red sale «¡Canjeado!» (antes, la copia
+//    se quedaba como si nada).
 // Con datos de mentira y la sesión de _cuenta_simulado (Chromium, ~15 s).
 //
 //   node tools/cuenta_revweb_check.mjs
-import { webConDatos, NEGOCIOS } from './_web_con_datos.mjs';
+import { webConDatos, NEGOCIOS, PLANES } from './_web_con_datos.mjs';
 import { playwright, SUPA } from './_supabase_simulado.mjs';
 import { conSesionCuenta } from './_cuenta_simulado.mjs';
 
@@ -67,6 +70,29 @@ for (const ruta of ['/cuenta/planes', '/cuenta/codigos']) {
   await p.waitForTimeout(1500);
   ok('favoritos sin red: «Reintentar»', conError === 1);
   ok('al volver la red se reintenta solo', (await p.locator('#reintentar').count()) === 0);
+  await ctx.close();
+}
+
+// 4. La copia de «Tu código» sin red, validada mientras tanto.
+{
+  const ctx = await contexto();
+  const oferta = PLANES.find((o) => o.kind === 'flash_offer');
+  let estado = 'pending';
+  await ctx.route(`${SUPA}/rest/v1/redemptions?**`, (r) => r.fulfill({ status: 200, contentType: 'application/json',
+    body: JSON.stringify({ status: estado, validated_at: estado === 'validated' ? new Date().toISOString() : null }) }));
+  const p = await ctx.newPage();
+  await p.goto(`${web.BASE}/cuenta/codigos`);
+  await p.waitForSelector(`a[href="/cuenta/codigo/${oferta.id}"]`);
+  await ctx.setOffline(true);
+  await p.click(`a[href="/cuenta/codigo/${oferta.id}"]`);
+  await p.waitForSelector('#view .ticket #qr', { timeout: 8000 }).catch(() => {});
+  const copia = await p.locator('#view .aviso-inv').count();
+  estado = 'validated';
+  await ctx.setOffline(false);
+  await p.evaluate(() => dispatchEvent(new Event('online')));
+  await p.waitForSelector('#view .canjeado', { timeout: 9000 }).catch(() => {});
+  ok('«Tu código» sin red: la copia guardada', copia === 1);
+  ok('validado mientras tanto: «¡Canjeado!» al volver la red', (await p.locator('#view .canjeado').count()) === 1);
   await ctx.close();
 }
 
