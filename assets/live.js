@@ -76,7 +76,7 @@
   });
   let tarjetaJs = null;
   const conArte = () => tarjetaJs || (tarjetaJs = Promise.all([
-    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=20261124marco' }),
+    cargar('link', { rel: 'stylesheet', href: '/assets/tarjeta.css?v=20261126p1p2' }),
     globalThis.KlendarTarjeta ? null : cargar('script', { src: '/assets/tarjeta.js?v=20261125pildoras' }),
     // Sin foto, el hueco de siempre (§4zzz-sinfoto).
     globalThis.KlendarSinFoto ? null : cargar('script', { src: '/assets/sin-foto.js?v=1' }),

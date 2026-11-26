@@ -71,10 +71,14 @@
 // 24. El botón principal de cada tarjeta, del mismo color y ancho sin sesión
 //     («Conseguir el código», «Ver evento») y con tu código («Ver tu código»,
 //     «Ver tu entrada»).
+// 25. Con foto también (P1 y P2, Iván, 26-11): el botón principal de
+//     «Foto grande» y «Cartel», coral (el mismo que el de «Clásica») y a lo
+//     ancho de su panel, sin sesión y con tu código. Solo «A todo color» lo
+//     lleva del color de contraste de su panel.
 //
 //   PW=<ruta a playwright> node tools/coherencia_check.mjs
 //   SOLO=web …    solo la parte 2;  SOLO=panel …   solo la parte 1;  SOLO=admin …   solo la parte 3
-//   SOLO=propuestas …   solo 19–21;  SOLO=pildoras …   solo 22–24
+//   SOLO=propuestas …   solo 19–21;  SOLO=pildoras …   solo 22–25
 //   (arranca su serve_dev en PORT, 9411, con Supabase cortado)
 import { playwright, SUPA, REF } from './_supabase_simulado.mjs';
 import { webConDatos, DATOS, PLANES } from './_web_con_datos.mjs';
@@ -449,6 +453,9 @@ async function partePildoras() {
     [flash[3].id, { style: { template: 'minimal' }, images: [] }],
     [eventos[0].id, { style: { template: 'poster' }, images: [] }],
     [eventos[1].id, { style: { template: 'photo' }, images: [] }],
+    // Con foto (25).
+    [eventos[2].id, { style: { template: 'poster' } }],
+    [eventos[3].id, { style: { template: 'photo' } }],
   ]);
   const planes = PLANES.map((o) => (cambia.has(o.id) ? { ...o, ...cambia.get(o.id) } : o));
   const hora = (h) => new Date(Date.now() + h * 3600e3).toISOString();
@@ -469,7 +476,8 @@ async function partePildoras() {
     return { id: c.getAttribute('data-o'), clase: [...c.classList].filter((k) => /^tj--(glass|photo|poster|bold|minimal)$/.test(k)).join(''),
       pantalla: c.classList.contains('tj--pantalla'), sinFoto: !!c.querySelector('.tj-media :is(.sin-foto, .tj-ph)'),
       borde: parseFloat(cp.borderTopWidth), contenido: Math.round(contenido),
-      cta: cta ? { fondo: getComputedStyle(cta).backgroundColor, ancho: Math.round(cta.getBoundingClientRect().width), mio: cta.classList.contains('tj-mio--codigo'), texto: cta.textContent.trim() } : null };
+      cta: cta ? { fondo: getComputedStyle(cta).backgroundColor, ancho: Math.round(cta.getBoundingClientRect().width), mio: cta.classList.contains('tj-mio--codigo'),
+        hecha: cta.classList.contains('tj-mio--hecha'), texto: cta.textContent.trim() } : null };
   });
   // Un aviso de la franja: dónde está, su hueco, los filtros, el texto y la ×.
   const mideAviso = (cual) => {
@@ -533,12 +541,16 @@ async function partePildoras() {
             } else {
               const suyos = ts.filter((c) => c.cta?.mio);
               ok(suyos.length >= 3, `${d}: «Ver tu código» / «Ver tu entrada» en las tarjetas (${suyos.length})`);
-              // «Foto grande» con foto lleva el botón a su texto (así es la
-              // plantilla; propuesta aparte en §4zzz-pildoras): ahí, el color.
-              const distintos = suyos.filter((c) => { const a = antes[`${dir} ${c.id} ${c.pantalla}`]; const asuTexto = c.clase === 'tj--photo' && !c.sinFoto;
-                return a && (a.fondo !== c.cta.fondo || (!asuTexto && Math.abs(a.ancho - c.cta.ancho) > 1)); });
+              const distintos = suyos.filter((c) => { const a = antes[`${dir} ${c.id} ${c.pantalla}`];
+                return a && (a.fondo !== c.cta.fondo || Math.abs(a.ancho - c.cta.ancho) > 1); });
               ok(!distintos.length, `${d}: el botón principal, del mismo color y ancho con tu código${distintos.length ? ` — ${distintos.map((c) => { const a = antes[`${dir} ${c.id} ${c.pantalla}`]; return `${c.clase} «${a.texto}» ${a.fondo} ${a.ancho} / «${c.cta.texto}» ${c.cta.fondo} ${c.cta.ancho}`; }).join(' | ')}` : ''}`);
             }
+            // 25. Con foto, «Foto grande» y «Cartel»: coral como «Clásica» y a lo ancho.
+            const coral = ts.find((c) => c.clase === 'tj--glass' && c.cta && !c.cta.hecha)?.cta.fondo;
+            const conFoto = ts.filter((c) => !c.sinFoto && /photo|poster/.test(c.clase) && c.cta && !c.cta.hecha);
+            ok(conFoto.length >= 1 && coral, `${d}: hay «Foto grande» o «Cartel» con foto que mirar (${conFoto.length})`);
+            const feas = conFoto.filter((c) => c.cta.fondo !== coral || c.cta.ancho < c.contenido - 2);
+            ok(!feas.length, `${d}: con foto, el botón principal coral y a lo ancho${feas.length ? ` — ${feas.map((c) => `${c.clase} ${c.cta.fondo} (coral ${coral}), botón ${c.cta.ancho} de ${c.contenido}`).join(' | ')}` : ''}`);
             // 22. El aviso de la franja (el de la ubicación sale sin zona elegida).
             if (dir === '/descubre' && !conSesion) {
               for (const cual of ['ubicacion', 'visita']) {

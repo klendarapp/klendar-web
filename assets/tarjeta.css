@@ -101,7 +101,8 @@
 :is(.pub, .tjv) .tj--poster .tj-titulo { font-size: 24px; }
 .tj--poster .tj-lugar, .tj--poster .tj-negocio .tj-dist, .tj--poster .tj-antes, .tj--poster .tj-desc { color: rgba(255,255,255,.82); }
 .tj--poster .tj-chip { background: rgba(255,255,255,.16); border-color: transparent; color: #fff; }
-.tj--poster .tj-cta { background: #fff; color: #0A0A0A; }
+/* El botón principal, coral y a lo ancho como en todas (antes blanco; Iván,
+   26-11, §4zzz-pildoras P2). */
 .tj--poster .tj-cuando.ahora { color: #FF8FA3; }
 /* Antetítulo de «Cartel»: la fecha, en un bloque del color del negocio. */
 .tj-kicker { align-self: flex-start; padding: 4px 9px; border-radius: 6px; background: var(--tj-acento, var(--accent));
@@ -111,7 +112,9 @@
    aunque la fila de la rejilla sea más alta que ella. */
 .tj--photo .tj-media, .tj--poster .tj-media { flex: 1 1 auto; }
 /* Plantilla «photo» (Foto grande): la foto manda; datos pequeños sobre un
-   degradado discreto, sin panel, y el botón del ancho del texto. */
+   degradado discreto, sin panel, y el botón principal más bajo, pero coral y
+   a lo ancho como en todas (antes blanco y a su texto, que cambiaba de ancho
+   con «Ver tu código»; Iván, 26-11, §4zzz-pildoras P1 y P2). */
 .tj--photo .tj-panel { position: absolute; left: 0; right: 0; bottom: 0; margin: 0; padding: 70px 16px 16px; border: 0; border-radius: 0 0 26px 26px;
   background: linear-gradient(to bottom, transparent, rgba(0,0,0,.45) 45%, rgba(0,0,0,.72)); color: #fff; box-shadow: none; gap: 6px;
   backdrop-filter: none; -webkit-backdrop-filter: none; text-shadow: 0 1px 3px rgba(0,0,0,.35); }
@@ -122,7 +125,7 @@
 .tj--photo .tj-negocio .tj-dist, .tj--photo .tj-org { color: rgba(255,255,255,.82); }
 .tj--photo .tj-chip { background: none; border: 0; padding: 0; color: rgba(255,255,255,.88); }
 .tj--photo .tj-precio { font-size: 13px; padding: 3px 9px; text-shadow: none; }
-.tj--photo .tj-cta { align-self: flex-start; min-height: 36px; padding: 0 14px; font-size: 13px; background: #fff; color: #0A0A0A; text-shadow: none; }
+.tj--photo .tj-cta { min-height: 36px; padding: 0 14px; font-size: 13px; text-shadow: none; }
 .tj--photo .tj-cuando.ahora { color: #FF8FA3; }
 /* Plantilla «minimal»: sobria; el color solo en el precio. */
 :is(.pub, .tjv) .tj--minimal .tj-titulo { font-weight: 700; }
