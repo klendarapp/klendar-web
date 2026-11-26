@@ -274,7 +274,7 @@ try {
         on: document.querySelector('#nav a.nav[aria-current]')?.getAttribute('href') || '', pagina: document.querySelector('#view > div')?.dataset.pagina || '',
       }));
       // Que la pantalla `pagina` se haya pintado (y no siga «Cargando…»).
-      const pintada = (pagina) => pg.waitForFunction((x) => document.querySelector('#view > div')?.dataset.pagina === x && !document.querySelector('#view .loading'), pagina, { timeout: 10000 }).catch(() => {});
+      const pintada = (pagina) => pg.waitForFunction((x) => document.querySelector('#view > div')?.dataset.pagina === x && !document.querySelector('#view .loading, #view .esq-p'), pagina, { timeout: 10000 }).catch(() => {});
       // a) /panel abre Hoy, en /panel.
       await pg.goto(`${BASE}/panel`);
       await pg.waitForSelector('#view h1');

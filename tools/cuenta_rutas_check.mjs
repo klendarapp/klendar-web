@@ -88,7 +88,7 @@ async function abre(nav, { ancho = 390, lang = '', sesion = false, consents = {}
 const dir = (p) => { const u = new URL(p.url()); return u.pathname + u.search; };
 const pintada = (p) => p.waitForFunction(() => {
   const v = document.getElementById('view');
-  return v && !v.querySelector('.esq') && v.textContent.trim() && !/^(Cargando|Loading)…?$/.test(v.textContent.trim());
+  return v && !v.querySelector('.esq, .esq-p') && v.textContent.trim() && !/^(Cargando|Loading)…?$/.test(v.textContent.trim());
 });
 /** Lo que no debe quedar en ninguna pantalla: `#/` de «Tu cuenta» ni `/app/`. */
 const enlacesViejos = (p) => p.evaluate(() => [...document.querySelectorAll('a[href]')]

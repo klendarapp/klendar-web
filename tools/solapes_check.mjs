@@ -153,7 +153,7 @@ async function tanda(perfil, zona) {
       await pg.goto(url, { waitUntil: 'load', timeout: 20000 });
       await pg.waitForLoadState('networkidle', { timeout: 6000 }).catch(() => {});
       if (zona !== 'pub') await pg.waitForSelector('#view h1, #view h2', { timeout: 10000 }).catch(() => {});
-      await pg.waitForFunction(() => !document.querySelector('#view .loading, .aguja-carga'), null, { timeout: 5000 }).catch(() => {});
+      await pg.waitForFunction(() => !document.querySelector('#view .loading, #view .esq-p, .aguja-carga'), null, { timeout: 5000 }).catch(() => {});
       await pg.evaluate(() => document.fonts.ready);
       await pg.waitForTimeout(350);
       // En el móvil, la ventana que se ensanchó un momento al cargar (la
