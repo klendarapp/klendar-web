@@ -219,11 +219,22 @@ function encFormulario(caja, d, i, hecho) {
   f.elements.mode.onchange = modo; modo();
   f.querySelectorAll('[name="al"]').forEach((c) => { c.onchange = () => { if (c.checked) f.elements.al_none.checked = false; }; });
   f.elements.al_none.onchange = () => { if (f.elements.al_none.checked) f.querySelectorAll('[name="al"]').forEach((c) => { c.checked = false; }); };
-  $('#encFoto', caja).onchange = async (e) => { const fl = e.target.files?.[0]; if (fl) { foto = (await encSubeFoto(fl)) || foto; toast(bi('Foto lista', 'Photo ready')); } };
+  // «Foto lista» solo si ha subido (antes salía también tras el error) y
+  // «Crear» o «Guardar» espera a la que aún sube (si no, iba sin ella).
+  let subiendo = null;
+  $('#encFoto', caja).onchange = async (e) => {
+    const fl = e.target.files?.[0];
+    if (!fl) return;
+    const esta = (subiendo = encSubeFoto(fl).catch((err) => { toast(friendly(err.message), true); return null; }));
+    const url = await esta;
+    if (subiendo === esta) subiendo = null;
+    if (url) { foto = url; toast(bi('Foto lista', 'Photo ready')); }
+  };
   const lee = (txt) => String(txt || '').split(',').map((x) => x.trim()).filter(Boolean).map((x) => x.split('-').map((y) => y.trim()));
   caja.scrollIntoView({ behavior: scrollSuave(), block: 'start' });
   f.onsubmit = async (e) => {
     e.preventDefault();
+    if (subiendo) await subiendo;
     const fe = f.elements;
     const precio = fe.price.value.trim() ? Math.round(Number(fe.price.value.replace(',', '.')) * 100) : null;
     const opciones = fe.options.value.split('\n').map((l) => l.trim()).filter(Boolean).map((l) => {
@@ -245,4 +256,7 @@ function encFormulario(caja, d, i, hecho) {
       hecho();
     } catch (err) { toast(err.message, true); }
   };
+  // Se pinta al tocar, después de la pantalla: sin esto, un doble clic en
+  // «Crear» creaba dos iguales.
+  sinDobleEnvio(caja);
 }
