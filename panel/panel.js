@@ -2316,10 +2316,9 @@ function avisoCerradoHoy() {
 /** Cierra hasta las 5 de la mañana del negocio (mañana abre solo; de
  * madrugada, antes de las 5, las de hoy: no 27 horas) o abre de nuevo.
  * Lo mismo que la app. Se deshace desde el aviso. */
-async function cambiaCerradoHoy(boton, cerrar, { deshacer = true } = {}) {
+async function cambiaCerradoHoy(boton, cerrar, { deshacer = true, negocio = BIZ.id } = {}) {
   if (boton?.disabled) return;
   if (boton) boton.disabled = true;
-  const negocio = BIZ.id;
   const hasta = enDiasNegocio(partesNegocio(new Date()).h < 5 ? 0 : 1, 5);
   try {
     await rpc('set_business_pause', { p_business: negocio, p_until: cerrar ? hasta.toISOString() : null });
@@ -2329,7 +2328,9 @@ async function cambiaCerradoHoy(boton, cerrar, { deshacer = true } = {}) {
     if (cerrar && deshacer) await avisaEventosDelCierre({ p_until: hasta.toISOString() });
     if (deshacer) {
       toastDeshacer(cerrar ? 'Ahora mismo no se ve nada de tu negocio. Mañana vuelve a verse solo.' : 'Abierto de nuevo',
-        () => cambiaCerradoHoy(null, !cerrar, { deshacer: false }));
+        // El de entonces: el aviso dura 6 s y sobrevive a cambiar de local
+        // (antes «Deshacer» cerraba o abría el otro).
+        () => cambiaCerradoHoy(null, !cerrar, { deshacer: false, negocio }));
     }
     route();
   } catch (e) { toast(friendly(e.message), true); if (boton) boton.disabled = false; }
