@@ -105,12 +105,14 @@ PAGES.grupos = async (v) => {
       PAGES.grupos(v).then(() => { I18N.translate(v); $(`[data-filtro="${f}"]`, v)?.focus(); });
     };
   });
+  // Mientras se manda, el botón de la página no se vuelve a pulsar (antes,
+  // una segunda propuesta o un segundo «No podemos»: dos avisos al cliente).
   $$('[data-propuesta]', v).forEach((b) => {
-    b.onclick = () => grupoPropuesta((lista || []).find((x) => x.id === b.dataset.propuesta), v);
+    b.onclick = () => enBoton(b, () => grupoPropuesta((lista || []).find((x) => x.id === b.dataset.propuesta), v));
   });
   $$('[data-denunciar]', v).forEach((b) => { b.onclick = () => grupoDenunciar(b.dataset.denunciar); });
   $$('[data-no-podemos]', v).forEach((b) => {
-    b.onclick = async () => {
+    b.onclick = () => enBoton(b, async () => {
       const r = await modal({
         title: S.cannotQ,
         intro: esc(bi('Le diremos que esta vez no puedes. Su petición sigue abierta con los demás negocios.', 'We’ll tell them you can’t this time. Their request stays open with the other places.')),
@@ -123,8 +125,11 @@ PAGES.grupos = async (v) => {
         toast(S.cannotDone);
         PAGES.grupos(v).then(() => I18N.translate(v));
       } catch (e) { toast(e.message, true); }
-    };
+    });
   });
+  // Al repintarse sola (guardar, los filtros, tras proponer) no pasa por
+  // `route()`: sus formularios, también una vez cada vez.
+  sinDobleEnvio(v);
 };
 
 /** Una petición en la bandeja. */

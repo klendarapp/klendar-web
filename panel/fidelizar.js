@@ -324,7 +324,8 @@ PAGES.habituales = async (v) => {
     if (!users.length) { err.textContent = fielError('no_recipients'); return; }
     const k = users.length;
     const ok = await confirmDlg(bi(`¿Mandar el regalo a ${k === 1 ? '1 persona' : `${k} personas`}?`, `Send the gift to ${k === 1 ? '1 person' : `${k} people`}?`),
-      bi(`Recibirán «${regalo}» con un código para canjearlo. Solo se puede mandar una vez al mes.`, `They'll get “${regalo}” with a code to redeem it. You can only send it once a month.`),
+      // Lo escrito, escapado: el cuerpo del diálogo es HTML (un «<» lo rompía).
+      esc(bi(`Recibirán «${regalo}» con un código para canjearlo. Solo se puede mandar una vez al mes.`, `They'll get “${regalo}” with a code to redeem it. You can only send it once a month.`)),
       { submit: $('#mandar', gf).textContent });
     if (!ok) return;
     try {
@@ -339,4 +340,6 @@ PAGES.habituales = async (v) => {
       PAGES.habituales(v);
     } catch (x) { err.textContent = x.message; }
   };
+  // Se repinta sola (sin `route()`): «Mandar el regalo», una vez cada vez.
+  sinDobleEnvio(v);
 };

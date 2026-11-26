@@ -194,6 +194,8 @@ async function bonoForm(v, id) {
       } catch (e) { toast(e.message, true); }
     };
   }
+  // Se repinta sola al pausar (sin `route()`): «Guardar», una vez cada vez.
+  sinDobleEnvio(v);
 }
 
 /** Una lista de usos: cuándo, quién, a mano, deshecho y «Deshacer». */
