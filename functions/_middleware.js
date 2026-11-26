@@ -16,7 +16,7 @@
 // pasa por aquí: lo saca `_routes.json` (cada paso por una Function cuenta
 // en el límite de CPU del plan gratis, 10 ms; ver RUNBOOK §3f).
 import { direccionBuena } from './_lib/direccion.js';
-import { EN_CACHE, desdeLaCache } from './_lib/cache.js';
+import { EN_CACHE, desdeLaCache, sinRastreo } from './_lib/cache.js';
 import { CABECERAS_ADMIN, CABECERAS_PANEL, CSP_PUBLICA, conNonce, nonceNuevo } from './_lib/csp.js';
 import { decideHost, esHostAdmin } from './_lib/admin.js';
 import { politicaPermisos } from './_lib/permisos.js';
@@ -58,6 +58,17 @@ const rutaReal = (pathname) => {
 };
 
 // 0. Direcciones sin barra al final (Iván, 2026-11-11): ver _lib/direccion.js.
+
+// Una página pública de las que se guardan en el borde (_lib/cache.js), sin
+// los parámetros de rastreo (`sinRastreo`): la misma clave y la misma página
+// con `?utm_…` o `?fbclid=…` que sin ellos.
+function publica(ctx, head) {
+  const limpia = sinRastreo(new URL(ctx.request.url));
+  const rq = limpia ? new Request(limpia.toString(), ctx.request) : ctx.request;
+  return desdeLaCache(ctx, limpia || new URL(ctx.request.url), head, () => (head
+    ? ctx.next(new Request(rq.url, { method: 'GET', headers: rq.headers }))
+    : limpia ? ctx.next(rq) : ctx.next()));
+}
 
 export async function onRequest(ctx) {
   const { pathname } = new URL(ctx.request.url);
@@ -109,9 +120,7 @@ export async function onRequest(ctx) {
     : zonaAdmin
       ? await ctx.env.ASSETS.fetch(new URL(host.reescribe, ctx.request.url))
       : (head || ctx.request.method === 'GET') && EN_CACHE.test(pathname)
-        ? await desdeLaCache(ctx, new URL(ctx.request.url), head, () => (head
-          ? ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
-          : ctx.next()))
+        ? await publica(ctx, head)
         : head
           ? await ctx.next(new Request(ctx.request.url, { method: 'GET', headers: ctx.request.headers }))
           : await ctx.next();

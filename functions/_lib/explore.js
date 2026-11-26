@@ -17,7 +17,7 @@
 
 import { categoriasSinFoto } from './sinfoto.js';
 import { enlaceCuenta } from './cuenta.js';
-import { cabeceraEdad, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido, jsonEnScript } from './page.js';
+import { ARRANQUE, cabeceraEdad, compilaAlArrancar, edadDeclarada, esc, html, preguntaEdadEncendida, rows, rpc, rpcAll, supabasePublic, vistosEncendido, jsonEnScript } from './page.js';
 import KZ from '../../assets/zona.js';
 import KCe from '../../assets/celda.js';
 import { celdaDeConexion, zonaDeConexion } from './conexion.js';
@@ -1364,6 +1364,7 @@ export function dependeDeLaConexion(searchParams) {
   // 11-11, como la app) en vez de «Próximas…» o «Bares, Re…».
 
 export async function explorePage(url, lang, modo = 'explorar', request = null) {
+  if (url === ARRANQUE) return null; // compilaAlArrancar (page.js)
   const en = lang === 'en';
   const S = T(en);
   // Contenido +18 (Iván, 2026-10-27): lo contestado en este navegador a
@@ -2978,3 +2979,8 @@ export async function kidsPage(rawCity, lang) {
     head: indexable ? ldScript(jsonLd) : '<meta name="robots" content="noindex, follow">',
   }), 200, 'public, max-age=300, s-maxage=900');
 }
+
+// Explorar y Descubre, compilados al cargar el módulo y no en la primera
+// petición de cada copia (page.js, compilaAlArrancar; RUNBOOK §4zzz-cpu-web).
+// T(): solo construye los textos.
+compilaAlArrancar(explorePage, () => T(false), () => T(true));

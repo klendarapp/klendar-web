@@ -10,7 +10,7 @@
 
 import { categoriasSinFoto } from './sinfoto.js';
 import { enlaceCuenta } from './cuenta.js';
-import { cabeceraEdad, edadDeclarada, esc, fmtWhen, html, isUuid, preguntaEdadEncendida, rpc, rpcAll, rows, supabasePublic, jsonEnScript } from './page.js';
+import { ARRANQUE, cabeceraEdad, compilaAlArrancar, edadDeclarada, esc, fmtWhen, html, isUuid, preguntaEdadEncendida, rpc, rpcAll, rows, supabasePublic, jsonEnScript } from './page.js';
 import KZ from '../../assets/zona.js';
 import { decodeSeg,
   agendaBase, BASE, benefit, bizPath, breadcrumbLd, cityLinks, citySeg, datosDeNegocios, discoverBase, exploreBase,
@@ -181,7 +181,9 @@ function icsHref(o, lugar, url) {
 const cuenta = enlaceCuenta;
 /** Solo enlaces web: lo que escribe un negocio no puede ser un javascript:. */
 // «4,0» en español y «4.0» en inglés, como la app.
-const nota = (r, lang) => Number(r).toLocaleString(lang === 'en' ? 'en-GB' : 'es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+// Los formateadores, uno por idioma y al cargar (no uno por nota; RUNBOOK §4zzz-cpu-web).
+const NOTA = { en: new Intl.NumberFormat('en-GB', { minimumFractionDigits: 1, maximumFractionDigits: 1 }), es: new Intl.NumberFormat('es-ES', { minimumFractionDigits: 1, maximumFractionDigits: 1 }) };
+const nota = (r, lang) => NOTA[lang === 'en' ? 'en' : 'es'].format(Number(r));
 
 const seguro = (u) => (/^https?:\/\//i.test(String(u || '')) ? String(u) : '');
 /** Una publicación que ya acabó o se borró, o un negocio que ya no está: con
@@ -330,6 +332,7 @@ function puertaEdad(lang, path) {
 }
 
 async function fichaOferta(id, lang, rpRaw, H, conSesion = false) {
+  if (id === ARRANQUE) return null; // compilaAlArrancar (page.js)
   const path = `${pre(lang)}/o/${id}`;
   const en = lang === 'en';
   if (!isUuid(id)) return notFound(lang, path, 'o');
@@ -945,6 +948,7 @@ const PREGUNTAS_CSS = `<style>
 </style>`;
 
 export async function businessPage(param, lang, search = '') {
+  if (param === ARRANQUE) return null; // compilaAlArrancar (page.js)
   // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
   await categoriasSinFoto();
   const en = lang === 'en';
@@ -1684,6 +1688,7 @@ ${GRUPOS_CSS}` : ''}`,
 const PRETTY = (s) => String(s || '').replace(/(^|[\s-])(\p{L})/gu, (m, a, b) => a + b.toLocaleUpperCase('es'));
 
 export async function agendaPage(rawCity, lang) {
+  if (rawCity === ARRANQUE) return null; // compilaAlArrancar (page.js)
   // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
   await categoriasSinFoto();
   const en = lang === 'en';
@@ -1820,6 +1825,7 @@ function placesBlock(negocios, lang, titulo) {
  * con cada categoría de la ciudad.
  */
 export async function todayPage(rawCity, lang) {
+  if (rawCity === ARRANQUE) return null; // compilaAlArrancar (page.js)
   // Sin foto: el icono de la categoría de cada publicación (§4zzz-sinfoto).
   await categoriasSinFoto();
   const en = lang === 'en';
@@ -2010,3 +2016,7 @@ export function friendLinkPage(code, lang) {
   res.headers.set('x-robots-tag', 'noindex, nofollow');
   return res;
 }
+
+// Las fichas, la agenda y «Hoy», compiladas al cargar el módulo y no en la
+// primera petición de cada copia (page.js, compilaAlArrancar; RUNBOOK §4zzz-cpu-web).
+compilaAlArrancar(fichaOferta, businessPage, agendaPage, todayPage);

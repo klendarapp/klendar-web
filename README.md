@@ -114,6 +114,30 @@ Cloudflare (Cache API, `functions/_lib/cache.js`):
   *Purge Everything* (o *Custom Purge* por dirección: la clave lleva detrás
   `?__borde=v3`, o `&__borde=v3` si ya tenía consulta), o cambiar `VERSION` en
   `functions/_lib/cache.js` y subir (lo guardado antes deja de valer).
+- **Parámetros de rastreo** (desde el 26-11, RUNBOOK §4zzz-cpu-web): `utm_*`,
+  `fbclid`, `gclid`, `srsltid` (Google), `igshid` y compañía se quitan antes
+  de mirar la caché y de pintar (`sinRastreo`): la misma clave y la misma
+  página que sin ellos. Antes cada clic desde Google, Instagram o una campaña
+  era una dirección nueva, pintada desde cero.
+
+## CPU de las Functions (plan gratis: 10 ms por petición)
+
+Cloudflare corta la petición que pasa de 10 ms de CPU (error 1102, «Exceeded
+CPU Time Limits»); la espera a la base no cuenta. Lo caro es la primera
+petición de cada copia nueva de la Function («en frío»: V8 compila y estrena
+el código), y con poco tráfico casi todas lo son.
+
+- `node tools/cpu_check.mjs` (en el pre-push, unos 12 s): el CPU del
+  middleware y de la página de ~47 rutas, con la base simulada de
+  `tools/_web_con_datos.mjs` y sin red, en frío y en caliente; falla si una
+  pasa de 8 ms en caliente o 40 en frío. `node tools/cpu_check.mjs una
+  /explorar` para una; `ESCALA=10` con más datos; `PERFIL=x.cpuprofile` el
+  perfil de la 1.ª visita; `CACHE=hit` una visita servida de la caché.
+- Las páginas grandes se compilan al cargar el módulo, no en la primera
+  petición (`compilaAlArrancar` de `functions/_lib/page.js`: la función vuelve
+  en su primera línea con `ARRANQUE`). Una página nueva y grande: lo mismo.
+- Los `Intl` (fechas, números, orden) se crean una vez al cargar, no en cada
+  llamada.
 
 Además, las listas que piden casi todas las páginas (ciudades, categorías,
 colecciones, las «Populares» de «Busca tu municipio», el municipio de un

@@ -295,9 +295,13 @@ export function siteHeader(lang, esPath = '/', enPath = '/en', actual = '') {
  * está parado en 1970 fuera de una petición, así que no puede ir en `TEXTOS`
  * (que se evalúa al cargar el módulo). En hora de Madrid.
  */
+// El formateador sí se crea al cargar (crear uno en cada petición costaba CPU;
+// RUNBOOK §4zzz-cpu-web); la fecha, en cada petición.
+let ANIO = null;
+try { ANIO = new Intl.DateTimeFormat('en', { timeZone: 'Europe/Madrid', year: 'numeric' }); } catch { /* sin Intl: el año UTC */ }
 export function anioActual(ahora = new Date()) {
   try {
-    return new Intl.DateTimeFormat('en', { timeZone: 'Europe/Madrid', year: 'numeric' }).format(ahora);
+    return ANIO ? ANIO.format(ahora) : String(ahora.getUTCFullYear());
   } catch {
     return String(ahora.getUTCFullYear());
   }

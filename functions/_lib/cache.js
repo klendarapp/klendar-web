@@ -72,6 +72,22 @@ const EXPLORA_O_DESCUBRE = /^\/(en\/)?(explorar|explore|descubre|discover)$/;
 /** La respuesta a «¿Tienes 18 años o más?» de la cookie («0», «1») o null. */
 const edadDe = (request) => ((/(?:^|;\s*)klendar_18=([01])(?![0-9])/.exec(request.headers.get('cookie') || '') || [])[1] || null);
 
+// Lo que añaden los enlaces de Google (`srsltid`), Facebook e Instagram
+// (`fbclid`, `igshid`), las campañas (`utm_*`) y compañía: ninguna página lo
+// lee, pero cada valor es distinto y hacía de cada visita una dirección nueva
+// para la caché (pintada desde cero; RUNBOOK §4zzz-cpu-web). Se quita antes
+// de mirar la caché y de pintar; en el navegador la dirección no cambia.
+const RASTREO = /^(utm_[a-z_]+|fbclid|gclid|gbraid|wbraid|dclid|msclkid|igshid|igsh|ttclid|twclid|li_fat_id|mc_cid|mc_eid|_ga|_gl|yclid|srsltid)$/i;
+/** [url] sin esos parámetros, o null si no llevaba ninguno. */
+export function sinRastreo(url) {
+  const qs = url.searchParams;
+  const quitar = [...new Set([...qs.keys()].filter((k) => RASTREO.test(k)))];
+  if (!quitar.length) return null;
+  const u = new URL(url.toString());
+  for (const k of quitar) u.searchParams.delete(k);
+  return u;
+}
+
 /** ¿Se puede mirar la caché para esta petición? ([url]: en Descubre y
  * Explorar la cookie de la edad no lo impide: va en la clave.) */
 export function peticionGuardable(request, url = null) {

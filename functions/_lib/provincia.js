@@ -100,6 +100,8 @@ export async function ofertasPage(rawCity, lang) {
 // ── Una provincia ──────────────────────────────────────────────────────────
 // Lo de hoy, de los municipios que más tienen (una llamada por municipio, como
 // mucho estos: el plan gratis de Cloudflare corta a las 50 subpeticiones).
+// Como `localeCompare(x, 'es')`, con un solo Collator (no uno por comparación; RUNBOOK §4zzz-cpu-web).
+const ORDEN_ES = new Intl.Collator('es').compare;
 const MUNICIPIOS_HOY = 4;
 const POR_MUNICIPIO = 8;
 
@@ -145,7 +147,7 @@ export async function provinciaPage(rawSlug, lang) {
         agenda: 'Agenda', biz: 'Publicar mi negocio',
         note: 'Se actualiza según van publicando los negocios. Cada municipio tiene su página de hoy, de la semana, de ofertas y de planes con niños.',
       };
-  const conPlanes = p.lugares.filter((l) => l.n > 0).sort((a, b) => b.n - a.n || String(a.city).localeCompare(String(b.city), 'es'));
+  const conPlanes = p.lugares.filter((l) => l.n > 0).sort((a, b) => b.n - a.n || ORDEN_ES(String(a.city), String(b.city)));
   const seg = (l) => citySeg(l.slug || l.city);
   const body = `
   <p class="crumbs"><a href="${en ? '/en' : '/'}">Klendar</a> · <a href="${agendaBase(lang)}">${S.agenda}</a></p>

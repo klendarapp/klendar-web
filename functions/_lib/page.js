@@ -49,7 +49,30 @@ export const ERRORES_V = '20261123admin';
 export const erroresScript = () =>
   `<script src="/assets/errores.js?v=${ERRORES_V}" async data-url="${esc(CFG.url)}" data-key="${esc(CFG.key)}"></script>`;
 
-export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// La tabla, una sola vez (antes, un objeto nuevo por cada carácter escapado; RUNBOOK §4zzz-cpu-web).
+const ESC = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+export const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC[c]);
+
+/**
+ * Compilar al arrancar (RUNBOOK §4zzz-cpu-web). V8 compila cada función la
+ * primera vez que se llama, y en una copia nueva de la Function (con poco
+ * tráfico, casi todas) eso caía dentro de la primera petición: solo compilar
+ * `explorePage` (96 KB de código) eran ~5 ms de los 10 de CPU del plan gratis.
+ * Lo que se hace al cargar el módulo no cuenta en la petición (Cloudflare lo
+ * mide aparte: «startup time», 1 s). Una función de página llamada con
+ * `ARRANQUE` vuelve en su primera línea sin hacer nada (ni red, ni cachés),
+ * pero ya queda compilada.
+ */
+export const ARRANQUE = Symbol('arranque');
+/** Llama a cada una con `ARRANQUE`; nada de lo que pase aquí puede tumbar el arranque. */
+export function compilaAlArrancar(...fns) {
+  for (const f of fns) {
+    try {
+      const r = f(ARRANQUE);
+      if (r && typeof r.catch === 'function') r.catch(() => {});
+    } catch { /* nada */ }
+  }
+}
 export const isUuid = (s) => UUID.test(s || '');
 /** Un valor para meterlo en un `<script>` en línea: JSON con `<`, U+2028 y
  *  U+2029 escapados. `JSON.stringify` solo no basta: un nombre de negocio con

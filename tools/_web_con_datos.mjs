@@ -395,3 +395,41 @@ function conNavegadores() {
     tipo.launchPersistentContext = async (...a) => { const ctx = await persistente(...a); return ACTIVO ? ACTIVO(ctx) : ctx; };
   }
 }
+
+/**
+ * El mismo Supabase falso, sin red ni servidor (tools/cpu_check.mjs mide el
+ * CPU de las Functions y no puede contar el de un servidor HTTP): devuelve
+ * `(url, init) => { status, cuerpo }` (o null si [url] no es de [base]).
+ */
+export function respondeSinRed({ base, rpc = {}, tablas = {}, datos = DATOS } = {}) {
+  const D = datos;
+  const R = { ...respuestas(D), ...rpc };
+  const T = {
+    cities: D.CIUDADES, categories: D.CATEGORIAS, businesses: D.NEGOCIOS, offers: D.PLANES, municipalities: D.MUNICIPIOS,
+    app_config: [], business_posts: [], business_municipality: [], ...tablas,
+  };
+  // Síncrono (para que quien mide pueda restar justo su tiempo): una respuesta
+  // que sea una promesa se devuelve como promesa.
+  const sale = (v, f) => (v && typeof v.then === 'function' ? v.then(f) : f(v));
+  return (u, init = {}) => {
+    if (!String(u).startsWith(base)) return null;
+    const url = new URL(String(u));
+    const p = url.pathname;
+    let args = {};
+    try { args = JSON.parse(init.body || '{}'); } catch { /* sin cuerpo */ }
+    if (p.startsWith('/rest/v1/rpc/')) {
+      const r = R[p.slice('/rest/v1/rpc/'.length)];
+      return sale(typeof r === 'function' ? r(args, { headers: {} }, D) : r !== undefined ? r : [], (v) => ({ status: 200, cuerpo: JSON.stringify(v ?? null) }));
+    }
+    if (p.startsWith('/rest/v1/')) {
+      const t = p.slice('/rest/v1/'.length);
+      const acepta = new Headers(init.headers || {}).get('accept') || '';
+      const uno = /vnd\.pgrst\.object/.test(acepta);
+      return sale(typeof T[t] === 'function' ? T[t](url.searchParams, { headers: {} }, D) : T[t] || [], (base2) => {
+        const filas = tabla(base2, url.searchParams);
+        return { status: uno && !filas.length ? 406 : 200, cuerpo: JSON.stringify(uno ? filas[0] || null : filas) };
+      });
+    }
+    return { status: 200, cuerpo: '{}' };
+  };
+}

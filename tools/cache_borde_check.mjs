@@ -281,6 +281,32 @@ const DE_SERIE = 'public, max-age=60, s-maxage=300';
   globalThis.fetch = realFetch;
 }
 
+// 8. Los parámetros de rastreo (`?utm_…`, `fbclid`, `srsltid`…; RUNBOOK §4zzz-cpu-web):
+//    la misma clave y la misma página que sin ellos, y la página no los ve;
+//    lo que sí lee una página (`?p=`, `rp`) sigue en la clave.
+{
+  const vistas = [];
+  const pinta = async (ruta) => {
+    const request = new Request(`https://klendar.app${ruta}`);
+    const ctx = {
+      request, env: {}, waitUntil: (p) => pendientes.push(p),
+      next: async (rq) => { pintadas += 1; vistas.push((rq || request).url); return html('<p>ficha</p>', DE_SERIE)(); },
+    };
+    const r = await onRequest(ctx);
+    await r.text();
+    await Promise.all(pendientes.splice(0));
+    return r.headers.get('x-klendar-cache');
+  };
+  pintadas = 0;
+  const a = await pinta('/b/rastreo-prueba?utm_source=ig&utm_medium=social');
+  const b = await pinta('/b/rastreo-prueba?fbclid=IwAR123');
+  const c = await pinta('/b/rastreo-prueba?srsltid=AfmBOo');
+  ok(a === 'MISS' && b === 'HIT' && c === 'HIT' && pintadas === 1, '8. con utm_, fbclid o srsltid: una sola pintada y la misma clave', `${a}/${b}/${c} · ${pintadas}`);
+  ok(vistas[0] === 'https://klendar.app/b/rastreo-prueba', '8. la página se pinta sin los parámetros de rastreo', vistas[0]);
+  const d = await pinta('/b/rastreo-prueba?p=2&utm_campaign=x');
+  ok(d === 'MISS' && vistas.at(-1) === 'https://klendar.app/b/rastreo-prueba?p=2', '8. lo que la página sí lee (?p=) sigue en la clave y llega', `${d} ${vistas.at(-1)}`);
+}
+
 Date.now = dateNow;
 console.log(fallos ? `\n${fallos} FALLAN` : '\nTodo bien.');
 process.exit(fallos ? 1 : 0);

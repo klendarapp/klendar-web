@@ -12,7 +12,7 @@
 // «Tu cuenta» (`#/grupos/pedir?b=<id>,<id>`), que pide entrar.
 
 import { enlaceCuenta } from './cuenta.js';
-import { esc, html, rows, rpcAll } from './page.js';
+import { ARRANQUE, compilaAlArrancar, esc, html, rows, rpcAll } from './page.js';
 import KG from '../../assets/textos-grupos.js';
 import { bizPath, breadcrumbLd, ldScript, publicPage } from './public.js';
 import { recuperaZona, zonaMenu } from './partidos.js';
@@ -78,6 +78,7 @@ const juntaSinRepetir = (listas) => {
 
 /** La lista. */
 export async function gruposPage(url, lang) {
+  if (url === ARRANQUE) return null; // compilaAlArrancar (page.js)
   const en = lang === 'en';
   const S = KG.t(lang);
   const base = gruposBase(lang);
@@ -222,3 +223,6 @@ export function grupoEnFicha(info, businessId, lang) {
       <p><a class="pill" data-solo-publico href="${esc(pedirHref(lang, [businessId]))}" rel="nofollow">${esc(S.askOne)}</a></p>
     </section>`;
 }
+
+// Compilada al cargar el módulo (page.js, compilaAlArrancar; RUNBOOK §4zzz-cpu-web).
+compilaAlArrancar(gruposPage);

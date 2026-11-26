@@ -17,6 +17,14 @@ Disallow: /en/discover?
 # (fichas, agenda, municipios, guías por municipio) siguen abiertas.
 Disallow: /guia/*?
 Disallow: /en/guide/*?
+# Partidos, grupos y sorteos con su zona (`?celda=`) o filtros: noindex y con
+# canonical a la página sin nada, como Explorar (RUNBOOK §4zzz-cpu-web).
+Disallow: /partidos?
+Disallow: /grupos?
+Disallow: /sorteos?
+Disallow: /en/matches?
+Disallow: /en/groups?
+Disallow: /en/giveaways?
 Disallow: /*?rp=
 Disallow: /*&rp=
 Disallow: /*?visita=

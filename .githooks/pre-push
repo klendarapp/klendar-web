@@ -26,6 +26,9 @@ python tools/robots_check.py || { echo "pre-push: robots.txt no es lo que genera
 for c in tools/revseg_check.mjs tools/alergenos_check.mjs tools/distancias_check.mjs tools/espana_check.mjs tools/auth_errores_check.cjs tools/precio_local_check.mjs tools/barras_check.mjs tools/compartir_check.mjs tools/ficha_una_vez_check.mjs tools/codigos_check.mjs tools/publicar_check.mjs tools/publicar2_check.mjs tools/reservas2_check.mjs tools/contacto_check.mjs tools/guias_check.mjs tools/encargos_check.mjs tools/aperturas_check.mjs tools/preguntas_reservar_check.mjs tools/amano_check.mjs tools/captcha_check.mjs tools/ayuda_guiada_check.mjs tools/cache_borde_check.mjs tools/celda_check.mjs tools/chips_check.mjs tools/seo_check.mjs tools/sitemap_agenda_check.mjs; do
   node "$c" >/dev/null 2>&1 || { echo "pre-push: falla $c (node $c para ver qué); no se sube."; exit 1; }
 done
+# El CPU de cada ruta (§4zzz-cpu-web; el plan gratis de Cloudflare corta a los 10 ms): middleware y página con la base simulada, en frío y en caliente,
+# sin red (unos 12 s). Falla si una ruta pasa de 8 ms en caliente o de 40 en frío (node tools/cpu_check.mjs para ver la tabla).
+node tools/cpu_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/cpu_check.mjs (CPU de las Functions; node tools/cpu_check.mjs para ver qué); no se sube."; exit 1; }
 # El admin en admin.klendar.app (§4zzz-admindom): qué hace cada host, la 404 de las direcciones viejas y las cabeceras del admin (sin navegador, 1 s).
 node tools/admin_dominio_check.mjs --sin-navegador >/dev/null 2>&1 || { echo "pre-push: falla tools/admin_dominio_check.mjs --sin-navegador (el admin en su subdominio); no se sube."; exit 1; }
 # El panel con direcciones limpias (§4zzz-panellimpio): qué sirve el servidor en cada ruta, la barra final, las cabeceras, _routes.json y ningún `#/` (sin navegador, 1 s).
