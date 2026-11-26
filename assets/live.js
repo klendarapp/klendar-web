@@ -98,8 +98,12 @@
   async function pintar(ciudad) {
     const items = await rpc('public_city_agenda', { p_city: ciudad, p_limit: MAX });
     if (!Array.isArray(items) || !items.length) return false;
-    const tz = await zonas(items.slice(0, MAX).map((o) => o.business_id));
-    const KT = items.slice(0, MAX).some((o) => !foto(o.images)) ? await conArte() : null;
+    // A la vez: las zonas horarias y el arte de las que no tienen foto no
+    // dependen la una del otro (§4zzz-cargas).
+    const [tz, KT] = await Promise.all([
+      zonas(items.slice(0, MAX).map((o) => o.business_id)),
+      items.slice(0, MAX).some((o) => !foto(o.images)) ? conArte() : null,
+    ]);
     const sinFoto = (o) => {
       const cat = KT && KT.arteDe(o);
       return cat ? `<span class="ph" style="position:relative">${KT.arteHtml(cat)}</span>` : '<span class="ph">✦</span>';

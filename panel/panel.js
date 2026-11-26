@@ -618,6 +618,9 @@ async function rpc(fn, args = {}) {
     throw new Error(friendly(e?.message));
   }
   // Nunca el texto de Postgres tal cual: el código, si lo hay, se traduce.
+  // Cortada por el tope de 25 s (`KL_FETCH_CON_TOPE`): supabase-js lo dice en
+  // `details`, y el `message` puede llegar vacío según el navegador.
+  if (res.error && /Request was aborted/.test(res.error.details || '')) throw Object.assign(new Error(friendly('timed out')), { clave: 'timed out' });
   if (res.error) throw Object.assign(new Error(friendly(res.error.message || (res.status >= 500 ? 'server_error' : ''))), { clave: res.error.message });
   return res.data;
 }
@@ -1174,7 +1177,7 @@ async function boot() {
   cabeceraDePanel();
   $('#app').hidden = false;
   // Mientras llegan tus negocios: la aguja, no la zona en blanco.
-  if (!$('#view').childElementCount) $('#view').innerHTML = '<div class="loading">Cargando…</div>';
+  if (!$('#view').childElementCount) $('#view').innerHTML = '<div class="loading" role="status">Cargando…</div>';
 
   const negocios = await negociosP;
   if (negocios.e) {
@@ -1537,6 +1540,23 @@ const PAGES = {};
 // de negocio y de pantalla seguido), lo que termine tarde no pisa ni saca
 // errores sobre la nueva.
 let RUTA_N = 0;
+/** Un botón suelto (no de formulario) que lanza algo: mientras trabaja,
+ * desactivado, con la aguja en su sitio (`.mov-ocupado`, sin cambiar de ancho)
+ * y `aria-busy`; no se manda dos veces (§4zzz-cargas; como `ocupado()` de «Tu
+ * cuenta»). Los errores los atiende `trabajo`. */
+async function enBoton(boton, trabajo) {
+  if (!boton || boton.disabled) return undefined;
+  boton.disabled = true;
+  boton.classList.add('mov-ocupado');
+  boton.setAttribute('aria-busy', 'true');
+  try { return await trabajo(); } finally {
+    if (boton.isConnected) {
+      boton.disabled = false;
+      boton.classList.remove('mov-ocupado');
+      boton.removeAttribute('aria-busy');
+    }
+  }
+}
 /** Un formulario no se manda dos veces: mientras trabaja, sus botones de
  * enviar se bloquean. Se aplica solo a los formularios de cada pantalla. */
 function sinDobleEnvio(caja) {
@@ -1671,7 +1691,7 @@ async function route() {
   // Qué pantalla es: las de lista y las de formulario van en una columna
   // de lectura en una pantalla ancha (panel.css, `data-pagina`).
   v.dataset.pagina = page;
-  v.innerHTML = '<div class="loading">Cargando…</div>';
+  v.innerHTML = '<div class="loading" role="status">Cargando…</div>';
   $('#view').replaceChildren(v);
   try {
     await (PAGES[page] || PAGES.hoy)(v, param);
@@ -6558,7 +6578,9 @@ PAGES.carta = async (v) => {
     guardando = true;
     const enviado = estadoCarta();
     const boton = $('#save', v);
-    if (boton) { boton.disabled = true; boton.textContent = I18N.t('Guardando…'); }
+    // La aguja en su sitio, sin cambiar de ancho (§4zzz-cargas; antes, el
+    // texto pasaba a «Guardando…»).
+    if (boton) { boton.disabled = true; boton.classList.add('mov-ocupado'); boton.setAttribute('aria-busy', 'true'); }
     let ok = false;
     try {
       await guardaFicha();
@@ -6576,7 +6598,7 @@ PAGES.carta = async (v) => {
         else {
           // Sin repintar: lo escrito sigue ahí para volver a probar.
           const b = $('#save', v);
-          if (b) { b.disabled = !sucia; b.textContent = guardarTxt; }
+          if (b) { b.disabled = !sucia; b.classList.remove('mov-ocupado'); b.removeAttribute('aria-busy'); }
         }
       }
     }
@@ -6588,7 +6610,7 @@ PAGES.carta = async (v) => {
     v.innerHTML = `
       <div class="page-head"><h1>${esc(tituloCarta(tipo))}</h1><span class="spacer"></span>
         ${canManage ? `${fotoCarta?.available ? `<button class="btn sm" id="foto-carta">${esc(I18N.t('Rellenar desde fotos'))}</button>` : ''}<button class="btn sm" id="add-sec">Añadir sección</button>
-        <button class="btn sm primary" id="save" ${sucia && !guardando ? '' : 'disabled'}>${guardando ? 'Guardando…' : esc(guardarTxt)}</button>` : ''}</div>
+        <button class="btn sm primary${guardando ? ' mov-ocupado' : ''}" id="save" ${sucia && !guardando ? '' : 'disabled'}${guardando ? ' aria-busy="true"' : ''}>${esc(guardarTxt)}</button>` : ''}</div>
       ${tipo !== 'menu' ? helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribir la lista</b> aquí, subir <b>fotos o un PDF</b> o poner un <b>enlace</b> a tu web. Escrita es lo que mejor se lee en el móvil.</p><p>Escrita, además, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y los archivos y el enlace se quedan debajo. Si no te apetece, con una foto o un PDF vas servido.</p>',
         '<p>Three ways, and you can use as many as you like at once: <b>type the list</b> here, upload <b>photos or a PDF</b> or add a <b>link</b> to your website. Typed is what reads best on a phone.</p><p>Typed, it can also be searched and screen readers can read it; if you type it, it is shown first and the files and the link go below. If you would rather not, a photo or a PDF is enough.</p>'))
     : helpBox('Tú eliges cómo ponerla', bi('<p>Tres maneras, y puedes usar las que quieras a la vez: <b>escribirla</b> aquí, subir <b>fotos o un PDF</b> de tu carta o poner un <b>enlace</b> a tu web. Escrita es lo que mejor se lee en el móvil.</p><p>Escrita, además, se puede buscar y la lee un lector de pantalla; si la escribes, es lo primero que se ve y los archivos y el enlace se quedan debajo. Si no te apetece, con una foto o un PDF vas servido.</p><p>Los <b>alérgenos</b> son los catorce que obliga a declarar el Reglamento 1169/2011. Pon solo los que sepas seguro: aquí equivocarse no es una errata.</p>',
@@ -8499,4 +8521,23 @@ async function salirDelEquipo() {
   if (aqui() === '/panel/hoy') route(); else go('/panel/hoy');
 }
 
-boot();
+// «Cargando más…» (§4zzz-cargas): mientras un «Ver más» pide la parte
+// siguiente (lo desactiva quien lo pulsa), la aguja pequeña en su sitio
+// (`.mov-ocupado`, sin cambiar de ancho) y `aria-busy` para el lector. Vale
+// para todas las listas por partes, sin tocar cada una.
+new MutationObserver((cambios) => {
+  for (const { target: b } of cambios) {
+    if (!b.matches?.('[data-ver-mas]')) continue;
+    b.classList.toggle('mov-ocupado', b.disabled);
+    if (b.disabled) b.setAttribute('aria-busy', 'true'); else b.removeAttribute('aria-busy');
+  }
+}).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['disabled'] });
+
+// Un fallo al arrancar (el enlace, la sesión…) no deja el panel en blanco ni
+// con el esqueleto para siempre: el error, con «Reintentar».
+boot().catch((e) => {
+  console.error(e);
+  $('#app').hidden = false;
+  $('#view').innerHTML = `<section class="vacio"><h2>${esc(I18N.t('Algo ha fallado'))}</h2><p>${esc(friendly(e?.message))}</p><div class="vacio-botones"><button class="btn primary" type="button" data-recargar>${esc(I18N.t('Reintentar'))}</button></div></section>`;
+  $('[data-recargar]', $('#view')).onclick = () => location.reload();
+});

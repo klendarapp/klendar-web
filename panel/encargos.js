@@ -172,7 +172,9 @@ PAGES['encargos-cosas'] = async (v) => {
     b.onclick = async () => {
       if (b.dataset.estado === 'deleted' && !(await confirmDlg(bi('¿Quitar de Encargos?', 'Remove from Pre-orders?'),
         esc(I18N.t('Deja de salir en tu ficha. Los encargos que ya tienes siguen igual.')), { submit: bi('Quitar', 'Remove'), danger: true }))) return;
-      try { await encRpc('set_preorder_item_status', { p_id: b.dataset.id, p_status: b.dataset.estado }); } catch (e) { toast(e.message, true); }
+      await enBoton(b, async () => {
+        try { await encRpc('set_preorder_item_status', { p_id: b.dataset.id, p_status: b.dataset.estado }); } catch (e) { toast(e.message, true); }
+      });
       PAGES['encargos-cosas'](v);
     };
   });

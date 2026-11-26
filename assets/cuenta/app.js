@@ -323,6 +323,9 @@ async function llamar(fn, args = {}) {
   // `datos`: lo demás que manda la base con el error (p. ej. de qué negocio
   // es una exclusiva), para las pantallas que lo cuentan con nombre.
   const falla = (clave, datos = null) => Object.assign(new Error(amable(clave)), { clave: String(clave || ''), datos });
+  // Cortada por el tope de 25 s (`KL_FETCH_CON_TOPE`): supabase-js lo dice en
+  // `details`, y el `message` puede llegar vacío según el navegador.
+  if (res.error && /Request was aborted/.test(res.error.details || '')) throw falla('timed out');
   // Un 5xx sin texto útil (la base o la red de Supabase caídas).
   if (res.error) throw falla(res.error.message || (res.status >= 500 ? 'server_error' : ''));
   const d = res.data;
@@ -637,7 +640,9 @@ async function navegar() {
     esqueletoT = setTimeout(() => {
       if (view.innerHTML !== antes) return;
       view.classList.remove('mov-entra');
-      view.innerHTML = `<div class="esq tarjetas" aria-busy="true" role="status"><span class="sr">${esc(t('Cargando…'))}</span></div>`;
+      // `role="status"` sin `aria-busy`: con él, algunos lectores se callan
+      // el «Cargando…» (§4zzz-cargas).
+      view.innerHTML = `<div class="esq tarjetas" role="status"><span class="sr">${esc(t('Cargando…'))}</span></div>`;
     }, 200);
   }
   try {
@@ -1497,6 +1502,17 @@ async function confirmaIdentidad() {
     (d.querySelector('input') || d.querySelector('button[type=submit]'))?.focus();
   });
 }
+
+// «Cargando más…» (§4zzz-cargas): mientras un «Ver más» pide la parte
+// siguiente (lo desactiva quien lo pulsa), la aguja pequeña en su sitio
+// (`.mov-ocupado`, sin cambiar de ancho) y `aria-busy` para el lector.
+new MutationObserver((cambios) => {
+  for (const { target: b } of cambios) {
+    if (!b.matches?.('[data-ver-mas]')) continue;
+    b.classList.toggle('mov-ocupado', b.disabled);
+    if (b.disabled) b.setAttribute('aria-busy', 'true'); else b.removeAttribute('aria-busy');
+  }
+}).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['disabled'] });
 
 /** Un botón que se bloquea mientras trabaja, para no mandar dos veces. */
 async function ocupado(boton, trabajo) {

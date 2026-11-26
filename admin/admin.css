@@ -229,9 +229,11 @@ dialog.modal .warn { background: rgba(255,92,92,.14); border-radius: 12px; paddi
 .login { width: min(var(--admin-acceso), calc(100% - 32px)); margin: 60px auto; display: grid; gap: 12px; }
 .login .btn { justify-content: center; }
 .login .brand { justify-content: center; margin-bottom: 8px; }
-/* .loading: el esqueleto común de site.css (filas grises con brillo). */
-.sk { height: 14px; border-radius: 6px; background: var(--glass); animation: pulse 1.2s ease-in-out infinite; }
-@keyframes pulse { 50% { opacity: .5 } }
+/* .loading: el esqueleto común de site.css (filas grises con brillo). Sale
+   solo si tarda (más de 200 ms): si carga antes, ni se ve, y sin parpadeo
+   (como «Tu cuenta» y la app; §4zzz-cargas). Ocupa su sitio desde el
+   principio (solo la opacidad): nada salta. Vale para el admin y el panel. */
+.loading { animation: mov-funde var(--mov-base) var(--mov-entra) 200ms backwards; }
 .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .75rem; }
 a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .stars { color: #F5B041; letter-spacing: 1px; }

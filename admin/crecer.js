@@ -304,7 +304,7 @@ PAGES.pedidos = async (v, id) => {
     <div class="tabs" id="crTabs"></div>
     <div class="toolbar"><input id="q" class="grow" type="search" placeholder="${esc(bi('Buscar por nombre…', 'Search by name…'))}" aria-label="${esc(bi('Buscar locales pedidos', 'Search requested places'))}" value="${esc(CR.q)}">
       <select id="crCiudad" aria-label="${esc(bi('Ciudad o zona', 'City or area'))}"></select></div>
-    <div id="list"><div class="loading">${esc(bi('Cargando…', 'Loading…'))}</div></div>`;
+    <div id="list"><div class="loading" role="status">${esc(bi('Cargando…', 'Loading…'))}</div></div>`;
   let filas = [];
   // Por partes, con «Ver más» (antes se cortaba en 200 sin avisar); la
   // primera trae además los recuentos y las ciudades.

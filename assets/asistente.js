@@ -554,8 +554,9 @@
       var espera = el('p', { class: 'asis-espera' }, [el('span', { class: 'mov-ocupado asis-aguja', 'aria-hidden': 'true' }), el('span', { class: 'asis-lector', texto: t('thinking') })]);
       log.append(espera);
       log.scrollTop = log.scrollHeight;
+      // Una sola aguja (§4zzz-cargas): la de «Pensando…» en la conversación;
+      // el botón solo se desactiva (antes, dos agujas a la vez).
       manda.disabled = true;
-      manda.classList.add('mov-ocupado');
       campo.disabled = true;
       pide('/functions/v1/help-assistant', {
         question: q, platform: 'web', lang: idioma(), consent: estado.signed_in ? undefined : permisoLocal(),
@@ -574,7 +575,6 @@
         log.append(el('p', { role: 'status', class: 'asis-error', texto: textoError(code) }), salidas(true));
       }).then(function () {
         manda.disabled = false;
-        manda.classList.remove('mov-ocupado');
         campo.disabled = false;
         log.scrollTop = log.scrollHeight;
         if (!form.hidden) campo.focus();

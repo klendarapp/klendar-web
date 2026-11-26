@@ -917,3 +917,7 @@ a.pl-dia:hover { background: var(--soft); }
    a la izquierda con su texto, como los demás de Ajustes (no centrado). */
 #view .bloque > .acciones { justify-content: flex-start; }
 #view .bloque > .acciones > :only-child { flex: 0 1 auto; }
+/* Mientras sube, solo la cápsula con la aguja (§4zzz-cargas): «Subiendo…»
+   queda para el lector, sin verse debajo (antes, texto y aguja uno encima
+   del otro). */
+.medio.subiendo .medio-sube { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

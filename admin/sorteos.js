@@ -119,7 +119,7 @@ PAGES.sorteos = async (v) => {
       <input id="q" class="grow" type="search" placeholder="Buscar por premio, negocio o ciudad…" aria-label="Buscar en sorteos" value="${esc(s.q || '')}">
       <select id="status">${[['active', 'Abiertos'], ['removed', 'Retirados'], ['all', 'Todos']].map((o) => `<option value="${o[0]}" ${(s.status || 'active') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
     const q = (s.q || '').trim();

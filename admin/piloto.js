@@ -207,8 +207,8 @@ PAGES.automatico = async (v) => {
   }).join('')}
     </div>
     <div class="grid2" style="margin-top:12px">
-      <div class="card" id="listaMarcas"><h2>${en ? 'Known brands' : 'Marcas conocidas'} <span class="badge">${fmtNum(d.lists?.brand || 0)}</span></h2><div data-lista="brand"><div class="loading"></div></div></div>
-      <div class="card" id="listaDominios"><h2>${en ? 'Official domains' : 'Dominios oficiales'} <span class="badge">${fmtNum(d.lists?.official_domain || 0)}</span></h2><div data-lista="official_domain"><div class="loading"></div></div></div>
+      <div class="card" id="listaMarcas"><h2>${en ? 'Known brands' : 'Marcas conocidas'} <span class="badge">${fmtNum(d.lists?.brand || 0)}</span></h2><div data-lista="brand"><div class="loading" role="status"></div></div></div>
+      <div class="card" id="listaDominios"><h2>${en ? 'Official domains' : 'Dominios oficiales'} <span class="badge">${fmtNum(d.lists?.official_domain || 0)}</span></h2><div data-lista="official_domain"><div class="loading" role="status"></div></div></div>
     </div>
     <div class="card" style="margin-top:12px"><h2>${en ? 'What was done automatically' : 'Lo que se ha hecho solo'}</h2>
       ${(d.actions || []).length ? d.actions.map(filaHecho).join('') : `<p class="muted" style="margin:0">${en ? 'Nothing yet.' : 'Nada todavía.'}</p>`}

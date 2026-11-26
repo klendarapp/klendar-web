@@ -403,7 +403,7 @@ async function entFicha(v, b) {
       `<p style="margin:12px 0 0"><button class="btn" type="button" id="retirar">${icono('deshacer')}${esc(I18N.t('Retirar la solicitud'))}</button></p>`)}`;
     $('#retirar', v).onclick = async () => {
       if (!await confirmDlg(I18N.t('¿Retirar la solicitud?'), esc(I18N.t('Dejaremos de revisarla y el documento se borrará. Podrás volver a pedirla cuando quieras.')), { submit: I18N.t('Retirar la solicitud'), danger: true })) return;
-      const r = await rpc('withdraw_entity_application', { p_id: a.id }).catch((x) => ({ ok: false, error: x.message }));
+      const r = await enBoton($('#retirar', v), () => rpc('withdraw_entity_application', { p_id: a.id }).catch((x) => ({ ok: false, error: x.message })));
       if (!r?.ok) { toast(entError(r?.error), true); return; }
       await entCarga();
       route();

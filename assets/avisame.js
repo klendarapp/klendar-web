@@ -197,8 +197,9 @@
         return;
       }
       if (boton.disabled) return;
-      var antes = boton.textContent;
-      boton.disabled = true; boton.textContent = T.busy;
+      // Ocupado (§4zzz-cargas): la aguja en su sitio, sin cambiar de ancho
+      // (`.mov-ocupado`, site.css), y el lector oye «ocupado».
+      boton.disabled = true; boton.classList.add('mov-ocupado'); boton.setAttribute('aria-busy', 'true');
       // Sin cuenta va por la Edge Function `city-waitlist-join`, que antes
       // comprueba que no es un robot (Turnstile, como las denuncias sin
       // cuenta; sin clave en el entorno no se pide nada).
@@ -220,7 +221,7 @@
       }).catch(function (x) {
         err.textContent = mensajeError(x); err.hidden = false;
       }).then(function () {
-        if (boton.isConnected) { boton.disabled = false; boton.textContent = antes; }
+        if (boton.isConnected) { boton.disabled = false; boton.classList.remove('mov-ocupado'); boton.removeAttribute('aria-busy'); }
       });
     });
     campo.focus();
@@ -233,9 +234,8 @@
       if (!URL_SB || !KEY) { location.href = si.getAttribute('href'); return; }
       if (!sesionGuardada()) { formulario(); return; }
       si.setAttribute('aria-disabled', 'true');
-      var antes = si.textContent;
-      si.textContent = T.busy;
-      var listo = function () { si.removeAttribute('aria-disabled'); si.textContent = antes; };
+      si.classList.add('mov-ocupado'); si.setAttribute('aria-busy', 'true');
+      var listo = function () { si.removeAttribute('aria-disabled'); si.classList.remove('mov-ocupado'); si.removeAttribute('aria-busy'); };
       cliente().then(function (sb) {
         return sb.auth.getSession().then(function (r) {
           if (!r.data || !r.data.session) { listo(); formulario(); return; }

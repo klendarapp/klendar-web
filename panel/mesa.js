@@ -300,7 +300,7 @@ PAGES['wifi-clientes'] = async (v) => {
       if (!await confirmDlg(bi('¿Cambiar el enlace?', 'Change the link?'),
         esc(bi('Los carteles que ya tienes impresos dejarán de enseñar el wifi. Tendrás que imprimir los nuevos.', 'The cards you’ve already printed will stop showing the Wi-Fi. You’ll need to print new ones.')),
         { danger: true, submit: bi('Cambiar', 'Change') })) return;
-      const r = await rpc('rotate_table_qr', { p_business: BIZ.id }).catch((err) => ({ ok: false, error: err.message }));
+      const r = await enBoton(cambiar, () => rpc('rotate_table_qr', { p_business: BIZ.id }).catch((err) => ({ ok: false, error: err.message })));
       if (!r?.ok) { toast(friendly(r?.error), true); return; }
       toast(bi('Enlace cambiado: imprime los carteles nuevos', 'Link changed: print the new cards'));
       route();

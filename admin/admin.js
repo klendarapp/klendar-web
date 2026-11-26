@@ -29,8 +29,32 @@ const LOCAL = /^((admin\.)?localhost|127\.0\.0\.1)$/i.test(location.hostname);
 // no recibe vueltas de Google ni enlaces de correo, así que no lee nada de la
 // dirección (`detectSessionInUrl: false`).
 const REF = (SUPABASE_URL.match(/^https:\/\/([a-z0-9]+)\./) || [])[1] || 'klendar';
+// Con tope (§4zzz-cargas; el mismo que `KL_FETCH_CON_TOPE` de acceso.js y el
+// `TimeoutClient` de la app): sin respuesta en 25 s (más la subida a 64 KB/s)
+// se corta («AbortError: timeout»; con ese nombre supabase-js no lo reintenta tres veces más), y la lista pasa a su error con «Reintentar» en vez
+// de quedarse con el esqueleto para siempre.
+const bytesDe = (b) => {
+  if (!b) return 0;
+  if (typeof b === 'string') return b.length;
+  if (b instanceof Blob) return b.size;
+  if (b instanceof ArrayBuffer || ArrayBuffer.isView(b)) return b.byteLength;
+  if (b instanceof FormData) { let n = 0; b.forEach((v) => { n += bytesDe(v); }); return n; }
+  return 0;
+};
+function fetchConTope(entrada, init = {}) {
+  const ctrl = new AbortController();
+  const propia = init.signal;
+  if (propia) {
+    if (propia.aborted) ctrl.abort(propia.reason);
+    else propia.addEventListener('abort', () => ctrl.abort(propia.reason), { once: true });
+  }
+  const t = setTimeout(() => ctrl.abort(new DOMException('timeout', 'AbortError')),
+    25000 + Math.round(bytesDe(init.body) * 1000 / (64 * 1024)));
+  return fetch(entrada, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(t));
+}
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
   auth: { flowType: 'pkce', detectSessionInUrl: false, storageKey: `sb-${REF}-admin-auth-token` },
+  global: { fetch: fetchConTope },
 });
 
 // ── Utilidades ──────────────────────────────────────────────────────────────
@@ -146,7 +170,8 @@ async function rpc(fn, args = {}) {
   const { data, error } = await sb.rpc(fn, args);
   if (n !== RUTA_N && !ESCRIBE.test(fn)) throw new Obsoleta();
   if (error) {
-    const msg = error.message || '';
+    // Cortada por `fetchConTope` (25 s): supabase-js lo dice en `details`.
+    const msg = /Request was aborted/.test(error.details || '') ? 'timed out' : (error.message || '');
     // Suspendida y «no es administradora» llegan con el mismo código (42501):
     // se distinguen por el mensaje.
     if (msg.includes('account_suspended')) throw new Error(RPC_ERRORS.account_suspended);
@@ -169,7 +194,8 @@ async function rpc(fn, args = {}) {
     }
     if (msg.includes('image_not_allowed')) throw new Error('Esa foto no se puede usar. Súbela desde Klendar.');
     if (/auth_required|JWT/.test(msg)) throw new Error(window.KL_AUTH_TEXT('sesion', I18N.lang));
-    if (/Failed to fetch|NetworkError|Load failed/i.test(msg)) throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang));
+    // También el corte de `fetchConTope` (sin respuesta en 25 s).
+    if (/Failed to fetch|NetworkError|Load failed|AbortError: timeout|timed out/i.test(msg)) throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang));
     if (error.code === '42501') throw new Error('No tienes permiso para esto.');
     if (error.code === '23505') throw new Error('Ya existe uno con ese identificador.');
     if (RPC_ERRORS[msg]) throw new Error(RPC_ERRORS[msg]);
@@ -687,8 +713,17 @@ const errAuth = (error) => window.KL_AUTH_ERROR(error, I18N.lang);
 async function esperando(boton, trabajo) {
   if (boton.disabled) return;
   boton.disabled = true;
-  try { await trabajo(); } finally { boton.disabled = false; }
+  // El lector oye «ocupado» (§4zzz-cargas; como `ocupado()` de «Tu cuenta»).
+  boton.setAttribute('aria-busy', 'true');
+  try { await trabajo(); } finally { boton.disabled = false; boton.removeAttribute('aria-busy'); }
 }
+// «Cargando más…» (§4zzz-cargas): mientras un «Ver más» pide la parte
+// siguiente (desactivado), la aguja pequeña en su sitio (`.mov-ocupado`).
+new MutationObserver((cambios) => {
+  for (const { target: b } of cambios) {
+    if (b.matches?.('[data-ver-mas]')) b.classList.toggle('mov-ocupado', b.disabled);
+  }
+}).observe(document.documentElement, { subtree: true, attributes: true, attributeFilter: ['disabled'] });
 $('#doLogin').onclick = () => {
   $('#loginErr').textContent = '';
   if (!KL_VALIDA.correoYClave(I18N.lang, $('#email'), $('#password'))) return;
@@ -1000,7 +1035,7 @@ function pantallaCodigo(factor) {
 // `reemplaza`: el factor de antes (cambio de móvil), que se quita solo cuando
 // el nuevo ya funciona; si se cancela, se queda el de antes.
 async function pantallaAlta({ obligatorio = false, cancelar = false, reemplaza = null } = {}) {
-  pantallaMfa(`<h2 style="margin:0">Protege la administración</h2><div class="loading">Cargando…</div>`);
+  pantallaMfa(`<h2 style="margin:0">Protege la administración</h2><div class="loading" role="status">Cargando…</div>`);
   // Un alta a medias de otra vez (se cerró la pestaña con el QR delante):
   // fuera, o Supabase no deja crear otra con el mismo nombre.
   const { data: fs } = await sb.auth.mfa.listFactors();
@@ -1294,7 +1329,7 @@ async function route() {
   // Cada pintada en su propia caja: si una vieja termina tarde, escribe en
   // una caja que ya no está en la página.
   const v = document.createElement('div');
-  v.innerHTML = '<div class="loading">Cargando…</div>';
+  v.innerHTML = '<div class="loading" role="status">Cargando…</div>';
   // La misma pantalla: «Cargando…» sin perder el alto (si no, la página se
   // encoge y el sitio se pierde).
   if (misma) v.style.minHeight = `${$('#view').offsetHeight}px`;
@@ -2189,7 +2224,7 @@ PAGES.negocios = async (v, id) => {
       <select id="sort">${[['created_desc', 'Más recientes'], ['created_asc', 'Más antiguos'], ['name', 'Por nombre'], ['redemptions', 'Más canjes']].map((o) => `<option value="${o[0]}" ${(s.sort || 'created_desc') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
     ${atasco ? `<div class="toolbar" id="atascoFiltro"><span class="tag warn">${ms('hourglass_empty')} ${esc(I18N.t(atasco[1]))}</span><button class="btn sm ghost" type="button" id="quitaAtasco">Quitar este filtro</button></div>` : ''}
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = enOrden(() => cargaLista());
@@ -2903,7 +2938,7 @@ PAGES.publicaciones = async (v, id) => {
       <select id="kind">${[['all', 'Ofertas y eventos'], ['flash_offer', 'Solo ofertas'], ['future_event', 'Solo eventos']].map((o) => `<option value="${o[0]}" ${(s.kind || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       ${s.business ? `<button class="btn sm" id="clearbiz">✕ Solo un negocio</button>` : ''}
     </div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = enOrden(() => cargaLista());
@@ -3051,7 +3086,7 @@ PAGES.canjes = async (v) => {
       <label class="f f-linea">Desde <input type="date" id="from" value="${esc(s.from || '')}"></label>
       <label class="f f-linea">Hasta <input type="date" id="to" value="${esc(s.to || '')}"></label>
     </div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = enOrden(() => cargaLista());
@@ -3088,7 +3123,7 @@ PAGES.usuarios = async (v, id) => {
       <select id="banned">${[['', 'Todos'], ['true', 'Suspendidos'], ['false', 'No suspendidos']].map((o) => `<option value="${o[0]}" ${(s.banned ?? '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="sort">${[['created_desc', 'Más recientes'], ['created_asc', 'Más antiguos'], ['last_sign_in', 'Último acceso'], ['email', 'Por email']].map((o) => `<option value="${o[0]}" ${(s.sort || 'created_desc') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const load = enOrden(() => cargaLista());
@@ -3311,7 +3346,7 @@ PAGES.resenas = async (v) => {
     ${TEXTOS_N ? `<p class="muted small" style="margin:0 0 12px">${I18N.lang === 'en' ? `${fmtNum(TEXTOS_N)} ${TEXTOS_N === 1 ? 'text is' : 'texts are'} waiting for a decision in <a class="link" href="/medios">Automatic filter</a>.` : `${fmtNum(TEXTOS_N)} ${TEXTOS_N === 1 ? 'texto espera' : 'textos esperan'} una decisión en <a class="link" href="/medios">Filtro automático</a>.`}</p>` : ''}
     <div class="tabs"><button type="button" data-t="reviews" aria-pressed="${tab === 'reviews'}" class="${tab === 'reviews' ? 'on' : ''}">Reseñas</button><button type="button" data-t="posts" aria-pressed="${tab === 'posts'}" class="${tab === 'posts' ? 'on' : ''}">Novedades</button></div>
     <div class="toolbar"><input id="q" class="grow" placeholder="Buscar por texto, negocio o email…" value="${esc((tab === 'posts' ? sP.q : sR.q) || '')}"><select id="rating" ${tab === 'posts' ? 'hidden' : ''}>${[['', 'Cualquier puntuación'], ['1', 'Solo 1 ★'], ['2', '≤ 2 ★'], ['3', '≤ 3 ★']].map((o) => `<option value="${o[0]}" ${String(sR.rating || '') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
     if (tab === 'reviews') {
@@ -3489,7 +3524,7 @@ PAGES.denuncias = async (v, tipoRuta) => {
       <select id="status">${[['open', 'Con denuncias abiertas'], ['closed', 'Ya cerradas'], ['all', 'Todo']].map((o) => `<option value="${o[0]}" ${(s.status || 'open') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="type">${[['all', 'Todo tipo'], ['offer', 'Publicaciones'], ['business', 'Negocios'], ['review', 'Reseñas'], ['review_media', 'Fotos y vídeos de reseñas'], ['post', 'Novedades'], ['group_request', 'Peticiones de grupo'], ['profile', 'Perfiles'], ['question', 'Preguntas'], ['question_answer', 'Respuestas a preguntas']].map((o) => `<option value="${o[0]}" ${(s.type || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
     const abiertas = (s.status || 'open') === 'open';
@@ -3737,7 +3772,7 @@ PAGES.reclamaciones = async (v) => {
       ? '<p>“Is this your business?”: someone with an account (18 or over) says they own or run a business whose page someone else created. Compare what they send with the page (phone, email, website): call the business number if in doubt. <b>Approve</b> makes them the owner (like a handover: the previous owner is told by notification and email, and you can leave them as a manager) and the other open claims for that business are rejected. <b>Reject</b> needs a reason, which they see; they can try again after 30 days. The evidence is deleted 6 months after deciding and the claim after 2 years. Everything stays in the activity log.</p>'
       : '<p>«¿Es tu negocio?»: alguien con cuenta (18 años o más) dice que es dueño o que lleva un negocio cuya ficha creó otra persona. Compara lo que manda con la ficha (teléfono, correo, web): si hay dudas, llama al número del negocio. <b>Aprobar</b> le hace propietario (como un traspaso: a quien lo era se le avisa por notificación y correo, y puedes dejarle de encargado) y las demás reclamaciones abiertas de ese negocio quedan rechazadas. <b>Rechazar</b> pide un motivo, que verá; podrá volver a intentarlo a los 30 días. La prueba se borra a los 6 meses de decidir y la reclamación a los 2 años. Todo queda en el registro de actividad.</p>')}
     <div class="toolbar"><input id="q" class="grow" type="search" placeholder="${en ? 'Search by business, city, person or email…' : 'Buscar por negocio, ciudad, persona o correo…'}" aria-label="${en ? 'Search claims' : 'Buscar en reclamaciones'}" value="${esc(s.q || '')}"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
-    <div id="list"><div class="loading">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
+    <div id="list"><div class="loading" role="status">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
   const ESTADO = { pending: ['warn', en ? 'pending' : 'pendiente'], approved: ['ok', en ? 'approved' : 'aprobada'], rejected: ['bad', en ? 'rejected' : 'rechazada'], withdrawn: ['dim', en ? 'withdrawn' : 'retirada'] };
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
@@ -3835,7 +3870,7 @@ PAGES.entidades = async (v) => {
       ? '<p>Councils, district councils, associations and NGOs: those that <b>signed up as an organisation</b> (their page is not public and they cannot publish until you approve) and businesses that <b>ask from their page</b>. Open the document and follow RUNBOOK §4e: the <b>official website</b> and the <b>phone or email on the official e-office</b> (never one given by the applicant), the register of associations, or the NIF G of the foundation or association. The CIF must match the organisation. <b>Approve</b> marks the type (you can correct it), verifies the page and moves it to the free plan with no end date. <b>Reject</b> needs a reason they will see; if it was a sign-up, the page stays rejected with that reason and they can ask again with another document. The document is deleted 6 months after deciding. Everything stays in the activity log.</p>'
       : '<p>Ayuntamientos, juntas de distrito, asociaciones y ONG: las que <b>se dan de alta como entidad</b> (su ficha no se ve y no pueden publicar hasta que apruebes) y los negocios que <b>lo piden desde su ficha</b>. Abre el documento y sigue el RUNBOOK §4e: la <b>web oficial</b> y el <b>teléfono o correo de la sede electrónica oficial</b> (nunca uno que dé quien lo pide), el registro de asociaciones, o el NIF G de la fundación o asociación. El CIF tiene que ser el de la entidad. <b>Aprobar</b> marca el tipo (lo puedes corregir), verifica la ficha y la pasa al plan gratis sin fin. <b>Rechazar</b> pide un motivo, que verá; si era un alta, la ficha queda rechazada con ese motivo y puede volver a pedirlo con otro documento. El documento se borra a los 6 meses de decidir. Todo queda en el registro de actividad.</p>')}
     <div class="toolbar"><input id="q" class="grow" type="search" placeholder="${en ? 'Search by name, CIF, city, person or email…' : 'Buscar por nombre, CIF, ciudad, persona o correo…'}" aria-label="${en ? 'Search organisations' : 'Buscar en entidades'}" value="${esc(s.q || '')}"><select id="status">${[['pending', en ? 'Pending' : 'Pendientes'], ['approved', en ? 'Approved' : 'Aprobadas'], ['rejected', en ? 'Rejected' : 'Rechazadas'], ['withdrawn', en ? 'Withdrawn' : 'Retiradas'], ['all', en ? 'All' : 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div>
-    <div id="list"><div class="loading">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
+    <div id="list"><div class="loading" role="status">${en ? 'Loading…' : 'Cargando…'}</div></div>`;
   const ESTADO = { pending: ['warn', en ? 'pending' : 'pendiente'], approved: ['ok', en ? 'approved' : 'aprobada'], rejected: ['bad', en ? 'rejected' : 'rechazada'], withdrawn: ['dim', en ? 'withdrawn' : 'retirada'] };
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
@@ -3996,7 +4031,7 @@ PAGES.mensajes = async (v) => {
       <input id="q" class="grow" type="search" placeholder="Buscar en el texto, el negocio o el correo…" aria-label="Buscar en mensajes a clientes" value="${esc(s.q || '')}">
       <select id="status">${[['all', 'Todos'], ['review', 'En revisión'], ['sent', 'Enviados'], ['rejected', 'No enviados']].map((o) => `<option value="${o[0]}" ${(s.status || 'review') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
     const estado = s.status || 'review';
@@ -4071,7 +4106,7 @@ PAGES.sugerencias = async (v) => {
       <select id="status">${[['open', 'Sin resolver'], ['new', 'Sin leer'], ['reviewing', 'En revisión'], ['planned', 'Las haremos'], ['done', 'Hechas'], ['declined', 'Descartadas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="kind">${[['all', 'De todo'], ['suggestion', 'Sugerencias'], ['bug', 'Fallos'], ['business', 'De negocios'], ['other', 'Otros']].map((o) => `<option value="${o[0]}" ${(s.kind || 'all') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   let rows = [];
   let ultimos = null; // lo último que se pidió (para «Exportar todo»)
   const kindIcon = { suggestion: ms('lightbulb'), bug: ms('bug_report'), business: ms('storefront'), other: ms('chat_bubble') };
@@ -4162,7 +4197,7 @@ PAGES.planes = async (v) => {
   let rows = [], csvCols = [], csvName = 'suscripciones';
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
-    const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
+    const tv = $('#tabview'); tv.innerHTML = '<div class="loading" role="status">Cargando…</div>';
     if (tab === 'subs') {
       const s = st.subs;
       tv.innerHTML = `<div class="toolbar"><select id="sstatus" aria-label="${esc(I18N.t('Estado'))}">${[['current', 'Vigentes'], ['trial', 'En prueba'], ['active', 'Activas'], ['past_due', 'Impagadas'], ['paused', 'En pausa'], ['cancelled', 'Canceladas'], ['all', 'Todas']].map((o) => `<option value="${o[0]}" ${(s.status || 'current') === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select></div><div id="list"></div>`;
@@ -4440,7 +4475,7 @@ PAGES.avisos = async (v) => {
     <div id="tabview"></div>`;
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
-    const tv = $('#tabview'); tv.innerHTML = '<div class="loading">Cargando…</div>';
+    const tv = $('#tabview'); tv.innerHTML = '<div class="loading" role="status">Cargando…</div>';
     if (tab === 'send') {
       tv.innerHTML = `<div class="card"><form id="sendf" style="display:grid;gap:12px">
         <fieldset class="grupo"><legend>Destinatarios</legend><div class="grupo-campos c2">
@@ -4668,9 +4703,11 @@ async function cityDetail(v, city, days) {
 
 // ── Colecciones ─────────────────────────────────────────────────────────────
 PAGES.colecciones = async (v, param) => {
+  // Las categorías, a la vez que las colecciones (antes, una detrás de otra).
+  const catsP = param ? null : rpc('admin_categories').catch(() => []);
   const cols = await rpc('admin_collections');
   if (param) return pintaADedo(v, cols.find((c) => c.id === param));
-  const cats = await rpc('admin_categories').catch(() => []);
+  const cats = await catsP;
   const byId = Object.fromEntries(cols.map((c) => [c.id, c]));
   const en = I18N.lang === 'en';
   const ruleText = (r = {}) => [
@@ -5068,7 +5105,7 @@ PAGES.errores = async (v) => {
       <select id="area">${[['all', 'Todas las áreas'], ['publica', 'Web pública'], ['cuenta', 'Tu cuenta'], ['panel', 'Panel de negocios'], ['admin', 'Administración']].map((o) => `<option value="${o[0]}" ${s.area === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
       <select id="status">${[['open', 'Sin resolver'], ['resolved', 'Resueltos'], ['all', 'Todos']].map((o) => `<option value="${o[0]}" ${s.status === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
     </div>
-    <div id="list"><div class="loading">Cargando…</div></div>
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>
     <div id="aviso"></div>
     <div id="tareas"></div>`;
   let rows = [];

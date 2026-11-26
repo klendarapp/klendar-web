@@ -44,13 +44,13 @@ PAGES['estaba-cerrado'] = async (v) => {
     c.people === 1 ? '1 persona desde que revisaste el horario' : `${c.people} personas desde que revisaste el horario`,
     c.people === 1 ? '1 person since you last checked your hours' : `${c.people} people since you last checked your hours`))}</p></div>` : ''}`;
   const b = $('#cerrPuntual', v);
-  if (b) b.onclick = async () => {
+  if (b) b.onclick = () => enBoton(b, async () => {
     try {
       await rpc('confirm_business_hours', { p_business: BIZ.id });
       toast(bi('Horario revisado', 'Opening hours checked'));
       go('/panel/cerrados');
     } catch (e) { toast(friendly(e.message), true); }
-  };
+  });
 };
 
 /** Encima del editor del horario (Tu ficha › Horario): si alguien lo
@@ -63,13 +63,14 @@ async function cerrAvisoHorario(caja) {
     <p class="muted" style="margin:4px 0 8px">${esc(c.unconfirmed ? cerrSinConfirmar()
     : bi('Comprueba que el horario está bien. Si lo está, confírmalo.', 'Check that your opening hours are right. If they are, confirm them.'))}</p>
     <button type="button" class="btn sm" id="cerrBien">${esc(bi('Está bien así', 'They’re right'))}</button></div>`;
-  $('#cerrBien', caja).onclick = async () => {
+  const bien = $('#cerrBien', caja);
+  bien.onclick = () => enBoton(bien, async () => {
     try {
       await rpc('confirm_business_hours', { p_business: BIZ.id });
       caja.innerHTML = '';
       toast(bi('Horario revisado', 'Opening hours checked'));
     } catch (e) { toast(friendly(e.message), true); }
-  };
+  });
 }
 
 /** Guardar el horario cuenta como revisarlo, aunque no cambie nada. */

@@ -102,25 +102,27 @@ async function ajustesCalendario() {
           texto: t('El enlace de ahora deja de funcionar y el calendario donde lo añadiste se quedará sin tus planes. Después, añade el nuevo.'),
           aceptar: t('Cambiar'),
         }))) return;
-        try {
+        // Sin mandarlo dos veces y con la aguja en el botón (§4zzz-cargas).
+        await ocupado(cambiar, async () => {
           feed = await llamar('regenerate_calendar_feed', {});
           toast(t('Enlace cambiado. Añade el nuevo a tu calendario.'));
           dibuja();
-        } catch (err) { toast(err.message, true); }
+        });
       };
-      $('#cal-quitar').onclick = async () => {
+      const quitar = $('#cal-quitar');
+      quitar.onclick = async () => {
         if (!(await confirma({
           titulo: t('¿Desactivar el enlace?'),
           texto: t('Tu calendario dejará de recibir tus planes. Puedes volver a activarlo cuando quieras, con un enlace nuevo.'),
           aceptar: t('Desactivar'),
           peligro: true,
         }))) return;
-        try {
+        await ocupado(quitar, async () => {
           await llamar('disable_calendar_feed', {});
           feed = null;
           toast(t('Enlace desactivado.'));
           dibuja();
-        } catch (err) { toast(err.message, true); }
+        });
       };
     }
   };

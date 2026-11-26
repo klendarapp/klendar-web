@@ -175,13 +175,13 @@ async function bonoForm(v, id) {
   };
   const pausa = $('#bono-pausa', v);
   if (pausa) {
-    pausa.onclick = async () => {
+    pausa.onclick = () => enBoton(pausa, async () => {
       try {
         await bonoRpc('set_pass_type_status', { p_id: t.id, p_status: t.status === 'paused' ? 'active' : 'paused' });
         toast(t.status === 'paused' ? 'El bono vuelve a estar a la venta' : 'Bono en pausa');
         bonoForm(v, id);
       } catch (e) { toast(e.message, true); }
-    };
+    });
     $('#bono-quita', v).onclick = async () => {
       const ok = await confirmDlg(bi(`¿Quitar «${t.name}»?`, `Remove “${t.name}”?`),
         I18N.t('Deja de salir para vender. Los que ya vendiste siguen valiendo hasta que se gasten o caduquen.'),
@@ -257,21 +257,23 @@ async function bonoVendidos(v, soloActivos = true, cargados = null, masPrevio = 
         I18N.t('Hazlo solo si no puede enseñar su QR de cliente. Le llegará un aviso con los usos que le quedan.'),
         { submit: I18N.t('Descontar un uso') });
       if (!ok) return;
-      try {
-        const r = await bonoRpc('use_pass', { p_pass: b.dataset.aMano, p_scan: null });
-        toast(bi(`Uso descontado. ${r.uses_left === 1 ? 'Queda 1' : `Quedan ${r.uses_left}`} de ${r.uses_total}.`, `Use recorded. ${r.uses_left} of ${r.uses_total} left.`));
-        bonoVendidos(v, soloActivos);
-      } catch (e) { toast(e.message, true); }
+      await enBoton(b, async () => {
+        try {
+          const r = await bonoRpc('use_pass', { p_pass: b.dataset.aMano, p_scan: null });
+          toast(bi(`Uso descontado. ${r.uses_left === 1 ? 'Queda 1' : `Quedan ${r.uses_left}`} de ${r.uses_total}.`, `Use recorded. ${r.uses_left} of ${r.uses_total} left.`));
+          bonoVendidos(v, soloActivos);
+        } catch (e) { toast(e.message, true); }
+      });
     };
   });
   $$('[data-deshaz-uso]', v).forEach((b) => {
-    b.onclick = async () => {
+    b.onclick = () => enBoton(b, async () => {
       try {
         await bonoRpc('undo_pass_use', { p_use: b.dataset.deshazUso });
         toast('Uso deshecho');
         bonoVendidos(v, soloActivos);
       } catch (e) { toast(e.message, true); }
-    };
+    });
   });
   I18N.translate(v);
 }

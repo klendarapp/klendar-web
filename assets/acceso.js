@@ -101,10 +101,45 @@
   }
   window.KL_OLVIDA_VERIFICADORES = olvidaVerificadores;
 
+  /** `fetch` con tope (§4zzz-cargas, como el `TimeoutClient` de la app): sin
+   * respuesta en 25 s (más lo que tarde en subir el cuerpo a 64 KB/s, para las
+   * fotos y los vídeos), se corta («AbortError: timeout»; con ese nombre supabase-js no lo reintenta tres veces más) y la pantalla pasa a su error
+   * con «Reintentar» (`familiaError`: «La conexión va lenta»). Sin esto, con una
+   * red muerta (wifi cautivo, cobertura fantasma) la aguja o el esqueleto se
+   * quedaban para siempre. Respeta la señal propia de quien llama. */
+  function bytesDe(b) {
+    if (!b) return 0;
+    if (typeof b === 'string') return b.length;
+    if (typeof Blob !== 'undefined' && b instanceof Blob) return b.size;
+    if (b instanceof ArrayBuffer) return b.byteLength;
+    if (ArrayBuffer.isView && ArrayBuffer.isView(b)) return b.byteLength;
+    if (typeof FormData !== 'undefined' && b instanceof FormData) {
+      var n = 0;
+      b.forEach(function (v) { n += bytesDe(v); });
+      return n;
+    }
+    return 0;
+  }
+  function fetchConTope(entrada, init) {
+    init = init || {};
+    var ms = 25000 + Math.round(bytesDe(init.body) * 1000 / (64 * 1024));
+    var ctrl = new AbortController();
+    var propia = init.signal;
+    if (propia) {
+      if (propia.aborted) ctrl.abort(propia.reason);
+      else propia.addEventListener('abort', function () { ctrl.abort(propia.reason); }, { once: true });
+    }
+    var t = setTimeout(function () {
+      ctrl.abort(typeof DOMException === 'function' ? new DOMException('timeout', 'AbortError') : undefined);
+    }, ms);
+    return fetch(entrada, Object.assign({}, init, { signal: ctrl.signal })).finally(function () { clearTimeout(t); });
+  }
+  window.KL_FETCH_CON_TOPE = fetchConTope;
+
   window.KL_SUPABASE = function (auth) {
     var env = window.KLENDAR_ENV || {};
     var opciones = Object.assign({ flowType: 'pkce' }, auth || {});
-    var sb = window.supabase.createClient(env.url, env.key, { auth: opciones });
+    var sb = window.supabase.createClient(env.url, env.key, { auth: opciones, global: { fetch: fetchConTope } });
     var ref = (String(env.url || '').match(/^https:\/\/([a-z0-9]+)\./) || [])[1] || '';
     var clave = opciones.storageKey || 'sb-' + ref + '-auth-token';
     // Con sesión (ya se ha entrado: el canje de `?code=` ya ha pasado) o al

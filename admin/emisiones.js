@@ -197,7 +197,7 @@ PAGES.emisiones = async (v) => {
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
     const tv = $('#tabview', v);
-    tv.innerHTML = '<div class="loading">Cargando…</div>';
+    tv.innerHTML = '<div class="loading" role="status">Cargando…</div>';
     I18N.translate(tv);
     if (EM.tab === 'ligas') await ligas(tv);
     else if (EM.tab === 'proximas') await proximas(tv);
@@ -264,7 +264,7 @@ PAGES.emisiones = async (v) => {
         <select id="emFuente" aria-label="${esc(I18N.t('Fuente'))}">${[['', 'Todas'], ['thesportsdb', 'TheSportsDB'], ['admin', 'Admin'], ['business', 'Bares']].map((o) => `<option value="${o[0]}" ${EM.fuente === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
         <input class="grow" type="search" id="emQ" value="${esc(EM.q)}" placeholder="Buscar: equipo, partido o competición" aria-label="Buscar: equipo, partido o competición">
         <label class="f check" style="grid-auto-flow:column;align-items:center"><input type="checkbox" id="emOcultas" ${EM.ocultas ? 'checked' : ''}><span>Ver ocultas</span></label>
-      </div><div id="list"><div class="loading">Cargando…</div></div>`;
+      </div><div id="list"><div class="loading" role="status">Cargando…</div></div>`;
     const pinta = async () => {
       const r = await rpc('admin_broadcasts', { p_from: null, p_days: 14, p_source: EM.fuente || null, p_q: EM.q.trim() || null, p_hidden: EM.ocultas });
       $('#emImport', v).textContent = lineaImportacion(r?.last_import);
@@ -339,7 +339,7 @@ PAGES.emisiones = async (v) => {
   }
 
   async function equipos(tv) {
-    tv.innerHTML = `<div class="toolbar"><input class="grow" type="search" id="eqQ" value="${esc(EM.qEquipos)}" placeholder="Buscar equipo" aria-label="Buscar equipo"></div><div id="list"><div class="loading">Cargando…</div></div>`;
+    tv.innerHTML = `<div class="toolbar"><input class="grow" type="search" id="eqQ" value="${esc(EM.qEquipos)}" placeholder="Buscar equipo" aria-label="Buscar equipo"></div><div id="list"><div class="loading" role="status">Cargando…</div></div>`;
     const pinta = async () => {
       const rows = (await rpc('admin_broadcast_teams', { p_q: EM.qEquipos.trim() || null })) || [];
       const lang = I18N.lang;
@@ -371,7 +371,7 @@ PAGES.emisiones = async (v) => {
         <select id="sgTipo" aria-label="${esc(I18N.t('Qué es'))}">${[['athlete', 'Deportistas'], ['competition', 'Competiciones'], ['team', 'Equipos']].map((o) => `<option value="${o[0]}" ${EM.tipo === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
         <input class="grow" type="search" id="sgQ" value="${esc(EM.qSeguir)}" placeholder="Buscar: deportista o competición" aria-label="Buscar: deportista o competición">
         <button class="btn sm primary" type="button" id="sgNuevo">Dar de alta</button>
-      </div><div id="list"><div class="loading">Cargando…</div></div>`;
+      </div><div id="list"><div class="loading" role="status">Cargando…</div></div>`;
     const pinta = async () => {
       const rows = (await rpc('admin_follow_items', { p_q: EM.qSeguir.trim() || null, p_kind: EM.tipo })) || [];
       const lang = I18N.lang;

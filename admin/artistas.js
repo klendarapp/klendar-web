@@ -150,7 +150,7 @@ PAGES.artistas = async (v) => {
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
     const tv = $('#tabview', v);
-    tv.innerHTML = '<div class="loading">Cargando…</div>';
+    tv.innerHTML = '<div class="loading" role="status">Cargando…</div>';
     I18N.translate(tv);
     if (AR.tab === 'repetidos') await repetidos(tv); else await lista(tv);
     I18N.translate(tv);
@@ -160,7 +160,7 @@ PAGES.artistas = async (v) => {
     tv.innerHTML = `<div class="toolbar">
         <select id="arFiltro" aria-label="${esc(I18N.t('Filtro'))}">${FILTROS_AR.map((o) => `<option value="${o[0]}" ${AR.filtro === o[0] ? 'selected' : ''}>${o[1]}</option>`).join('')}</select>
         <input class="grow" type="search" id="arQ" value="${esc(AR.q)}" placeholder="Buscar artista" aria-label="Buscar artista">
-      </div><div id="list"><div class="loading">Cargando…</div></div>`;
+      </div><div id="list"><div class="loading" role="status">Cargando…</div></div>`;
     // Por partes (cursor: la fecha y el id del último), con «Ver más»; antes
     // se cortaba en 200 sin avisar. Sin la migración nueva, los 200 de antes.
     const partes = porPartes('admin_artists', (n, ya) => rpcParte('admin_artists',

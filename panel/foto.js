@@ -371,7 +371,7 @@ window.KFotoRellena = (() => {
       error = null;
       let ultimo = null;
       for (let i = 0; i < fotos.length; i++) {
-        v.innerHTML = `${cabecera()}<div class="card foto-leyendo" role="status"><div class="mov-cargando foto-aguja" aria-hidden="true"></div><p>${esc(I18N.t(`Leyendo la foto ${i + 1} de ${fotos.length}…`))}</p></div>`;
+        v.innerHTML = `${cabecera()}<div class="card foto-leyendo" role="status"><svg class="mov-cargando foto-aguja" viewBox="0 0 64 64" aria-hidden="true"><path pathLength="1" d="M32 6.8A25.2 25.2 0 1 1 8.03 24.21" fill="none" stroke="#FF4D6D" stroke-width="8.4" stroke-linecap="round"/><g class="simbolo-aguja"><path d="M32 32V19.4" stroke="currentColor" stroke-width="5.6" stroke-linecap="round"/></g><circle cx="32" cy="32" r="5.6" fill="currentColor"/></svg><p>${esc(I18N.t(`Leyendo la foto ${i + 1} de ${fotos.length}…`))}</p></div>`;
         I18N.translate?.(v);
         try {
           const r = await leer('menu', fotos[i].file);

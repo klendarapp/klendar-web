@@ -234,7 +234,7 @@ PAGES.medios = async (v) => {
     : '<p>La <b>única cola</b> de lo que se ha parado antes de que lo vea nadie: textos (novedades, reseñas y respuestas, la ficha y la carta, preguntas, regalos de cumpleaños, tarjetas de sellos…), fotos y vídeos. Unos los paran las <b>listas de palabras</b> (insultos, palabras malsonantes, sexo explícito, odio o amenazas), otros el <b>filtro con IA</b> cuando está encendido y otros las <b>denuncias</b>. Las novedades, las reseñas y las respuestas <b>no se ven</b> hasta que las apruebas; un regalo de cumpleaños o el nombre o el premio de una tarjeta de sellos nuevos no se usan hasta entonces (sigue el anterior). El nombre, la descripción y la carta del negocio siguen a la vista mientras tanto. <b>Aprobar</b> si está bien (una falsa alarma o algo fuerte pero aceptable); <b>Rechazar</b> o <b>Retirar</b> si incumple las Normas de la comunidad: quien lo publicó recibe el motivo y puede pedir que se revise en 6 meses. «Rechazado por el filtro»: lo que el filtro rechazó solo, por si hay que recuperar algo.</p>')}
     <div id="medEstado"></div>
     <div class="tabs" id="medTabs"></div>
-    <div id="list"><div class="loading">Cargando…</div></div>`;
+    <div id="list"><div class="loading" role="status">Cargando…</div></div>`;
   const load = enOrden(() => cargaLista());
   const cargaLista = async () => {
     ponUrl('medios', { tab: tab === 'held' ? null : tab });
