@@ -348,9 +348,14 @@
   function tic() {
     clearTimeout(reloj);
     var n = Date.now();
+    // La próxima vez: cada 30 s y justo cuando algo empieza o acaba (antes,
+    // «Quedan 1 min» y «Conseguir el código» hasta 30 s después de acabar).
+    var prox = 30000;
+    var cerca = function (t) { if (t > n && t - n + 50 < prox) prox = t - n + 50; };
     relojes.forEach(function (el) {
       var ini = Date.parse(el.getAttribute('data-ini')) || 0;
       var fin = Date.parse(el.getAttribute('data-fin'));
+      cerca(ini); cerca(fin);
       var txt = el.querySelector('span');
       if (!txt || !fin) return;
       var primera = !el.hasAttribute('data-original');
@@ -369,10 +374,11 @@
     document.querySelectorAll('.tj-cta[data-cta-fin]').forEach(function (b) {
       var i = Date.parse(b.getAttribute('data-cta-ini')) || 0;
       var f = Date.parse(b.getAttribute('data-cta-fin'));
+      cerca(i); cerca(f);
       var t = b.querySelector('span');
       if (t) t.textContent = n >= i && n < f ? b.getAttribute('data-si') : b.getAttribute('data-no');
     });
-    if (relojes.length) reloj = setTimeout(tic, 30000);
+    if (relojes.length) reloj = setTimeout(tic, Math.max(1000, prox));
   }
 
   // ── Distancia, si sabemos dónde estás ──────────────────────────────────

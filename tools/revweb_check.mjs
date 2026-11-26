@@ -7,7 +7,8 @@
 //    elegida (no la que llega tarde) y, si no llega, el selector vuelve a
 //    la que se ve.
 //  · La ficha de una oferta: la cuenta atrás dice «Terminada» al acabar,
-//    no «Quedan 1 min» hasta 30 s después.
+//    no «Quedan 1 min» hasta 30 s después. Lo mismo en las tarjetas de
+//    Descubre (y su «Conseguir el código»).
 //
 //   node tools/revweb_check.mjs
 import { webConDatos, PLANES } from './_web_con_datos.mjs';
@@ -86,6 +87,26 @@ const ok = (nombre, cond, extra = '') => { console.log(`${cond ? '  ok  ' : '  F
   await p.clock.runFor(45_000);
   const despues = (await p.textContent('#cuenta')).trim();
   ok('ficha: «Quedan 1 min» y, a su hora, terminada', /1 min/.test(antes) && despues && !/\d+ min/.test(despues), `${antes} → ${despues}`);
+  await ctx.close();
+}
+
+// Las tarjetas de Descubre, al acabar.
+{
+  const oferta = PLANES.find((o) => o.kind === 'flash_offer' && o.redeem_end_at);
+  const fin = Date.parse(oferta.redeem_end_at);
+  const ctx = await nav.newContext({ viewport: { width: 390, height: 844 } });
+  const p = await ctx.newPage();
+  await p.clock.install({ time: new Date(fin - 40_000) });
+  await p.goto(`${web.BASE}/descubre`);
+  const texto = () => p.evaluate((f) => {
+    const el = [...document.querySelectorAll('.tj-cuando[data-fin]')].find((x) => Date.parse(x.getAttribute('data-fin')) === f);
+    return el ? el.textContent.trim() : null;
+  }, fin);
+  await p.waitForTimeout(300);
+  const antes = await texto();
+  await p.clock.runFor(45_000);
+  const despues = await texto();
+  ok('Descubre: la tarjeta pasa a terminada a su hora', antes && /1 min/.test(antes) && despues && !/\d+ min/.test(despues), `${antes} → ${despues}`);
   await ctx.close();
 }
 
