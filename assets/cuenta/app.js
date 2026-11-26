@@ -178,15 +178,26 @@ const fecha = (iso, opts = { weekday: 'short', day: 'numeric', month: 'short', h
 /** Zona de cada negocio, por id. Las listas de «Tu cuenta» no traen
  * coordenadas, pero `businesses.time_zone` se puede leer: una consulta por
  * lista y lo que ya se sabe no se vuelve a pedir. Devuelve `fila → zona`. */
-const ZONAS = new Map();
+const ZONAS = new Map(); // id → zona (null: preguntado y sin zona válida)
+const ZONAS_PIDIENDO = new Map(); // id → la consulta que lo trae
 async function zonasDe(filas) {
-  const faltan = [...new Set((filas || []).map((f) => f?.business_id).filter(Boolean))].filter((id) => !ZONAS.has(id));
+  const ids = [...new Set((filas || []).map((f) => f?.business_id).filter(Boolean))];
+  const faltan = ids.filter((id) => !ZONAS.has(id) && !ZONAS_PIDIENDO.has(id));
   if (faltan.length && KZ) {
-    try {
-      const { data } = await sb.from('businesses').select('id, time_zone').in('id', faltan);
-      for (const f of data || []) if (KZ.valida(f.time_zone)) ZONAS.set(f.id, f.time_zone);
-    } catch { /* sin red: Madrid */ }
+    const consulta = (async () => {
+      try {
+        const { data, error } = await sb.from('businesses').select('id, time_zone').in('id', faltan);
+        if (error) return;
+        // Lo que no vuelve (o vuelve sin zona) tampoco se vuelve a pedir.
+        for (const id of faltan) ZONAS.set(id, null);
+        for (const f of data || []) if (KZ.valida(f.time_zone)) ZONAS.set(f.id, f.time_zone);
+      } catch { /* sin red: Madrid, y se pregunta la próxima vez */ }
+    })();
+    for (const id of faltan) ZONAS_PIDIENDO.set(id, consulta);
+    consulta.then(() => { for (const id of faltan) ZONAS_PIDIENDO.delete(id); });
   }
+  // Lo que ya se está pidiendo (otra lista de la misma pantalla), se espera.
+  await Promise.all([...new Set(ids.map((id) => ZONAS_PIDIENDO.get(id)).filter(Boolean))]);
   return (fila) => ZONAS.get(fila?.business_id) || (KZ ? KZ.de(fila) : undefined);
 }
 function beneficio(d, precio, moneda) {
@@ -643,6 +654,7 @@ async function navegar() {
   // Cambiar de vista (Lista ↔ Calendario) también es una pantalla nueva.
   const ruta = `${partes.join('/')}?${params?.get('vista') || ''}`;
   movNueva = ruta !== movRuta;
+  const pantallaNueva = movNueva;
   movRuta = ruta;
   window.scrollTo(0, 0);
   // Otra pantalla que tarda (Favoritos son 4 llamadas, Tus códigos 7): a
@@ -684,9 +696,29 @@ async function navegar() {
            <a class="pill" href="/cuenta">${esc(t('Volver'))}</a>`,
     });
     $('#reintentar')?.addEventListener('click', () => navegar());
+    // Como la app (ErrorState): al volver la red o al volver a la pestaña, se
+    // reintenta solo (antes había que pulsar «Reintentar»).
+    if ($('#reintentar')) {
+      const solo = () => { if (!document.hidden && $('#reintentar')) navegar(); };
+      addEventListener('online', solo);
+      document.addEventListener('visibilitychange', solo);
+      alSalir(() => { removeEventListener('online', solo); document.removeEventListener('visibilitychange', solo); });
+    }
   }
   clearTimeout(esqueletoT);
   I18N.translate(view);
+  if (pantallaNueva) anunciaPantalla();
+}
+/** Al llegar a otra pantalla, el lector dice su título (no la pantalla
+ * entera: `#view` ya no es una región viva; con ella se leía todo cada vez
+ * que algo cambiaba, también cada segundo de una cuenta atrás). */
+function anunciaPantalla() {
+  const a = document.getElementById('anuncio');
+  if (!a) return;
+  const h = view.querySelector('h1');
+  const txt = (h ? h.textContent : document.title).replace(/\s+/g, ' ').trim();
+  a.textContent = '';
+  setTimeout(() => { a.textContent = txt; }, 60);
 }
 // Atrás y adelante. Un `#algo` de la misma pantalla («Saltar al contenido»)
 // también pasa por aquí y no es otra pantalla.
@@ -2215,6 +2247,10 @@ RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
   ]);
   // Tu turno en una cola y tu pedido, cada uno con su título (como la app),
   // debajo de «Sigues N series».
+  // La zona de todos los negocios de la pantalla, en una sola consulta
+  // (antes, una para los turnos y otra para lo demás, una detrás de otra).
+  const zonaP = zonasDe([...(guardados || []), ...(guardadosPasados || []), ...(canjes || []),
+    ...(Array.isArray(turnos) ? turnos : []).map((x) => ({ business_id: x?.business?.id }))]);
   const colaHtml = await colaTarjetasHtml(turnos);
   const listoHtml = listoTarjetasHtml(pedidosListo);
   const turnoHtml = (colaHtml ? `<h2 class="seccion-t">${esc(t('Cola virtual'))}</h2>${colaHtml}` : '')
@@ -2226,7 +2262,7 @@ RUTAS.planes = async (_partes, params = new URLSearchParams()) => {
   const saved = guardados || [];
   const savedPast = guardadosPasados || [];
   const reds = canjes || [];
-  const zona = await zonasDe([...saved, ...savedPast, ...reds]);
+  const zona = await zonaP;
   const ahora = Date.now();
   const pasado = (o) => { const m = momentoPlan(o); return m != null && m < ahora; };
   const enCurso = reds.filter((r) => r.status === 'pending' && new Date(r.expires_at).getTime() > ahora);
@@ -2683,7 +2719,8 @@ RUTAS.codigos = async (_partes, params) => {
   const quitarPremios = await quitarPremiosEnBase();
   // Un premio que aún se puede usar no se quita.
   const premioVivo = (p) => p.status === 'pending' && !!p.code;
-  const zona = await zonasDe(lista);
+  // Con los negocios de los turnos: una sola consulta de zonas.
+  const zona = await zonasDe([...(lista || []), ...(Array.isArray(turnos) ? turnos : []).map((x) => ({ business_id: x?.business?.id }))]);
   const turnoHtml = (await colaTarjetasHtml(turnos)) + listoTarjetasHtml(pedidosListo);
   // Los vivos, guardados para enseñarlos sin cobertura (y fuera los demás).
   recuerdaCodigos((lista || []).filter((r) => r.status === 'pending')
