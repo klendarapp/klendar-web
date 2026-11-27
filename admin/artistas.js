@@ -243,13 +243,14 @@ PAGES.artistas = async (v) => {
   $('#arNuevo', v).onclick = (e) => esperando(e.currentTarget, async () => {
     if (await editaArtista(null)) { AR.tab = 'lista'; aUrl(); route(); }
   });
-  $('[data-ar-csv]', v).onclick = async () => {
+  // Con la aguja mientras pide todas las partes (antes, un doble clic bajaba dos CSV).
+  $('[data-ar-csv]', v).onclick = (e) => esperando(e.currentTarget, async () => {
     if (AR.tab !== 'lista' || !filas.length) { toast(I18N.t('No hay nada que descargar.')); return; }
     const todos = partesAr ? await partesAr.todas().catch((e) => { toast(e.message, true); return null; }) : filas;
     if (!todos) return;
     downloadCsv('artistas', todos, [['name', 'Nombre'], ['slug', 'Dirección'], [(a) => (a.hidden ? 'sí' : ''), 'Oculto'], [(a) => (a.edited ? 'sí' : ''), 'Revisado'],
       [(a) => a.created_by_business?.name || '', 'Lo escribió'], ['events_upcoming', 'Próximas'], ['events_total', 'Eventos'], ['followers', 'Lo siguen'], ['created_at', 'Alta']]);
-  };
+  });
   await load();
 };
 
