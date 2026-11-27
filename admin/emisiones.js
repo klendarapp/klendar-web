@@ -57,11 +57,11 @@ async function importacion(modo, extra = {}) {
   if (!token) throw new Error(window.KL_AUTH_TEXT('sesion', I18N.lang));
   let r;
   try {
-    r = await fetch(`${SUPABASE_URL}/functions/v1/broadcasts-import`, {
+    r = await fetchConTope(`${SUPABASE_URL}/functions/v1/broadcasts-import`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}`, apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode: modo, ...extra }),
-    });
+    }, 160000);
   } catch { throw new Error(window.KL_AUTH_TEXT('sinRed', I18N.lang)); }
   let j = null;
   try { j = await r.json(); } catch { j = null; }

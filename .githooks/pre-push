@@ -41,6 +41,8 @@ if [ -n "$PW" ]; then
   PW="$PW" node tools/feed_reintenta_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/feed_reintenta_check.mjs; no se sube."; exit 1; }
   # «Tu cuenta» (§4zzz-revweb): #view sin región viva y el título anunciado, una consulta de zonas, «Algo ha fallado» reintentado al volver la red (unos 5 s).
   PW="$PW" node tools/cuenta_revweb_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/cuenta_revweb_check.mjs; no se sube."; exit 1; }
+  # El admin (§4zzz-revadmin2): «Algo ha fallado» y las listas que no cargan, de nuevo solas al volver la red; ids que no son ids; «No tienes permiso»; la Edge Function de festivos con tope (Chromium y WebKit, unos 20 s).
+  PW="$PW" node tools/revadmin2_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/revadmin2_check.mjs (node tools/revadmin2_check.mjs para ver qué); no se sube."; exit 1; }
   # La web pública (§4zzz-revweb): «Busca tu municipio» con Intro deprisa, «Ahora mismo» con una ciudad sin nada (P2)… (unos 10 s).
   PW="$PW" node tools/revweb_check.mjs >/dev/null 2>&1 || { echo "pre-push: falla tools/revweb_check.mjs; no se sube."; exit 1; }
   # «Sin conexión a internet» (§4zzz-revweb, P1): la franja de abajo sin red en la web pública, «Tu cuenta» y el panel, en los idiomas de la app, a todo el ancho, en una línea y sin tapar nada (unos 60 s).

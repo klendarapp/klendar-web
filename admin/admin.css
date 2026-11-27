@@ -234,6 +234,9 @@ dialog.modal .warn { background: rgba(255,92,92,.14); border-radius: 12px; paddi
    (como «Tu cuenta» y la app; §4zzz-cargas). Ocupa su sitio desde el
    principio (solo la opacidad): nada salta. Vale para el admin y el panel. */
 .loading { animation: mov-funde var(--mov-base) var(--mov-entra) 200ms backwards; }
+/* Una lista que no ha podido cargar (en vez del esqueleto): el aviso y «Reintentar». */
+.carga-fallida { padding: 24px 16px; text-align: center; color: var(--ink-2); display: grid; gap: 10px; justify-items: center; }
+.carga-fallida p { margin: 0; }
 .mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: .75rem; }
 a.link { color: var(--ink); font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .stars { color: #F5B041; letter-spacing: 1px; }

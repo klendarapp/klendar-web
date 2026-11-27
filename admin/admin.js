@@ -41,7 +41,10 @@ const bytesDe = (b) => {
   if (b instanceof FormData) { let n = 0; b.forEach((v) => { n += bytesDe(v); }); return n; }
   return 0;
 };
-function fetchConTope(entrada, init = {}) {
+// `espera`: otro tope (las Edge Functions que importan, «Importar ahora» y
+// «Buscar festivos», pueden tardar hasta su límite de 150 s; antes iban sin
+// ninguno y la aguja se podía quedar para siempre).
+function fetchConTope(entrada, init = {}, espera = 25000) {
   const ctrl = new AbortController();
   const propia = init.signal;
   if (propia) {
@@ -49,7 +52,7 @@ function fetchConTope(entrada, init = {}) {
     else propia.addEventListener('abort', () => ctrl.abort(propia.reason), { once: true });
   }
   const t = setTimeout(() => ctrl.abort(new DOMException('timeout', 'AbortError')),
-    25000 + Math.round(bytesDe(init.body) * 1000 / (64 * 1024)));
+    espera + Math.round(bytesDe(init.body) * 1000 / (64 * 1024)));
   return fetch(entrada, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(t));
 }
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
@@ -183,6 +186,9 @@ async function rpc(fn, args = {}) {
     // pantalla de entrar dice por qué; aquí no se enseña nada más).
     if (msg.includes('admin_session_expired')) { setTimeout(() => cierraSesion('caducada'), 0); throw new Obsoleta(); }
     if (msg.includes('not_admin')) throw new Error('Esta cuenta no es administradora.');
+    // Las de colecciones, artistas, emisiones y traducción miran `is_admin()`
+    // y dicen `not_authorized` o `forbidden` (antes, «Prueba otra vez»).
+    if (/^(not_authorized|forbidden)$/.test(msg)) throw new Error('No tienes permiso para esto.');
     // Eliminar una cuenta pide haber confirmado la contraseña hace poco.
     if (msg.includes('reauth_required')) { IDENTIDAD_OK = 0; throw new Error('Por seguridad, vuelve a confirmar que eres tú.'); }
     // Dueña de un negocio: primero se traspasa o se elimina el negocio (con
@@ -1304,6 +1310,12 @@ const sinAlmohadilla = () => {
 };
 sinAlmohadilla();
 const PAGES = {};
+// Una ficha con un id que no es un id (`/negocios/xyz`, un enlace cortado):
+// «no encontrado» sin preguntar a la base (antes, la base decía «invalid input
+// syntax for type uuid» y salía «No se ha podido completar. Prueba otra vez.»).
+// Lo que no está no se reintenta solo (`noEsta`).
+const ES_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const noEncontrado = (texto) => Object.assign(new Error(texto), { noEsta: true });
 
 // ── Entidades (migración 20261130100000) ────────────────────────────────────
 const ENTIDADES = {
@@ -1317,8 +1329,31 @@ const nombreEntidad = (k) => (ENTIDADES[k] ? ENTIDADES[k][I18N.lang === 'en' ? 1
 // algo en Configuración, en la ficha de un negocio…), se queda donde estaba
 // en vez de saltar arriba del todo.
 let RUTA_PINTADA = null;
+// «Algo ha fallado» se vuelve a intentar solo al volver la red o la pestaña
+// (como `ErrorState` de la app y «Tu cuenta», §4zzz-revweb; revisión general,
+// parte 5): antes, con el wifi de vuelta, se quedaba el error hasta pulsar
+// «Reintentar». Un solo vigilante a la vez, quitado al cambiar de pantalla.
+let REINTENTA_SOLO = null;
+function quitaReintento() {
+  if (!REINTENTA_SOLO) return;
+  removeEventListener('online', REINTENTA_SOLO);
+  document.removeEventListener('visibilitychange', REINTENTA_SOLO);
+  REINTENTA_SOLO = null;
+}
+function reintentaSolo(v) {
+  quitaReintento();
+  const f = () => {
+    if (document.hidden || !ME) return;
+    quitaReintento();
+    if (v.isConnected && v.querySelector('[data-reintentar]')) route();
+  };
+  REINTENTA_SOLO = f;
+  addEventListener('online', f);
+  document.addEventListener('visibilitychange', f);
+}
 async function route() {
   if (!ME || !$('#mfa').hidden) return;
+  quitaReintento();
   const n = ++RUTA_N;
   const misma = RUTA_PINTADA === currentRoute().join("/");
   const y = misma ? window.scrollY : 0;
@@ -1360,6 +1395,8 @@ async function route() {
     v.innerHTML = `<section class="vacio"><h2>Algo ha fallado</h2><p>${esc(I18N.t(msg))}</p>${/administradora/.test(msg) ? (I18N.lang === 'en' ? '<p class="muted">Ask another administrator to add you in “Administrators”, or run this in Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'your@email\'</code></p>' : '<p class="muted">Pide a otro administrador que te dé de alta en «Administradores», o ejecuta en Supabase: <code>insert into public.admin_users (user_id) select id from auth.users where email = \'tu@email\'</code></p>') : ''}
       <div class="vacio-botones"><button class="btn primary" type="button" data-reintentar>Reintentar</button></div></section>`;
     $('[data-reintentar]', v).onclick = () => route();
+    // Sin ser administradora no hay nada que reintentar solo.
+    if (!e?.noEsta && !/administradora/.test(msg)) reintentaSolo(v);
     I18N.translate(v);
   }
 }
@@ -1416,7 +1453,18 @@ window.addEventListener('unhandledrejection', (ev) => {
   if (e?.obsoleta) { ev.preventDefault(); return; }
   if (e instanceof Error && ME) {
     toast(e instanceof TypeError ? 'Algo ha fallado. Prueba otra vez.' : (e.message || window.KL_AUTH_TEXT('sinRed', I18N.lang)), true);
-    $$('#view .loading').forEach((l) => { l.textContent = I18N.t('No se ha podido cargar. Prueba otra vez.'); });
+    // La lista que se quedaba en «Cargando…»: el aviso, «Reintentar» (vuelve
+    // a pintar la pantalla con lo que dice la dirección) y, como «Algo ha
+    // fallado», otra vez solo al volver la red o la pestaña (revisión
+    // general, parte 5; antes, solo el texto, sin botón ni reintento).
+    const cargando = $$('#view .loading');
+    for (const l of cargando) {
+      l.className = 'carga-fallida';
+      l.removeAttribute('role');
+      l.innerHTML = `<p>${esc(I18N.t('No se ha podido cargar. Prueba otra vez.'))}</p><button class="btn sm" type="button" data-reintentar>${esc(I18N.t('Reintentar'))}</button>`;
+      $('[data-reintentar]', l).onclick = () => route();
+    }
+    if (cargando.length && $('#view > div')) reintentaSolo($('#view > div'));
   }
 });
 /** A otra pantalla del admin (`/negocios/x`, `/negocios?status=pending`), sin
@@ -2212,6 +2260,7 @@ const params = () => Object.fromEntries(new URLSearchParams(location.search));
 const st = { mensajes: { limit: 50, offset: 0 }, sugerencias: { limit: 50, offset: 0 }, negocios: { limit: 50, offset: 0 }, publicaciones: { limit: 50, offset: 0 }, canjes: { limit: 50, offset: 0 }, usuarios: { limit: 50, offset: 0 }, resenas: { limit: 50, offset: 0 }, posts: { limit: 50, offset: 0 }, denuncias: { limit: 50, offset: 0 }, actividad: { limit: 100, offset: 0 }, pagos: { limit: 100, offset: 0 }, subs: { limit: 100, offset: 0 }, errores: { limit: 50, offset: 0 } };
 
 PAGES.negocios = async (v, id) => {
+  if (id && !ES_ID.test(id)) throw noEncontrado('Negocio no encontrado.');
   if (id) return businessDetail(v, id);
   const s = st.negocios;
   const DEF = { status: 'all', plan: 'all', active: '', sort: 'created_desc', stuck: '' };
@@ -2335,7 +2384,7 @@ async function businessDetail(v, id) {
     rpc('admin_business_billing', { p_id: id }).catch((e) => { if (e?.obsoleta) throw e; return null; }),
   ]);
   const b = d.business;
-  if (!b) throw new Error('Negocio no encontrado.');
+  if (!b) throw noEncontrado('Negocio no encontrado.');
   if (!Array.isArray(b.amenities)) {
     const { data: am } = await sb.from('businesses').select('amenities').eq('id', b.id).maybeSingle();
     b.amenities = Array.isArray(am?.amenities) ? am.amenities : [];
@@ -2930,6 +2979,7 @@ const tipoAviso = (k) => (k ? (TIPO_AVISO[k] || [I18N.lang === 'en' ? 'Other' : 
 
 // ── Publicaciones ───────────────────────────────────────────────────────────
 PAGES.publicaciones = async (v, id) => {
+  if (id && !ES_ID.test(id)) throw noEncontrado('Publicación no encontrada.');
   if (id) return offerDetail(v, id);
   const s = st.publicaciones;
   const DEF = { moderation: 'all', status: 'all', kind: 'all' };
@@ -3008,7 +3058,7 @@ async function moderateOffer(id, val) {
 async function offerDetail(v, id) {
   const d = await rpc('admin_offer_detail', { p_id: id });
   const o = d.offer;
-  if (!o) throw new Error('Publicación no encontrada.');
+  if (!o) throw noEncontrado('Publicación no encontrada.');
   // Sus horas, en la zona de su negocio (la posición es la del local).
   const tz = KZ.de(o);
   v.innerHTML = `
@@ -3118,6 +3168,7 @@ PAGES.canjes = async (v) => {
 
 // ── Usuarios ────────────────────────────────────────────────────────────────
 PAGES.usuarios = async (v, id) => {
+  if (id && !ES_ID.test(id)) throw noEncontrado('Usuario no encontrado.');
   if (id) return userDetail(v, id);
   const s = st.usuarios;
   const DEF = { type: 'all', banned: '', sort: 'created_desc' };
@@ -3163,7 +3214,7 @@ async function userDetail(v, id) {
     rpc('admin_inactive_notice', { p_id: id }).catch(() => null),
   ]);
   const u = d.user;
-  if (!u) throw new Error('Usuario no encontrado.');
+  if (!u) throw noEncontrado('Usuario no encontrado.');
   const prefs = d.notification_prefs;
   const en = I18N.lang === 'en';
   v.innerHTML = `

@@ -356,8 +356,8 @@ PAGES.pedidos = async (v, id) => {
 };
 
 async function crDetalle(v, id) {
-  const g = await rpc('admin_venue_request_detail', { p_group: id });
-  if (!g) throw new Error(bi('Ese sitio pedido no existe (o se ha unido con otro).', "That requested place doesn't exist (or was merged into another)."));
+  const g = ES_ID.test(id) ? await rpc('admin_venue_request_detail', { p_group: id }) : null;
+  if (!g) throw Object.assign(new Error(bi('Ese sitio pedido no existe (o se ha unido con otro).', "That requested place doesn't exist (or was merged into another).")), { noEsta: true });
   const nombres = g.names || [];
   const lista = (xs) => (xs.length ? `<ul class="cr-nombres">${xs.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>` : '<p class="muted">—</p>');
   v.innerHTML = `
