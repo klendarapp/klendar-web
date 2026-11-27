@@ -8,6 +8,7 @@
 //     sin preguntar a la base, y lo que no está no se reintenta solo.
 //  4. `not_authorized` / `forbidden` de las funciones que miran `is_admin()`:
 //     «No tienes permiso para esto.» (antes, «Prueba otra vez»).
+//  4-bis. «Descargar la lista (CSV)» de Artistas con doble clic: una descarga.
 //  5. «Buscar festivos» (Edge Function `holidays`) con tope: sin respuesta,
 //     a los 160 s el error y el botón libre (antes, la aguja para siempre).
 // Base simulada (_admin_simulado), Chromium y WebKit (~30 s).
@@ -128,6 +129,23 @@ for (const tipo of ['chromium', 'webkit']) {
     const visto = await espera(p, () => /No tienes permiso para esto/.test(document.querySelector('#view')?.textContent || '') || [...document.querySelectorAll('.toast')].some((t) => /No tienes permiso para esto/.test(t.textContent)));
     ok(`${ruta} con ${codigo}: «No tienes permiso para esto.»`, visto, await p.evaluate(() => document.querySelector('#view')?.textContent.slice(0, 120)));
     await ctx.close();
+  }
+
+  // 4-bis. «Descargar la lista (CSV)» de Artistas con doble clic: una descarga.
+  {
+    const estado = { falla: {} };
+    const ctx = await nav.newContext({ viewport: { width: 1280, height: 800 }, locale: 'es-ES', timezoneId: 'Europe/Madrid', acceptDownloads: true });
+    await conSesionAdmin(ctx, { extra: { admin_artists: [{ id: '0ad00000-0000-4000-8000-000000000901', name: 'DJ Prueba', slug: 'dj-prueba', followers: 3, events_upcoming: 1, events_total: 2, created_at: new Date().toISOString() }] } });
+    const p = await ctx.newPage();
+    let bajadas = 0;
+    p.on('download', () => { bajadas++; });
+    await p.goto(`${ADMIN}/artistas`);
+    await espera(p, () => document.querySelector('[data-ar-csv]') && document.querySelector('#view table'));
+    await p.evaluate(() => { const b = document.querySelector('[data-ar-csv]'); b.click(); b.click(); });
+    await p.waitForTimeout(1200);
+    ok('artistas: CSV con doble clic, una descarga', bajadas === 1, String(bajadas));
+    await ctx.close();
+    void estado;
   }
 
   // 5. «Buscar festivos» sin respuesta: a los 160 s, el error y el botón libre.
